@@ -1,0 +1,113 @@
+{
+ "D3": {
+  "runs": {
+   "rw1k-a": {
+    "side": "gpu",
+    "lm_loss": 12.01518440246582,
+    "mtp_loss_mt": 0.949964702129364,
+    "note": "metrics.jsonl 第 1 步"
+   },
+   "rw1k-b": {
+    "side": "gpu",
+    "lm_loss": 12.015106201171875,
+    "mtp_loss_mt": 0.9499197006225586,
+    "note": "metrics.jsonl 第 1 步"
+   },
+   "rw1k-c": {
+    "side": "gpu",
+    "lm_loss": 12.015121459960938,
+    "mtp_loss_mt": 0.9498499035835266,
+    "note": "metrics.jsonl 第 1 步"
+   },
+   "rw1k-d": {
+    "side": "gpu",
+    "lm_loss": 12.015144348144531,
+    "mtp_loss_mt": 0.9498271942138672,
+    "note": "metrics.jsonl 第 1 步"
+   },
+   "trw-e": {
+    "side": "tpu",
+    "lm_loss": 12.013306617736816,
+    "mtp_loss_mt": 0.9498320817947388,
+    "note": "metrics.jsonl 第 1 步（Pod 镜像）；sa_use_base2_exp 开；trw-a 的 Pod 日志 lm_loss 逐位相同"
+   }
+  },
+  "fp64_ref_note": "D3 的 FP64 参照 = d3-step1-fp64-forward.micro.jsonl"
+ },
+ "B": {
+  "runs": {
+   "gb2-a": {
+    "side": "gpu",
+    "lm_loss": 11.702826499938965,
+    "note": "metrics.jsonl 第 1 步"
+   },
+   "gb2-b": {
+    "side": "gpu",
+    "lm_loss": 11.702827453613281,
+    "note": "metrics.jsonl 第 1 步"
+   },
+   "gb2-c": {
+    "side": "gpu",
+    "lm_loss": 11.702828407287598,
+    "note": "metrics.jsonl 第 1 步"
+   },
+   "gb2-d": {
+    "side": "gpu",
+    "lm_loss": 11.702840805053711,
+    "note": "metrics.jsonl 第 1 步"
+   },
+   "gb2-e": {
+    "side": "gpu",
+    "lm_loss": 11.702834129333496,
+    "note": "metrics.jsonl 第 1 步"
+   },
+   "gb2-f": {
+    "side": "gpu",
+    "lm_loss": 11.702836036682129,
+    "note": "metrics.jsonl 第 1 步"
+   },
+   "gb2-g": {
+    "side": "gpu",
+    "lm_loss": 11.70283317565918,
+    "note": "metrics.jsonl 第 1 步"
+   },
+   "gb2-h": {
+    "side": "gpu",
+    "lm_loss": 11.702834129333496,
+    "note": "metrics.jsonl 第 1 步"
+   },
+   "tnorm-sg": {
+    "side": "tpu",
+    "lm_loss": 11.701127448038331,
+    "loss": 11.71169376373291,
+    "indexer_loss_raw_sum": 0.04221173468977213,
+    "note": "现行 T2 yml + rmsnorm_scale_grad_fp32（只改反向）；sa_use_base2_exp 开。lm_loss = diag_step1.json 的 loss − KD 项；KD 项 = Σ indexer_loss_raw ÷ 2（累积 2 份）× 32768 ÷ 65453（indexer_kd_mcore_weight：每个 microbatch 的 token 位置数 targets.size ÷ 全局有效 token 数）"
+   },
+   "tqa-nb2": {
+    "side": "tpu",
+    "lm_loss": 11.702156140882861,
+    "loss": 11.712713241577148,
+    "indexer_loss_raw_sum": 0.04217492137104273,
+    "note": "同 tnorm-sg，只差 sa_use_base2_exp 关。lm_loss = diag_step1.json 的 loss − KD 项；KD 项 = Σ indexer_loss_raw ÷ 2（累积 2 份）× 32768 ÷ 65453（indexer_kd_mcore_weight：每个 microbatch 的 token 位置数 targets.size ÷ 全局有效 token 数）",
+    "base2_off": true
+   },
+   "tqa-dot": {
+    "side": "tpu",
+    "lm_loss": 11.702344569883367,
+    "loss": 11.712906837463379,
+    "indexer_loss_raw_sum": 0.04219556273892522,
+    "note": "注意力换 dot_product（不走 splash）。lm_loss = diag_step1.json 的 loss − KD 项；KD 项 = Σ indexer_loss_raw ÷ 2（累积 2 份）× 32768 ÷ 65453（indexer_kd_mcore_weight：每个 microbatch 的 token 位置数 targets.size ÷ 全局有效 token 数）",
+    "base2_off": true
+   },
+   "tnorm-f32": {
+    "side": "tpu",
+    "lm_loss": 11.702039647349688,
+    "loss": 11.71259880065918,
+    "indexer_loss_raw_sum": 0.042183121433481574,
+    "note": "dtype float32 + matmul_precision highest。lm_loss = diag_step1.json 的 loss − KD 项；KD 项 = Σ indexer_loss_raw ÷ 2（累积 2 份）× 32768 ÷ 65453（indexer_kd_mcore_weight：每个 microbatch 的 token 位置数 targets.size ÷ 全局有效 token 数）",
+    "base2_off": true
+   }
+  },
+  "fp64_ref_note": "B 的 FP64 参照见 b-base（本次重跑，只前向）"
+ }
+}

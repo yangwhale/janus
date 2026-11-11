@@ -1,0 +1,5 @@
+# 01 · 运行清单。数据位置写成占位，不写桶名。
+schema: 1
+alignment: 01-v5p-acceptance
+golden: []
+test: []

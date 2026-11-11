@@ -1,0 +1,10 @@
+$ python verify_ckpt.py megatron --hf <HF 目录 hy3-4l> --gpu-run <golden g1k-a>
+rank 0: GPU 185 个，name_map 拼出 185 个；sha256 不同 0；形状不同 0；只在 GPU 0 []；只在 name_map 0 []
+rank 1: GPU 185 个，name_map 拼出 185 个；sha256 不同 0；形状不同 0；只在 GPU 0 []；只在 name_map 0 []
+rank 2: GPU 185 个，name_map 拼出 185 个；sha256 不同 0；形状不同 0；只在 GPU 0 []；只在 name_map 0 []
+rank 3: GPU 185 个，name_map 拼出 185 个；sha256 不同 0；形状不同 0；只在 GPU 0 []；只在 name_map 0 []
+rank 4: GPU 185 个，name_map 拼出 185 个；sha256 不同 0；形状不同 0；只在 GPU 0 []；只在 name_map 0 []
+rank 5: GPU 185 个，name_map 拼出 185 个；sha256 不同 0；形状不同 0；只在 GPU 0 []；只在 name_map 0 []
+rank 6: GPU 185 个，name_map 拼出 185 个；sha256 不同 0；形状不同 0；只在 GPU 0 []；只在 name_map 0 []
+rank 7: GPU 185 个，name_map 拼出 185 个；sha256 不同 0；形状不同 0；只在 GPU 0 []；只在 name_map 0 []
+OK

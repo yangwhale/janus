@@ -1,0 +1,48 @@
+{
+ "fp64": {
+  "rows": 16,
+  "lm_loss": 12.014492588897129,
+  "mtp_loss_mt": 0.9499259739375474
+ },
+ "runs": {
+  "rw1k-a": {
+   "side": "gpu",
+   "lm_loss": 12.01518440246582,
+   "lm_loss.rel_vs_fp64": 5.7581588533386986e-05,
+   "mtp_loss_mt": 0.949964702129364,
+   "mtp_loss_mt.rel_vs_fp64": 4.0769694564802166e-05
+  },
+  "rw1k-b": {
+   "side": "gpu",
+   "lm_loss": 12.015106201171875,
+   "lm_loss.rel_vs_fp64": 5.1072674955332085e-05,
+   "mtp_loss_mt": 0.9499197006225586,
+   "mtp_loss_mt.rel_vs_fp64": -6.604004060243047e-06
+  },
+  "rw1k-c": {
+   "side": "gpu",
+   "lm_loss": 12.015121459960938,
+   "lm_loss.rel_vs_fp64": 5.234270687300134e-05,
+   "mtp_loss_mt": 0.9498499035835266,
+   "mtp_loss_mt.rel_vs_fp64": -8.008029689458469e-05
+  },
+  "rw1k-d": {
+   "side": "gpu",
+   "lm_loss": 12.015144348144531,
+   "lm_loss.rel_vs_fp64": 5.424775474950521e-05,
+   "mtp_loss_mt": 0.9498271942138672,
+   "mtp_loss_mt.rel_vs_fp64": -0.00010398675937954128
+  },
+  "trw-a": {
+   "side": "tpu",
+   "lm_loss": 12.013306617736816,
+   "lm_loss.rel_vs_fp64": -9.871171433478497e-05
+  }
+ },
+ "R": {
+  "trw-a": {
+   "lm_loss": 1.7142930031801726
+  }
+ },
+ "note": "TPU trw-a 的第 1 步 lm_loss 取自它的 Pod 日志（[janus] step 1 行，float32 的完整 repr）；trw-a 的运行目录随 spot 节点丢失，没有 metrics.jsonl"
+}

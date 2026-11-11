@@ -1,0 +1,41 @@
+{
+ "a": "ck-a",
+ "b": "ck-c",
+ "steps": [
+  1,
+  10
+ ],
+ "metrics": {
+  "values": 810,
+  "differ": 0,
+  "first_differ": []
+ },
+ "params_sha": {
+  "files": 8,
+  "entries": 1968,
+  "differ": 1680,
+  "first_differ": [
+   [
+    "rank0.final.json",
+    "buffer.decoder.layers.1.mlp.router.expert_bias"
+   ],
+   [
+    "rank0.final.json",
+    "buffer.decoder.layers.2.mlp.router.expert_bias"
+   ],
+   [
+    "rank0.final.json",
+    "buffer.decoder.layers.3.mlp.router.expert_bias"
+   ],
+   [
+    "rank0.final.json",
+    "buffer.decoder.layers.4.mlp.router.expert_bias"
+   ],
+   [
+    "rank0.final.json",
+    "buffer.decoder.layers.5.mlp.router.expert_bias"
+   ]
+  ]
+ },
+ "bitwise_identical": false
+}

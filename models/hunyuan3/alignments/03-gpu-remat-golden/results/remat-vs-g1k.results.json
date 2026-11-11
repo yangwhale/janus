@@ -1,0 +1,374 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.0.1",
+  "commit": null
+ },
+ "catalog": {
+  "path": "/data/rc/cat/remat-vs-g1k.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "73164e7c34f411d70fe70ff5023942395060e72a55e787caed28a047128eceaf",
+  "raw_sha256": "ceaa7e0d0423d4d56bcb2a341905458d32b16f59fa96ec35fedc0e88b7771866"
+ },
+ "runs": {
+  "rc-a": {
+   "path": "/data/rc/runs/rc-a",
+   "meta_sha256": "a866e6b2c8131e3e22c327318050b593e96f8395fa6ccf0ecd9fc3346dadb44f"
+  },
+  "g1k-a": {
+   "path": "/data/rc/runs/g1k-a",
+   "meta_sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+  },
+  "g1k-b": {
+   "path": "/data/rc/runs/g1k-b",
+   "meta_sha256": "20ba1aa99be3b12587f2de807208a5906be631a7ce882cad95ee969c237f5bd2"
+  },
+  "g1k-c": {
+   "path": "/data/rc/runs/g1k-c",
+   "meta_sha256": "dd91c737df4f227d97184e55846444cbdfdd8f1b9f0570c5b5d9f04095b3a88f"
+  }
+ },
+ "started_at": "2026-11-04T14:21:04+00:00",
+ "finished_at": "2026-11-04T14:21:12+00:00",
+ "summary": {
+  "pass": 3,
+  "fail": 1,
+  "inconclusive": 2,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L0.data.fingerprint",
+   "type": "data_fingerprint",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "units_per_field": {
+     "tokens": 16000,
+     "labels": 16000,
+     "loss_mask": 16000,
+     "position_ids": 16000
+    },
+    "units": 65000,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/rc/runs/rc-a",
+     "sha256": "a866e6b2c8131e3e22c327318050b593e96f8395fa6ccf0ecd9fc3346dadb44f"
+    },
+    {
+     "path": "/data/rc/runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "token 与首步 loss 逐位相同",
+   "details": "details/L0.data.fingerprint.jsonl"
+  },
+  {
+   "id": "L3.step1.act.bitwise",
+   "type": "bitwise_equal",
+   "level": "L3",
+   "hard": false,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 46,
+    "differ": 26
+   },
+   "worst": [
+    {
+     "name": "final_norm.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.1.mlp.experts.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.1.mlp.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.1.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.2.attn.core.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/rc/runs/rc-a",
+     "sha256": "a866e6b2c8131e3e22c327318050b593e96f8395fa6ccf0ecd9fc3346dadb44f"
+    },
+    {
+     "path": "/data/rc/runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "26 / 46 个张量不同",
+   "details": "details/L3.step1.act.bitwise.jsonl"
+  },
+  {
+   "id": "L4.loss",
+   "type": "multi_golden",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "signed_mean": 3.138001005029759e-05,
+      "mare": 0.00010911357036476045,
+      "max_step": 0.0006337405554602801
+     }
+    }
+   },
+   "metrics": {
+    "d0_max": 7.485828702447209e-07,
+    "signed_mean_max": 2.789695961898177e-05,
+    "mare_max": 0.00010468839731771203,
+    "max_step_max": 0.00052616791575593,
+    "goldens": 3,
+    "in_band_frac": 0.5275275275275275,
+    "window": "1:1001",
+    "denominator": "golden",
+    "noise_dropped": [],
+    "noise_loo": [
+     {
+      "pair": "g1k-a~g1k-b",
+      "signed_mean": 0.6962907412322953,
+      "mare": 0.9310357834371853,
+      "max_step": 0.819056803837571
+     },
+     {
+      "pair": "g1k-a~g1k-c",
+      "signed_mean": 0.3040126266972713,
+      "mare": 0.9364001831929528,
+      "max_step": 0.9561160741070172
+     },
+     {
+      "pair": "g1k-b~g1k-c",
+      "signed_mean": 1.4361816706483848,
+      "mare": 1.0679194835163142,
+      "max_step": 1.0458981153872653
+     }
+    ]
+   },
+   "r1": 0.9594443382958204,
+   "r2": 0.8890041645705977,
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/rc/runs/rc-a",
+     "sha256": "a866e6b2c8131e3e22c327318050b593e96f8395fa6ccf0ecd9fc3346dadb44f"
+    },
+    {
+     "path": "/data/rc/runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    },
+    {
+     "path": "/data/rc/runs/g1k-b",
+     "sha256": "20ba1aa99be3b12587f2de807208a5906be631a7ce882cad95ee969c237f5bd2"
+    },
+    {
+     "path": "/data/rc/runs/g1k-c",
+     "sha256": "dd91c737df4f227d97184e55846444cbdfdd8f1b9f0570c5b5d9f04095b3a88f"
+    }
+   ],
+   "message": "在噪声参照内",
+   "details": "details/L4.loss.jsonl"
+  },
+  {
+   "id": "L4.grad_norm",
+   "type": "loss_series",
+   "level": "L4",
+   "hard": true,
+   "status": "inconclusive",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "signed_mean": 0.003311722376366379,
+      "mare": 0.028050678429221824,
+      "max_step": 0.5043153575299238
+     }
+    }
+   },
+   "metrics": {
+    "d0": 5.656199036422985e-06,
+    "signed_mean": 0.00011644390351049526,
+    "mare": 0.024024438214409447,
+    "max_step": 0.5661848743918853,
+    "max_step_at": 204,
+    "window": "1:1001",
+    "denominator": "golden",
+    "nonfinite_steps": [],
+    "signed_mean_se": 0.0015122697001673983,
+    "first_differ_step": 1,
+    "noise_dropped": [],
+    "noise_loo": [
+     {
+      "pair": "g1k-a~g1k-b",
+      "signed_mean": 1.5674881325890984,
+      "mare": 1.0392202499255505,
+      "max_step": 0.856843501007841
+     },
+     {
+      "pair": "g1k-a~g1k-c",
+      "signed_mean": 0.6379633626624337,
+      "mare": 0.962259925238793,
+      "max_step": 1.1670742659817979
+     },
+     {
+      "pair": "g1k-b~g1k-c",
+      "signed_mean": 0.13877082703581958,
+      "mare": 0.9385562556609022,
+      "max_step": 0.448584647642752
+     }
+    ]
+   },
+   "r1": 0.8564654960138848,
+   "r2": 0.03516113075826648,
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/rc/runs/rc-a",
+     "sha256": "a866e6b2c8131e3e22c327318050b593e96f8395fa6ccf0ecd9fc3346dadb44f"
+    },
+    {
+     "path": "/data/rc/runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "介于噪声参照一到两倍之间，或参照不足"
+  },
+  {
+   "id": "L4.param_norm",
+   "type": "loss_series",
+   "level": "L4",
+   "hard": true,
+   "status": "inconclusive",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "signed_mean": 8.407598440642782e-08,
+      "mare": 9.326791048211813e-08,
+      "max_step": 3.2408493937960374e-07
+     }
+    }
+   },
+   "metrics": {
+    "d0": 0.0,
+    "signed_mean": 1.2084245946638726e-07,
+    "mare": 1.2722274439495772e-07,
+    "max_step": 3.240850444106857e-07,
+    "max_step_at": 992,
+    "window": "1:1001",
+    "denominator": "golden",
+    "nonfinite_steps": [],
+    "signed_mean_se": 2.364298443178726e-08,
+    "first_differ_step": 16,
+    "noise_dropped": [],
+    "noise_loo": [
+     {
+      "pair": "g1k-a~g1k-b",
+      "signed_mean": 0.5228290185955241,
+      "mare": 0.6069582257564454,
+      "max_step": 0.6666676387539836
+     },
+     {
+      "pair": "g1k-a~g1k-c",
+      "signed_mean": 1.912671187774352,
+      "mare": 1.540171802884385,
+      "max_step": 1.4999978128067262
+     },
+     {
+      "pair": "g1k-b~g1k-c",
+      "signed_mean": 0.4771709946382518,
+      "mare": 0.6492782156686883,
+      "max_step": 0.6666664865755844
+     }
+    ]
+   },
+   "r1": 1.3640569809843612,
+   "r2": 1.4373005599581008,
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/rc/runs/rc-a",
+     "sha256": "a866e6b2c8131e3e22c327318050b593e96f8395fa6ccf0ecd9fc3346dadb44f"
+    },
+    {
+     "path": "/data/rc/runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "介于噪声参照一到两倍之间，或参照不足"
+  },
+  {
+   "id": "L4.router.bias_std",
+   "type": "router_stats",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "signed_mean": 0.0026667042753915613,
+      "mare": 0.0031863348250844273,
+      "max_step": 0.011464995678478824
+     }
+    }
+   },
+   "metrics": {
+    "signed_mean_max": 0.0014750029042194226,
+    "mare_max": 0.002702387307644578,
+    "max_step_max": 0.010833500981295943,
+    "stats": 3
+   },
+   "r1": 0.8481178080752934,
+   "r2": 0.5531182883047063,
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/rc/runs/rc-a",
+     "sha256": "a866e6b2c8131e3e22c327318050b593e96f8395fa6ccf0ecd9fc3346dadb44f"
+    },
+    {
+     "path": "/data/rc/runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "在噪声参照内",
+   "details": "details/L4.router.bias_std.jsonl"
+  }
+ ]
+}

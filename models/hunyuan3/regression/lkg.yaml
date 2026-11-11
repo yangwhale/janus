@@ -1,0 +1,381 @@
+# 混元 3 · 日常回归 · LKG 登记（标准第七节）。每个「平台 × 档位 × 并行变体」一条，换代追加新条目、旧条目不删（二分和翻案要用）。
+# 数值没变（回归门逐位通过）：指针前移，追加一条，approved_by 写「逐位，无需批准」。
+# 数值变了（会改数值、升级依赖）：由项目负责人批准后追加，附 PR 号与声明、回归门各行的变化、对齐门「不变差」、（升级依赖）归因结论。
+# 条目由 run_regression.sh --first-lkg 或 regress.py lkg-entry 打印；location 写占位，不写桶名。
+# status: superseded —— 被后续条目取代、没批也不再补批的旧条目，保留作历史（approval_note 记登记时的原文）。
+# 检查项目录换代（目录 sha256 变了、数值不变）：在新目录下重判逐位后，同一运行可以再登记一条；regress.py 的 R02 登记核对取同一运行的最新一条。
+# catalog_content_sha256 是目录的内容指纹（content-v1，改注释与说明文字不变），R02 比它；catalog_sha256 是原文件的 sha256，留作历史。
+# 2026-11-06 之前的条目由 tools/migrate_catalog_content_hash.py 按 git 历史里的那一版目录补算。
+# 2026-11-05 数学级换代：对齐 / 生产配置换成 hy3-4layers.yml a238883b（dense_fp32_accumulation 及 #62 的三个舍入开关，maxtext hunyuan@0622774a）。
+# 按新配置重建的 T0 reg-t0-fa-a、T1 reg-t1-fa-a 追加在末尾，2026-11-05 经项目负责人批准（数值变了的换代要批准，标准第七节）；
+# 7704115 那一版的 LKG 已不是现行配置（run_regression.sh 默认取最后一条）。
+schema: 1
+approver: 项目负责人
+entries:
+- key:
+    platform: v5p
+    tier: T0
+    variant: main
+  run: reg-t0-lkg1-a
+  pair: reg-t0-lkg1-b
+  date: '2026-11-04'
+  code:
+    maxtext: 4d4ffac25d26c0edf81a34659cd22792b4fa07f3
+    janus: c5d71c8b564c2f3c8c0433402c9894081a621427
+  image: us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf
+  versions:
+    jax: 0.11.1
+    jaxlib: 0.11.1
+    libtpu: 'PJRT C API
+
+      TFRT TPU v5
+
+      Built on Aug 12 2026 16:43:34 (1786578214) cl/963683785'
+    flax: 0.12.9
+    optax: 0.2.8
+    orbax_checkpoint: 0.12.4
+  config:
+    overrides:
+    - mtp_num_layers=0
+    - per_device_batch_size=2
+    - gradient_accumulation_steps=1
+    yml_sha256: 7704115ba7a791d04f768a23d99bfb093aab07be1b37966281dba28bf5b8adf6
+  tier_config_sha256: d95fa250a233d61e1c4b8807fd4a8cece80412e43fd91a73ad974e42d02803cd
+  catalog_sha256:
+    regression-t0.yaml: 7912b0466cee452e5d1609400837f1fdc1cd17484cd7226e479bce47ddc06896
+    regression-common.yaml: 386ccee9ca6e89dc68984649f77c771cf460f23cb935a8ccc945988bcc064b79
+  catalog_content_sha256:
+    regression-t0.yaml: 12a33a60f72217033e7404ebc45d9028da554a1714828ceada1e1901d7aeb11f
+    regression-common.yaml: f20e7f405d8448c89f876706bcfd723ead6a3bf54f790835186a21988181569e
+  reason: 首个 LKG：同一提交（maxtext hunyuan@4d4ffac2）双跑逐位（reg-t0-lkg1-a、reg-t0-lkg1-b），两个 v5p-8 节点池各一次
+  approved_by: 未批准（已被后续换代取代，不补批）
+  status: superseded
+  superseded_by: reg-t0-r2（2026-11-04，逐位前移）；现行 T0 LKG 为 reg-t0-st1（2026-11-05，已批准）
+  superseded_at: '2026-11-05'
+  approval_note: 登记时写的是「待项目负责人确认（首个 LKG，不是数值变化的换代）」；后续条目已换代并经项目负责人批准，这一条保留作历史（二分、翻案用），不再批准
+  location: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T0/20261104/runs/reg-t0-lkg1-a/
+  results: models/hunyuan3/regression/results/reg-t0-lkg1/
+  note: janus c5d71c8 是合并前的分支提交；训练侧代码（janus/dump、models/hunyuan3/frameworks/maxtext）与 main 上合并后的 65b7cde 逐字节相同
+- key:
+    platform: v5p
+    tier: T0
+    variant: main
+  run: reg-t0-r2
+  date: '2026-11-04'
+  code:
+    maxtext: 237a32705feb9f028910eb28216299139415d007
+    janus: 3fff02dc81307f9128565a8a9d4ec61725f7aa46
+  image: us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf
+  versions:
+    jax: 0.11.1
+    jaxlib: 0.11.1
+    libtpu: 'PJRT C API
+
+      TFRT TPU v5
+
+      Built on Aug 12 2026 16:43:34 (1786578214) cl/963683785'
+    flax: 0.12.9
+    optax: 0.2.8
+    orbax_checkpoint: 0.12.4
+  config:
+    overrides:
+    - mtp_num_layers=0
+    - per_device_batch_size=2
+    - gradient_accumulation_steps=1
+    yml_sha256: 7704115ba7a791d04f768a23d99bfb093aab07be1b37966281dba28bf5b8adf6
+  tier_config_sha256: d95fa250a233d61e1c4b8807fd4a8cece80412e43fd91a73ad974e42d02803cd
+  catalog_sha256:
+    regression-t0.yaml: 7912b0466cee452e5d1609400837f1fdc1cd17484cd7226e479bce47ddc06896
+    regression-common.yaml: 386ccee9ca6e89dc68984649f77c771cf460f23cb935a8ccc945988bcc064b79
+  catalog_content_sha256:
+    regression-t0.yaml: 12a33a60f72217033e7404ebc45d9028da554a1714828ceada1e1901d7aeb11f
+    regression-common.yaml: f20e7f405d8448c89f876706bcfd723ead6a3bf54f790835186a21988181569e
+  reason: 指针前移：对 reg-t0-lkg1-a 回归门逐位通过（声明数学不变；窗口内合进了 MaxText 一个只改 `.github` 的提交、janus 两个提交）
+  approved_by: 逐位，无需批准
+  location: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T0/20261104/runs/reg-t0-r2/
+  results: models/hunyuan3/regression/results/reg-t0-r2/
+- key:
+    platform: v5p
+    tier: T1
+    variant: main
+  run: reg-t1-lkg2-a
+  pair: reg-t1-lkg2-b
+  date: '2026-11-04'
+  code:
+    maxtext: 237a32705feb9f028910eb28216299139415d007
+    janus: 3fff02dc81307f9128565a8a9d4ec61725f7aa46
+  image: us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf
+  versions:
+    jax: 0.11.1
+    jaxlib: 0.11.1
+    libtpu: 'PJRT C API
+
+      TFRT TPU v5
+
+      Built on Aug 12 2026 16:43:34 (1786578214) cl/963683785'
+    flax: 0.12.9
+    optax: 0.2.8
+    orbax_checkpoint: 0.12.4
+  config:
+    overrides:
+    - mtp_num_layers=0
+    - per_device_batch_size=2
+    - gradient_accumulation_steps=1
+    yml_sha256: 7704115ba7a791d04f768a23d99bfb093aab07be1b37966281dba28bf5b8adf6
+  tier_config_sha256: abd58de70a97a7e0f279ad085e0544b10c698c16de2da6f36736d1957838eb85
+  catalog_sha256:
+    regression-t1.yaml: c68049cc4bb80c2231d0afd6f4efbef6c43d8ad46461a33c3b5e6dbf356bb2a6
+    regression-common.yaml: 386ccee9ca6e89dc68984649f77c771cf460f23cb935a8ccc945988bcc064b79
+  catalog_content_sha256:
+    regression-t1.yaml: 4e8d89079c6c07ad39aee371468efb1b5f3fedd669b7817e7dcac9243044f56a
+    regression-common.yaml: f20e7f405d8448c89f876706bcfd723ead6a3bf54f790835186a21988181569e
+  reason: 首个 LKG：同一提交（maxtext hunyuan@237a3270）双跑逐位（reg-t1-lkg2-a、reg-t1-lkg2-b）；第一次尝试 reg-t1-lkg1-a 跑到第 310 步左右时节点被平台回收（基础设施中断），没跑完
+  approved_by: 未批准（已被后续换代取代，不补批）
+  status: superseded
+  superseded_by: reg-t1-lkg2-a 的 2026-11-05 重新登记（目录换代，已批准）
+  superseded_at: '2026-11-05'
+  approval_note: 登记时写的是「待项目负责人确认（首个 LKG，不是数值变化的换代）」；后续条目已换代并经项目负责人批准，这一条保留作历史（二分、翻案用），不再批准
+  location: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T1/20261104/runs/reg-t1-lkg2-a/
+  results: models/hunyuan3/regression/results/reg-t1-lkg2/
+- key:
+    platform: v5p
+    tier: T1
+    variant: main
+  run: reg-t1-lkg2-a
+  pair: reg-t1-lkg2-b
+  date: '2026-11-04'
+  code:
+    maxtext: 237a32705feb9f028910eb28216299139415d007
+    janus: 3fff02dc81307f9128565a8a9d4ec61725f7aa46
+  image: us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf
+  versions:
+    jax: 0.11.1
+    jaxlib: 0.11.1
+    libtpu: 'PJRT C API
+
+      TFRT TPU v5
+
+      Built on Aug 12 2026 16:43:34 (1786578214) cl/963683785'
+    flax: 0.12.9
+    optax: 0.2.8
+    orbax_checkpoint: 0.12.4
+  config:
+    overrides:
+    - mtp_num_layers=0
+    - per_device_batch_size=2
+    - gradient_accumulation_steps=1
+    yml_sha256: 7704115ba7a791d04f768a23d99bfb093aab07be1b37966281dba28bf5b8adf6
+  tier_config_sha256: abd58de70a97a7e0f279ad085e0544b10c698c16de2da6f36736d1957838eb85
+  catalog_sha256:
+    regression-t1.yaml: 6d79da490fc2f6e19ee85b02d3cad67b1838b4c667c3afb67d6881c731c40bfc
+    regression-common.yaml: 06d08d7f207aa847455135e0f4837367dc8d786c020aac76d6e0211cc7c2530a
+  catalog_content_sha256:
+    regression-t1.yaml: 2288501e83a44f2badb7d3a7775d7d26f6e61ee992dfccff1558847b21b077b0
+    regression-common.yaml: 92df432541f4ba48a7b3d95357dd1842559d0d70a4e68ac2a2db74535438838e
+  reason: '检查项目录换代后重新登记（数值不变）：容差门由待标定改为标定（runs.noise：4 份运行两两配对得到 6 对，R25 加 noise_from: golden），硬门一条没改。同一对双跑 reg-t1-lkg2-b → reg-t1-lkg2-a 在新目录下重判，除 R02.registry 报的就是这次目录 sha 变化外全部逐位；登记后重判 PASS'
+  approved_by: 项目负责人
+  approved_at: '2026-11-05'
+  location: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T1/20261104/runs/reg-t1-lkg2-a/
+  results: models/hunyuan3/regression/results/reg-t1-lkg2-cal/
+- key:
+    platform: v5p
+    tier: T0
+    variant: main
+  run: reg-t0-st1
+  pair: reg-t0-st2
+  date: '2026-11-05'
+  code:
+    maxtext: 237a32705feb9f028910eb28216299139415d007
+    janus: 3fff02dc81307f9128565a8a9d4ec61725f7aa46
+  image: us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf
+  versions:
+    jax: 0.11.1
+    jaxlib: 0.11.1
+    libtpu: 'PJRT C API
+
+      TFRT TPU v5
+
+      Built on Aug 12 2026 16:43:34 (1786578214) cl/963683785'
+    flax: 0.12.9
+    optax: 0.2.8
+    orbax_checkpoint: 0.12.4
+  config:
+    overrides:
+    - mtp_num_layers=0
+    - per_device_batch_size=2
+    - gradient_accumulation_steps=1
+    yml_sha256: 7704115ba7a791d04f768a23d99bfb093aab07be1b37966281dba28bf5b8adf6
+  tier_config_sha256: d95fa250a233d61e1c4b8807fd4a8cece80412e43fd91a73ad974e42d02803cd
+  catalog_sha256:
+    regression-t0.yaml: 44e7f3b66871070c4574ac25cc4579022be1e4f3a12c2f21fca63725e06515c5
+    regression-common.yaml: 06d08d7f207aa847455135e0f4837367dc8d786c020aac76d6e0211cc7c2530a
+  catalog_content_sha256:
+    regression-t0.yaml: 7f5e0f90f0bcbbc5942d2cd423c56ffe5a10c3f349eb4a6d57dc4692f7f9ff88
+    regression-common.yaml: 92df432541f4ba48a7b3d95357dd1842559d0d70a4e68ac2a2db74535438838e
+  reason: 检查项目录换代后重建（数值不变）：容差门由待标定改为标定（runs.noise：4 份运行两两配对得到 6 对），硬门一条没改。同一提交（maxtext hunyuan@237a3270）在另一个 v5p-8 切片上双跑 reg-t0-st1、reg-t0-st2，新目录下 b 对 a 全部逐位；两次在旧目录下对上一条 LKG reg-t0-r2（另一套 v5p-8 节点池）也全部逐位，跨集群同程序逐位
+  approved_by: 项目负责人
+  approved_at: '2026-11-05'
+  location: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T0/20261105/runs/reg-t0-st1/
+  results: models/hunyuan3/regression/results/reg-t0-st/
+- key:
+    platform: v5p
+    tier: T1
+    variant: main
+  run: reg-t1-lkg2-a
+  pair: reg-t1-lkg2-b
+  date: '2026-11-04'
+  code:
+    maxtext: 237a32705feb9f028910eb28216299139415d007
+    janus: 3fff02dc81307f9128565a8a9d4ec61725f7aa46
+  image: us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf
+  versions:
+    jax: 0.11.1
+    jaxlib: 0.11.1
+    libtpu: 'PJRT C API
+
+      TFRT TPU v5
+
+      Built on Aug 12 2026 16:43:34 (1786578214) cl/963683785'
+    flax: 0.12.9
+    optax: 0.2.8
+    orbax_checkpoint: 0.12.4
+  config:
+    overrides:
+    - mtp_num_layers=0
+    - per_device_batch_size=2
+    - gradient_accumulation_steps=1
+    yml_sha256: 7704115ba7a791d04f768a23d99bfb093aab07be1b37966281dba28bf5b8adf6
+  tier_config_sha256: abd58de70a97a7e0f279ad085e0544b10c698c16de2da6f36736d1957838eb85
+  catalog_sha256:
+    regression-t1.yaml: 0570c5d055244b9d43efac3e37a01a00cafdf433cd58e2bd36e7f6a58900b3bc
+    regression-common.yaml: 06d08d7f207aa847455135e0f4837367dc8d786c020aac76d6e0211cc7c2530a
+  catalog_content_sha256:
+    regression-t1.yaml: a9b5b17f1748f7face2c2a54c6e728a851d7ef9e7f4b31461e87251574f9367b
+    regression-common.yaml: 92df432541f4ba48a7b3d95357dd1842559d0d70a4e68ac2a2db74535438838e
+  reason: 噪声参照扩到 8 份运行两两配对的 28 对、容差门正式启用后重新登记（数值不变）：只改了 regression-t1.yaml 的 runs.noise。同一对双跑 reg-t1-lkg2-b → reg-t1-lkg2-a 在新目录下重判，19 行里只有 R02.registry 报这次目录变化，其余全部逐位；登记后重判 PASS
+  approved_by: 项目负责人
+  approved_at: '2026-11-05'
+  location: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T1/20261104/runs/reg-t1-lkg2-a/
+  results: models/hunyuan3/regression/results/reg-t1-lkg2-formal/
+- key:
+    platform: v5p
+    tier: T0
+    variant: main
+  run: reg-t0-st1
+  pair: reg-t0-st2
+  date: '2026-11-05'
+  code:
+    maxtext: 237a32705feb9f028910eb28216299139415d007
+    janus: 3fff02dc81307f9128565a8a9d4ec61725f7aa46
+  image: us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf
+  versions:
+    jax: 0.11.1
+    jaxlib: 0.11.1
+    libtpu: 'PJRT C API
+
+      TFRT TPU v5
+
+      Built on Aug 12 2026 16:43:34 (1786578214) cl/963683785'
+    flax: 0.12.9
+    optax: 0.2.8
+    orbax_checkpoint: 0.12.4
+  config:
+    overrides:
+    - mtp_num_layers=0
+    - per_device_batch_size=2
+    - gradient_accumulation_steps=1
+    yml_sha256: 7704115ba7a791d04f768a23d99bfb093aab07be1b37966281dba28bf5b8adf6
+  tier_config_sha256: d95fa250a233d61e1c4b8807fd4a8cece80412e43fd91a73ad974e42d02803cd
+  catalog_sha256:
+    regression-t0.yaml: 073bce6705ab380022ef44653ac238a4e1a0422de04066c1b9d0aa0db945d746
+    regression-common.yaml: 06d08d7f207aa847455135e0f4837367dc8d786c020aac76d6e0211cc7c2530a
+  catalog_content_sha256:
+    regression-t0.yaml: 56f5c10fe0639a935dd1300a2ac418d4f2a2ea0625704eab37276ea9e60c97b1
+    regression-common.yaml: 92df432541f4ba48a7b3d95357dd1842559d0d70a4e68ac2a2db74535438838e
+  reason: 噪声参照扩到 8 份运行两两配对的 28 对、容差门正式启用后重新登记（数值不变）：只改了 regression-t0.yaml 的 runs.noise。同一对双跑 reg-t0-st2 → reg-t0-st1 在新目录下重判，只有 R02.registry 报这次目录变化，其余全部逐位；登记后重判 PASS
+  approved_by: 项目负责人
+  approved_at: '2026-11-05'
+  location: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T0/20261105/runs/reg-t0-st1/
+  results: models/hunyuan3/regression/results/reg-t0-st-formal/
+- key:
+    platform: v5p
+    tier: T1
+    variant: main
+  run: reg-t1-fa-a
+  pair: reg-t1-fa-b
+  date: '2026-11-05'
+  code:
+    maxtext: 0622774a160c17ba8f3f66941cf1ee49cd9158b2
+    janus: 4db01d7a27a1db8f302e7afe705e0786df4e4680
+  image: us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf
+  versions:
+    jax: 0.11.1
+    jaxlib: 0.11.1
+    libtpu: 'PJRT C API
+
+      TFRT TPU v5
+
+      Built on Aug 12 2026 16:43:34 (1786578214) cl/963683785'
+    flax: 0.12.9
+    optax: 0.2.8
+    orbax_checkpoint: 0.12.4
+  config:
+    overrides:
+    - mtp_num_layers=0
+    - per_device_batch_size=2
+    - gradient_accumulation_steps=1
+    yml_sha256: a238883b7f914d5c99f313d2d5ef68fa472164ef81e95d48d1046cb7e593ee6b
+  tier_config_sha256: abd58de70a97a7e0f279ad085e0544b10c698c16de2da6f36736d1957838eb85
+  catalog_sha256:
+    regression-t1.yaml: 9837ad44c3a516be135a563664a6cc9ee8b18e4c44dbff25d59a847ecfc582f5
+    regression-common.yaml: aa7f49385dec17459b06d3dd85aa2e138942f0f320b38f05746efcf5862711a9
+  catalog_content_sha256:
+    regression-t1.yaml: 9ca2f5a077a65610bad298286be91ac3eb843dbb1cf40cbe72c7f0dcb9d6c19e
+    regression-common.yaml: ba0efaad6f84eccb6f656a4adb3ba0f8ed5c4a2edadcf22f3495b1d4d50761d4
+  reason: '数学级换代：对齐 / 生产配置换成 hy3-4layers.yml a238883b（新开 dense_fp32_accumulation，以及更早已开的 routed_gate_bf16_rounding、rmsnorm_single_rounding、mlp_activation_round_per_op），maxtext hunyuan@0622774a。同一提交双跑
+    reg-t1-fa-a / -b 逐位（19 行），另 3 次同程序（-c/-d/-e）也逐位。对旧 LKG reg-t1-lkg2-a 按「会改数值 · 数学级」判：R25 不变差 pass（对 g1k-a 的带符号均值 / MARE / 最大单步 +6.99e-6 / +2.11e-5 / +2.67e-5，新 TPU 执行噪声上限 4.76e-5 / 1.19e-4 / 7.16e-4）；R20
+    all-reduce 9→8、reduce-precision 31→63；R15 训练后 91 个状态叶子 88 个不同。噪声参照已按新配置重标（8 份运行两两 28 对，正式）'
+  approved_by: 项目负责人
+  approved_at: '2026-11-05'
+  location: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T1/20261105/runs/reg-t1-fa-a/
+  results: models/hunyuan3/regression/results/reg-t1-fa/
+- key:
+    platform: v5p
+    tier: T0
+    variant: main
+  run: reg-t0-fa-a
+  pair: reg-t0-fa-b
+  date: '2026-11-05'
+  code:
+    maxtext: 0622774a160c17ba8f3f66941cf1ee49cd9158b2
+    janus: 4db01d7a27a1db8f302e7afe705e0786df4e4680
+  image: us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf
+  versions:
+    jax: 0.11.1
+    jaxlib: 0.11.1
+    libtpu: 'PJRT C API
+
+      TFRT TPU v5
+
+      Built on Aug 12 2026 16:43:34 (1786578214) cl/963683785'
+    flax: 0.12.9
+    optax: 0.2.8
+    orbax_checkpoint: 0.12.4
+  config:
+    overrides:
+    - mtp_num_layers=0
+    - per_device_batch_size=2
+    - gradient_accumulation_steps=1
+    yml_sha256: a238883b7f914d5c99f313d2d5ef68fa472164ef81e95d48d1046cb7e593ee6b
+  tier_config_sha256: d95fa250a233d61e1c4b8807fd4a8cece80412e43fd91a73ad974e42d02803cd
+  catalog_sha256:
+    regression-t0.yaml: ed85e06a67231739a6ea539c5991476ce9ee434323af45695c92b3c07d7790af
+    regression-common.yaml: aa7f49385dec17459b06d3dd85aa2e138942f0f320b38f05746efcf5862711a9
+  catalog_content_sha256:
+    regression-t0.yaml: 1d276a58991cd0065bf2546aae1025fd3ad17bbe91d9a33077c11f87fb3fabb8
+    regression-common.yaml: ba0efaad6f84eccb6f656a4adb3ba0f8ed5c4a2edadcf22f3495b1d4d50761d4
+  reason: 数学级换代：同 T1 那条（yml a238883b，maxtext hunyuan@0622774a）。同一提交双跑 reg-t0-fa-a / -b 逐位（15 行），另 3 次同程序（-c/-d/-e）也逐位。对旧 LKG reg-t0-st1 按数学级判：配置、R20 计数、训练数值按声明变化，只报
+  approved_by: 项目负责人
+  approved_at: '2026-11-05'
+  location: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T0/20261105/runs/reg-t0-fa-a/
+  results: models/hunyuan3/regression/results/reg-t0-fa/

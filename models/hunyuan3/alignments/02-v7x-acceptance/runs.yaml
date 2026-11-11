@@ -1,0 +1,108 @@
+# 02 · B200×8 → TPU v7x-4 · 运行清单。数据位置写成占位，不写桶名。
+# 字段出处：各运行目录的 meta.json。
+schema: 1
+alignment: 02-v7x-acceptance
+golden: 同 01（g1k-a / g1k-b / g1k-c，见 ../01-v5p-acceptance/runs.yaml）
+test:
+  - name: t-v7x-loss30
+    steps: 30
+    role: 冒烟（只看 loss，不加钩子、不抓数）；验证 v7x 的提交方式
+    setting: "--no-hooks --dump-steps none --no-param-sha；FSDP 8；topology 2x2x1（4 片 8 个 device）；可被平台回收的节点；TRAIN_DIR=models/hunyuan3/tpu（与 01 的 t-loss30 同一份代码包）"
+    code: {framework: maxtext@64cd9a640b8ea65aaf856b6f24755f61ee97e057, janus: 16af8f7b116b337fae03265c26bf0ba7256c6fc7, image: "tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf"}
+    versions: {jax: 0.11.1, libtpu: "TFRT TPU7x，2026-08-12 构建 cl/963683785（与 t-loss30 同一个构建）"}
+    config: {file: frameworks/maxtext/hy3-4layers.yml, sha256: 66a03bf31d3578d9d1d5bcfb0103f5047572df5c802f0057f0683ef315ae435f, overrides: [mtp_num_layers=0], gbs: 16}
+    compare: {golden: g1k-a, v5p: t-loss30}
+    location: gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-v7x-loss30/
+    series: results/series/t-v7x-loss30.metrics.jsonl
+    results: phase2-v7x-t-loss30
+  - name: t-v7x-rmap-1000-a
+    steps: 1000
+    role: 被测（换代前的生产配置：对 rc-a..e 的第二层；v7x 自身逐位复现）；01 t-rmap-1000 的 v7x 对应
+    setting: "--no-hooks --dump-steps none --row-stats-every 100 --group-norms；GA 2 + 三个精度开关（yml）；除层输入与 moe_routing_maps 外全部 remat，moe_routing_maps=device；FSDP 8；2x2x1；可被平台回收的节点"
+    code: {framework: maxtext@237a32705feb9f028910eb28216299139415d007, janus: 9793b367767f27e4f2d00538b69f23f240c58400, image: "tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf"}
+    config: {file: frameworks/maxtext/hy3-4layers.yml, sha256: 2a76c7590866f3d63e6de765798f64f0900d703f3fae5fc76c55df0e6889f99d, overrides: [mtp_num_layers=0, context=remat, query_proj=remat, key_proj=remat, value_proj=remat, out_proj=remat, mlpwi_0=remat, mlpwi_1=remat, mlpwo=remat, moe_mlpwi_0=remat, moe_mlpwi_1=remat, moe_mlpwo=remat, moe_routing_maps=device]}
+    location: gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-v7x-rmap-1000-a/
+    results: [phase2-v7x-acceptance-rc, phase2-v7x-rmap-repro]
+  - name: t-v7x-rmap-1000-b
+    steps: 1000
+    role: 同程序第二次（看 v7x 自己是否逐位）；第一次提交跑到第 70 步前后时节点被平台回收（基础设施中断），原名重提
+    setting: 同 t-v7x-rmap-1000-a
+    location: gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-v7x-rmap-1000-b/
+    results: phase2-v7x-rmap-repro
+  - name: t-v7x-l0
+    steps: 1
+    role: L0 载入后状态（第 1 步训练之前从状态读，零扰动）；01 用 t-a 的第 1 步
+    setting: "--no-hooks --dump-steps 1 --full；代码包与配置同 t-v7x-rmap-1000-a"
+    location: gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-v7x-l0/
+    results: phase2-v7x-l0-state
+  - name: t-v7x-st1-prod
+    steps: 2
+    role: L1 优化器单步、L2 / L3 梯度与更新（第 1 步全量状态读）；01 t-st1-prod 的 v7x 对应。派生 t-v7x-st1-prod-gm（grads_from_moments.py）
+    setting: "--no-hooks --dump-steps 1 --full --no-param-sha；生产 yml + remat 覆盖（同 t-v7x-rmap-1000-a）"
+    code: {framework: maxtext@237a32705feb9f028910eb28216299139415d007, janus: 68ae6b8910}
+    location: gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-v7x-st1-prod/
+    results: phase2-v7x-st1-prod-state
+  - name: t-v7x-st8-prod
+    steps: 9
+    role: 优化器连续 8 步重放；派生 t-v7x-st8-prod-gm
+    setting: "--no-hooks --dump-steps 1..8 --full --full-steps 1..8 --full-include（同 01）--no-param-sha；生产 yml + remat 覆盖"
+    code: {framework: maxtext@237a32705feb9f028910eb28216299139415d007, janus: 68ae6b8910}
+    location: gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-v7x-st8-prod/
+    results: phase2-v7x-st8-opt8
+  - name: r-v7x-l2
+    role: 逐层隔离回放（前向 + 反向），layer_replay.py --layers 0,1,2,3 --grad
+    code: {framework: maxtext@237a32705feb9f028910eb28216299139415d007, janus: 68ae6b8910}
+    location: gs://<POC 桶>/janus/hunyuan3-4l/tpu/r-v7x-l2/
+    results: [phase2-v7x-l2-replay-rratio, phase2-v7x-l1-ops-own, phase2-v7x-l2-replay-bitwise]
+  - name: r-v7x-ff-prod
+    role: 整网前向回放，layer_replay.py --layers , --full-forward
+    code: {framework: maxtext@237a32705feb9f028910eb28216299139415d007, janus: 68ae6b8910}
+    location: gs://<POC 桶>/janus/hunyuan3-4l/tpu/r-v7x-ff-prod/
+    results: phase2-v7x-ff-chain
+  - name: t-v7x-nan8
+    steps: 8
+    role: 梯度 NaN 演练（第 5 步埋 NaN）
+    setting: "--no-hooks --dump-steps none --inject-nan-grad 5 --no-param-sha；per_device_batch_size=2 gradient_accumulation_steps=1"
+    code: {framework: maxtext@237a32705feb9f028910eb28216299139415d007, janus: 68ae6b8910}
+    location: gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-v7x-nan8/
+    results: phase2-v7x-t-nan8
+  - name: obs-v7x-t1
+    steps: 1000
+    role: 观测构建（每步同一个加钩子程序），第 1 步全量抓数
+    setting: "--observe --dump-steps 1,1000 --full --full-steps 1 --no-selfcheck --state-sha --hlo-dir /data/xla；per_device_batch_size=2 gradient_accumulation_steps=1；XLA_DUMP=1"
+    code: {framework: maxtext@237a32705feb9f028910eb28216299139415d007, janus: 8c3c713834}
+    location: gs://<POC 桶>/janus/hunyuan3-4l/tpu/obs-v7x-t1/
+    results: [phase2-v7x-obs-gate, phase2-v7x-coverage]
+  - name: reg-v7x-t1
+    steps: 1000
+    role: 观测构建的基线（同提交、同 yml、同覆盖的生产构建，T1 档参数）
+    setting: "--no-hooks --dump-steps none --no-param-sha --state-sha --hlo-dir /data/xla；per_device_batch_size=2 gradient_accumulation_steps=1；XLA_DUMP=1"
+    code: {framework: maxtext@237a32705feb9f028910eb28216299139415d007, janus: 8c3c713834}
+    location: gs://<POC 桶>/janus/hunyuan3-4l/tpu/reg-v7x-t1/
+    results: phase2-v7x-obs-gate
+  - name: r-v7x-wcoff
+    role: 诊断：同 r-v7x-l2 的逐层回放（不带 --grad），LIBTPU_INIT_ARGS=--xla_jf_spmd_threshold_for_windowed_einsum_mib=1000000 关掉窗口化 collective matmul
+    code: {framework: maxtext@237a32705feb9f028910eb28216299139415d007, janus: 68ae6b8910}
+    location: gs://<POC 桶>/janus/hunyuan3-4l/tpu/r-v7x-wcoff/
+  - name: r-v7x-cont20
+    steps: 20
+    role: 存档续训的 golden：连续 20 步，第 10 步存档，第 11 步全量状态读
+    setting: "--no-hooks --dump-steps 11 --full --no-param-sha --probe-ref（同 01）--save-state-at 10 --state-dir <POC 桶>/…/tpu/ckpt/r-v7x-cont20-step10；生产 yml + remat 覆盖"
+    code: {framework: maxtext@237a32705feb9f028910eb28216299139415d007, janus: c8143c6531}
+    location: gs://<POC 桶>/janus/hunyuan3-4l/tpu/r-v7x-cont20/
+    results: phase2-v7x-resume
+  - name: r-v7x-res20
+    steps: 20
+    role: 存档续训的被测：从 r-v7x-cont20 的第 10 步存档续训 11–20 步
+    setting: "同 r-v7x-cont20，换成 --first-step 11 --resume-state 同一个存档"
+    code: {framework: maxtext@237a32705feb9f028910eb28216299139415d007, janus: c8143c6531}
+    location: gs://<POC 桶>/janus/hunyuan3-4l/tpu/r-v7x-res20/
+    results: phase2-v7x-resume
+  # ---- 2026-11-05 对齐配置打开 dense_fp32_accumulation（yml a238883b7f91…，maxtext 0622774a，janus 958d173）：开 / 关步时与显存对比
+  - {name: t-v7x-st-off-100, steps: 100, role: "生产 rmap 配置，命令行 dense_fp32_accumulation=false", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-v7x-st-off-100/"}
+  - {name: t-v7x-st-on-100, steps: 100, role: "生产 rmap 配置，开关打开", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-v7x-st-on-100/"}
+  - name: t-v7x-ep8-1000
+    steps: 1000
+    role: 并行方式对照：生产配置只改成 EP=8（ici_fsdp_parallelism=1、ici_expert_parallelism=8，对应 GPU DP8 + EP8）
+    location: gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-v7x-ep8-1000/
+    results: phase2-v7x-acceptance-rcc-ep8

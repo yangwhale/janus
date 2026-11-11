@@ -1,0 +1,31 @@
+{
+ "t1diag4": {
+  "setting": "T1 配置",
+  "ratio_median": 2.667619607578967,
+  "n_ratio_gt2": 139,
+  "n_tensors": 195,
+  "grad_norm": 6.3618228526238365,
+  "kd_layer0_gpu_convention": 2.77228582490352e-06
+ },
+ "t1diag7": {
+  "setting": "+ dense_fp32_accumulation、rmsnorm_single_rounding、routed_gate_bf16_rounding",
+  "ratio_median": 1.6460302651075287,
+  "n_ratio_gt2": 52,
+  "n_tensors": 195,
+  "grad_norm": 6.360847097233343,
+  "kd_layer0_gpu_convention": 2.7723970106308116e-06
+ },
+ "t1diag8": {
+  "setting": "+ 以上 + mlp_activation_round_per_op",
+  "ratio_median": 1.7199031592556877,
+  "n_ratio_gt2": 62,
+  "n_tensors": 195,
+  "grad_norm": 6.360786850423582,
+  "kd_layer0_gpu_convention": 2.7723970106308116e-06
+ },
+ "gpu": {
+  "grad_norm_g1_step1": "6.36313–6.36360",
+  "kd_layer0": 2.775609e-06
+ },
+ "note": "比值 = TPU 对 GPU 的 rel_L2（取对 g1s-a/b/c 里最近的一份）÷ GPU 三份两两的最大 rel_L2；第 1 步，回放 g1-a 的 batch"
+}

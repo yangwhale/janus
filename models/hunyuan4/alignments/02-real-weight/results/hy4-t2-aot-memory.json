@@ -1,0 +1,232 @@
+{
+ "schema_version": 1,
+ "kind": "aot_memory",
+ "target": "v5p 2x2x2（compile_topology=v5p-16），8 个设备，每设备 95 GiB",
+ "maxtext_commit": "5eaa12f3654583f73d0fffcd580eb6ae7514658f",
+ "note": "TPU 一栏是 CPU 上的编译期分析（aot_memory.py，systemd-run 限 250 GB 内存，一次一份），只作初筛，最终看 TPU 实测 peak_bytes_in_use；GPU 一栏是估算",
+ "created_at": "2026-11-07T23:25:12+08:00",
+ "tpu": [
+  {
+   "stage": "B",
+   "layers": 2,
+   "mtp": 0,
+   "returncode": 0,
+   "overrides": [
+    "base_num_decoder_layers=2",
+    "mtp_num_layers=0",
+    "compile_topology=v5p-16",
+    "compile_topology_num_slices=1",
+    "run_name=aot-B",
+    "base_output_directory=/tmp/aotout",
+    "steps=10",
+    "indexer_loss_scaling_factor=0.1"
+   ],
+   "memory_analysis": {
+    "argument_size_in_bytes": 12835473408,
+    "output_size_in_bytes": 12835316608,
+    "alias_size_in_bytes": 12835309568,
+    "temp_size_in_bytes": 60298565856,
+    "generated_code_size_in_bytes": 335742976
+   },
+   "argument_plus_temp_bytes": 73134039264,
+   "num_devices": 8,
+   "config": {
+    "path": "models/hunyuan4/frameworks/maxtext/hy4-t2-b.yml",
+    "sha256": "676c320162301493db5097f4af7aa990e66bd267e9a4476400a6f276027f2c08"
+   },
+   "argument_plus_temp_GiB": 68.11
+  },
+  {
+   "stage": "D1",
+   "layers": 1,
+   "mtp": 1,
+   "returncode": 0,
+   "overrides": [
+    "base_num_decoder_layers=1",
+    "mtp_num_layers=1",
+    "compile_topology=v5p-16",
+    "compile_topology_num_slices=1",
+    "run_name=aot-D1",
+    "base_output_directory=/tmp/aotout",
+    "steps=10",
+    "indexer_loss_scaling_factor=0.1"
+   ],
+   "memory_analysis": {
+    "argument_size_in_bytes": 12906464256,
+    "output_size_in_bytes": 12906307392,
+    "alias_size_in_bytes": 12906300416,
+    "temp_size_in_bytes": 57847165760,
+    "generated_code_size_in_bytes": 347917824
+   },
+   "argument_plus_temp_bytes": 70753630016,
+   "num_devices": 8,
+   "config": {
+    "path": "models/hunyuan4/frameworks/maxtext/hy4-t2-d1.yml",
+    "sha256": "95d65448dc67c3c5046f62bb608b7e26c057f779752ec59dc69d48a808dc6357"
+   },
+   "argument_plus_temp_GiB": 65.89
+  },
+  {
+   "stage": "hy4-mid",
+   "layers": 7,
+   "mtp": 1,
+   "returncode": 0,
+   "overrides": [
+    "base_num_decoder_layers=7",
+    "mtp_num_layers=1",
+    "compile_topology=v5p-16",
+    "compile_topology_num_slices=1",
+    "run_name=aot-mini",
+    "base_output_directory=/tmp/aotout",
+    "steps=10",
+    "indexer_loss_scaling_factor=0.1",
+    "base_emb_dim=6144",
+    "base_num_query_heads=64",
+    "base_num_kv_heads=64",
+    "q_lora_rank=2048",
+    "base_mlp_dim=18432",
+    "base_moe_mlp_dim=512"
+   ],
+   "memory_analysis": {
+    "argument_size_in_bytes": 5982078464,
+    "output_size_in_bytes": 5981923648,
+    "alias_size_in_bytes": 5981914624,
+    "temp_size_in_bytes": 57179494688,
+    "generated_code_size_in_bytes": 1228914176
+   },
+   "argument_plus_temp_bytes": 63161573152,
+   "num_devices": 8,
+   "config": {
+    "path": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+    "sha256": "4d3aba12ea2b7d3a9cddd947a0c624404415b6904608a16978c0d1d321943901",
+    "candidate": "hy4-mid：hy4-mini 的结构，宽 6144、64 头、q_lora 2048、稠密 FFN 18432、16 个路由专家（top-4）宽 512；5,189,678,849 参数（含 MTP）"
+   },
+   "argument_plus_temp_GiB": 58.82
+  }
+ ],
+ "gpu_estimate": {
+  "label": "估算",
+  "hardware": "B200 × 8，每卡 183,359 MiB（179.1 GiB，nvidia-smi 实测）",
+  "setting": "Megatron-Core 0.20，数据并行 8、专家并行 4，Muon 不用分布式优化器（g2 的 meta.json：distributed_optimizer false），每卡一份完整的非专家参数",
+  "bytes_per_param": {
+   "BF16 模型权重": 2,
+   "FP32 主权重": 4,
+   "FP32 梯度缓冲": 4,
+   "Muon 动量": 4,
+   "Adam 两个动量": 8,
+   "Muon 参数合计": "2 + 4 + 4 + 4 = 14",
+   "词嵌入（Adam）": "2 + 4 + 4 + 8 = 18",
+   "输出头（FP32 模型权重，推断没有另一份主权重）": "4 + 4 + 8 = 16"
+  },
+  "assumptions": [
+   "词嵌入与输出头走 Adam，其余按 Muon 计（Adam 的一维小参数、iHC、sink 合计不到千分之一，按 Muon 计偏小可忽略）",
+   "专家并行 4：每卡本地专家参数 = 路由专家总量 ÷ 4；本地参数公式在专家并行 8 下给出 B 3,622,834,093、D1 3,697,956,761，减去路由偏置 256 个（buffer，不训练）正好等于冒烟日志的 trainable 3,622,833,837、3,697,956,505（外部锚点）",
+   "激活与临时量取同一程序在真实权重上的冒烟实测（专家并行 8、Muon、重算、q·k 在 BF16 里；B 峰值 72.6 GiB、D1 74.9 GiB）减去按同一公式算的常驻量；专家并行 4 与 8 下每卡收到的 token-专家对期望相同（4 卡 × 4096 × 8 ÷ 4 = 8 卡 × 4096 × 8 ÷ 8），激活按不变计",
+   "q·k 改 FP32：每张 [1, 64, 4096, 4096] 分数从 BF16 到 FP32 多 2.0 GiB，按同时活着 2 张计 4.0 GiB",
+   "第 1 步参照不重算：激活按「每层都存」取重算时激活的 2 倍作上界（B 两个解码层；D1 一个解码层 + MTP 层）"
+  ],
+  "stages": [
+   {
+    "stage": "B",
+    "total_params": 12078550957,
+    "routed_expert_params": 9663676416,
+    "ep": 4,
+    "rank_local_params": 4830793645,
+    "rank_local_params_formula": "12078550957 − 9663676416 + 9663676416 ÷ 4",
+    "bytes": {
+     "embedding (Adam, BF16 模型权重)": {
+      "params": 742391808,
+      "bytes_per_param": 18,
+      "bytes": 13363052544
+     },
+     "output_head (Adam, FP32 模型权重)": {
+      "params": 742391808,
+      "bytes_per_param": 16,
+      "bytes": 11878268928
+     },
+     "rest (按 Muon 计)": {
+      "params": 3346010029,
+      "bytes_per_param": 14,
+      "bytes": 46844140406
+     }
+    },
+    "static_bytes": 72085461878,
+    "static_GiB": 67.1,
+    "smoke_anchor": {
+     "ep8_rank_local_params_formula": 3622834093,
+     "ep8_static_GiB": 51.4,
+     "ep8_measured_peak_alloc_GiB": 72.6,
+     "activation_and_temporaries_GiB（实测峰值 − 估算常驻）": 21.2
+    },
+    "fp32_scores_increment_GiB": 4.0,
+    "estimate_GiB（重算，专家并行 4）": 92.3,
+    "estimate_GiB（第 1 步参照不重算，上界）": 117.5
+   },
+   {
+    "stage": "D1",
+    "total_params": 12153673625,
+    "routed_expert_params": 9663676416,
+    "ep": 4,
+    "rank_local_params": 4905916313,
+    "rank_local_params_formula": "12153673625 − 9663676416 + 9663676416 ÷ 4",
+    "bytes": {
+     "embedding (Adam, BF16 模型权重)": {
+      "params": 742391808,
+      "bytes_per_param": 18,
+      "bytes": 13363052544
+     },
+     "output_head (Adam, FP32 模型权重)": {
+      "params": 742391808,
+      "bytes_per_param": 16,
+      "bytes": 11878268928
+     },
+     "rest (按 Muon 计)": {
+      "params": 3421132697,
+      "bytes_per_param": 14,
+      "bytes": 47895857758
+     }
+    },
+    "static_bytes": 73137179230,
+    "static_GiB": 68.1,
+    "smoke_anchor": {
+     "ep8_rank_local_params_formula": 3697956761,
+     "ep8_static_GiB": 52.4,
+     "ep8_measured_peak_alloc_GiB": 74.9,
+     "activation_and_temporaries_GiB（实测峰值 − 估算常驻）": 22.5
+    },
+    "fp32_scores_increment_GiB": 4.0,
+    "estimate_GiB（重算，专家并行 4）": 94.6,
+    "estimate_GiB（第 1 步参照不重算，上界）": 121.1
+   },
+   {
+    "stage": "hy4-mid",
+    "total_params": 5189678849,
+    "routed_expert_params": 1056964608,
+    "ep": 4,
+    "rank_local_params": 4396955393,
+    "rank_local_params_formula": "5189678849 − 1056964608 + 1056964608 ÷ 4",
+    "bytes": {
+     "embedding (Adam, BF16 模型权重)": {
+      "params": 742391808,
+      "bytes_per_param": 18,
+      "bytes": 13363052544
+     },
+     "output_head (Adam, FP32 模型权重)": {
+      "params": 742391808,
+      "bytes_per_param": 16,
+      "bytes": 11878268928
+     },
+     "rest (按 Muon 计)": {
+      "params": 2912171777,
+      "bytes_per_param": 14,
+      "bytes": 40770404878
+     }
+    },
+    "static_bytes": 66011726350,
+    "static_GiB": 61.5,
+    "estimate_GiB（重算，专家并行 4）": 86.7,
+    "note": "激活借用 B 的冒烟锚点（注意力形状与生产相同：64 头、序列 4096），推断"
+   }
+  ]
+ }
+}

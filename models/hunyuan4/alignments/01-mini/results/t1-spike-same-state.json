@@ -1,0 +1,262 @@
+{
+ "what": "grad_norm 尖峰段（第 849、900 步）同状态单步：TPU、GPU、CPU FP64 从同一状态各走一步（不更新）",
+ "state": "GPU g3x-a（g3 的设置重跑，这两步 grad_norm 11.41、10.81，与 g3-a 的 11.41、10.96 同为尖峰）该步更新前的 FP32 主权重与路由偏置；GPU 重跑与 FP64 用按 GPU 参数实际 dtype 重建的 HF 目录（analysis/build_hf_gpu_dtype.py），TPU 用 --param-override / --bias-override",
+ "gpu_choices_note": "GPU 原运行抓的路由选择上传不全（849 步缺 1 行、900 步缺 2 行），偏置更新方向只用两次同状态重跑",
+ "definition": "rel = (x − FP64) / FP64；R = |rel(TPU)| ÷ GPU 各份 |rel| 的中位数；偏置更新方向 = 每层 16 个专家 sign(平均负载 − 负载)",
+ "rows": [
+  {
+   "step": 849,
+   "fp64_grad_norm": 11.422074258422908,
+   "gpu_grad_norm": {
+    "orig": 11.413329887508455,
+    "g3x-s849-a": 11.413469595526498,
+    "g3x-s849-b": 11.41071255276874
+   },
+   "tpu_grad_norm": 11.416067847548197,
+   "gpu_rel": {
+    "orig": -0.0007655676820700678,
+    "g3x-s849-a": -0.0007533362769082453,
+    "g3x-s849-b": -0.0009947147424462276
+   },
+   "tpu_rel": -0.0005258599041485002,
+   "R_grad_norm": 0.6868888492348497,
+   "tpu_run": "mz-sp849",
+   "bias_sign_differ_vs_fp64": {
+    "tpu": 1,
+    "gpu": {
+     "g3x-s849-a": 0,
+     "g3x-s849-b": 0
+    },
+    "layers": 7,
+    "experts_per_layer": 16
+   },
+   "load_l1_vs_fp64_sum": {
+    "tpu": 3356,
+    "gpu": {
+     "g3x-s849-a": 3538,
+     "g3x-s849-b": 3610
+    }
+   },
+   "per_layer": [
+    {
+     "layer": "1",
+     "sign_differ": {
+      "g3x-s849-a": 0,
+      "g3x-s849-b": 0,
+      "mz-sp849": 0
+     },
+     "load_l1": {
+      "g3x-s849-a": 412,
+      "g3x-s849-b": 412,
+      "mz-sp849": 408
+     }
+    },
+    {
+     "layer": "2",
+     "sign_differ": {
+      "g3x-s849-a": 0,
+      "g3x-s849-b": 0,
+      "mz-sp849": 0
+     },
+     "load_l1": {
+      "g3x-s849-a": 346,
+      "g3x-s849-b": 302,
+      "mz-sp849": 310
+     }
+    },
+    {
+     "layer": "3",
+     "sign_differ": {
+      "g3x-s849-a": 0,
+      "g3x-s849-b": 0,
+      "mz-sp849": 0
+     },
+     "load_l1": {
+      "g3x-s849-a": 590,
+      "g3x-s849-b": 632,
+      "mz-sp849": 528
+     }
+    },
+    {
+     "layer": "4",
+     "sign_differ": {
+      "g3x-s849-a": 0,
+      "g3x-s849-b": 0,
+      "mz-sp849": 0
+     },
+     "load_l1": {
+      "g3x-s849-a": 530,
+      "g3x-s849-b": 558,
+      "mz-sp849": 530
+     }
+    },
+    {
+     "layer": "5",
+     "sign_differ": {
+      "g3x-s849-a": 0,
+      "g3x-s849-b": 0,
+      "mz-sp849": 0
+     },
+     "load_l1": {
+      "g3x-s849-a": 636,
+      "g3x-s849-b": 746,
+      "mz-sp849": 770
+     }
+    },
+    {
+     "layer": "6",
+     "sign_differ": {
+      "g3x-s849-a": 0,
+      "g3x-s849-b": 0,
+      "mz-sp849": 0
+     },
+     "load_l1": {
+      "g3x-s849-a": 688,
+      "g3x-s849-b": 612,
+      "mz-sp849": 572
+     }
+    },
+    {
+     "layer": "mtp0",
+     "sign_differ": {
+      "g3x-s849-a": 0,
+      "g3x-s849-b": 0,
+      "mz-sp849": 1
+     },
+     "load_l1": {
+      "g3x-s849-a": 336,
+      "g3x-s849-b": 348,
+      "mz-sp849": 238
+     }
+    }
+   ]
+  },
+  {
+   "step": 900,
+   "fp64_grad_norm": 10.822499428799667,
+   "gpu_grad_norm": {
+    "orig": 10.81003996807265,
+    "g3x-s900-a": 10.806920017455106,
+    "g3x-s900-b": 10.808739862808938
+   },
+   "tpu_grad_norm": 10.821571501303989,
+   "gpu_rel": {
+    "orig": -0.0011512553831937778,
+    "g3x-s900-a": -0.001439539123753855,
+    "g3x-s900-b": -0.0012713852360308647
+   },
+   "tpu_rel": -8.574059086648632e-05,
+   "R_grad_norm": 0.06743871836530028,
+   "tpu_run": "mz-sp900",
+   "bias_sign_differ_vs_fp64": {
+    "tpu": 0,
+    "gpu": {
+     "g3x-s900-a": 0,
+     "g3x-s900-b": 0
+    },
+    "layers": 7,
+    "experts_per_layer": 16
+   },
+   "load_l1_vs_fp64_sum": {
+    "tpu": 4534,
+    "gpu": {
+     "g3x-s900-a": 4184,
+     "g3x-s900-b": 4078
+    }
+   },
+   "per_layer": [
+    {
+     "layer": "1",
+     "sign_differ": {
+      "g3x-s900-a": 0,
+      "g3x-s900-b": 0,
+      "mz-sp900": 0
+     },
+     "load_l1": {
+      "g3x-s900-a": 536,
+      "g3x-s900-b": 536,
+      "mz-sp900": 632
+     }
+    },
+    {
+     "layer": "2",
+     "sign_differ": {
+      "g3x-s900-a": 0,
+      "g3x-s900-b": 0,
+      "mz-sp900": 0
+     },
+     "load_l1": {
+      "g3x-s900-a": 608,
+      "g3x-s900-b": 602,
+      "mz-sp900": 558
+     }
+    },
+    {
+     "layer": "3",
+     "sign_differ": {
+      "g3x-s900-a": 0,
+      "g3x-s900-b": 0,
+      "mz-sp900": 0
+     },
+     "load_l1": {
+      "g3x-s900-a": 360,
+      "g3x-s900-b": 328,
+      "mz-sp900": 406
+     }
+    },
+    {
+     "layer": "4",
+     "sign_differ": {
+      "g3x-s900-a": 0,
+      "g3x-s900-b": 0,
+      "mz-sp900": 0
+     },
+     "load_l1": {
+      "g3x-s900-a": 548,
+      "g3x-s900-b": 562,
+      "mz-sp900": 686
+     }
+    },
+    {
+     "layer": "5",
+     "sign_differ": {
+      "g3x-s900-a": 0,
+      "g3x-s900-b": 0,
+      "mz-sp900": 0
+     },
+     "load_l1": {
+      "g3x-s900-a": 986,
+      "g3x-s900-b": 966,
+      "mz-sp900": 1084
+     }
+    },
+    {
+     "layer": "6",
+     "sign_differ": {
+      "g3x-s900-a": 0,
+      "g3x-s900-b": 0,
+      "mz-sp900": 0
+     },
+     "load_l1": {
+      "g3x-s900-a": 666,
+      "g3x-s900-b": 680,
+      "mz-sp900": 686
+     }
+    },
+    {
+     "layer": "mtp0",
+     "sign_differ": {
+      "g3x-s900-a": 0,
+      "g3x-s900-b": 0,
+      "mz-sp900": 0
+     },
+     "load_l1": {
+      "g3x-s900-a": 480,
+      "g3x-s900-b": 404,
+      "mz-sp900": 482
+     }
+    }
+   ]
+  }
+ ]
+}

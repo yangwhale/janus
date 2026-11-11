@@ -1,0 +1,96 @@
+{
+ "kind": "gpu_load_check",
+ "what": "hy4-mid GPU 8 份 golden 开训前的载入自检（每个参数 == 检查点张量、FP64 平方和相等）与清单 sha256（model/t2_l0.sh 第 5 步的同一判法）",
+ "manifest_sha256": "c4444d77a358208c8c0119af48d44ebc8b8d90c284fd1569a5c03f1e4044db32",
+ "ok": true,
+ "runs": [
+  {
+   "run": "gm-a",
+   "ok": true,
+   "n_checked_rank0": 246,
+   "n_mismatch_all_ranks": 0,
+   "sumsq_rank0": {
+    "model": 302470.87684866384,
+    "ckpt": 302470.87684866384
+   },
+   "manifest_sha256": "c4444d77a358208c8c0119af48d44ebc8b8d90c284fd1569a5c03f1e4044db32"
+  },
+  {
+   "run": "gm-b",
+   "ok": true,
+   "n_checked_rank0": 246,
+   "n_mismatch_all_ranks": 0,
+   "sumsq_rank0": {
+    "model": 302470.87684866384,
+    "ckpt": 302470.87684866384
+   },
+   "manifest_sha256": "c4444d77a358208c8c0119af48d44ebc8b8d90c284fd1569a5c03f1e4044db32"
+  },
+  {
+   "run": "gm-c",
+   "ok": true,
+   "n_checked_rank0": 246,
+   "n_mismatch_all_ranks": 0,
+   "sumsq_rank0": {
+    "model": 302470.87684866384,
+    "ckpt": 302470.87684866384
+   },
+   "manifest_sha256": "c4444d77a358208c8c0119af48d44ebc8b8d90c284fd1569a5c03f1e4044db32"
+  },
+  {
+   "run": "gm-d",
+   "ok": true,
+   "n_checked_rank0": 246,
+   "n_mismatch_all_ranks": 0,
+   "sumsq_rank0": {
+    "model": 302470.87684866384,
+    "ckpt": 302470.87684866384
+   },
+   "manifest_sha256": "c4444d77a358208c8c0119af48d44ebc8b8d90c284fd1569a5c03f1e4044db32"
+  },
+  {
+   "run": "gm-e",
+   "ok": true,
+   "n_checked_rank0": 246,
+   "n_mismatch_all_ranks": 0,
+   "sumsq_rank0": {
+    "model": 302470.87684866384,
+    "ckpt": 302470.87684866384
+   },
+   "manifest_sha256": "c4444d77a358208c8c0119af48d44ebc8b8d90c284fd1569a5c03f1e4044db32"
+  },
+  {
+   "run": "gm-f",
+   "ok": true,
+   "n_checked_rank0": 246,
+   "n_mismatch_all_ranks": 0,
+   "sumsq_rank0": {
+    "model": 302470.87684866384,
+    "ckpt": 302470.87684866384
+   },
+   "manifest_sha256": "c4444d77a358208c8c0119af48d44ebc8b8d90c284fd1569a5c03f1e4044db32"
+  },
+  {
+   "run": "gm-g",
+   "ok": true,
+   "n_checked_rank0": 246,
+   "n_mismatch_all_ranks": 0,
+   "sumsq_rank0": {
+    "model": 302470.87684866384,
+    "ckpt": 302470.87684866384
+   },
+   "manifest_sha256": "c4444d77a358208c8c0119af48d44ebc8b8d90c284fd1569a5c03f1e4044db32"
+  },
+  {
+   "run": "gm-h",
+   "ok": true,
+   "n_checked_rank0": 246,
+   "n_mismatch_all_ranks": 0,
+   "sumsq_rank0": {
+    "model": 302470.87684866384,
+    "ckpt": 302470.87684866384
+   },
+   "manifest_sha256": "c4444d77a358208c8c0119af48d44ebc8b8d90c284fd1569a5c03f1e4044db32"
+  }
+ ]
+}

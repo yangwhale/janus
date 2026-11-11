@@ -1,0 +1,821 @@
+# 检查清单 models/hunyuan3/CHECKS.md 的骨架：每一级比什么、对象是哪些模块与张量、非 ✅ 格子的原因。
+# 判法、实测、判定、比较单元个数由 build.py 调 janus/report/inventory.py 从结果文件现读，这里不写数字。
+# 格式见 janus/report/inventory.py 开头。src 的写法同 items.yaml：「结果文件名（不带后缀）:检查 id 通配」。
+# 总览 items.yaml 里 v5p、v7x 两列引用的每一条检查，这里都必须有一行引用（build.py 核对，缺了就失败）。
+
+columns:
+  v5p: TPU v5p-8
+  v7x: TPU v7x-4
+
+header:
+  - "[janus](../../README.md) › [混元 3](README.md) ｜ 检查清单"
+  - ""
+  - "# 混元 3 · 检查清单"
+  - ""
+  - "这一页回答：迁移验收到底比了哪些量，每一项的对象是哪些模块和张量，用什么指标、什么门槛判，在 TPU v5p-8 和 v7x-4 上各是什么结果。"
+  - ""
+  - "- 页面由 `models/hunyuan3/dashboard/build.py` 按 [`dashboard/checks.yaml`](dashboard/checks.yaml) 从各对齐实践的结果文件生成，数字和判定都不手写。"
+  - "- 结论和偏差的机制在[对齐报告](ALIGNMENT-REPORT.md)；每一级为什么这样比、不过时先查什么，在[用户指南第 4 章](../../docs/guide/04-level-by-level.md)。"
+  - "- 被测是两个平台各自的当前对齐配置（MaxText `hy3-4layers.yml` 版本 `a238883b`，开关见对齐报告第 6 节）；用了换代前配置的两行在行内注明（对 `rc-a` 的 L4、v7x 同程序重跑）。参照是 GPU golden（定义见[`goldens.md`](goldens.md)）。"
+  - ""
+
+summary_lead:
+  - "## 规模"
+  - ""
+  - "- **检查项**：表里的一行，回答一个问题。"
+  - "- **检查条数**：结果文件里的检查，一个检查 id 算一条（v5p / v7x）。"
+  - "- **张量级比较**：这些检查逐个比了多少个张量（一个参数、一个算子输出或一个层内观测点算一个）。同一个张量被几条检查各比一次时分别计数，所以是比较次数，不是去重后的张量个数。"
+  - "- **其他比较单元**：数据指纹、dtype 条目、逐步曲线的步数等。"
+  - ""
+
+how_to_read:
+  - "## 怎么读"
+  - ""
+  - "### 一个数是怎么聚合出来的"
+  - ""
+  - "表里每个数属于下面三种之一，每一行「对象」格最后一句写明是哪一种："
+  - ""
+  - "| 种类 | 怎么算 | 例 |"
+  - "|---|---|---|"
+  - "| 逐步标量 | 每步一个数，算 TPU 对参照的逐步相对差，再在窗口内算带符号均值、MARE（平均绝对相对差）、最大单步三个判定量，各自对噪声上限 N 判，最差的决定结果 | L4 的 loss（全局批的平均 loss）、grad_norm 与 param_norm（全部可训练参数的全局 L2 范数，约 124 亿个元素合成一个数，不含 3 个路由偏置） |"
+  - "| 逐张量取最差 | 每个张量拉直成一个向量，单独算一个数（如 rel_L2 = ‖a − b‖ / ‖b‖，或 R 比）；一条检查选中一批张量时取最差的那个，不取平均 | L1 单算子、L2 逐层、L3 的梯度与状态 |"
+  - "| 按能量合成（只用于定责） | 把一组张量当成一个大向量：√(Σ‖a − b‖²) ÷ √(Σ‖b‖²)；R 比的合成写法是 √(Σ‖TPU − FP64‖²) ÷ √(Σ‖GPU − FP64‖²)。大张量权重大，小张量的抖动被压住 | 第 1 步梯度「TPU 对 GPU 整网只差 1.3e-3」、「整网按能量 R 比 1.20」 |"
+  - ""
+  - "张量个数为什么有 1781、1193、1480、50 几种，见[术语表](../../docs/glossary.md#tensor-counts)。"
+  - ""
+  - "### 三种严格门槛"
+  - ""
+  - "| 门槛 | 用在哪 | 怎么判 |"
+  - "|---|---|---|"
+  - "| 逐位 | L0 数据、权重、配置；续训 | 两边逐位相同才过 |"
+  - "| R 比 ≤ 1.2 | L1 单算子；L2 逐层前向、反向；L3 logits 与逐 token loss | R = TPU 离 FP64 真值的 rel_L2 ÷ GPU 离 FP64 真值的 rel_L2。TPU 不比 GPU 离精确算术远就过 |"
+  - "| 噪声上限 N | L2、L3 的第 1 步梯度与状态；L4 的逐步曲线 | N 是 GPU（第 1 步再并上 TPU 只改执行参数）自己重跑两两之间的最大差。实测 ≤ N 过，> 2N 不过，之间待定 |"
+  - ""
+  - "定义与依据见 [`docs/reference/judging.md`](../../docs/reference/judging.md)。"
+  - ""
+  - "### 表里各栏"
+  - ""
+  - "- **证据来源**：「生产程序」是不加钩子的生产构建（L4 与训练步之间的状态读），是生产图的直接证据；「隔离回放」「单算子回放」「整网前向回放」是单独编译的程序，图和生产不同，结果只用来定责、确认修复方向，不当生产程序逐位的证据；「离线 FP64 计算」在 CPU 上算真值。回放怎样贴近生产、生产 HLO 里怎样核对精度开关，见[用户指南第 4 章 4.8](../../docs/guide/04-level-by-level.md#48-tpu-上第-1-步的证据为什么不用钩子)。"
+  - "- **判法**：「｜」前是严格档，决定验收；「参考」后是同类 GPU→TPU 迁移项目用过的经验门槛，只并列报告，「无」表示那边没有对应的线。"
+  - "- **平台格子**：实测值，括号里是离严格门槛多远（×N 或 实测 ÷ 门槛），然后是判定。「｜参」后是参考档判定。点格子打开那份结果报告。"
+  - "  - 一个格子选中多条检查（例如 4 层各一条）时写最差的那条。"
+  - "  - 本列的指标或 N 和判法栏不同时，括号里另写本列自己的。"
+  - "- **符号**：✅ 过　🟡 待定　❌ 不过　— 不适用。参考档另有 ☑️（记录了的都过、有门槛项没记录）与 ❔（所需指标没记录）。"
+  - "- 每张表下面写非 ✅ 格子的原因；机制与量级在对齐报告的偏差台账（第 5 节）。"
+  - "- 检查名后标「（只报）」的行不在验收路径上：对照（如对未修的 GPU 生产 golden）、可选配置（如 EP = 8、三个梯度 FP32 开关）、只记事实的检查（如跨平台激活逐位）、定责用的 FP64 比较。规模表的判定计数不含这些行，单列为「只报」。"
+  - "- 格子写的是 rel_L2，而最差的指标离噪声上限更远时，括号里另写「最差 …×N」。"
+  - "- 「比较单元」是这一行全部检查的合计；格子只写最差那一条检查自己的数，所以两者可以不同（例如 L0「载入后的参数」合计 2,960 个参数张量，是两次各 1,480）。"
+  - "- 同一批张量分组不同，N 也不同：N 取每一对噪声运行在这组张量里最差的那个，所以整网一组（L3）的 N 比每层一组（L2）大。"
+  - "- 张量名用两侧共用的规范名（[`model/name_map.yaml`](model/name_map.yaml)）。`layers.{0..3}` 指 4 层；第 0 层是稠密层，第 1–3 层是 MoE 层（192 个路由专家、top-8、1 个共享专家）。"
+  - ""
+
+# 每一行的「证据来源」：按引用的结果文件名匹配（通配，按顺序取第一个）。行里写 source 时以行里的为准。
+# 生产程序 = 不加钩子的生产构建（L4 与训练步之间的状态读），回放 = 单独编译的程序，只作定责与参考，不是生产图的逐位证据。
+evidence_sources:
+  - {match: "phase2-*t-loss30", source: "生产程序（30 步，不加钩子）"}
+  - {match: "phase2-*l0-state", source: "生产程序（第 1 步训练前读状态）"}
+  - {match: "phase2-ckpt-convert", source: "离线核对（CPU，检查点文件）"}
+  - {match: "phase2-native-loader", source: "离线核对（CPU，数据管线）"}
+  - {match: "phase2-*resume", source: "生产程序（存档与续训）"}
+  - {match: "phase2-*l1-ops*", source: "单算子回放（单独编译）＋离线 FP64 计算"}
+  - {match: "phase2-*l2-replay-bitwise", source: "隔离回放（单独编译）"}
+  - {match: "phase2-*l2-replay*", source: "隔离回放（单独编译）＋离线 FP64 计算"}
+  - {match: "phase2-*ff-chain", source: "整网前向回放（单独编译）＋离线 FP64 计算"}
+  - {match: "phase2-*st1-fp64*", source: "生产程序（第 1 步状态读）＋离线 FP64 计算"}
+  - {match: "phase2-*st1-*xnoise", source: "生产程序（第 1 步状态读）"}
+  - {match: "phase2-*st1-*gpuonly", source: "生产程序（第 1 步状态读）"}
+  - {match: "phase2-*st8-opt8", source: "生产程序（状态读）＋离线 FP64 重放"}
+  - {match: "phase2-*coverage", source: "观测构建（加钩子，只比名字清单）"}
+  - {match: "phase2-*obs-gate", source: "观测构建对生产程序"}
+  - {match: "phase2-*acc*", source: "生产程序"}
+  - {match: "phase2-*t-nan8", source: "生产程序（埋错演练）"}
+  - {match: "phase2-*rmap-repro", source: "生产程序"}
+  - {match: "phase1-l1", source: "GPU 单算子回放"}
+  - {match: "phase1-kernels", source: "GPU 单算子回放"}
+  - {match: "phase1-moe-stages", source: "GPU 单算子回放"}
+  - {match: "phase1-*", source: "GPU 训练运行"}
+  - {match: "remat-*", source: "GPU 训练运行"}
+
+levels:
+  # ======================================================================== L0
+  - id: L0
+    title: L0 · 地基：数据、权重、配置
+    purpose: 两边从同一份输入、同一份权重、同一套配置出发
+    lead:
+      - "目的：证明两边从同一份输入、同一份权重、同一套配置出发。这一级不过，上面各级的差都说不清来源。"
+      - ""
+      - "L0 共 {rows} 项检查，检查条数 {checks}（v5p / v7x），张量级比较 {tensors} 次。除「TPU 原生数据加载器」一项外，全部要求逐位相同。"
+    tables:
+      - rows:
+          - name: 配置逐项对照
+            what: 两边训练配置里机读得到、且必须相同的字段
+            objects: "6 个字段：dropout = 0、学习率、权重衰减、路由偏置更新速率、检查点清单 sha256、回放数据清单 sha256。其余 80 行配置的人工逐项对照在 [`config-alignment.md`](config-alignment.md)"
+            src: {v5p: "phase2-t-loss30:L0.config.diff.*", v7x: "phase2-v7x-t-loss30:L0.config.diff.*"}
+          - name: 每步输入指纹
+            what: TPU 回放的每一步、每个 rank、每个 microbatch 的输入，对 GPU golden 存下的输入
+            objects: 前 30 步 × 8 个 rank × 2 个 microbatch 的 tokens、labels、loss_mask、position_ids，加每步首个 loss
+            src: {v5p: "phase2-t-loss30:L0.data.fingerprint", v7x: "phase2-v7x-t-loss30:L0.data.fingerprint"}
+          - name: 载入后的参数
+            what: 训练开始前，TPU 载入的参数对 GPU 载入的参数
+            objects: 初始参数清单（BF16 参数 + FP32 expert_bias，按 GPU 的 8 个 rank 分）逐项 sha256，正式被测与 1000 步生产配置各比一次；第 1 步训练前从状态读出的参数张量（专家参数每层只读 0、1 号两个专家）
+            src: {v5p: "phase2-l0-state:L0.weights.*", v7x: "phase2-v7x-l0-state:L0.weights.*"}
+          - name: FP32 主权重
+            what: 训练开始前的 FP32 主权重。BF16 参数看不出主权重上不到半格的差，所以单独比
+            objects: "第 1 步训练前的 `main_param.*`（专家参数每层 0、1 号）"
+            src: {v5p: "phase2-l0-state:L0.main_params.loaded", v7x: "phase2-v7x-l0-state:L0.main_params.loaded"}
+          - name: 路由偏置 expert_bias
+            what: 训练开始前的 FP32 路由偏置。1 个 bit 的差就能改变 top-8 选择
+            objects: "第 1–3 层各一个 `expert_bias`（192 维，FP32）"
+            src: {v5p: "phase2-l0-state:L0.buffers.loaded", v7x: "phase2-v7x-l0-state:L0.buffers.loaded"}
+          - name: dtype 清单
+            what: 每个参数与训练状态的 dtype 是否符合规则
+            objects: 参数清单（expert_bias 为 FP32，其余 BF16）；训练状态（主权重、两个动量、路由偏置必须 FP32，只在 v5p 的回归运行上读）
+            src: {v5p: "phase2-l0-state:L0.dtype.*", v7x: "phase2-v7x-l0-state:L0.dtype.*"}
+          - name: 模型结构
+            what: TPU 实例化出来的模型和 HF 配置是否一致
+            objects: 15 条规则：1 层稠密 + 3 层 MoE、192 个专家、专家中间维 1536、1 个共享专家、64 个 q 头 / 8 个 kv 头 × 128、稠密 MLP 13312、词表 120832、输出层不与词表共享、主权重全部 FP32、没有 MTP
+            src: {v5p: "phase2-l0-state:L0.model.structure", v7x: "phase2-v7x-l0-state:L0.model.structure"}
+          - name: 权重转换
+            what: HF 权重转成 MaxText 检查点后，逐张量转回 HF 对原件。v5p、v7x 用同一份检查点
+            objects: 全部 1781 个 HF 张量逐位，加转换前后两份 dtype 清单
+            src: {v5p: "phase2-ckpt-convert:L0.ckpt.*", v7x: "phase2-ckpt-convert:L0.ckpt.*"}
+          - name: 续训的数据位置
+            what: 从存档恢复后，数据是否从正确的位置接着读
+            objects: 恢复后各步、各 rank 的输入指纹
+            src: {v5p: "phase2-resume:L0.resume.data", v7x: "phase2-v7x-resume:L0.resume.data"}
+          - name: TPU 原生数据加载器
+            info: true
+            what: 不回放 GPU 的 batch、改用 MaxText 自己的数据管线时，读出的样本是否与 Megatron 相同
+            objects: 14 条：三个索引表、样本流、每步非 padding token 数、字段约定、读取进程数、多 host、多 epoch、文档边界合成用例、pad id、3 个负对照、覆盖率；分配到设备与 microbatch 的布局。加载器与 TPU 型号无关，只在 CPU 上跑了一次，v7x 列引用同一份结果
+            src: {v5p: "phase2-native-loader:L0.native.*", v7x: "phase2-native-loader:L0.native.*"}
+            why: >-
+              样本本身逐位相同（`L0.native.stream`），差在两处约定：MaxText 梯度累积把样本分到 microbatch 的顺序不同（`L0.native.device_map.native`，台账 #16）；
+              数据里出现 pad id 时 Megatron 把它换成 0 并不计 loss，MaxText 原样保留（`L0.native.pad_id`）。
+              验收不走这条路：TPU 原样回放 GPU 每一步每个 rank 的 batch，「每步输入指纹」一行逐位相同。
+          - name: 设置核对：学习率逐步
+            what: 逐步学习率两边逐位相同。学习率是设置的常数（1e-5，无 warmup、无衰减），不是观测量，所以归设置核对，不算 L4 的比较项（报告口径，判定不变，见对齐报告「判法变更记录」）
+            objects: "`lr`，第 1–1000 步（检查 id 仍是 `L4.lr`，取自 L4 的验收结果文件）"
+            src: {v5p: "phase2-acceptance-rcc-on:L4.lr", v7x: "phase2-v7x-acceptance-rcc:L4.lr"}
+
+  # ======================================================================== L1
+  - id: L1
+    title: L1 · 单算子
+    purpose: 每个算子单独看，TPU 不比 GPU 离 FP64 真值远
+    lead:
+      - "目的：把每个算子单独拿出来，看 TPU 的实现是否不比 GPU 离 FP64 真值远。整网的差是各算子的差叠起来的，这一级定位到具体算子。"
+      - ""
+      - "L1 共 {rows} 项检查，检查条数 {checks}（v5p / v7x），覆盖模型的 {modules} 个算子（下表 TPU 两列有检查的行），张量级比较 {tensors} 次。"
+      - ""
+      - "算子的输入有两种取法："
+      - ""
+      - "- **各用自己的输入**（主判，v5p 与 v7x）：每一侧的真值都从这一侧自己抓到的算子输入在 FP64 里算，比 TPU 离自己的真值多远、GPU 离自己的真值多远。上游的差不进来，只看算子本身。"
+      - "- **用 golden 的输入**（v5p 补充）：把 GPU 抓到的算子输入原样喂给 TPU 的算子，可以直接和 GPU 的输出比，也能核对 TPU 的舍入方式。"
+    modules:
+      title: 模型的每个算子由哪条检查覆盖
+      lead:
+        - "按前向顺序列出模型的算子。「—」是这一列没有单独的检查；最后一列写更高一级在哪里覆盖它。GPU 一列是 GPU 侧的算子回放（参照自己的可信度，见文末「GPU 侧的检查」）。"
+      columns:
+        tpu_own: TPU 各用自己的输入（v5p / v7x）
+        tpu_golden: TPU 用 golden 的输入（v5p）
+        gpu: GPU 侧回放
+        upper: 更高一级在哪覆盖
+      count: [tpu_own, tpu_golden]
+      rows:
+        - name: 词嵌入查表
+          does: token id → 4096 维向量
+          checks: {upper: "L0 权重逐位；L3 整网链路从 golden 的 `embed.out` 起算"}
+        - name: 输入 RMSNorm + q / k / v 投影
+          does: 层输入归一化后乘 qkv 权重（GPU 把归一化融进投影，所以两者合成一个算子比）
+          checks:
+            tpu_own: ["phase2-l1-ops-own-on:L1.ops.op.qkv"]
+            gpu: ["phase1-l1:L1.gemm.qkv.replay"]
+            upper: "L2 观测点 `attn.qkv.out`"
+        - name: q / k 每头 RMSNorm
+          does: q、k 各自按头做 RMSNorm（RoPE 之前）
+          checks:
+            tpu_own: ["phase2-l1-ops-own-on:L1.ops.op.qk_norm"]
+            gpu: ["phase1-l1:L1.norm.replay"]
+            upper: "L2 观测点 `attn.q_norm.out`、`attn.k_norm.out`"
+        - name: 注意力核心
+          does: RoPE、1/√d 缩放、因果 softmax、乘 V
+          checks:
+            tpu_own: ["phase2-l1-ops-own-on:L1.ops.kernel.attn_core"]
+            tpu_golden: ["phase2-l1-ops-on:L1.ops.attn.core"]
+            gpu: ["phase1-kernels:L1.kernel.attn.*"]
+            upper: "L2 观测点 `attn.core.out`"
+        - name: 注意力输出投影
+          does: core.out 乘输出投影权重
+          checks:
+            tpu_own: ["phase2-l1-ops-own-on:L1.ops.op.attn_proj"]
+            gpu: ["phase1-l1:L1.gemm.attn_proj.replay"]
+            upper: "L2 观测点 `attn.proj.out`、`attn.out`"
+        - name: MLP 前 RMSNorm（MoE 层）
+          does: 注意力残差和 bf16(层输入 + attn.out) 归一化
+          checks:
+            tpu_own: ["phase2-l1-ops-own-on:L1.ops.op.mlp_norm"]
+            tpu_golden: ["phase2-l1-ops-on:L1.ops.rmsnorm"]
+            gpu: ["phase1-l1:L1.norm.replay"]
+            upper: "L2 观测点 `mlp_norm.out`"
+        - name: 路由 GEMM
+          does: mlp_norm.out 乘路由权重，得到 192 个专家的 FP32 logits
+          checks:
+            tpu_own: ["phase2-l1-ops-own-on:L1.ops.op.router_gemm"]
+            tpu_golden: ["phase2-l1-ops-on:L1.ops.router.gemm", "phase2-l1-ops-on:L1.ops.router.precision"]
+            gpu: ["phase1-l1:L1.gemm.router.replay"]
+            upper: "L2 观测点 `mlp.router.logits`"
+        - name: 路由打分与 top-8
+          does: sigmoid、加 expert_bias、选 8 个专家
+          checks:
+            tpu_own: ["phase2-l2-replay-rratio-on:L1.router.topk.fp64.*"]
+            tpu_golden: ["phase2-l1-ops-on:L1.ops.router.topk"]
+            gpu: ["phase1-full-noise28:L1.router.topk.fp64", "phase1-l1:L1.ties.*"]
+            upper: "L2 各层路由选中集合"
+        - name: MoE 块（整块）
+          does: 按路由分发 token、192 个专家的 gate / up / down GEMM 与门控激活、按路由权重合并、加共享专家
+          checks:
+            tpu_own: ["phase2-l1-ops-own-on:L1.ops.kernel.moe"]
+            tpu_golden: ["phase2-l1-ops-on:L1.ops.moe"]
+            gpu: ["phase1-kernels:L1.kernel.experts.*", "phase1-moe-stages:L2.moe.movement"]
+            upper: "L2 观测点 `mlp.shared.out`、`mlp.out`"
+        - name: MoE 块内：分发与合并
+          does: token 按选中的专家重排、发到专家、按权重加回原位置
+          checks:
+            tpu_own: "在 MoE 块里整体比，没有单独的检查"
+            gpu: ["phase1-moe-stages:L2.moe.movement"]
+        - name: MoE 块内：路由专家 GEMM
+          does: 每个专家的 gate、up（fc1）与 down（fc2）
+          checks:
+            tpu_own: "在 MoE 块里整体比，没有单独的检查"
+            gpu: ["phase1-kernels:L1.kernel.experts.fwd.replay", "phase1-kernels:L1.kernel.experts.bwd.replay", "phase1-kernels:L1.kernel.experts.wgrad"]
+        - name: MoE 块内：共享专家
+          does: 每个 token 都过的一个专家
+          checks:
+            tpu_own: "在 MoE 块里整体比，没有单独的检查"
+            upper: "L2 观测点 `mlp.shared.out`"
+        - name: 稠密 MLP 前 RMSNorm + gate、up 投影（第 0 层）
+          does: 注意力残差和归一化后乘 fc1 权重（GPU 融合成一个算子）
+          checks:
+            tpu_own: ["phase2-l1-ops-own-on:L1.ops.op.dense_fc1"]
+            upper: "L2 观测点 `mlp.fc1.out`"
+        - name: 门控激活 + down 投影（第 0 层）
+          does: silu(gate) · up，再乘 fc2 权重
+          checks:
+            tpu_own: ["phase2-l1-ops-own-on:L1.ops.op.dense_act_fc2"]
+            tpu_golden: ["phase2-l1-ops-on:L1.ops.act"]
+            gpu: ["phase1-l1:L1.elem.silu.fp32"]
+            upper: "L2 观测点 `mlp.fc2.out`"
+        - name: 残差加
+          does: 层输入 + attn.out、h + mlp.out（BF16）
+          checks: {upper: "L2 观测点 `mlp_norm.out`（第 0 层）、`out`"}
+        - name: 最后的 RMSNorm、输出层、交叉熵
+          does: 归一化、乘输出层得到 120832 维 logits、算逐 token loss
+          checks: {upper: "L3 logits、逐 token loss（整网链路对 FP64）"}
+        - name: AdamW 一步更新
+          does: 由梯度、两个动量、偏差修正、权重衰减、裁剪系数算出更新量
+          checks:
+            tpu_own: ["phase2-st1-on-state-gpuonly:L1.optim.adamw.replay", "phase2-st8-opt8:L1.optim.adamw.8steps"]
+            gpu: ["phase1-full-noise28:L1.optim.adamw.replay", "phase1-opt8:L1.optim.adamw.8steps"]
+            upper: "L3 更新后主权重、优化器状态"
+    tables:
+      - title: 各用自己的输入（主判）
+        lead:
+          - "真值由 [`analysis/fp64_forward.py`](analysis/fp64_forward.py) 在 FP64 里算，判法见 [`analysis/fwd_rratio.py`](analysis/fwd_rratio.py)。每层一个用例。"
+        rows:
+          - name: 输入 RMSNorm + q / k / v 投影
+            what: 层输入 → 归一化 + qkv 投影（输入两边相同，都是 golden 的层输入）
+            objects: "`layers.{0..3}.attn.qkv.out`"
+            src: {v5p: "phase2-l1-ops-own-on:L1.ops.op.qkv", v7x: "phase2-v7x-l1-ops-own-on:L1.ops.op.qkv"}
+          - name: q / k 每头 RMSNorm
+            what: 本侧 qkv.out 里的 q、k → 每头 RMSNorm
+            objects: "`layers.{0..3}.attn.q_norm.out`、`layers.{0..3}.attn.k_norm.out`"
+            src: {v5p: "phase2-l1-ops-own-on:L1.ops.op.qk_norm", v7x: "phase2-v7x-l1-ops-own-on:L1.ops.op.qk_norm"}
+          - name: 注意力核心
+            what: 本侧 q_norm、k_norm、v → RoPE、1/√d、因果注意力
+            objects: "`layers.{0..3}.attn.core.out`"
+            src: {v5p: "phase2-l1-ops-own-on:L1.ops.kernel.attn_core", v7x: "phase2-v7x-l1-ops-own-on:L1.ops.kernel.attn_core"}
+          - name: 注意力输出投影
+            what: 本侧 core.out → 输出投影
+            objects: "`layers.{0..3}.attn.proj.out`"
+            src: {v5p: "phase2-l1-ops-own-on:L1.ops.op.attn_proj", v7x: "phase2-v7x-l1-ops-own-on:L1.ops.op.attn_proj"}
+          - name: MLP 前 RMSNorm
+            what: bf16(层输入 + 本侧 attn.out) → RMSNorm
+            objects: "MoE 层 `layers.{1..3}.mlp_norm.out`"
+            src: {v5p: "phase2-l1-ops-own-on:L1.ops.op.mlp_norm", v7x: "phase2-v7x-l1-ops-own-on:L1.ops.op.mlp_norm"}
+          - name: 路由 GEMM
+            what: 本侧 mlp_norm.out → 路由 logits
+            objects: "`layers.{1..3}.mlp.router.logits`"
+            src: {v5p: "phase2-l1-ops-own-on:L1.ops.op.router_gemm", v7x: "phase2-v7x-l1-ops-own-on:L1.ops.op.router_gemm"}
+          - name: MoE 块
+            what: 本侧 mlp_norm.out → 路由、分组专家、合并、共享专家（真值按 FP64 的分数重新选专家）
+            objects: "`layers.{1..3}.mlp.out`"
+            src: {v5p: "phase2-l1-ops-own-on:L1.ops.kernel.moe", v7x: "phase2-v7x-l1-ops-own-on:L1.ops.kernel.moe"}
+            why: >-
+              v7x 第 2 层 4096 个 token 里有 1 个在近似平局处选了和 FP64 不同的专家，去掉这个 token R 是 0.95；
+              v5p 同一层有 2 个这样的 token，R 0.94（[`v7x-l1-moe-routeflip.json`](alignments/02-v7x-acceptance/results/v7x-l1-moe-routeflip.json)，台账 #5）。
+              路由本身另由「路由选中集合对 FP64」与 L2「各层路由选中集合」判，两平台都过。
+          - name: 稠密 MLP 前 RMSNorm + gate、up 投影
+            what: 第 0 层本侧残差和 → RMSNorm + fc1
+            objects: "`layers.0.mlp.fc1.out`"
+            src: {v5p: "phase2-l1-ops-own-on:L1.ops.op.dense_fc1", v7x: "phase2-v7x-l1-ops-own-on:L1.ops.op.dense_fc1"}
+          - name: 门控激活 + down 投影
+            what: 第 0 层本侧 fc1.out → silu(gate) · up → fc2
+            objects: "`layers.0.mlp.fc2.out`"
+            src: {v5p: "phase2-l1-ops-own-on:L1.ops.op.dense_act_fc2", v7x: "phase2-v7x-l1-ops-own-on:L1.ops.op.dense_act_fc2"}
+          - name: 路由选中集合对 FP64
+            what: 本侧路由输入 mlp_norm.out → FP64 logits → 加偏置取 top-8，与本侧实际选中的比
+            objects: 第 1–3 层，每层 4096 个 token 的 top-8 集合
+            src: {v5p: "phase2-l2-replay-rratio-on:L1.router.topk.fp64.*", v7x: "phase2-v7x-l2-replay-rratio-on:L1.router.topk.fp64.*"}
+      - title: 优化器
+        rows:
+          - name: AdamW 单步 FP64 重放
+            source: "生产程序（第 1 步状态读）＋离线 FP64 重放"
+            what: 用 TPU 第 1 步的梯度与动量在 FP64 里重算一步 AdamW 更新量，对 TPU 实际的更新量
+            objects: "全部参数的更新量（`update.*`）与二阶动量（专家参数每层 0、1 号）"
+            src: {v5p: "phase2-st1-on-state-gpuonly:L1.optim.adamw.replay", v7x: "phase2-v7x-st1-on-state-gpuonly:L1.optim.adamw.replay"}
+          - name: AdamW 连续 8 步重放
+            what: 第 k 步用第 k−1 步的动量，连续重放 8 步
+            objects: 第 1–8 步的更新量
+            src: {v5p: "phase2-st8-opt8:L1.optim.adamw.8steps", v7x: "phase2-v7x-st8-opt8:L1.optim.adamw.8steps"}
+      - title: 用 golden 的输入（v5p 补充）
+        lead:
+          - "TPU 算子的输入换成 GPU 抓到的同一份，输出可以直接和 GPU 比。判法见 [`analysis/l1_replay_results.py`](analysis/l1_replay_results.py)。v7x 没有跑这一组。"
+        columns: [v5p]
+        rows:
+          - name: 路由 GEMM
+            what: golden 的 mlp_norm.out → TPU 路由 GEMM
+            objects: "`layers.{1..3}.mlp.router.logits`"
+            src: {v5p: "phase2-l1-ops-on:L1.ops.router.gemm"}
+          - name: 路由 top-8
+            what: TPU 的 logits 过 sigmoid、加 golden 的 expert_bias 取 top-8，与 GPU 选中的集合逐行比
+            objects: "`layers.{1..3}.mlp.router.topk_idx`"
+            src: {v5p: "phase2-l1-ops-on:L1.ops.router.topk"}
+          - name: 路由 GEMM 的精度档
+            what: 用不能被 BF16 表示的探针权重，核对 TPU 默认精度等于「两个操作数先舍 BF16、单遍乘、FP32 累加」
+            objects: 第 1–3 层各一个探针
+            src: {v5p: "phase2-l1-ops-on:L1.ops.router.precision"}
+          - name: MLP 前 RMSNorm
+            what: golden 的 bf16(层输入 + attn.out) → TPU RMSNorm
+            objects: "`layers.{1..3}.mlp_norm.out`"
+            src: {v5p: "phase2-l1-ops-on:L1.ops.rmsnorm"}
+          - name: 门控激活
+            what: golden 的第 0 层 fc1.out → TPU silu(gate) · up，对主机上按 GPU 写法 bf16(bf16(silu(gate)) · up) 算的结果逐位比
+            objects: "`layers.0.mlp.act.out`"
+            src: {v5p: "phase2-l1-ops-on:L1.ops.act"}
+          - name: 注意力核心
+            what: golden 的 q_norm、k_norm、v → TPU RoPE、缩放、splash 注意力
+            objects: "`layers.{0..3}.attn.core.out`"
+            src: {v5p: "phase2-l1-ops-on:L1.ops.attn.core"}
+          - name: MoE 块
+            what: golden 的 mlp_norm.out → TPU 路由、分组 GEMM、合并、共享专家
+            objects: "`layers.{1..3}.mlp.out`"
+            src: {v5p: "phase2-l1-ops-on:L1.ops.moe"}
+
+  # ======================================================================== L2
+  - id: L2
+    title: L2 · 逐层
+    purpose: 每层输入取 GPU 的，层内观测点不比 GPU 离 FP64 远
+    lead:
+      - "目的：一层一层比，误差不跨层累积。TPU 用逐层隔离回放：每层的输入都取 GPU golden 的 `layers.k.in`（第 1 步），所以每层只带着自己的误差。例外是「各层参数梯度」一行：它来自整网第 1 步的状态读，只是按层分组，带着上游各层的差和路由翻转。"
+      - ""
+      - "参考档的逐层线（rel_L2、超差元素比例、均值差 < 1%）只用在第 0 层：它来自同类 GPU→TPU 迁移项目对注意力层输出的逐层前向检查，层内没有路由。第 1–3 层是 MoE 层，路由之后的观测点受近似平局翻转影响，参考档写「不适用」，按严格档 R 比判。"
+      - ""
+      - "L2 共 {rows} 项检查，检查条数 {checks}（v5p / v7x），张量级比较 {tensors} 次。"
+      - ""
+      - "每层的前向观测点（每层 11 个）："
+      - ""
+      - "| 层 | 观测点 |"
+      - "|---|---|"
+      - "| 第 0 层（稠密） | `attn.qkv.out`、`attn.q_norm.out`、`attn.k_norm.out`、`attn.core.out`、`attn.proj.out`、`attn.out`、`mlp_norm.out`、`mlp.fc1.out`、`mlp.fc2.out`、`mlp.out`、`out` |"
+      - "| 第 1–3 层（MoE） | `attn.qkv.out`、`attn.q_norm.out`、`attn.k_norm.out`、`attn.core.out`、`attn.proj.out`、`attn.out`、`mlp_norm.out`、`mlp.router.logits`、`mlp.shared.out`、`mlp.out`、`out` |"
+      - ""
+      - "第 1 步的参数梯度按层分组，每层比这些张量（专家参数每层只比 0、1 号两个专家，原因见文末「已知的覆盖缺口」）："
+      - ""
+      - "| 层 | 张量 |"
+      - "|---|---|"
+      - "| 第 0 层（8 个） | 输入 RMSNorm 权重、qkv、q_norm、k_norm、输出投影、MLP 前 RMSNorm 权重、fc1、fc2 |"
+      - "| 第 1–3 层（各 13 个） | 输入 RMSNorm 权重、qkv、q_norm、k_norm、输出投影、MLP 前 RMSNorm 权重、路由权重、0 号与 1 号专家的 fc1 和 fc2、共享专家 fc1 和 fc2 |"
+    tables:
+      - rows:
+          - name: 第 0 层前向
+            what: 隔离回放的第 0 层，每个观测点对 FP64 真值，比 R
+            objects: 第 0 层 11 个观测点
+            src: {v5p: "phase2-l2-replay-rratio-on:L2.layer0.fwd", v7x: "phase2-v7x-l2-replay-rratio-on:L2.layer0.fwd"}
+          - name: 第 1 层前向
+            what: 同上，第 1 层
+            objects: 第 1 层 11 个观测点
+            src: {v5p: "phase2-l2-replay-rratio-on:L2.layer1.fwd", v7x: "phase2-v7x-l2-replay-rratio-on:L2.layer1.fwd"}
+          - name: 第 2 层前向
+            what: 同上，第 2 层
+            objects: 第 2 层 11 个观测点
+            src: {v5p: "phase2-l2-replay-rratio-on:L2.layer2.fwd", v7x: "phase2-v7x-l2-replay-rratio-on:L2.layer2.fwd"}
+          - name: 第 3 层前向
+            what: 同上，第 3 层
+            objects: 第 3 层 11 个观测点
+            src: {v5p: "phase2-l2-replay-rratio-on:L2.layer3.fwd", v7x: "phase2-v7x-l2-replay-rratio-on:L2.layer3.fwd"}
+          - name: 各层反向
+            what: 隔离回放的反向：每层的输入与输出端梯度都取 golden 的，比层输入的梯度对 FP64 真值的 R
+            objects: "`layers.{0..3}.in.grad`，每层 1 个"
+            src: {v5p: "phase2-l2-replay-bwd-fp64-on:L2.layer*.bwd", v7x: "phase2-v7x-l2-replay-bwd-fp64-on:L2.layer*.bwd"}
+          - name: 各层路由选中集合
+            what: 隔离回放的 top-8 对 FP64 真值的集合一致比例。真值从层输入一路在 FP64 里算到路由，GPU 自己对它也只有 0.95 左右，所以门槛定为翻转率（1 − 一致比例）不超过 GPU 的 1.2 倍；L1 那条只看路由这一个算子，接近 1
+            objects: 第 1–3 层，每层 4096 个 token
+            src: {v5p: "phase2-l2-replay-rratio-on:L2.layer*.router", v7x: "phase2-v7x-l2-replay-rratio-on:L2.layer*.router"}
+          - name: 各层参数梯度
+            what: 第 1 步每层的参数梯度，对 GPU golden；噪声取两侧执行噪声的并集（GPU 重跑 3 对 ∪ TPU 只改执行参数 21 对）
+            objects: 第 0 层 8 个、第 1–3 层各 13 个张量（见上表）
+            src: {v5p: "phase2-st1-on-state-gpuonly:L2.layer*.grads", v7x: "phase2-v7x-st1-on-state-gpuonly:L2.layer*.grads"}
+            agg: "逐张量算 rel_L2、cos、范数比（每个张量拉直）；每层各有自己的 N（v5p 第 0–3 层 rel_L2 的 N 依次 1.47e-3、1.84e-2、4.75e-2、7.95e-2），每层按「实测 ÷ 本层 N」取最差，4 层再取最大比值，判法栏的 N 是起决定作用那一层的；这些梯度来自整网第 1 步，按层分组，不是逐层隔离回放"
+            why: >-
+              第 1 步每层 0.44% – 0.56% 的路由槽位在近似平局处两边各落一边，分到 token 少的专家梯度相对差到 0.10（台账 #5）；
+              第 0 层是稠密层、没有路由，它的超出来自一维 norm 权重的梯度先以 BF16 落地（台账 #20，可选开关能消掉）。
+              按梯度能量加权，TPU 对 GPU 整网只差 1.3e-3，1000 步统计在噪声内。对 FP64 的定责见 L3「对 FP64 定责」一表。
+
+  # ======================================================================== L3
+  - id: L3
+    title: L3 · 整网第 1 步
+    purpose: 第 1 步整网的输出、梯度、更新后状态
+    lead:
+      - "目的：整网跑完第 1 步，比输出、全部参数梯度、优化器状态、更新后的权重。L2 隔离了层，这一级看层与层串起来、加上优化器以后还对不对。"
+      - ""
+      - "L3 共 {rows} 项检查，检查条数 {checks}（v5p / v7x），张量级比较 {tensors} 次。"
+      - ""
+      - "比较的张量组（参数类专家只比每层 0、1 号）："
+      - ""
+      - "| 张量组 | 内容 | 个数 |"
+      - "|---|---|---|"
+      - "| 激活 | 第 1 步 rank 0 第一个 microbatch 的各层观测点 | 41 |"
+      - "| 输出 | logits（120832 维）、逐 token loss | 2 |"
+      - "| 参数梯度 `grad.*` | 4 层的参数（第 0 层 8 个、第 1–3 层各 13 个）+ 词嵌入、最后的 RMSNorm、输出层 | 50 |"
+      - "| 更新后主权重 `main_param_after.*` | 同上 50 个参数更新后的 FP32 主权重 | 50 |"
+      - "| 优化器状态 `exp_avg*` | 同上 50 个参数的一阶、二阶动量 | 100 |"
+      - "| 更新后路由偏置 `buffer_after.*` | 第 1–3 层的 expert_bias | 3 |"
+    tables:
+      - title: 对 GPU 比
+        rows:
+          - name: 逐 token loss
+            what: 整网链路：从 golden 的 embed.out 起，FP64 一路算到逐 token loss，比 R
+            objects: rank 0 第一个 microbatch 的 4096 个 token
+            src: {v5p: "phase2-ff-chain:L3.step1.loss.per_token", v7x: "phase2-v7x-ff-chain:L3.step1.loss.per_token"}
+          - name: logits
+            what: 同一条链路的 logits，比 R；另记三方 KL（TPU‖FP64、GPU‖FP64、TPU‖GPU）
+            objects: "`logits`，4096 × 120832"
+            src: {v5p: "phase2-ff-chain:L3.step1.logits", v7x: "phase2-v7x-ff-chain:L3.step1.logits"}
+          - name: 全部参数梯度
+            what: 第 1 步全部参数梯度对 GPU golden；噪声取两侧执行噪声的并集
+            objects: "`grad.*` 50 个张量"
+            src: {v5p: "phase2-st1-on-state-gpuonly:L3.step1.grads.all", v7x: "phase2-v7x-st1-on-state-gpuonly:L3.step1.grads.all"}
+            agg: "逐张量算 rel_L2、cos、范数比，取 50 个里最差的张量；对齐报告里「整网只差 1.3e-3」是同一批梯度按能量合成的数，只用于定责"
+            why: "由路由近似平局主导（台账 #5），同 L2「各层参数梯度」。最差的张量是 MoE 层 0 号专家的 fc1 / fc2 梯度。"
+          - name: 梯度分布
+            what: 同一批梯度的标准差比、零元素比例差、逐元素相对误差 p99
+            objects: "`grad.*` 50 个张量"
+            src: {v5p: "phase2-st1-on-state-gpuonly:L3.step1.grads.dist", v7x: "phase2-v7x-st1-on-state-gpuonly:L3.step1.grads.dist"}
+            why: 同「全部参数梯度」：被路由翻转的专家梯度把逐元素 p99 推到噪声上限的 1.05 倍。
+          - name: 优化器状态
+            what: 第 1 步更新后的一阶、二阶动量。第 1 步的一阶动量就是 0.1 × 梯度，所以这一格和「全部参数梯度」几乎相同
+            objects: "`exp_avg.*`、`exp_avg_sq.*` 100 个张量"
+            src: {v5p: "phase2-st1-on-state-gpuonly:L3.step1.optim_state", v7x: "phase2-v7x-st1-on-state-gpuonly:L3.step1.optim_state"}
+            why: 动量由梯度直接决定，原因同「全部参数梯度」。
+          - name: 更新后主权重
+            what: 第 1 步更新后的 FP32 主权重
+            objects: "`main_param_after.*` 50 个张量"
+            src: {v5p: "phase2-st1-on-state-gpuonly:L3.step1.updated", v7x: "phase2-v7x-st1-on-state-gpuonly:L3.step1.updated"}
+            why: v5p 是梯度差的下游，量级很小（rel_L2 5e-5；最差的 1−cos 是 N 的 1.11 倍）；对 FP64 按能量算 R 0.92，TPU 的更新量更接近精确值。参考档（rel_L2 ≤ 0.02、cos ≥ 0.9999）两平台都过。
+          - name: 更新后路由偏置
+            what: 第 1 步按负载更新后的 expert_bias
+            objects: "`buffer_after.*` 3 个张量（每层 192 个专家）"
+            src: {v5p: "phase2-st1-on-state-gpuonly:L3.step1.bias_after", v7x: "phase2-v7x-st1-on-state-gpuonly:L3.step1.bias_after"}
+            why: >-
+              v7x 第 1 层 65 号专家的偏置更新方向和 GPU 相反（192 个里 1 个，台账 #17）。噪声的 24 对里没有一对翻号，所以 N = 0，任何翻号都判不过。
+              按 FP64 这个专家选中 2730 个 token，比平均 2730.67 少 0.67，偏置应当加：v7x 和精确算术一致，GPU 三份与 v5p 都减。
+          - name: 主权重与动量是真 FP32
+            what: FP32 张量的低 16 位是否几乎全 0（是的话说明实际只存了 BF16 精度）
+            objects: 主权重 50 个、动量 100 个
+            src: {v5p: "phase2-st1-on-state-gpuonly:L3.step1.fake_fp32.*", v7x: "phase2-v7x-st1-on-state-gpuonly:L3.step1.fake_fp32.*"}
+          - name: 激活逐位
+            info: true
+            what: 隔离回放的各层激活对 golden 逐位比。跨平台不要求逐位，只记事实
+            objects: 41 个激活张量
+            src: {v5p: "phase2-l2-replay-bitwise:L3.step1.act.bitwise", v7x: "phase2-v7x-l2-replay-bitwise:L3.step1.act.bitwise"}
+            why: "两种硬件的舍入顺序不同，按定义不会逐位；这条 `hard: false`，不参与验收，数值上的判定看 L2 前向的 R。"
+          - name: 比全了没有
+            what: TPU 抓到的张量名单对 golden 的名单（两边本来就没有对应量的三类除外）
+            objects: 第 1 步全部张量名
+            src: {v5p: "phase2-t-a-coverage:L3.step1.coverage", v7x: "phase2-v7x-coverage:L3.step1.coverage"}
+      - title: 对 FP64 定责
+        lead:
+          - "第 1 步梯度超出噪声时，用 FP64 整步参照判是谁离精确算术更远：同一份权重、同一个全局 batch 在 FP64 里求梯度，比 R = TPU 离 FP64 ÷ GPU 离 FP64。"
+        rows:
+          - name: 各层参数梯度对 FP64
+            info: true
+            what: 每层参数梯度的 R（逐张量取最差）
+            objects: 第 0 层 8 个、第 1–3 层各 13 个张量
+            src: {v5p: "phase2-st1-fp64-on:L2.layer*.grads", v7x: "phase2-v7x-st1-fp64-on:L2.layer*.grads"}
+            agg: "逐张量算 R 比，取最差的张量；另报按能量合成的 R 比（√(Σ‖TPU − FP64‖²) ÷ √(Σ‖GPU − FP64‖²)），只用于定责"
+            why: >-
+              超线的是两类张量：一维 norm 权重、输出层与 embedding 的梯度 TPU 先以 BF16 落地（R 最高 2.20，v7x 2.70，台账 #20）；
+              经过路由的专家梯度随近似平局翻转变（台账 #5）。投影、共享专家、稠密 MLP 的梯度 R 0.45 – 0.96，TPU 更接近精确值。
+          - name: 全部参数梯度对 FP64
+            info: true
+            what: 50 个梯度张量的 R（逐张量取最差）
+            objects: "`grad.*` 50 个张量"
+            src: {v5p: "phase2-st1-fp64-on:L3.step1.grads.all", v7x: "phase2-v7x-st1-fp64-on:L3.step1.grads.all"}
+            agg: "逐张量算 R 比，取 50 个里最差的张量（v5p 2.20、v7x 2.70）；按能量合成的整网 R 比是 1.20 / 1.21，只用于定责"
+            why: "同上。按梯度能量加权整网 R 1.20（v7x 1.21）；打开台账 #20 的三个可选开关后 0.67（v7x 0.72），见下一表。"
+          - name: 更新后主权重与动量对 FP64
+            info: true
+            what: 用这一侧自己的主权重与 FP64 梯度在 FP64 里重放一步 AdamW 得到真值，比 R
+            objects: 主权重 50 个、动量 100 个
+            src: {v5p: ["phase2-st1-fp64-on:L3.step1.updated", "phase2-st1-fp64-on:L3.step1.optim_state"], v7x: ["phase2-v7x-st1-fp64-on:L3.step1.updated", "phase2-v7x-st1-fp64-on:L3.step1.optim_state"]}
+            agg: "逐张量算 R 比，取最差的张量；按能量合成的整体 R 比：主权重 0.92 / 0.94，动量 1.20 / 1.21（v5p / v7x）"
+            why: >-
+              超线的是几个 128 维的 q / k norm：Adam 第 1 步的更新量近似 lr · sign(g)，小张量上少数元素的符号就决定比值。
+              按能量算整体，更新后主权重 0.92（v7x 0.94）；两个动量 1.20（v7x 1.21），和梯度同源（台账 #20），打开三个可选开关后降到 0.67。
+          - name: 更新后路由偏置对 FP64
+            info: true
+            what: 按 FP64 选中数算出的偏置更新方向，对两侧实际的方向。R 比是「更新方向和真值相反的专家数」之比的平方根，格子写 3 层里最大的那个，两边都是 0 个时记为 1：v5p 第 1 层 1 对 1（GPU 与 v5p 是同一个专家方向反），其余两层 0 对 0；v7x 第 1 层 GPU 有 1 个专家方向反、TPU 没有（这一层 R = 0），其余两层 0 对 0
+            objects: 第 1–3 层 192 个专家
+            src: {v5p: "phase2-st1-fp64-on:L3.step1.bias_after", v7x: "phase2-v7x-st1-fp64-on:L3.step1.bias_after"}
+            agg: "逐层数方向和 FP64 相反的专家个数，R 比 = 两侧个数之比的平方根，取 3 层最大"
+      - title: 可选开关：梯度以 FP32 落地
+        lead:
+          - "台账 #20 的三个开关（`rmsnorm_scale_grad_fp32`、`logits_dense_wgrad_fp32`、`embedding_grad_fp32`，默认关，不在当前对齐配置里）打开后重判。是否打开由使用方决定，代价见对齐报告第 6 节。"
+        rows:
+          - name: 全部参数梯度对 FP64（开关打开）
+            info: true
+            what: 同「全部参数梯度对 FP64」
+            objects: "`grad.*` 50 个张量"
+            src: {v5p: "phase2-st1-fp64-gradfp32:L3.step1.grads.all"}
+            why: "剩下的超线张量是第 2 层 MLP 前 RMSNorm（1.79）与第 2 层 1 号专家的 fc2（1.32），都经过路由，随近似平局翻转变（台账 #5）。"
+          - name: 第 1 步整步（开关打开）
+            info: true
+            what: 同「对 GPU 比」一表的梯度、状态、更新后权重，噪声同样取两侧并集
+            objects: 梯度 50、主权重 50、动量 100、路由偏置 3
+            src: {v5p: ["phase2-st1-gradfp32-gpuonly:L2.layer*.grads", "phase2-st1-gradfp32-gpuonly:L3.step1.*"]}
+            why: "只用 GPU 3 对作尺子（2026-11-08 起）：第 0 层参数梯度 10.6 → 5.41 倍 N（仍不过），更新后主权重 1.63 → 1.30 倍 N（仍待定）；其余格子由路由近似平局主导（台账 #5）。并集尺子下（历史）是 2.12 → 1.34、1.11 → 1.001。"
+      - title: 续训
+        rows:
+          - name: 存档恢复后的状态
+            what: 存档再恢复后的训练状态，对不中断的运行逐位比
+            objects: 恢复时的状态张量；恢复后第 11 步全量张量
+            src: {v5p: "phase2-resume:L3.resume.*", v7x: "phase2-v7x-resume:L3.resume.*"}
+
+  # ======================================================================== L4
+  - id: L4
+    title: L4 · 多步训练
+    purpose: 1000 步的 loss、grad_norm、param_norm 等逐步曲线在 GPU 重跑的噪声内
+    lead:
+      - "目的：训练 1000 步，看逐步曲线是否落在 GPU 自己重跑的散布里。前三级的差如果会累积，在这里显出来。"
+      - ""
+      - "L4 共 {rows} 项检查，检查条数 {checks}（v5p / v7x）。"
+      - ""
+      - "- 参照：TPU 只和最终 golden 的基线 `rcc-a`（GPU 生产程序只把输出头 dgrad 改成分段 FP32 累加，见[对齐报告](ALIGNMENT-REPORT.md)第 2 节）逐步比。"
+      - "- 噪声上限 N：`rcc-a..j` 10 份重跑两两配对的 45 对比较里的最大差。"
+      - "- 每条序列算三个判定量：带符号均值、MARE（平均绝对相对差）、最大单步；三个都对 N 判，取最差。首步差只报。"
+    tables:
+      - title: 正式验收（对最终 golden `rcc-a`）
+        rows:
+          - name: loss
+            what: 第 1–1000 步逐步 loss 的相对差
+            objects: "`lm_loss`，第 1–1000 步"
+            src: {v5p: "phase2-acceptance-rcc-on:L4.loss", v7x: "phase2-v7x-acceptance-rcc:L4.loss"}
+            agg: "每步一个标量（全局批的平均 loss），算逐步相对差，再在第 1–1000 步内算带符号均值、MARE、最大单步，各自对 N 判"
+          - name: loss 后段
+            what: 第 301–1000 步（前 300 步曲线下降快、相对差大，单独看后段的系统偏移）
+            objects: "`lm_loss`，第 301–1000 步"
+            src: {v5p: "phase2-acceptance-rcc-on:L4.loss.tail", v7x: "phase2-v7x-acceptance-rcc:L4.loss.tail"}
+            agg: "同上，窗口是第 301–1000 步"
+          - name: grad_norm
+            what: 逐步全局梯度范数；分母用两边均值，交换两边只差一个符号（对齐报告第 8 节）
+            objects: "`grad_norm`，第 1–1000 步"
+            src: {v5p: "phase2-acceptance-rcc-on:L4.grad_norm", v7x: "phase2-v7x-acceptance-rcc:L4.grad_norm"}
+            agg: "每步一个标量：全部可训练参数梯度的全局 L2 范数（裁剪前，约 124 亿个元素合成一个数）；逐步相对差的分母用两边均值；再算带符号均值、MARE、最大单步"
+          - name: grad_norm（以 golden 为分母）
+            info: true
+            what: 同上，分母用 golden（原口径），并排保留
+            objects: "`grad_norm`，第 1–1000 步"
+            src: {v5p: "phase2-acceptance-rcc-on:L4.grad_norm.golden_den", v7x: "phase2-v7x-acceptance-rcc:L4.grad_norm.golden_den"}
+          - name: param_norm
+            what: 逐步全局参数范数；TPU 读按组合成的 `param_norm_from_groups`（整网一次 FP32 归约测得太粗，对齐报告第 8 节）
+            objects: "`param_norm`，第 1–1000 步"
+            src: {v5p: "phase2-acceptance-rcc-on:L4.param_norm", v7x: "phase2-v7x-acceptance-rcc:L4.param_norm"}
+            agg: "每步一个标量：全部可训练参数 FP32 主权重的全局 L2 范数（约 124 亿个元素，不含路由偏置）；TPU 由按组记录的平方和合成；再算带符号均值、MARE、最大单步"
+          - name: param_norm（TPU 原始值）
+            info: true
+            what: 同上，TPU 读日志里的原始 param_norm
+            objects: "`param_norm`，第 1–1000 步"
+            src: {v5p: "phase2-acceptance-rcc-on:L4.param_norm.raw", v7x: "phase2-v7x-acceptance-rcc:L4.param_norm.raw"}
+          - name: 路由偏置曲线
+            what: 逐步路由偏置的统计量（均值、标准差等）
+            objects: 第 1–1000 步，第 1–3 层
+            src: {v5p: "phase2-acc-health-rcc:L4.router.bias_std", v7x: "phase2-v7x-acc-health-rcc:L4.router.bias_std"}
+          - name: 健康信号
+            what: loss、grad_norm 等有没有 NaN / Inf、有没有突跳（单步超过中位数 3 倍）
+            objects: 第 1–1000 步
+            src: {v5p: "phase2-acc-health-rcc:L4.health", v7x: "phase2-v7x-acc-health-rcc:L4.health"}
+      - title: 换并行方式
+        lead:
+          - "TPU 改成和 GPU 一样的专家并行 EP = 8（当前对齐配置是非专家参数 FSDP 8、专家不切），同样对 `rcc-a` 比。"
+        rows:
+          - name: EP = 8 的 L4
+            info: true
+            what: loss、loss 后段、grad_norm、param_norm、学习率
+            objects: 第 1–1000 步
+            src: {v5p: ["phase2-acceptance-rcc-ep8:L4.loss", "phase2-acceptance-rcc-ep8:L4.loss.tail", "phase2-acceptance-rcc-ep8:L4.grad_norm", "phase2-acceptance-rcc-ep8:L4.param_norm", "phase2-acceptance-rcc-ep8:L4.lr"], v7x: ["phase2-v7x-acceptance-rcc-ep8:L4.loss", "phase2-v7x-acceptance-rcc-ep8:L4.loss.tail", "phase2-v7x-acceptance-rcc-ep8:L4.grad_norm", "phase2-v7x-acceptance-rcc-ep8:L4.param_norm", "phase2-v7x-acceptance-rcc-ep8:L4.lr"]}
+      - title: 可选开关：梯度以 FP32 落地
+        lead:
+          - "台账 #20 的三个开关打开后的 1000 步，不是当前对齐配置。"
+        rows:
+          - name: 开关打开后的 L4
+            info: true
+            what: loss、loss 后段、grad_norm、param_norm、学习率
+            objects: 第 1–1000 步
+            src: {v5p: ["phase2-acceptance-rcc-gradfp32:L4.loss", "phase2-acceptance-rcc-gradfp32:L4.loss.tail", "phase2-acceptance-rcc-gradfp32:L4.grad_norm", "phase2-acceptance-rcc-gradfp32:L4.param_norm", "phase2-acceptance-rcc-gradfp32:L4.lr"], v7x: ["phase2-v7x-acceptance-rcc-gradfp32:L4.loss", "phase2-v7x-acceptance-rcc-gradfp32:L4.loss.tail", "phase2-v7x-acceptance-rcc-gradfp32:L4.grad_norm", "phase2-v7x-acceptance-rcc-gradfp32:L4.param_norm", "phase2-v7x-acceptance-rcc-gradfp32:L4.lr"]}
+            why: v7x 的 grad_norm 最大单步差 0.482，噪声上限 0.459（1.05 倍）；带符号均值 0.10 倍、MARE 0.97 倍。不开这三个开关时两平台对 `rcc-a` 已全过。
+          - name: 开关打开后的只报变体
+            info: true
+            what: grad_norm 以 golden 为分母、param_norm 读 TPU 原始值（同正式验收一表里的两条只报行）
+            objects: 第 1–1000 步
+            src: {v5p: ["phase2-acceptance-rcc-gradfp32:L4.grad_norm.golden_den", "phase2-acceptance-rcc-gradfp32:L4.param_norm.raw"], v7x: ["phase2-v7x-acceptance-rcc-gradfp32:L4.grad_norm.golden_den", "phase2-v7x-acceptance-rcc-gradfp32:L4.param_norm.raw"]}
+            why: "v7x 的 grad_norm 以 golden 为分母时最大单步 0.635，噪声上限 0.559（1.14 倍）；这一口径交换两边不对称（对齐报告第 8 节），只报。"
+          - name: 开关打开后的路由偏置与健康信号
+            info: true
+            what: 同「路由偏置曲线」「健康信号」
+            objects: 第 1–1000 步
+            src: {v5p: "phase2-acc-health-rcc-gradfp32:L4.*", v7x: "phase2-v7x-acc-health-rcc-gradfp32:L4.*"}
+      - title: 对未修的 GPU 生产 golden `rc`（已解释差异）
+        lead:
+          - "同样的比较，参照换成没有修输出头 dgrad 的 GPU 生产 golden `rc`（单基线 `rc-a`，噪声 `rc` 5 份两两 10 对）。这里的超出是 GPU 一侧的系统偏差，不是 TPU 的问题。"
+        rows:
+          - name: 对 `rc-a` 的 L4
+            info: true
+            what: loss、loss 后段、grad_norm、param_norm、学习率。被测是换代前配置（v5p `t-rmap-1000`、v7x `t-v7x-rmap-1000-a`，打开 `dense_fp32_accumulation` 之前）
+            objects: 第 1–1000 步
+            src: {v5p: "phase2-acceptance-rc:L4.*", v7x: "phase2-v7x-acceptance-rc:L4.*"}
+            why: >-
+              B200 上输出头 dgrad 沿 12 万词表的长求和有朝 0 的系统偏差（台账 #1、#2），让 `rc` 的 loss 稳定偏高、param_norm 少漂 2.07e-2。
+              最终 golden `rcc` 只修这一处，TPU 就落在它的重跑散布里（上一表）。排查全过程见案例 01。
+      - title: 程序与工具
+        rows:
+          - name: 梯度 NaN 先于 loss 报警（演练）
+            what: 第 5 步故意让梯度变成 NaN，健康检查必须在 grad_norm 上先报，不能等到 loss
+            objects: 8 步的演练运行
+            src: {v5p: "phase2-t-nan8:L4.health.grad_norm", v7x: "phase2-v7x-t-nan8:L4.health.grad_norm"}
+            expect: fail
+          - name: 加抓数不改数值
+            info: true
+            what: 同一个 TPU 程序加不加抓数输出，逐步标量是否逐位相同
+            objects: 6 个逐步标量
+            src: {v5p: "phase2-obs-gate:DET.hooks.noop", v7x: "phase2-v7x-obs-gate:DET.hooks.noop"}
+            why: >-
+              多出的抓数输出改变了 XLA 的融合，第 1 步 loss 就不逐位。所以 TPU 一侧的正式证据都不经过抓数钩子：
+              L0–L3 用训练步之间的状态读、逐层隔离回放与单算子回放，L4 用不加钩子的生产构建（用户指南第 4 章 4.8 节）。
+          - name: 续训重叠步
+            what: 存档恢复后与不中断的运行重叠的步，逐步标量逐位相同
+            objects: 10 个重叠步
+            src: {v5p: "phase2-resume:L4.resume.overlap", v7x: "phase2-v7x-resume:L4.resume.overlap"}
+          - name: TPU 自己重跑逐位（v7x）
+            what: 同一份代码包、配置、数据在 v7x 上跑两次（各占一个切片），1000 步的逐步 loss、grad_norm、param_norm 与输入指纹逐位相同。用的是换代前配置（`t-v7x-rmap-1000-a/-b`，打开 `dense_fp32_accumulation` 之前）；v5p 的同程序双跑在日常回归里（`reg-t0-fa-a`、`reg-t1-fa-a`），不在本页
+            objects: 第 1–1000 步
+            src: {v7x: "phase2-v7x-rmap-repro:*"}
+
+gpu:
+  title: GPU 侧的检查：参照本身可不可信、工具能不能抓到错
+  lead:
+    - "这些检查只在 GPU 上做（对齐实践 [00](alignments/00-gpu-noise-and-drills/README.md) 与 [03](alignments/03-gpu-remat-golden/README.md)）。它们回答两件事：GPU golden 能不能当参照（重跑的噪声多大、哪些执行方式会改数值），以及 janus 的检查能不能抓到真错。故障演练（9 种埋错 × 24 项检查）的矩阵在[总览](dashboard/dashboard.md)末尾。"
+    - ""
+    - "GPU 侧共 {rows} 项检查，检查条数 {checks}，张量级比较 {tensors} 次。"
+  columns:
+    gpu: GPU B200 × 8
+  tables:
+    - title: 只换执行方式，数值变不变
+      rows:
+        - name: 数据并行副本一致
+          what: 8 个数据并行副本上的同一个对象是否逐位相同
+          objects: 第 1 步的参数、梯度等对象
+          src: {gpu: "phase1-full-noise28:L2.dp.replica"}
+        - name: 截断模型前缀
+          what: 截 2 层的模型与截 4 层的模型，前 2 层的第 1 步输出逐位相同
+          objects: embed、第 0–1 层输出、第 1 层路由
+          src: {gpu: "phase1-truncate:*"}
+        - name: 专家并行 EP8 ↔ EP4
+          what: 只换专家并行度，前向、反向与更新后参数
+          objects: 第 1 步激活、梯度、更新后稠密参数
+          src: {gpu: ["phase1-parallel:L2.parallel.fwd.bitwise", "phase1-parallel-ext:L2.parallel.grads.tol"]}
+          why: 前向逐位；反向的规约顺序随专家并行度变，梯度差到 GPU 噪声的 4.1 倍（1−cos）。所以全部 golden 与噪声参照固定 EP 8，不混用。
+        - name: 张量 / 上下文并行：loss
+          what: 打开 TP 2 或 CP 2，第 1 步 loss 与窗口内统计对不切分的运行
+          objects: 逐步 loss（TP 2、CP 2 各一份）
+          src: {gpu: ["phase1-tp-cp.tp2:L3.loss.step1", "phase1-tp-cp.cp2:L3.loss.step1"]}
+        - name: 张量 / 上下文并行：grad_norm
+          what: 同上，逐步 grad_norm
+          objects: 逐步 grad_norm（TP 2、CP 2 各一份）
+          src: {gpu: ["phase1-tp-cp.tp2:L4.grad_norm", "phase1-tp-cp.cp2:L4.grad_norm"]}
+        - name: 梯度累积切分
+          what: 同样的全局批，只改梯度累积的切分
+          objects: 第 1 步 loss、梯度、更新后参数
+          src: {gpu: "phase1-ga:*"}
+          why: "embedding 梯度差到噪声上限的 31 倍：累加分组决定舍入位置。所以两边的梯度累积分组设成一样（每 rank 2 个 microbatch，台账 #12）。"
+        - name: 激活重算
+          what: 开整层重算时，重算的前向与首次前向是否逐位相同；开路由回放后再比
+          objects: 第 1 步各层激活
+          src: {gpu: ["phase1-remat:DET.remat.vs_first", "remat-noise:DET.replay.vs_first"]}
+          why: 不开路由回放时 9 / 51 个张量不同（重算里路由会重选）；开路由回放后 0 / 57 不同，这就是 GPU 生产 golden `rc` 的配置。
+        - name: 确定性设置
+          what: 确定性设置下同一程序重跑是否逐位
+          objects: 1000 步逐步标量、第 1 步张量
+          src: {gpu: "phase1-determinism:*"}
+    - title: GPU 算子回放与合成用例
+      lead:
+        - "GPU 一侧把抓到的算子输入重新喂给同一个 kernel、对 CPU 复现的舍入方式、对 FP64 真值比。用来证明 GPU 参照的数是可复现、可解释的，也是 TPU 一侧 L1 判法（R 比 1.2）的起点。"
+      rows:
+        - name: GEMM 与 RMSNorm 回放
+          what: 路由、qkv、输出投影 GEMM 与各 RMSNorm 用抓到的输入重算，对抓到的输出逐位
+          objects: 第 0–3 层各算子
+          src: {gpu: ["phase1-l1:L1.gemm.*", "phase1-l1:L1.norm.replay"]}
+        - name: 舍入方式复现
+          what: 在 CPU 上按张量核的累加方式复现 GEMM，对 GPU 输出逐位
+          objects: 路由 logits、投影
+          src: {gpu: "phase1-l1:L1.emulate.*"}
+        - name: R 比自检
+          what: 干净实现 R ≈ 1；多舍一次的实现 R 被 1.2 的门槛抓到（演练）
+          objects: RMSNorm、路由 sigmoid
+          src: {gpu: "phase1-l1:L1.rratio.*"}
+        - name: 逐元素函数
+          what: exp、sigmoid、silu、rsqrt 对正确舍入值的 ULP；加、乘、类型转换逐位
+          objects: 合成输入与真实输入
+          src: {gpu: "phase1-l1:L1.elem.*"}
+        - name: 极端输入
+          what: RMSNorm、sigmoid、softmax 在极小、次正规、极大、全 −inf 等输入上对 FP64
+          objects: 合成输入
+          src: {gpu: "phase1-l1:L1.extreme.*"}
+        - name: 路由平局
+          what: 精确平局时 top-k 的选择规则
+          objects: 合成平局与真实路由输入
+          src: {gpu: "phase1-l1:L1.ties.*"}
+        - name: 反向（VJP）
+          what: RMSNorm、路由打分函数的反向对 FP64 解析梯度
+          objects: 第 1 层
+          src: {gpu: "phase1-l1:L1.vjp.*"}
+        - name: 专家 GEMM 与注意力 kernel
+          what: 分组专家 GEMM、注意力 kernel 的前向与反向回放
+          objects: 第 0–3 层
+          src: {gpu: "phase1-kernels:L1.kernel.*"}
+        - name: padding 与因果
+          what: padding 区填 NaN / Inf 不污染有效输出；改动未来的 token 不影响当前输出
+          objects: 合成用例
+          src: {gpu: ["phase1-kernels:L1.poison.*", "phase1-kernels:L1.causal.*"]}
+        - name: TF32 开关
+          what: 各种 TF32 开关组合下 FP32 GEMM 实际走不走 TF32
+          objects: 开关矩阵、训练中的探针
+          src: {gpu: "phase1-kernels:TF32.*"}
+        - name: MoE 分阶段
+          what: MoE 块按分发、专家 GEMM、激活、合并、共享专家逐段回放
+          objects: 第 1–3 层
+          src: {gpu: "phase1-moe-stages:*"}
+
+footer:
+  - "## 已知的覆盖缺口"
+  - ""
+  - "下面几处这一版没有覆盖或只覆盖了一部分。前两条是适用范围上的限制；接着五条是对照同类 GPU→TPU 迁移项目的检查范围找出来的；后几条是这次验收自己的限制。它们不改变上面任何一格的判定（判定只针对比到的对象），但限定了结论覆盖的范围。"
+  - ""
+  - "| 缺口 | 现状 | 补做的办法 |"
+  - "|---|---|---|"
+  - "| 80 层生产形状没有验证 | 全部检查都在截 4 层的模型上做；日常回归的 T3 生产形状档位待定（生产配置与切片资源未定） | 在 80 层、生产切分与数据管线上至少跑 L0 与 L4 |"
+  - "| EP = 8 只验了 L4 的四个量与学习率 | TPU 改成和 GPU 一样的 EP = 8 时，只对 `rcc-a` 比了 loss、loss 后段、grad_norm、param_norm 与学习率；路由偏置曲线、健康信号与 L0–L3 只在 FSDP 8 上做 | EP = 8 下补跑路由偏置与健康信号，必要时补第 1 步 |"
+  - "| 第 1 步专家参数只比 2 / 192 个 | GPU 抓数默认每层只留 0、1 号专家的参数张量（`janus/dump/megatron.py` 的 `DEFAULT_SKIP`），L0 的初始参数清单与 L4 的 param_norm 覆盖全部专家 | GPU 侧去掉这条跳过规则重抓第 1 步，TPU 状态读本来就是全量 |"
+  - "| TPU 上没有单独的输出端算子检查 | 词嵌入、最后的 RMSNorm、输出层、交叉熵只在 L3 整网链路里整体比 | 用 golden 的 `final_norm.out` 等输入在 TPU 上单独回放，对 FP64 判 R |"
+  - "| TPU 上没有算子级反向 | 反向只比到层（L2 各层反向）与第 1 步整网梯度 | 对各主要算子做随机或真实余切的反向回放，对 FP64 VJP 判 R |"
+  - "| 逐元素函数、极端输入、平局、padding / 因果的合成用例只在 GPU 上做过 | v5p 只核对了门控激活（`L1.ops.act`），v7x 没有这一组 | 在 TPU 上跑同样的合成用例，单芯片即可 |"
+  - "| grad_norm 没有参考档 | 参考档只有 loss、param_norm、算子与优化器几类线 | 并列报告 grad_norm 的平均相对误差 |"
+  - "| 换基线的敏感度没有逐份算 | L4 只对 `rcc-a` 比；换一份当基线，r 最多挪动 1，但实际挪动多少没算，`rcc` 各份的逐步序列没有入库 | 入库 `rcc-a..j` 的 `metrics.jsonl`，以每一份当基线各算一遍 |"
+  - "| v7x 当前配置 1000 步的逐步序列没有入库 | v7x 对 `rc` 的 loss 偏移只能用推导值（对齐报告第 3 节） | 入库 `t-v7x-on-1000` 的 `metrics.jsonl` |"
+  - "| 第 1 步比较的 GPU golden 不开重算，TPU 被测开重算 | GPU 上开整层重算加路由回放后，第 1 步激活已和不重算的 `g1k` 不逐位（`remat-vs-g1k` 的 `L3.step1.act.bitwise`，26 / 46 个张量不同），这部分差没有单独进第 1 步的尺子；1000 步时 `rc` 对 `g1k` 的 loss 在噪声内 | 第 1 步改用开重算的 GPU golden 做参照与噪声 |"
+  - "| TPU 侧的故障演练只做了梯度 NaN 一种 | 9 种埋错的演练都在 GPU 上做 | 在 TPU 上照 GPU 的故障矩阵埋错 |"
+  - "| v7x 上 TPU 自己的执行噪声没有标定 | 日常回归的 TPU 执行噪声只在 v5p 上标定（第 1 步整步的 7 份扰动运行两平台都有） | 照 v5p 的做法在 v7x 上标定 |"
+  - ""
+  - "## 未列入本页的结果文件"
+  - ""
+  - "01、02 两个实践里下面这些结果文件不进清单：旧配置或旧判法的结果（被上面的行取代），以及诊断用的臂。保留它们是为了可追溯。"
+  - ""
+
+# 01、02 里清单没有引用的结果文件，每个写一句原因（build.py 核对：缺了就失败）
+unlisted_reasons:
+  phase2-rcb-vs-rcc: "GPU 一侧的便宜等价修法 `rcb-a`（输出头 dgrad 用 BF16 张量核分段）对 `rcc-a` 的 1000 步比较：只说明 golden 可以更便宜地造，不是 TPU 的检查；正式基线仍是 `rcc-a`（案例 01「便宜的等价修法 `rcb`」行）"
+  phase2-acceptance-rcb-on: "v5p 对 `rcb-a` 的交叉核对，只报：正式第一层仍对 `rcc-a`（`phase2-acceptance-rcc-on`）"
+  phase2-v7x-acceptance-rcb: "v7x 对 `rcb-a` 的交叉核对，只报：正式第一层仍对 `rcc-a`（`phase2-v7x-acceptance-rcc`）；grad_norm 的 MARE 1.09 倍待定，对 `rcc` 单份当 golden 时也在 0.70 – 1.11 之间起伏"
+  phase2-l1-ops-own: "v5p 单算子，打开 `dense_fp32_accumulation` 之前的配置：qkv 与第 0 层 fc1 超线。被 `phase2-l1-ops-own-on` 取代"
+  phase2-v7x-l1-ops-own: "v7x 单算子，打开 `dense_fp32_accumulation` 之前的配置。被 `phase2-v7x-l1-ops-own-on` 取代"
+  phase2-l1-ops-wcoff: "v5p 单算子的诊断臂：整个关掉窗口化 collective matmul，用来定位 qkv 超线的来源（台账 #6）"
+  phase2-l2-replay-rratio: "v5p 逐层前向，打开 `dense_fp32_accumulation` 之前：4 层都只差在 `attn.qkv.out`。被 `phase2-l2-replay-rratio-on` 取代"
+  phase2-v7x-l2-replay-rratio: "v7x 逐层前向，打开 `dense_fp32_accumulation` 之前。被 `phase2-v7x-l2-replay-rratio-on` 取代"
+  phase2-l2-replay-bwd-on: "v5p 逐层反向的旧判法：噪声只取 GPU 第 1 步重跑 3 对，这把尺子对路由翻转的宽度是 0。改按对 FP64 的 R 判（`phase2-l2-replay-bwd-fp64-on`）"
+  phase2-v7x-l2-replay-bwd-on: "v7x 逐层反向的旧判法，同上。改按 `phase2-v7x-l2-replay-bwd-fp64-on` 判"
+  phase2-l2-replay-bwd-on-xnoise: "v5p 逐层反向按两侧执行噪声并集判的对照：隔离回放里两侧只改执行方式都不翻路由，并集同样量不到路由翻转，只报"
+  phase2-v7x-l2-replay-bwd-on-xnoise: "v7x 逐层反向按两侧执行噪声并集判的对照，同上，只报"
+  phase2-st1-prod-state: "v5p 第 1 步整步更早的判法（GPU 3 对，被测是改配置前的 TPU 运行）；现行判法 `phase2-st1-on-state-gpuonly`"
+  phase2-v7x-st1-prod-state: "v7x 第 1 步整步更早的判法，同上；现行判法 `phase2-v7x-st1-on-state-gpuonly`"
+  phase2-st1-on-state-xnoise: "v5p 第 1 步整步按两侧执行噪声并集判的旧结果（2026-11-07 撤回：尺子只来自 GPU）；现行 `phase2-st1-on-state-gpuonly`，留作判法变更记录"
+  phase2-v7x-st1-on-state-xnoise: "v7x 第 1 步整步的并集旧结果，同上；现行 `phase2-v7x-st1-on-state-gpuonly`"
+  phase2-st1-gradfp32-xnoise: "三个梯度 FP32 开关全开时的并集旧结果，同上；现行 `phase2-st1-gradfp32-gpuonly`"
+  phase2-obs-grad: "v5p 观测构建（每一步都加抓数钩子）第 1 步梯度的标定：没过，所以观测构建的张量不当正式证据（L4「加抓数不改数值」一行）"

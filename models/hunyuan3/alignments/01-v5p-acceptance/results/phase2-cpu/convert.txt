@@ -1,0 +1,4 @@
+$ JAX_PLATFORMS=cpu python convert_hf_to_maxtext.py --hf <HF 目录 hy3-4l> --out <转换输出>
+MaxText 变量 30 个，与 name_map 推出的叶子逐个一致
+搬运 1781 个 HF 张量 → 30 个叶子，每个元素恰好写一次（126 s）
+已存 <转换输出>/0/items（62 s）

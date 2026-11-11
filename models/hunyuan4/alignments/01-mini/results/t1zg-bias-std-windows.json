@@ -1,0 +1,739 @@
+{
+ "what": "L4 路由偏置标准差逐层、逐窗口的带符号均值（TPU 对 golden vs GPU 两两 28 对）",
+ "tpu": "t1zg-a",
+ "gpu": [
+  "g3-a",
+  "g3-b",
+  "g3-c",
+  "g3-d",
+  "g3-e",
+  "g3-f",
+  "g3-g",
+  "g3-h"
+ ],
+ "steps": 1000,
+ "win": 100,
+ "denominator": "golden",
+ "full": {
+  "steps": "1-1000",
+  "tpu_worst_abs": 0.0018214799759594012,
+  "tpu_worst_stat": "router.bias_std.3",
+  "N_formal": 0.0015960225509962249,
+  "r_formal": 1.1412620547387926,
+  "layers": {
+   "router.bias_std.1": {
+    "tpu_vs_golden": 0.00027369610910997754,
+    "N_layer": 0.001251741630894223,
+    "r_layer": 0.21865223809361817,
+    "tpu_vs_each_median": -0.0002980696152803784,
+    "tpu_vs_each_max_abs": 0.0009948202368047958,
+    "gpu_loo_max_abs": 0.0007484504446757915
+   },
+   "router.bias_std.2": {
+    "tpu_vs_golden": -0.0004111721795817803,
+    "N_layer": 0.0013712264789284038,
+    "r_layer": 0.2998572343083005,
+    "tpu_vs_each_median": -0.00032046570941724834,
+    "tpu_vs_each_max_abs": 0.0007434646396752444,
+    "gpu_loo_max_abs": 0.0007834760429198791
+   },
+   "router.bias_std.3": {
+    "tpu_vs_golden": -0.0018214799759594012,
+    "N_layer": 0.0010127405329115704,
+    "r_layer": 1.7985652956169846,
+    "tpu_vs_each_median": -0.0014366763810048206,
+    "tpu_vs_each_max_abs": 0.0018214799759594012,
+    "gpu_loo_max_abs": 0.0006344432944428915
+   },
+   "router.bias_std.4": {
+    "tpu_vs_golden": -0.00041800343545632363,
+    "N_layer": 0.0007317094150925933,
+    "r_layer": 0.5712697237925084,
+    "tpu_vs_each_median": -0.00042376531771653656,
+    "tpu_vs_each_max_abs": 0.0008370092461381829,
+    "gpu_loo_max_abs": 0.00043926808855072983
+   },
+   "router.bias_std.5": {
+    "tpu_vs_golden": 0.0018095705822499337,
+    "N_layer": 0.0015960225509962249,
+    "r_layer": 1.1338001340397188,
+    "tpu_vs_each_median": 0.001473782839720333,
+    "tpu_vs_each_max_abs": 0.002449467567900497,
+    "gpu_loo_max_abs": 0.0011310898208773653
+   },
+   "router.bias_std.6": {
+    "tpu_vs_golden": 0.0003257599799007479,
+    "N_layer": 0.0013961650898451576,
+    "r_layer": 0.23332482832447593,
+    "tpu_vs_each_median": -0.0001404556764895722,
+    "tpu_vs_each_max_abs": 0.0010423141218898532,
+    "gpu_loo_max_abs": 0.0010244131108642052
+   },
+   "router.bias_std.mtp0": {
+    "tpu_vs_golden": -0.0010590218891291595,
+    "N_layer": 0.0006964165116205868,
+    "r_layer": 1.5206731481204785,
+    "tpu_vs_each_median": -0.0007732360401609843,
+    "tpu_vs_each_max_abs": 0.0010590218891291595,
+    "gpu_loo_max_abs": 0.0004141444201466222
+   }
+  }
+ },
+ "windows": [
+  {
+   "steps": "1-100",
+   "tpu_worst_abs": 0.004677447967789581,
+   "tpu_worst_stat": "router.bias_std.2",
+   "N_formal": 0.005395538718541306,
+   "r_formal": 0.8669102775068468,
+   "layers": {
+    "router.bias_std.1": {
+     "tpu_vs_golden": 0.000269635370843719,
+     "N_layer": 0.0009092883623922465,
+     "r_layer": 0.296534501040281,
+     "tpu_vs_each_median": 0.0005584497203752054,
+     "tpu_vs_each_max_abs": 0.0009622265745519313,
+     "gpu_loo_max_abs": 0.0005224302932119182
+    },
+    "router.bias_std.2": {
+     "tpu_vs_golden": -0.004677447967789581,
+     "N_layer": 0.005395538718541306,
+     "r_layer": 0.8669102775068468,
+     "tpu_vs_each_median": -0.004268250893631582,
+     "tpu_vs_each_max_abs": 0.005423373895612543,
+     "gpu_loo_max_abs": 0.003763670123527926
+    },
+    "router.bias_std.3": {
+     "tpu_vs_golden": -0.00243861086162139,
+     "N_layer": 0.0027237205385842217,
+     "r_layer": 0.8953234471290398,
+     "tpu_vs_each_median": -0.0011670028573549716,
+     "tpu_vs_each_max_abs": 0.00243861086162139,
+     "gpu_loo_max_abs": 0.0015802542722951516
+    },
+    "router.bias_std.4": {
+     "tpu_vs_golden": -0.001267692025699682,
+     "N_layer": 0.0018715021294909199,
+     "r_layer": 0.677366061049856,
+     "tpu_vs_each_median": -0.0003965154920770202,
+     "tpu_vs_each_max_abs": 0.001267692025699682,
+     "gpu_loo_max_abs": 0.0010662666547037538
+    },
+    "router.bias_std.5": {
+     "tpu_vs_golden": 0.004133513807592521,
+     "N_layer": 0.001459153749531426,
+     "r_layer": 2.83281580773781,
+     "tpu_vs_each_median": 0.004057133878696483,
+     "tpu_vs_each_max_abs": 0.004408295204292026,
+     "gpu_loo_max_abs": 0.0009541170149934006
+    },
+    "router.bias_std.6": {
+     "tpu_vs_golden": 0.0005204222599759484,
+     "N_layer": 0.0011136525570314935,
+     "r_layer": 0.4673111525583568,
+     "tpu_vs_each_median": 0.00010468135874102568,
+     "tpu_vs_each_max_abs": 0.0005958236616770477,
+     "gpu_loo_max_abs": 0.0006646210860149686
+    },
+    "router.bias_std.mtp0": {
+     "tpu_vs_golden": -0.0030249288199196427,
+     "N_layer": 0.004467282756771425,
+     "r_layer": 0.6771294732428814,
+     "tpu_vs_each_median": -0.0011995080663423524,
+     "tpu_vs_each_max_abs": 0.0035653059655492356,
+     "gpu_loo_max_abs": 0.002541665236957247
+    }
+   }
+  },
+  {
+   "steps": "101-200",
+   "tpu_worst_abs": 0.0027752052477538025,
+   "tpu_worst_stat": "router.bias_std.4",
+   "N_formal": 0.0031500932410391757,
+   "r_formal": 0.8809914613315692,
+   "layers": {
+    "router.bias_std.1": {
+     "tpu_vs_golden": 0.0024728389621962318,
+     "N_layer": 0.002620741452525043,
+     "r_layer": 0.9435646388596214,
+     "tpu_vs_each_median": 0.001719275654613462,
+     "tpu_vs_each_max_abs": 0.003436400623968558,
+     "gpu_loo_max_abs": 0.0017316210160893272
+    },
+    "router.bias_std.2": {
+     "tpu_vs_golden": -0.0006534904924508963,
+     "N_layer": 0.0008736670816257846,
+     "r_layer": 0.7479857101114907,
+     "tpu_vs_each_median": -0.0005185524843519049,
+     "tpu_vs_each_max_abs": 0.0012339758844401242,
+     "gpu_loo_max_abs": 0.0007137479853751991
+    },
+    "router.bias_std.3": {
+     "tpu_vs_golden": -0.0015387088917981013,
+     "N_layer": 0.001730215827225457,
+     "r_layer": 0.8893161578954848,
+     "tpu_vs_each_median": -0.0009784523530333477,
+     "tpu_vs_each_max_abs": 0.0015387088917981013,
+     "gpu_loo_max_abs": 0.0012839782431434954
+    },
+    "router.bias_std.4": {
+     "tpu_vs_golden": -0.0027752052477538025,
+     "N_layer": 0.0031500932410391757,
+     "r_layer": 0.8809914613315692,
+     "tpu_vs_each_median": -0.001623416471521861,
+     "tpu_vs_each_max_abs": 0.0027752052477538025,
+     "gpu_loo_max_abs": 0.0021396413261848797
+    },
+    "router.bias_std.5": {
+     "tpu_vs_golden": 0.001833952430363098,
+     "N_layer": 0.002312200273938354,
+     "r_layer": 0.7931633133315653,
+     "tpu_vs_each_median": 0.0016283650969202606,
+     "tpu_vs_each_max_abs": 0.002987327088779876,
+     "gpu_loo_max_abs": 0.0015077924354881197
+    },
+    "router.bias_std.6": {
+     "tpu_vs_golden": -0.0003743632041652371,
+     "N_layer": 0.0014215261752637523,
+     "r_layer": 0.2633530150057048,
+     "tpu_vs_each_median": -0.000744391872311075,
+     "tpu_vs_each_max_abs": 0.0011309556634918156,
+     "gpu_loo_max_abs": 0.0010290139929121833
+    },
+    "router.bias_std.mtp0": {
+     "tpu_vs_golden": -0.001849827568064302,
+     "N_layer": 0.0030181386569951125,
+     "r_layer": 0.6129034409260733,
+     "tpu_vs_each_median": 0.0002749428696942847,
+     "tpu_vs_each_max_abs": 0.001849827568064302,
+     "gpu_loo_max_abs": 0.0020286001969193456
+    }
+   }
+  },
+  {
+   "steps": "201-300",
+   "tpu_worst_abs": 0.004222030232779253,
+   "tpu_worst_stat": "router.bias_std.1",
+   "N_formal": 0.003573797057231424,
+   "r_formal": 1.1813849989708165,
+   "layers": {
+    "router.bias_std.1": {
+     "tpu_vs_golden": 0.004222030232779253,
+     "N_layer": 0.003573797057231424,
+     "r_layer": 1.1813849989708165,
+     "tpu_vs_each_median": 0.001849611611662588,
+     "tpu_vs_each_max_abs": 0.004222030232779253,
+     "gpu_loo_max_abs": 0.0025264635386273273
+    },
+    "router.bias_std.2": {
+     "tpu_vs_golden": -0.00106837102611316,
+     "N_layer": 0.002652356688807907,
+     "r_layer": 0.40280066049236235,
+     "tpu_vs_each_median": -0.0009678275058897298,
+     "tpu_vs_each_max_abs": 0.002699812258348929,
+     "gpu_loo_max_abs": 0.0019065599204634222
+    },
+    "router.bias_std.3": {
+     "tpu_vs_golden": -0.0009044656819318267,
+     "N_layer": 0.0014756564938220704,
+     "r_layer": 0.6129242718196475,
+     "tpu_vs_each_median": -0.0008291163774064946,
+     "tpu_vs_each_max_abs": 0.0012132072052386373,
+     "gpu_loo_max_abs": 0.0010702095403765358
+    },
+    "router.bias_std.4": {
+     "tpu_vs_golden": 0.0032416457644771066,
+     "N_layer": 0.002821895171699659,
+     "r_layer": 1.1487477624920515,
+     "tpu_vs_each_median": 0.0013037404278490048,
+     "tpu_vs_each_max_abs": 0.0032416457644771066,
+     "gpu_loo_max_abs": 0.0020768077787323555
+    },
+    "router.bias_std.5": {
+     "tpu_vs_golden": 0.0003876873051764821,
+     "N_layer": 0.002488468984822956,
+     "r_layer": 0.1557935049787508,
+     "tpu_vs_each_median": -0.0003977026826817977,
+     "tpu_vs_each_max_abs": 0.0021146070093468273,
+     "gpu_loo_max_abs": 0.0018240590973627913
+    },
+    "router.bias_std.6": {
+     "tpu_vs_golden": 0.0003620445294808335,
+     "N_layer": 0.0029698741382523514,
+     "r_layer": 0.1219056810582154,
+     "tpu_vs_each_median": 0.00031487075416879303,
+     "tpu_vs_each_max_abs": 0.002387805549257933,
+     "gpu_loo_max_abs": 0.0020588623352812366
+    },
+    "router.bias_std.mtp0": {
+     "tpu_vs_golden": -0.001118072281150124,
+     "N_layer": 0.0030187391073064375,
+     "r_layer": 0.37037724738914524,
+     "tpu_vs_each_median": -0.0010586195008715612,
+     "tpu_vs_each_max_abs": 0.0029268946342393357,
+     "gpu_loo_max_abs": 0.0020005258086856306
+    }
+   }
+  },
+  {
+   "steps": "301-400",
+   "tpu_worst_abs": 0.0021586395942209723,
+   "tpu_worst_stat": "router.bias_std.4",
+   "N_formal": 0.002300489848786778,
+   "r_formal": 0.9383391086726098,
+   "layers": {
+    "router.bias_std.1": {
+     "tpu_vs_golden": 0.0005117434200357365,
+     "N_layer": 0.002300489848786778,
+     "r_layer": 0.22244976229980648,
+     "tpu_vs_each_median": 0.0006170813282016445,
+     "tpu_vs_each_max_abs": 0.001769927943194441,
+     "gpu_loo_max_abs": 0.0014070957165473943
+    },
+    "router.bias_std.2": {
+     "tpu_vs_golden": -0.0010896141689024262,
+     "N_layer": 0.001083332507475808,
+     "r_layer": 1.0057984611218347,
+     "tpu_vs_each_median": -0.0006473716537874013,
+     "tpu_vs_each_max_abs": 0.00120768539795279,
+     "gpu_loo_max_abs": 0.0006544735157925575
+    },
+    "router.bias_std.3": {
+     "tpu_vs_golden": -0.00161241585803186,
+     "N_layer": 0.0019699135033738892,
+     "r_layer": 0.8185211458626281,
+     "tpu_vs_each_median": -0.0012725302362220177,
+     "tpu_vs_each_max_abs": 0.0023380076904140706,
+     "gpu_loo_max_abs": 0.0012189382981015007
+    },
+    "router.bias_std.4": {
+     "tpu_vs_golden": 0.0021586395942209723,
+     "N_layer": 0.0017731140192470578,
+     "r_layer": 1.217428530139097,
+     "tpu_vs_each_median": 0.0013540685127781148,
+     "tpu_vs_each_max_abs": 0.0022987375503285747,
+     "gpu_loo_max_abs": 0.0010287801134792121
+    },
+    "router.bias_std.5": {
+     "tpu_vs_golden": 0.00010800775939799456,
+     "N_layer": 0.0021726888291566807,
+     "r_layer": 0.04971156382293238,
+     "tpu_vs_each_median": 0.00040950124904196906,
+     "tpu_vs_each_max_abs": 0.0015730375101168659,
+     "gpu_loo_max_abs": 0.0012998345814722154
+    },
+    "router.bias_std.6": {
+     "tpu_vs_golden": -0.0003061588898384068,
+     "N_layer": 0.0012318869394491727,
+     "r_layer": 0.24852839983456843,
+     "tpu_vs_each_median": -0.00014102650089668276,
+     "tpu_vs_each_max_abs": 0.0006460068594390607,
+     "gpu_loo_max_abs": 0.0007731788785524433
+    },
+    "router.bias_std.mtp0": {
+     "tpu_vs_golden": 0.0015091632947332166,
+     "N_layer": 0.001919118622792908,
+     "r_layer": 0.7863835391982803,
+     "tpu_vs_each_median": 0.0015965385808530208,
+     "tpu_vs_each_max_abs": 0.002668221215731836,
+     "gpu_loo_max_abs": 0.0013344341437394368
+    }
+   }
+  },
+  {
+   "steps": "401-500",
+   "tpu_worst_abs": 0.002449210654211442,
+   "tpu_worst_stat": "router.bias_std.1",
+   "N_formal": 0.0026636816385785258,
+   "r_formal": 0.9194832515789926,
+   "layers": {
+    "router.bias_std.1": {
+     "tpu_vs_golden": 0.002449210654211442,
+     "N_layer": 0.0026630935918937073,
+     "r_layer": 0.9196862857793238,
+     "tpu_vs_each_median": 0.0016049983633076765,
+     "tpu_vs_each_max_abs": 0.002449210654211442,
+     "gpu_loo_max_abs": 0.001850368008405592
+    },
+    "router.bias_std.2": {
+     "tpu_vs_golden": 0.00026716023528607655,
+     "N_layer": 0.0011796121753864786,
+     "r_layer": 0.22648141555384194,
+     "tpu_vs_each_median": 0.00011137795507434876,
+     "tpu_vs_each_max_abs": 0.0007766437684840567,
+     "gpu_loo_max_abs": 0.0007647164558596294
+    },
+    "router.bias_std.3": {
+     "tpu_vs_golden": -0.0007811234580627505,
+     "N_layer": 0.0011557615405804144,
+     "r_layer": 0.6758517485107494,
+     "tpu_vs_each_median": -0.0008025764924604165,
+     "tpu_vs_each_max_abs": 0.0012598947663133994,
+     "gpu_loo_max_abs": 0.0007078311815861851
+    },
+    "router.bias_std.4": {
+     "tpu_vs_golden": -0.0007579975322980685,
+     "N_layer": 0.0015148513135529668,
+     "r_layer": 0.5003775126419793,
+     "tpu_vs_each_median": -0.00046089430536299996,
+     "tpu_vs_each_max_abs": 0.0015230800934690858,
+     "gpu_loo_max_abs": 0.0011485713969290059
+    },
+    "router.bias_std.5": {
+     "tpu_vs_golden": 0.0011265440289144153,
+     "N_layer": 0.0014260611522062478,
+     "r_layer": 0.7899689485065546,
+     "tpu_vs_each_median": 0.0015105010735453651,
+     "tpu_vs_each_max_abs": 0.0025197801982457715,
+     "gpu_loo_max_abs": 0.0009586153801761006
+    },
+    "router.bias_std.6": {
+     "tpu_vs_golden": 0.0002580791170735072,
+     "N_layer": 0.0006933989562065811,
+     "r_layer": 0.37219426819647383,
+     "tpu_vs_each_median": 0.0008502427098568495,
+     "tpu_vs_each_max_abs": 0.000947309770972783,
+     "gpu_loo_max_abs": 0.0005245815002345203
+    },
+    "router.bias_std.mtp0": {
+     "tpu_vs_golden": 0.0008024017423286614,
+     "N_layer": 0.0026636816385785258,
+     "r_layer": 0.30123785466977326,
+     "tpu_vs_each_median": -0.0002894172541974245,
+     "tpu_vs_each_max_abs": 0.0015341428168570987,
+     "gpu_loo_max_abs": 0.0018723637222806645
+    }
+   }
+  },
+  {
+   "steps": "501-600",
+   "tpu_worst_abs": 0.002641897708981296,
+   "tpu_worst_stat": "router.bias_std.3",
+   "N_formal": 0.0029710429219529395,
+   "r_formal": 0.8892155981525544,
+   "layers": {
+    "router.bias_std.1": {
+     "tpu_vs_golden": -0.0011180409902992767,
+     "N_layer": 0.0016776877531804663,
+     "r_layer": 0.6664178052082441,
+     "tpu_vs_each_median": -0.001661320066693834,
+     "tpu_vs_each_max_abs": 0.0020130394244791436,
+     "gpu_loo_max_abs": 0.001200983357642588
+    },
+    "router.bias_std.2": {
+     "tpu_vs_golden": 3.8408017213409716e-05,
+     "N_layer": 0.00135091765090517,
+     "r_layer": 0.02843105735399547,
+     "tpu_vs_each_median": 0.0003575087100657176,
+     "tpu_vs_each_max_abs": 0.0007398927901963037,
+     "gpu_loo_max_abs": 0.00102116180267048
+    },
+    "router.bias_std.3": {
+     "tpu_vs_golden": -0.002641897708981296,
+     "N_layer": 0.00257489494848355,
+     "r_layer": 1.0260215511072428,
+     "tpu_vs_each_median": -0.002142233549668803,
+     "tpu_vs_each_max_abs": 0.0030956986791818636,
+     "gpu_loo_max_abs": 0.0018362347840695328
+    },
+    "router.bias_std.4": {
+     "tpu_vs_golden": -0.00155621327089213,
+     "N_layer": 0.001882343760956379,
+     "r_layer": 0.826742332177121,
+     "tpu_vs_each_median": -0.0015854151602276102,
+     "tpu_vs_each_max_abs": 0.002871612624253298,
+     "gpu_loo_max_abs": 0.001314388201195338
+    },
+    "router.bias_std.5": {
+     "tpu_vs_golden": 0.0020572068913350273,
+     "N_layer": 0.0029710429219529395,
+     "r_layer": 0.692419108500383,
+     "tpu_vs_each_median": 0.0018624444649292067,
+     "tpu_vs_each_max_abs": 0.0031061853122555105,
+     "gpu_loo_max_abs": 0.0019910132839439524
+    },
+    "router.bias_std.6": {
+     "tpu_vs_golden": 0.0012889242797006028,
+     "N_layer": 0.0026104636533885945,
+     "r_layer": 0.49375300745040984,
+     "tpu_vs_each_median": -5.3774718277407364e-05,
+     "tpu_vs_each_max_abs": 0.001435660237521971,
+     "gpu_loo_max_abs": 0.0015667895218359983
+    },
+    "router.bias_std.mtp0": {
+     "tpu_vs_golden": 0.0011802711510385516,
+     "N_layer": 0.0015994967157146511,
+     "r_layer": 0.7379015783169078,
+     "tpu_vs_each_median": 0.0005774721697624801,
+     "tpu_vs_each_max_abs": 0.001405523229398874,
+     "gpu_loo_max_abs": 0.0010018890690390583
+    }
+   }
+  },
+  {
+   "steps": "601-700",
+   "tpu_worst_abs": 0.0039013255232401693,
+   "tpu_worst_stat": "router.bias_std.mtp0",
+   "N_formal": 0.0038120120419606446,
+   "r_formal": 1.0234294856092814,
+   "layers": {
+    "router.bias_std.1": {
+     "tpu_vs_golden": -0.0017947961054138953,
+     "N_layer": 0.0027035082671726966,
+     "r_layer": 0.6638766846793763,
+     "tpu_vs_each_median": -0.0024698283336934334,
+     "tpu_vs_each_max_abs": 0.003898738722241255,
+     "gpu_loo_max_abs": 0.0015736976458094055
+    },
+    "router.bias_std.2": {
+     "tpu_vs_golden": -2.2378784085910564e-05,
+     "N_layer": 0.0038120120419606446,
+     "r_layer": 0.005870596377864644,
+     "tpu_vs_each_median": -0.0001090827326086558,
+     "tpu_vs_each_max_abs": 0.0023406197360534894,
+     "gpu_loo_max_abs": 0.002279579619696585
+    },
+    "router.bias_std.3": {
+     "tpu_vs_golden": -0.00036457255863597745,
+     "N_layer": 0.0026426294767901955,
+     "r_layer": 0.13795825780267784,
+     "tpu_vs_each_median": -0.0003043899185710768,
+     "tpu_vs_each_max_abs": 0.001512570592444159,
+     "gpu_loo_max_abs": 0.0018561058983670225
+    },
+    "router.bias_std.4": {
+     "tpu_vs_golden": -0.0001110300568691101,
+     "N_layer": 0.0021509752805529765,
+     "r_layer": 0.051618471803435276,
+     "tpu_vs_each_median": -0.0003735317606810949,
+     "tpu_vs_each_max_abs": 0.0013829820651035058,
+     "gpu_loo_max_abs": 0.0012790393175987295
+    },
+    "router.bias_std.5": {
+     "tpu_vs_golden": 0.0021413724700412133,
+     "N_layer": 0.0018734109761873808,
+     "r_layer": 1.1430340150985807,
+     "tpu_vs_each_median": 0.0025309305575858666,
+     "tpu_vs_each_max_abs": 0.003800376360990999,
+     "gpu_loo_max_abs": 0.0012659620584264371
+    },
+    "router.bias_std.6": {
+     "tpu_vs_golden": 0.0007624418468045669,
+     "N_layer": 0.001721665050652296,
+     "r_layer": 0.44285143995674225,
+     "tpu_vs_each_median": -0.000187222553598908,
+     "tpu_vs_each_max_abs": 0.0009665871336198374,
+     "gpu_loo_max_abs": 0.0010957165200917304
+    },
+    "router.bias_std.mtp0": {
+     "tpu_vs_golden": -0.0039013255232401693,
+     "N_layer": 0.002496153105996776,
+     "r_layer": 1.5629351876964586,
+     "tpu_vs_each_median": -0.002926401761055104,
+     "tpu_vs_each_max_abs": 0.003913504064102632,
+     "gpu_loo_max_abs": 0.0016169271384209353
+    }
+   }
+  },
+  {
+   "steps": "701-800",
+   "tpu_worst_abs": 0.0023265024030834636,
+   "tpu_worst_stat": "router.bias_std.3",
+   "N_formal": 0.0037157189311333035,
+   "r_formal": 0.6261244314229857,
+   "layers": {
+    "router.bias_std.1": {
+     "tpu_vs_golden": -0.0022625416179628804,
+     "N_layer": 0.0021149559337733386,
+     "r_layer": 1.069781919250786,
+     "tpu_vs_each_median": -0.0027045059504342914,
+     "tpu_vs_each_max_abs": 0.003735496513753779,
+     "gpu_loo_max_abs": 0.0013105425428295253
+    },
+    "router.bias_std.2": {
+     "tpu_vs_golden": -0.0013902865915241427,
+     "N_layer": 0.003179117690986488,
+     "r_layer": 0.43731837782096494,
+     "tpu_vs_each_median": -0.0005936826895557041,
+     "tpu_vs_each_max_abs": 0.0017760980657115031,
+     "gpu_loo_max_abs": 0.0024438692982274575
+    },
+    "router.bias_std.3": {
+     "tpu_vs_golden": -0.0023265024030834636,
+     "N_layer": 0.0011109891260800003,
+     "r_layer": 2.0940820647743554,
+     "tpu_vs_each_median": -0.002091689014041845,
+     "tpu_vs_each_max_abs": 0.0028780018869524367,
+     "gpu_loo_max_abs": 0.0008177107233298686
+    },
+    "router.bias_std.4": {
+     "tpu_vs_golden": -0.0013799267346087185,
+     "N_layer": 0.002416238391192432,
+     "r_layer": 0.5711053758763076,
+     "tpu_vs_each_median": -0.0003751723308183175,
+     "tpu_vs_each_max_abs": 0.0013799267346087185,
+     "gpu_loo_max_abs": 0.0014964404535541573
+    },
+    "router.bias_std.5": {
+     "tpu_vs_golden": 0.002034834715639782,
+     "N_layer": 0.0016912466762336788,
+     "r_layer": 1.20315666793874,
+     "tpu_vs_each_median": 0.001316778313820711,
+     "tpu_vs_each_max_abs": 0.002034834715639782,
+     "gpu_loo_max_abs": 0.001118718156317829
+    },
+    "router.bias_std.6": {
+     "tpu_vs_golden": -0.0006076514251460378,
+     "N_layer": 0.0037157189311333035,
+     "r_layer": 0.1635353578696822,
+     "tpu_vs_each_median": -0.000621702118041155,
+     "tpu_vs_each_max_abs": 0.00355746545870643,
+     "gpu_loo_max_abs": 0.003057030551364438
+    },
+    "router.bias_std.mtp0": {
+     "tpu_vs_golden": -0.002253213135364917,
+     "N_layer": 0.002688952628016384,
+     "r_layer": 0.8379519638570547,
+     "tpu_vs_each_median": -0.0017481524534104123,
+     "tpu_vs_each_max_abs": 0.0032772375156922013,
+     "gpu_loo_max_abs": 0.0016775828671762424
+    }
+   }
+  },
+  {
+   "steps": "801-900",
+   "tpu_worst_abs": 0.0037155226329962277,
+   "tpu_worst_stat": "router.bias_std.3",
+   "N_formal": 0.0031129563993207705,
+   "r_formal": 1.1935671934907066,
+   "layers": {
+    "router.bias_std.1": {
+     "tpu_vs_golden": -0.00016915306354074852,
+     "N_layer": 0.002816127863348834,
+     "r_layer": 0.060065832145703074,
+     "tpu_vs_each_median": -0.0017758215192908457,
+     "tpu_vs_each_max_abs": 0.0029903942764918866,
+     "gpu_loo_max_abs": 0.0018193912794278258
+    },
+    "router.bias_std.2": {
+     "tpu_vs_golden": 0.00027953438832666803,
+     "N_layer": 0.002849379460781482,
+     "r_layer": 0.09810360191548578,
+     "tpu_vs_each_median": 0.0012684562564233858,
+     "tpu_vs_each_max_abs": 0.002634769030543008,
+     "gpu_loo_max_abs": 0.0016635980437930023
+    },
+    "router.bias_std.3": {
+     "tpu_vs_golden": -0.0037155226329962277,
+     "N_layer": 0.002630343206161692,
+     "r_layer": 1.4125619137048184,
+     "tpu_vs_each_median": -0.0022062987265954862,
+     "tpu_vs_each_max_abs": 0.0037155226329962277,
+     "gpu_loo_max_abs": 0.0014979759240868872
+    },
+    "router.bias_std.4": {
+     "tpu_vs_golden": -0.0005592418719168754,
+     "N_layer": 0.0031129563993207705,
+     "r_layer": 0.1796497606066371,
+     "tpu_vs_each_median": -0.002289545222711367,
+     "tpu_vs_each_max_abs": 0.003511303672563197,
+     "gpu_loo_max_abs": 0.0019058287121059986
+    },
+    "router.bias_std.5": {
+     "tpu_vs_golden": 0.0030044556641441885,
+     "N_layer": 0.00264495381489094,
+     "r_layer": 1.135919896683743,
+     "tpu_vs_each_median": 0.0009808533661360445,
+     "tpu_vs_each_max_abs": 0.0030044556641441885,
+     "gpu_loo_max_abs": 0.0017651858493889139
+    },
+    "router.bias_std.6": {
+     "tpu_vs_golden": 0.000290064296571063,
+     "N_layer": 0.0028911578705064027,
+     "r_layer": 0.10032807254494773,
+     "tpu_vs_each_median": -0.00023632179725179854,
+     "tpu_vs_each_max_abs": 0.0020297599008585365,
+     "gpu_loo_max_abs": 0.0019198866270059302
+    },
+    "router.bias_std.mtp0": {
+     "tpu_vs_golden": -0.00039984357506371945,
+     "N_layer": 0.0030802538814119636,
+     "r_layer": 0.12980864255268282,
+     "tpu_vs_each_median": -0.0007482854157814294,
+     "tpu_vs_each_max_abs": 0.0028705341822214663,
+     "gpu_loo_max_abs": 0.0022515183118502666
+    }
+   }
+  },
+  {
+   "steps": "901-1000",
+   "tpu_worst_abs": 0.00416210183634008,
+   "tpu_worst_stat": "router.bias_std.2",
+   "N_formal": 0.006166120639015877,
+   "r_formal": 0.6749952003865365,
+   "layers": {
+    "router.bias_std.1": {
+     "tpu_vs_golden": -0.0018440063791324713,
+     "N_layer": 0.002627510543079171,
+     "r_layer": 0.7018074138615963,
+     "tpu_vs_each_median": -0.0018001547673954998,
+     "tpu_vs_each_max_abs": 0.0032919169267895663,
+     "gpu_loo_max_abs": 0.0016577784939777083
+    },
+    "router.bias_std.2": {
+     "tpu_vs_golden": 0.00416210183634008,
+     "N_layer": 0.005209560164096422,
+     "r_layer": 0.7989353621491347,
+     "tpu_vs_each_median": 0.003909159967308554,
+     "tpu_vs_each_max_abs": 0.007029741829562956,
+     "gpu_loo_max_abs": 0.0032741517935388916
+    },
+    "router.bias_std.3": {
+     "tpu_vs_golden": -0.0018971510133077387,
+     "N_layer": 0.002876219013128356,
+     "r_layer": 0.6595989403617349,
+     "tpu_vs_each_median": -0.002244543067398192,
+     "tpu_vs_each_max_abs": 0.0034373957808135824,
+     "gpu_loo_max_abs": 0.00196344881944703
+    },
+    "router.bias_std.4": {
+     "tpu_vs_golden": -0.0011815098591253623,
+     "N_layer": 0.0029716900480159262,
+     "r_layer": 0.39758852371370534,
+     "tpu_vs_each_median": -0.0007919271066223897,
+     "tpu_vs_each_max_abs": 0.002185314393637346,
+     "gpu_loo_max_abs": 0.0018487404316381763
+    },
+    "router.bias_std.5": {
+     "tpu_vs_golden": 0.0012913701821480438,
+     "N_layer": 0.006166120639015877,
+     "r_layer": 0.20942992486669035,
+     "tpu_vs_each_median": 0.0004048466111731729,
+     "tpu_vs_each_max_abs": 0.004009583545957235,
+     "gpu_loo_max_abs": 0.004268373270113469
+    },
+    "router.bias_std.6": {
+     "tpu_vs_golden": 0.0010657436113513902,
+     "N_layer": 0.003816510938761635,
+     "r_layer": 0.2792455277744332,
+     "tpu_vs_each_median": -0.0006944413913642156,
+     "tpu_vs_each_max_abs": 0.002765411760250633,
+     "gpu_loo_max_abs": 0.0024093660549349555
+    },
+    "router.bias_std.mtp0": {
+     "tpu_vs_golden": -0.0015545032458970523,
+     "N_layer": 0.0032363741562302702,
+     "r_layer": 0.48032247535548805,
+     "tpu_vs_each_median": -0.0012955077414833131,
+     "tpu_vs_each_max_abs": 0.002984073428935336,
+     "gpu_loo_max_abs": 0.0019471774129102817
+    }
+   }
+  }
+ ],
+ "layers_over_own_N_full": [
+  "router.bias_std.3",
+  "router.bias_std.5",
+  "router.bias_std.mtp0"
+ ]
+}

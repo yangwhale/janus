@@ -1,0 +1,32 @@
+# 05 · GPU 扩展（hy4-mini）· 运行清单。数据位置写成占位，不写桶名。
+# 角色：参照是单机 GPU golden g3-a；被测是只改执行方式（机器数、DP / EP / PP）的 GPU 运行。
+schema: 1
+alignment: 05-gpu-scale
+golden:   # 参照
+  - {name: g3-a, stage: T1, steps: 1000, role: "单机 DP 8 + EP 4 的 GPU golden（01-mini）；这里只用前 300 步", location: "gs://<POC 桶>/janus/hunyuan4/gpu/g3-a/"}
+reference:   # 尺子
+  - {name: g3-b..g3-h, stage: T1, steps: 1000, role: "同设置重跑：与 g3-a 一起 8 份，两两 28 对是尺子（前 300 步窗口）", location: "gs://<POC 桶>/janus/hunyuan4/gpu/g3-*/"}
+test:     # 被测：对 g3-a 比
+  - {name: mn-a, stage: T1, steps: 300, role: "2 台 DP 16 + EP 4", golden: g3-a, results: [mn-a-vs-single-node, data-same-batches], location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/mn-a/"}
+  - {name: mn-b..mn-h, stage: T1, steps: 300, role: "mn-a 的同设置重跑：与 mn-a 一起 8 份，两两 28 对是多机自己的尺子（catalogs/multi-node-self.yaml）", golden: g3-a, results: [mn-b-vs-single-node, mn-c-vs-single-node, mn-d-vs-single-node, mn-e-vs-single-node, mn-f-vs-single-node, mn-g-vs-single-node, mn-h-vs-single-node, g3-a-vs-multi-node, yardstick-multi-vs-single, groups-single-vs-multi, mn-self-pairs], location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/mn-*/"}
+  - {name: mn-ep16, stage: T1, steps: 300, role: "2 台 DP 16 + EP 16", golden: g3-a, results: [mn-ep16-vs-single-node, data-same-batches], location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/mn-ep16/"}
+  - {name: mn-pp2, stage: T1, steps: 300, role: "2 台 PP 2（层 0–4 / 5–6 + MTP）+ DP 8 + EP 4", golden: g3-a, results: [mn-pp2-vs-single-node, data-same-batches], location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/mn-pp2/"}
+  - {name: mn4-pp2, stage: T1, steps: 300, role: "4 台 PP 2（层 0–4 / 5–6 + MTP）+ DP 16 + EP 16", golden: g3-a, results: [mn4-pp2-vs-single-node, mn4-pp2-vs-multi-node, data-same-batches], location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/mn4-pp2/"}
+  - {name: mn-lr, stage: T1, steps: 300, role: "正对照：2 台 DP 16 + EP 4，学习率 1.1e-5（大 10%）", golden: g3-a, results: [mn-lr-vs-single-node], location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/mn-lr/"}
+  - {name: sn-a, stage: T1, steps: 300, role: "新代码在单机重跑 g3-a 的设置：代码改动不改单机数值", golden: g3-a, results: [sn-a-vs-single-node], location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/sn-a/"}
+  - {name: sn-ep8, stage: T1, steps: 300, role: "单机 DP 8 + EP 8", golden: g3-a, results: [sn-ep8-vs-single-node], location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/sn-ep8/"}
+real_width:   # 真实宽度截层（试跑，不判档）
+  - {name: p-a3mtp, steps: 10, role: "参照：单机 DP 8 + EP 8，hy4-preview 第 0–2 层 + MTP（hf/hy4-4l），设置同 rw-a（显存与步时估算的作业里跑的）"}
+  - {name: rws-a..rws-f, steps: 30, role: "单机 DP 8 + EP 8 同设置 6 份：这个尺寸的尺子（两两 15 对，catalogs/rw-vs-single-node.yaml）；rws-a 是参照", location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/rws-*/"}
+  - {name: rw-a, steps: 50, role: "2 台 DP 16 + EP 16，第 0–2 层 + MTP", golden: rws-a, results: [rw-a-vs-rws, rw-a-vs-single-node], location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/rw-a/"}
+  - {name: rw-b..rw-e, steps: 30, role: "rw-a 的同设置重跑（30 步）", golden: rws-a, location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/rw-*/"}
+  - {name: rw1k-a, steps: 1000, role: "2 台 DP 16 + EP 16 跑 1000 步，带 --save-batches：以后 TPU 回放的多机 golden；前 30 步另对 rws 尺子判", golden: rws-a, results: [rw1k-a-summary, rw1k-a-vs-rws], location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/rw1k-a/"}
+  - {name: rw-pp2, steps: 50, role: "2 台 PP 2（层 0 / 层 1–2 + MTP）+ DP 8 + EP 8", results: [rw-pp2-vs-rw-a], location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/rw-pp2/"}
+  - {name: p-l4mtp, steps: 10, role: "参照：单机 DP 8 + EP 8，第 0–3 层 + MTP，设置同 rw4-pp2（显存与步时估算的作业里跑的）"}
+  - {name: rw4-pp2, steps: 50, role: "4 台 PP 2（层 0 / 层 1–3 + MTP）+ DP 16 + EP 16，第 0–3 层 + MTP", results: [rw4-pp2-summary, rw4-pp2-vs-single-node], location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/rw4-pp2/"}
+checkpoint:   # 存档续跑（确定性模式）
+  - {name: ck-a / ck-b, steps: 20, role: "单机 DP 8 + EP 4，确定性模式跑 20 步，两次", results: [ckpt-rerun-dp8]}
+  - {name: ck-c / ck-d, steps: "10 + 10", role: "同上，跑 10 步存档；从存档续跑第 11–20 步", results: [ckpt-resume-dp8]}
+  - {name: ckp-a / ckp-b, steps: 20, role: "2 台 PP 2 + DP 8 + EP 8，确定性模式跑 20 步，两次，最后写全部状态的 sha256", results: [ckpt-rerun-pp2]}
+  - {name: ckp-c / ckp-d, steps: "10 + 10", role: "同上，跑 10 步存档；从存档续跑第 11–20 步", results: [ckpt-resume-pp2]}
+  - {name: rwck-a / rwck-c / rwck-d, steps: "20；10 + 10", role: "2 台真实宽度第 0–2 层 + MTP，DP 16 + EP 16，确定性模式：跑 20 步；跑 10 步存档；从存档续跑第 11–20 步", results: [ckpt-resume-rw], location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/rwck-*/"}

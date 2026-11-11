@@ -1,0 +1,4 @@
+$ JAX_PLATFORMS=cpu python verify_ckpt.py maxtext --ckpt <转换输出>/0/items --hf <HF 目录 hy3-4l>
+顶层集合： ['MoEBiasVar', 'params']
+从 MaxText 检查点取回 1781 个 HF 张量；与 tensor_sha256.json 不同 0 个 []
+OK

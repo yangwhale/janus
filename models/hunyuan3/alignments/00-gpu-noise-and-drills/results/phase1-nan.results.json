@@ -1,0 +1,82 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.0.1",
+  "commit": null
+ },
+ "catalog": {
+  "path": "catalogs/hunyuan3-4l/phase1-nan.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "561c4951a8e907677a7f39eb30f93d8e0962212c20c5efbc412b2a43918eb2b2",
+  "raw_sha256": "e6fa3611bbcd2ee6421a13f1f5270b5d823f6ac6a2284ce4c3734b6580d73a27"
+ },
+ "runs": {
+  "f-nan": {
+   "path": "/data/janus-runs2/f-nan",
+   "meta_sha256": "4091086a8d7bac316dc87fe5c45f2b01775f8a85f13413203a9594105bd5939a"
+  }
+ },
+ "started_at": "2026-11-03T23:45:27+00:00",
+ "finished_at": "2026-11-03T23:45:27+00:00",
+ "summary": {
+  "pass": 1,
+  "fail": 1,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": true
+ },
+ "checks": [
+  {
+   "id": "L4.health.grad_norm",
+   "type": "health_signals",
+   "level": "L4",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "spike_ratio": 10.0
+    },
+    "source": "规格默认值"
+   },
+   "metrics": {
+    "fields": 1,
+    "problems": 1
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/f-nan",
+     "sha256": "4091086a8d7bac316dc87fe5c45f2b01775f8a85f13413203a9594105bd5939a"
+    }
+   ],
+   "message": "grad_norm@5=非有限"
+  },
+  {
+   "id": "L4.health.loss",
+   "type": "health_signals",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "spike_ratio": 10.0
+    },
+    "source": "规格默认值"
+   },
+   "metrics": {
+    "fields": 1,
+    "problems": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/f-nan",
+     "sha256": "4091086a8d7bac316dc87fe5c45f2b01775f8a85f13413203a9594105bd5939a"
+    }
+   ],
+   "message": "健康"
+  }
+ ]
+}

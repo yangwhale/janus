@@ -1,0 +1,37 @@
+{
+ "what": "T1 param_norm 的残余系统差定位：TPU（t1tdump3，现行 t1t 设置）与 GPU（g2d-a，g2 设置）第 300 步更新之后的 FP32 主权重逐张量平方和之差（HF 名字，GPU 用 export_hf_grads.py --kind main_param_after 换名）",
+ "step300": {
+  "total_dsumsq_TPU_minus_GPU": -0.077688,
+  "lm_head.weight": -0.07045,
+  "model.embed_tokens.weight": -0.006925,
+  "all_other_tensors": -0.00031,
+  "lm_head_share": 0.907,
+  "embed_share": 0.089,
+  "lm_head_update_projection": "Σ<W_T−W_G, W_G−W_0> / Σ|W_G−W_0|² = −5.95e-5：TPU 输出头 300 步的累计更新沿 GPU 的更新方向短 6e-5，按更新大小分位数看各行一致（0.99994–0.99997）"
+ },
+ "step1": {
+  "lm_head": {
+   "update_norm_ratio_TPU_over_GPU": 1.0000005,
+   "projection": 0.99874,
+   "rel_diff": 0.0502
+  },
+  "embed": {
+   "update_norm_ratio": 1.0000405,
+   "projection": 0.98696,
+   "rel_diff": 0.1618
+  },
+  "reading": "第 1 步两边更新的大小相同（Adam 第 1 步近似 lr·sign(g)），方向因小梯度元素的符号不同差 5%；更新大小的系统差是之后各步累积出来的"
+ },
+ "measurement_part": "另一部分来自 TPU learning/param_norm 的 FP32 全局求和偏低（1e-7 至 3e-7），已改为两边比精确值（PROTOCOL 变更记录，t1t-l4 / t1u-l4）",
+ "status": "残余差 90% 在输出头、9% 在词嵌入（两者都走标量 Adam），机理待查；300 步 r 1.60、1000 步 r 1.06（待定）",
+ "hypotheses_open": [
+  "输出头的梯度里 MTP 那份（共用输出头）的权重两边不同",
+  "梯度裁剪系数（每步 1/grad_norm）序列的差在 Adam 的 m、v 里不按比例抵消",
+  "Adam 在小梯度行进入 eps 主导区时两边的数值差"
+ ],
+ "notes": [
+  "GPU meta.json 的 config.eps 写死 1e-8 是过时字段；实际生效的是 config.adam_eps 1e-10（train_hy4mg.py）"
+ ],
+ "update_2026_11_07_t1v": "后续：TPU 再开 ihc_stream_sum_unrolled（台账 M28）后，t1v-l4 的 param_norm 精确值 r 1.60 → 0.88（过），带符号均值 −3.0e-7 → −1.7e-7：M28 消掉了约一半的漂移，剩下的一半（TPU 仍偏低，0.87 N）根因待查。iHC 加权和经 hc_head 影响输出头与词嵌入是推断，t1v 上没有重做逐张量定位",
+ "status_update_2026_11_07": "status 字段已过时：t1v 300 步 param_norm r 0.88（过），t1w 1000 步 r 0.43（过）；剩余带符号偏差的根因见 update_2026_11_07_t1v"
+}

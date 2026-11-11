@@ -1,0 +1,93 @@
+{
+ "说明": "v7x 1000 步拆分臂：当前对齐配置（t-v7x-on-1000）上一次改一处，对精确轨迹 rce-a 的 param_norm 带符号均值、第 1000 步差（TPU 的 param_norm 按 FP32 记录，分辨率约 2.4e-4）、loss 带符号均值；判定用 phase2-acceptance-rce-on 的门槛（噪声 rcx 10 对）。TPU 执行噪声（回归 T1 标定 28 对）param_norm 带符号均值上限 9.0e-8、loss 5.9e-5。",
+ "arms": {
+  "t-v7x-on-1000": {
+   "step1_loss": 11.465965,
+   "pn_signed_mean_vs_rce_a": 3.192e-07,
+   "pn_diff_1000": 0.00235,
+   "loss_signed_mean_all": 9.87e-05,
+   "loss_signed_mean_301": 0.000102,
+   "step_time": 0.9801602702035512
+  },
+  "t-v7x-attn32-1000": {
+   "step1_loss": 11.465853,
+   "pn_signed_mean_vs_rce_a": 3.853e-07,
+   "pn_diff_1000": 0.00235,
+   "loss_signed_mean_all": 5.69e-05,
+   "loss_signed_mean_301": 5.51e-05,
+   "step_time": 1.0549392211324409
+  },
+  "t-v7x-logit32-1000": {
+   "step1_loss": 11.465965,
+   "pn_signed_mean_vs_rce_a": 3.769e-07,
+   "pn_diff_1000": 0.00235,
+   "loss_signed_mean_all": 5.29e-05,
+   "loss_signed_mean_301": 3.07e-05,
+   "step_time": 0.9973228248511955
+  },
+  "t-v7x-mmhi-1000": {
+   "step1_loss": 11.465969,
+   "pn_signed_mean_vs_rce_a": 2.152e-07,
+   "pn_diff_1000": 0.00162,
+   "loss_signed_mean_all": 0.000129,
+   "loss_signed_mean_301": 0.000142,
+   "step_time": 0.9810919746615533
+  },
+  "t-v7x-all3-1000": {
+   "step1_loss": 11.465927,
+   "pn_signed_mean_vs_rce_a": 1.231e-06,
+   "pn_diff_1000": 0.00894,
+   "loss_signed_mean_all": 5.07e-05,
+   "loss_signed_mean_301": 6.69e-05,
+   "step_time": 1.196642741294564
+  },
+  "t-v7x-ep8-1000": {
+   "step1_loss": 11.465963,
+   "pn_signed_mean_vs_rce_a": 3.736e-07,
+   "pn_diff_1000": 0.00235,
+   "loss_signed_mean_all": 9.2e-05,
+   "loss_signed_mean_301": 7.54e-05,
+   "step_time": 0.7110207604810391
+  },
+  "t-v7x-rmap-1000-a": {
+   "step1_loss": 11.465931,
+   "pn_signed_mean_vs_rce_a": 4.359e-07,
+   "pn_diff_1000": 0.00235,
+   "loss_signed_mean_all": 5.88e-05,
+   "loss_signed_mean_301": 4.43e-05,
+   "step_time": 0.9610706842284097
+  },
+  "t-v7x-attnmm-1000": {
+   "step1_loss": 11.465913,
+   "pn_signed_mean_vs_rce_a": 3.532e-07,
+   "pn_diff_1000": 0.00259,
+   "loss_signed_mean_all": 0.000152,
+   "loss_signed_mean_301": 0.000144,
+   "step_time": 1.1003604722449205
+  },
+  "t-v7x-logmm-1000": {
+   "step1_loss": 11.465967,
+   "pn_signed_mean_vs_rce_a": 1.202e-06,
+   "pn_diff_1000": 0.00894,
+   "loss_signed_mean_all": -8.27e-06,
+   "loss_signed_mean_301": -4.1e-06,
+   "step_time": 1.0745723182345288
+  },
+  "t-v7x-attnlog-1000": {
+   "step1_loss": 11.465862,
+   "pn_signed_mean_vs_rce_a": 3.516e-07,
+   "pn_diff_1000": 0.00235,
+   "loss_signed_mean_all": 4.99e-05,
+   "loss_signed_mean_301": 5.59e-05,
+   "step_time": 1.0712378709474197
+  },
+  "t-v7x-on-b-1000": {
+   "step1_loss": 11.465965,
+   "pn_signed_mean_vs_rce_a": 3.192e-07,
+   "pn_diff_1000": 0.00235,
+   "loss_signed_mean_all": 9.87e-05,
+   "loss_signed_mean_301": 0.000102,
+   "step_time": 0.9799064704923098
+  }
+ }
+}

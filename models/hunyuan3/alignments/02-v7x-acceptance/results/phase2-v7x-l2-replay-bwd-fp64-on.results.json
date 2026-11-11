@@ -1,0 +1,202 @@
+{
+ "schema_version": 1,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": null
+ },
+ "catalog": {
+  "path": "models/hunyuan3/analysis/fwd_rratio.py",
+  "sha256": "c02387df92a012b6e0f1c6d2670c16d24c7e493b70a15ab5d776ab22d122fec6"
+ },
+ "runs": {
+  "r-v7x-l2-on": {
+   "path": "/tmp/fill-runs/r-v7x-l2-on",
+   "meta_sha256": "579275b4af84e03b0a5581d5682cf5bbab832499b28af250f0c3afc8f5e38817"
+  },
+  "g1k-a": {
+   "path": "/tmp/fill-runs/g1k-a",
+   "meta_sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+  }
+ },
+ "started_at": "2026-11-06T04:30:48+00:00",
+ "finished_at": "2026-11-06T04:45:43+00:00",
+ "environment": {
+  "hf_config_sha256": "ce080ff3da244dc3dc203af51ac614ec0c5c78298d907a4f04af895d79ddbed7",
+  "numpy": "2.4.6",
+  "reference": "models/hunyuan3/analysis/fp64_backward.py（FP64 自动求导，中间不舍入）",
+  "mode": "bwd"
+ },
+ "summary": {
+  "pass": 4,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L2.layer0.bwd",
+   "type": "op_replay",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "r_ratio": 1.2
+    },
+    "source": "推断：同 GPU 侧 phase1-l1 的 L1.rratio 起点。只差舍入顺序时 R≈1；多一次同量级的独立舍入误差方差约翻倍、R≈√2≈1.41，取两者之间"
+   },
+   "metrics": {
+    "rel_l2": 0.002513274664007828,
+    "cr_match_frac": 0.6752673983573914,
+    "ulp_max": 13317,
+    "ulp_p999": 51.0,
+    "nonfinite_mismatch": 0,
+    "r_ratio": 0.9820128903498411,
+    "vs_ref_rel_l2": 0.002095897795619381,
+    "vs_ref_cosine": 0.9999978036042261,
+    "vs_ref_oot_frac": 0.00010669231414794922,
+    "vs_ref_mean_diff": 0.0008225291418364317,
+    "vs_ref_norm_max": 0.006648936170212766,
+    "cases": 1,
+    "vs_ref_cases": 1,
+    "vs_ref_worst": "layers.0.in.grad"
+   },
+   "worst": [
+    {
+     "name": "layers.0.in.grad",
+     "metric": "r_ratio",
+     "value": 0.9820128903498411,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "全部在门槛内",
+   "details": "details/L2.layer0.bwd.jsonl"
+  },
+  {
+   "id": "L2.layer1.bwd",
+   "type": "op_replay",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "r_ratio": 1.2
+    },
+    "source": "推断：同 GPU 侧 phase1-l1 的 L1.rratio 起点。只差舍入顺序时 R≈1；多一次同量级的独立舍入误差方差约翻倍、R≈√2≈1.41，取两者之间"
+   },
+   "metrics": {
+    "rel_l2": 0.0057634703159913465,
+    "cr_match_frac": 0.6166186332702637,
+    "ulp_max": 1443,
+    "ulp_p999": 96.0,
+    "nonfinite_mismatch": 0,
+    "r_ratio": 0.9577146241855046,
+    "vs_ref_rel_l2": 0.004547100226767302,
+    "vs_ref_cosine": 0.9999896618863697,
+    "vs_ref_oot_frac": 0.002387404441833496,
+    "vs_ref_mean_diff": 0.001665072894803671,
+    "vs_ref_norm_max": 0.008828125,
+    "cases": 1,
+    "vs_ref_cases": 1,
+    "vs_ref_worst": "layers.1.in.grad"
+   },
+   "worst": [
+    {
+     "name": "layers.1.in.grad",
+     "metric": "r_ratio",
+     "value": 0.9577146241855046,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "全部在门槛内",
+   "details": "details/L2.layer1.bwd.jsonl"
+  },
+  {
+   "id": "L2.layer2.bwd",
+   "type": "op_replay",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "r_ratio": 1.2
+    },
+    "source": "推断：同 GPU 侧 phase1-l1 的 L1.rratio 起点。只差舍入顺序时 R≈1；多一次同量级的独立舍入误差方差约翻倍、R≈√2≈1.41，取两者之间"
+   },
+   "metrics": {
+    "rel_l2": 0.004593895400026784,
+    "cr_match_frac": 0.5837622284889221,
+    "ulp_max": 1923,
+    "ulp_p999": 115.0,
+    "nonfinite_mismatch": 0,
+    "r_ratio": 0.8794657964001227,
+    "vs_ref_rel_l2": 0.005329397262273608,
+    "vs_ref_cosine": 0.9999857986843694,
+    "vs_ref_oot_frac": 0.004242360591888428,
+    "vs_ref_mean_diff": 0.002202818367385799,
+    "vs_ref_norm_max": 0.011847882231404958,
+    "cases": 1,
+    "vs_ref_cases": 1,
+    "vs_ref_worst": "layers.2.in.grad"
+   },
+   "worst": [
+    {
+     "name": "layers.2.in.grad",
+     "metric": "r_ratio",
+     "value": 0.8794657964001227,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "全部在门槛内",
+   "details": "details/L2.layer2.bwd.jsonl"
+  },
+  {
+   "id": "L2.layer3.bwd",
+   "type": "op_replay",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "r_ratio": 1.2
+    },
+    "source": "推断：同 GPU 侧 phase1-l1 的 L1.rratio 起点。只差舍入顺序时 R≈1；多一次同量级的独立舍入误差方差约翻倍、R≈√2≈1.41，取两者之间"
+   },
+   "metrics": {
+    "rel_l2": 0.005515678131490085,
+    "cr_match_frac": 0.542535126209259,
+    "ulp_max": 12399,
+    "ulp_p999": 144.0,
+    "nonfinite_mismatch": 0,
+    "r_ratio": 0.9508129964583478,
+    "vs_ref_rel_l2": 0.006280630985066193,
+    "vs_ref_cosine": 0.9999802769521683,
+    "vs_ref_oot_frac": 0.008441686630249023,
+    "vs_ref_mean_diff": 0.0028377458724600153,
+    "vs_ref_norm_max": 0.008680555555555556,
+    "cases": 1,
+    "vs_ref_cases": 1,
+    "vs_ref_worst": "layers.3.in.grad"
+   },
+   "worst": [
+    {
+     "name": "layers.3.in.grad",
+     "metric": "r_ratio",
+     "value": 0.9508129964583478,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "全部在门槛内",
+   "details": "details/L2.layer3.bwd.jsonl"
+  }
+ ]
+}

@@ -1,0 +1,948 @@
+{
+ "schema_version": 1,
+ "stage": "phase2-native-loader",
+ "runs": {
+  "gpu": {
+   "path": "/data/janus-runs2/g1k-a",
+   "meta_sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+  },
+  "maxtext": {
+   "path": "/tmp/g62r/mt-w1",
+   "meta_sha256": "88b152bd1d465f2f517f60cdbd40382161e723c5627256d6dc57addebd6fafa4"
+  }
+ },
+ "maxtext": {
+  "commit": "ce608b918c4fdfbfdb62f5a7976d2e15e4fdd720",
+  "versions": {
+   "python": "3.12.3",
+   "jax": "0.11.1",
+   "numpy": "2.1.3",
+   "grain": "0.2.18"
+  },
+  "overrides": [
+   "run_name=g62-native-loader",
+   "base_output_directory=/tmp/g62r/mt-w1/run",
+   "dataset_type=grain",
+   "grain_file_type=mmap_npy",
+   "grain_train_files=/tmp/g62r/npy|/data/ds/fw_hy3_text_document",
+   "max_target_length=4096",
+   "mmap_eod_id=120025",
+   "data_shuffle_seed=1234",
+   "reset_attention_mask=False",
+   "eod_mask_loss=False",
+   "packing_max_segments_per_sample=0",
+   "mmap_split_sentences=False",
+   "per_device_batch_size=1",
+   "gradient_accumulation_steps=2",
+   "steps=1000",
+   "grain_worker_count=1",
+   "enable_checkpointing=False",
+   "eval_interval=-1",
+   "mmap_npy_split=9999,1,0"
+  ],
+  "mesh": {
+   "axis_names": [
+    "diloco",
+    "data",
+    "stage",
+    "fsdp",
+    "fsdp_transpose",
+    "context",
+    "context_usp_ulysses",
+    "context_autoregressive",
+    "tensor",
+    "tensor_sequence",
+    "expert",
+    "autoregressive"
+   ],
+   "shape": {
+    "diloco": 1,
+    "data": 1,
+    "stage": 1,
+    "fsdp": 8,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "device_ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ]
+  },
+  "rows_of_device": {
+   "0": [
+    0,
+    1
+   ],
+   "1": [
+    2,
+    3
+   ],
+   "2": [
+    4,
+    5
+   ],
+   "3": [
+    6,
+    7
+   ],
+   "4": [
+    8,
+    9
+   ],
+   "5": [
+    10,
+    11
+   ],
+   "6": [
+    12,
+    13
+   ],
+   "7": [
+    14,
+    15
+   ]
+  }
+ },
+ "gpu": {
+  "dp": 8,
+  "mbs": 1,
+  "gbs": 16,
+  "ga": 2,
+  "seq": 4096,
+  "seed": 1234,
+  "data": "/data/ds/fw_hy3_text_document",
+  "data_idx_sha256": "83d5a23b14d38944dbd7323ca7e794fbac6018bf3e6263398bd0b04db98fdad2"
+ },
+ "data_idx_sha256_maxtext": "83d5a23b14d38944dbd7323ca7e794fbac6018bf3e6263398bd0b04db98fdad2",
+ "steps": {
+  "first": 1,
+  "last": 1000,
+  "count": 1000
+ },
+ "started_at": "2026-11-04T08:53:00+00:00",
+ "finished_at": "2026-11-04T09:07:12+00:00",
+ "summary": {
+  "pass": 12,
+  "fail": 2,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L0.native.gpu_integrity",
+   "type": "artifact_check",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "arrays": 64000,
+    "bad": 0,
+    "fingerprint_units": 16000
+   },
+   "worst": [],
+   "message": "GPU 整批输入与其 sha256 索引、数据指纹全部一致"
+  },
+  {
+   "id": "L0.native.index",
+   "type": "artifact_check",
+   "level": "L0",
+   "hard": true,
+   "threshold": {
+    "kind": "exact"
+   },
+   "status": "pass",
+   "metrics": {
+    "megatron_hash": "d120f154e644fde2e32d96777d2921a2",
+    "num_samples": 16000,
+    "same_array": 3,
+    "same_file": 3
+   },
+   "details_inline": {
+    "indices": [
+     {
+      "name": "document_index",
+      "megatron": {
+       "file": "/data/ds/fw_hy3_text_document/cache/GPTDataset_indices/d120f154e644fde2e32d96777d2921a2-GPTDataset-train-document_index.npy",
+       "sha256_file": "bcf1a5ecb2cb387a5e642e9f96bec0105f9461bb38dc0df030f72ad6816cff91",
+       "dtype": "int32",
+       "shape": [
+        725927
+       ],
+       "sha256_array": "95556f4aad3dc81d8b8eda6eb5e9e36f072459e442af4d69284850fecfdad872"
+      },
+      "maxtext": {
+       "file": "8af8537f0867979aa1d658395326c381-document_index.npy",
+       "sha256_file": "bcf1a5ecb2cb387a5e642e9f96bec0105f9461bb38dc0df030f72ad6816cff91",
+       "dtype": "int32",
+       "shape": [
+        725927
+       ],
+       "sha256_array": "95556f4aad3dc81d8b8eda6eb5e9e36f072459e442af4d69284850fecfdad872"
+      },
+      "same_file": true,
+      "same_array": true
+     },
+     {
+      "name": "sample_index",
+      "megatron": {
+       "file": "/data/ds/fw_hy3_text_document/cache/GPTDataset_indices/d120f154e644fde2e32d96777d2921a2-GPTDataset-train-sample_index.npy",
+       "sha256_file": "d61e4bc3542304f4e35f2698f43e86d9e749705ec6218fed14aeeea4f33f9acd",
+       "dtype": "int32",
+       "shape": [
+        178375,
+        2
+       ],
+       "sha256_array": "0381efef34267fbb5f27f8ffff3ba18940d98ad74b8a005caca66575e3e80643"
+      },
+      "maxtext": {
+       "file": "8af8537f0867979aa1d658395326c381-sample_index.npy",
+       "sha256_file": "d61e4bc3542304f4e35f2698f43e86d9e749705ec6218fed14aeeea4f33f9acd",
+       "dtype": "int32",
+       "shape": [
+        178375,
+        2
+       ],
+       "sha256_array": "0381efef34267fbb5f27f8ffff3ba18940d98ad74b8a005caca66575e3e80643"
+      },
+      "same_file": true,
+      "same_array": true
+     },
+     {
+      "name": "shuffle_index",
+      "megatron": {
+       "file": "/data/ds/fw_hy3_text_document/cache/GPTDataset_indices/d120f154e644fde2e32d96777d2921a2-GPTDataset-train-shuffle_index.npy",
+       "sha256_file": "8f61dfcec9ce2f7ebbd5207286f8c065bb0c3bede3e97c31b1387ed22eecedab",
+       "dtype": "uint32",
+       "shape": [
+        178374
+       ],
+       "sha256_array": "8219806dc24b54cf678412cfd934be2ec87563c74a37c5befb559dff990cc1cd"
+      },
+      "maxtext": {
+       "file": "8af8537f0867979aa1d658395326c381-shuffle_index.npy",
+       "sha256_file": "8f61dfcec9ce2f7ebbd5207286f8c065bb0c3bede3e97c31b1387ed22eecedab",
+       "dtype": "uint32",
+       "shape": [
+        178374
+       ],
+       "sha256_array": "8219806dc24b54cf678412cfd934be2ec87563c74a37c5befb559dff990cc1cd"
+      },
+      "same_file": true,
+      "same_array": true
+     }
+    ],
+    "megatron_description": {
+     "class": "GPTDataset",
+     "dataset_path": "/data/ds/fw_hy3_text_document",
+     "num_samples": 16000,
+     "index_split": "train",
+     "random_seed": 1234,
+     "sequence_length": 4096,
+     "split": "9999,1,0",
+     "split_matrix": [
+      [
+       0,
+       0.9999
+      ],
+      [
+       0.9999,
+       1.0
+      ],
+      null
+     ],
+     "tokenizer": {
+      "class": "megatron.core.tokenizers.text.text_tokenizer.MegatronTokenizerText",
+      "tokenizer_path": "/data/hy3-4l",
+      "chat_template": "None",
+      "vocab_file": "None",
+      "merges_file": "None",
+      "additional_special_tokens": "[]",
+      "use_fast": "True",
+      "trust_remote_code": "False",
+      "include_special_tokens": "True",
+      "use_gigatoken": "False"
+     }
+    }
+   },
+   "message": "三个索引两边重建结果逐字节相同（文件 sha256 也相同）"
+  },
+  {
+   "id": "L0.native.stream",
+   "type": "data_fingerprint",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "steps": 1000,
+    "rows": 16000,
+    "differ": 0
+   },
+   "worst": [],
+   "message": "每步 16 个样本按顺序与 Megatron 的样本流逐位相同"
+  },
+  {
+   "id": "L0.native.device_map.native",
+   "type": "data_fingerprint",
+   "level": "L0",
+   "hard": false,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "units": 16000,
+    "same": 2000,
+    "dp": 8,
+    "mbs": 1,
+    "ga": 2
+   },
+   "message": "原样布局只有 2000 / 16000 个（设备 · microbatch）单元与 GPU 同号 rank 相同：MaxText 梯度累积按 reshape(gbs//ga, ga) 交错取行，Megatron 每个 microbatch 取连续 dp×mbs 个；样本本身没错（见 L0.native.stream），差在分配约定"
+  },
+  {
+   "id": "L0.native.fingerprint",
+   "type": "data_fingerprint",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "units_per_field": {
+     "tokens": 16000,
+     "labels": 16000,
+     "loss_mask": 16000,
+     "position_ids": 16000
+    },
+    "units": 64000,
+    "differ": 0,
+    "elementwise_differ": 0,
+    "adapter": "janus.data_layout.maxtext_perm_for_megatron",
+    "perm": [
+     0,
+     8,
+     1,
+     9,
+     2,
+     10,
+     3,
+     11,
+     4,
+     12,
+     5,
+     13,
+     6,
+     14,
+     7,
+     15
+    ]
+   },
+   "worst": [],
+   "evidence": [],
+   "message": "换序后 1000 步 × 8 个设备 × 2 个 microbatch 的 tokens / labels / loss_mask / position_ids 全部逐元素相同，sha256 与 GPU 数据指纹相同"
+  },
+  {
+   "id": "L0.native.nonpad_total",
+   "type": "data_fingerprint",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "steps": 1000,
+    "differ": 0,
+    "min": 65536,
+    "max": 65536,
+    "expected_full": 65536
+   },
+   "worst": [],
+   "message": "每步全局非 padding token 数逐步相等"
+  },
+  {
+   "id": "L0.native.fields",
+   "type": "artifact_check",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "eod_tokens_in_compared_inputs": 65444,
+    "gpu_loss_mask_zeros": 0,
+    "pad_id": 120002,
+    "pad_occurrences_gpu": 0,
+    "pad_occurrences_maxtext": 0,
+    "full_bin": {
+     "tokens": 730699036,
+     "pad": 0,
+     "eod": 726000,
+     "documents": 726000,
+     "max_token_id": 120039
+    },
+    "inputs_segmentation_not_1": 0,
+    "inputs_position_not_arange": 0,
+    "targets_position_ne_inputs_position": 0
+   },
+   "details_inline": {
+    "dtype_shape": {
+     "gpu": {
+      "tokens": [
+       "int64",
+       [
+        1,
+        4096
+       ]
+      ],
+      "labels": [
+       "int64",
+       [
+        1,
+        4096
+       ]
+      ],
+      "loss_mask": [
+       "float32",
+       [
+        1,
+        4096
+       ]
+      ],
+      "position_ids": [
+       "int64",
+       [
+        1,
+        4096
+       ]
+      ]
+     },
+     "maxtext_global_batch": {
+      "inputs": [
+       "int32",
+       [
+        16,
+        4096
+       ]
+      ],
+      "targets": [
+       "int32",
+       [
+        16,
+        4096
+       ]
+      ],
+      "inputs_segmentation": [
+       "int32",
+       [
+        16,
+        4096
+       ]
+      ],
+      "targets_segmentation": [
+       "int32",
+       [
+        16,
+        4096
+       ]
+      ],
+      "inputs_position": [
+       "int32",
+       [
+        16,
+        4096
+       ]
+      ],
+      "targets_position": [
+       "int32",
+       [
+        16,
+        4096
+       ]
+      ]
+     },
+     "mapping": {
+      "tokens": "inputs",
+      "labels": "targets",
+      "loss_mask": "targets_segmentation != 0",
+      "position_ids": "inputs_position",
+      "attention": "inputs_segmentation（全 1 = 整条序列一个因果段 = GPU reset_attention_mask=False）"
+     }
+    }
+   },
+   "message": "字段约定一致：MaxText 用 int32、按全局批 [gbs, L] 存，GPU 用 int64 / float32、按 [mbs, L] 存；按 inputs→tokens、targets→labels、targets_segmentation≠0→loss_mask、inputs_position→position_ids 换算后数值逐位相同；inputs_segmentation 全 1（整条序列一个因果段）、位置 0..L-1，与 GPU 配置一致"
+  },
+  {
+   "id": "L0.native.readers",
+   "type": "determinism",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "base_grain_worker_count": 1,
+    "variants": [
+     {
+      "dump": "/tmp/g62r/mt-w0",
+      "grain_worker_count": 0,
+      "steps": 1000,
+      "same": 1000
+     },
+     {
+      "dump": "/tmp/g62r/mt-w8",
+      "grain_worker_count": 8,
+      "steps": 1000,
+      "same": 1000
+     }
+    ]
+   },
+   "worst": [],
+   "message": "grain_worker_count 0 / 8 与 1 逐步逐位相同"
+  },
+  {
+   "id": "L0.native.hosts",
+   "type": "data_fingerprint",
+   "level": "L0",
+   "hard": false,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "variants": [
+     {
+      "dump": "/tmp/g62r/mt-h2",
+      "hosts": 2,
+      "steps": 1000,
+      "rows_slot_ok": 16000,
+      "rows": 16000,
+      "units": 64000,
+      "same_with_single_host_perm": 36000,
+      "same_with_host_aware_perm": 64000
+     },
+     {
+      "dump": "/tmp/g62r/mt-h4",
+      "hosts": 4,
+      "steps": 1000,
+      "rows_slot_ok": 16000,
+      "rows": 16000,
+      "units": 64000,
+      "same_with_single_host_perm": 40000,
+      "same_with_host_aware_perm": 64000
+     }
+    ],
+    "emulation": "单进程里对每个 host 调 MaxText 的 get_datasets(host_index=h, host_count=H) + _mmap_pretrain_pipeline，本地批按 host 拼成全局批（假定 host h 的设备在 mesh 批维上连续）；没有跑真的多进程 / MultiHostDataLoadIterator"
+   },
+   "worst": [],
+   "message": "2 host：读进来的行按 host 交错（16000/16000 行符合 host 切分公式），用单 host 换序只对上 36000/64000，按 host 数换序后 64000/64000；4 host：读进来的行按 host 交错（16000/16000 行符合 host 切分公式），用单 host 换序只对上 40000/64000，按 host 数换序后 64000/64000"
+  },
+  {
+   "id": "L0.native.epochs",
+   "type": "data_fingerprint",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "cases": [
+     {
+      "num_samples": 16000,
+      "num_epochs": 1,
+      "separate_final_epoch": false,
+      "len_megatron": 178374,
+      "len_maxtext": 178374,
+      "index_same": {
+       "document_index": true,
+       "sample_index": true,
+       "shuffle_index": true
+      },
+      "index_sha256": {
+       "document_index": "bcf1a5ecb2cb387a5e642e9f96bec0105f9461bb38dc0df030f72ad6816cff91",
+       "sample_index": "d61e4bc3542304f4e35f2698f43e86d9e749705ec6218fed14aeeea4f33f9acd",
+       "shuffle_index": "8f61dfcec9ce2f7ebbd5207286f8c065bb0c3bede3e97c31b1387ed22eecedab"
+      },
+      "cross_epoch": [],
+      "samples_compared": 8,
+      "arrays_differ": []
+     },
+     {
+      "num_samples": 356736,
+      "num_epochs": 2,
+      "separate_final_epoch": false,
+      "len_megatron": 356748,
+      "len_maxtext": 356748,
+      "index_same": {
+       "document_index": true,
+       "sample_index": true,
+       "shuffle_index": true
+      },
+      "index_sha256": {
+       "document_index": "a6d3f7600f4f16ef6e0aa0fd28090fad1c2eb2104f079ff3dd2c329597ca012d",
+       "sample_index": "49bd058847be510f1f3f4df76de52ff45a604a1e873ec95ce24ee22f95226176",
+       "shuffle_index": "66b01ee11ffcd39a48a0756f7c20c1b577aba56f5004ebfc744f81c1ab409143"
+      },
+      "cross_epoch": [
+       {
+        "epoch_boundary": 1,
+        "sample_id": 178349,
+        "stream_index": 186901
+       }
+      ],
+      "samples_compared": 11,
+      "arrays_differ": []
+     },
+     {
+      "num_samples": 400000,
+      "num_epochs": 3,
+      "separate_final_epoch": true,
+      "len_megatron": 535122,
+      "len_maxtext": 535122,
+      "index_same": {
+       "document_index": true,
+       "sample_index": true,
+       "shuffle_index": true
+      },
+      "index_sha256": {
+       "document_index": "288d8b39fabdf9dfd4e8cde32f12e0e1452eee1e94cc550172f79a85fa3cac81",
+       "sample_index": "e7f72b456834b7b857bfd7d34df1d27364ffc0749939f07b486ffea0aef00dfd",
+       "shuffle_index": "78da9db41918ea4cd45c290c03b61ef174d8f4919814ffbc9daeda60acd7ad2a"
+      },
+      "cross_epoch": [
+       {
+        "epoch_boundary": 1,
+        "sample_id": 178349,
+        "stream_index": 216201
+       },
+       {
+        "epoch_boundary": 2,
+        "sample_id": 356748,
+        "stream_index": 512075
+       }
+      ],
+      "samples_compared": 14,
+      "arrays_differ": []
+     }
+    ]
+   },
+   "message": "16000 个样本（1 个 epoch）：三个索引相同，8 个样本（含跨 epoch 边界的 0 个）逐位相同；356736 个样本（2 个 epoch）：三个索引相同，11 个样本（含跨 epoch 边界的 1 个）逐位相同；400000 个样本（3 个 epoch，最后一个 epoch 单独打乱）：三个索引相同，14 个样本（含跨 epoch 边界的 2 个）逐位相同"
+  },
+  {
+   "id": "L0.native.eod_cases",
+   "type": "data_fingerprint",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "doc_lens": [
+     3,
+     1,
+     17,
+     16,
+     2,
+     7,
+     1,
+     5,
+     15,
+     4,
+     9,
+     35,
+     6,
+     1,
+     3
+    ],
+    "seq": 16,
+    "combos": [
+     {
+      "megatron": "ram0_rpi0_eml0",
+      "maxtext": "ram0_eml0",
+      "samples": 15,
+      "samples_without_pad_same": 13,
+      "samples_with_pad": 2
+     },
+     {
+      "megatron": "ram0_rpi0_eml1",
+      "maxtext": "ram0_eml1",
+      "samples": 15,
+      "samples_without_pad_same": 13,
+      "samples_with_pad": 2
+     },
+     {
+      "megatron": "ram0_rpi1_eml0",
+      "maxtext": null,
+      "samples": 15,
+      "note": "MaxText 表达不了：reset_attention_mask 同时决定注意力分段与位置重置",
+      "differ_vs_ram0_eml0": [
+       "position_ids"
+      ],
+      "differ_vs_ram1_eml0": [
+       "attention_mask"
+      ]
+     },
+     {
+      "megatron": "ram0_rpi1_eml1",
+      "maxtext": null,
+      "samples": 15,
+      "note": "MaxText 表达不了：reset_attention_mask 同时决定注意力分段与位置重置",
+      "differ_vs_ram0_eml1": [
+       "position_ids"
+      ],
+      "differ_vs_ram1_eml1": [
+       "attention_mask"
+      ]
+     },
+     {
+      "megatron": "ram1_rpi0_eml0",
+      "maxtext": null,
+      "samples": 15,
+      "note": "MaxText 表达不了：reset_attention_mask 同时决定注意力分段与位置重置",
+      "differ_vs_ram1_eml0": [
+       "position_ids"
+      ],
+      "differ_vs_ram0_eml0": [
+       "attention_mask"
+      ]
+     },
+     {
+      "megatron": "ram1_rpi0_eml1",
+      "maxtext": null,
+      "samples": 15,
+      "note": "MaxText 表达不了：reset_attention_mask 同时决定注意力分段与位置重置",
+      "differ_vs_ram1_eml1": [
+       "position_ids"
+      ],
+      "differ_vs_ram0_eml1": [
+       "attention_mask"
+      ]
+     },
+     {
+      "megatron": "ram1_rpi1_eml0",
+      "maxtext": "ram1_eml0",
+      "samples": 15,
+      "samples_without_pad_same": 13,
+      "samples_with_pad": 2
+     },
+     {
+      "megatron": "ram1_rpi1_eml1",
+      "maxtext": "ram1_eml1",
+      "samples": 15,
+      "samples_without_pad_same": 13,
+      "samples_with_pad": 2
+     }
+    ],
+    "synthetic_idx_sha256": "3765f6d6f9b9330df78bd67cf2b6a7cb1090c3f83d5bb54cce1a3acb315140b6",
+    "synthetic_bin_sha256": "3935fa3fed6ccbbcf630558be2eb9d39cc9f005203b1f7cc8f823c843461e3b9"
+   },
+   "worst": [],
+   "message": "合成数据（15 篇文档，含 1 token 空文档、恰好 seq / seq+1 长、跨两个样本的长文档，序列 16，2 个 epoch）：MaxText 能表达的 4 种组合（reset_attention_mask = reset_position_ids）下，不含 pad id 的样本 tokens / labels / loss_mask / position_ids / 注意力 mask 全部逐位相同；reset_attention_mask ≠ reset_position_ids 的 4 种组合 MaxText 表达不了（位置重置跟着注意力走）"
+  },
+  {
+   "id": "L0.native.pad_id",
+   "type": "data_fingerprint",
+   "level": "L0",
+   "hard": false,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "pad_id": 120002,
+    "cases": [
+     {
+      "combo": "ram0_rpi0_eml0",
+      "sample": 5,
+      "fields_differ": [
+       "tokens",
+       "labels",
+       "loss_mask"
+      ]
+     },
+     {
+      "combo": "ram0_rpi0_eml0",
+      "sample": 9,
+      "fields_differ": [
+       "tokens",
+       "labels",
+       "loss_mask"
+      ]
+     },
+     {
+      "combo": "ram0_rpi0_eml1",
+      "sample": 5,
+      "fields_differ": [
+       "tokens",
+       "labels",
+       "loss_mask"
+      ]
+     },
+     {
+      "combo": "ram0_rpi0_eml1",
+      "sample": 9,
+      "fields_differ": [
+       "tokens",
+       "labels",
+       "loss_mask"
+      ]
+     },
+     {
+      "combo": "ram1_rpi1_eml0",
+      "sample": 5,
+      "fields_differ": [
+       "tokens",
+       "labels",
+       "loss_mask"
+      ]
+     },
+     {
+      "combo": "ram1_rpi1_eml0",
+      "sample": 9,
+      "fields_differ": [
+       "tokens",
+       "labels",
+       "loss_mask"
+      ]
+     },
+     {
+      "combo": "ram1_rpi1_eml1",
+      "sample": 5,
+      "fields_differ": [
+       "tokens",
+       "labels",
+       "loss_mask"
+      ]
+     },
+     {
+      "combo": "ram1_rpi1_eml1",
+      "sample": 9,
+      "fields_differ": [
+       "tokens",
+       "labels",
+       "loss_mask"
+      ]
+     }
+    ]
+   },
+   "message": "含 pad id 的样本在 4 种组合下共 8 处两边不同（字段 ['labels', 'loss_mask', 'tokens']）：Megatron GPTDataset 把 tokens / labels 里的 pad id 换成 0、label 为 pad id 的位置 loss_mask 置 0，MaxText mmap_npy 原样保留、照常算 loss。只在数据里出现 pad id 时触发（见 L0.native.fields 的计数）"
+  },
+  {
+   "id": "L0.native.negative_controls",
+   "type": "poison_selftest",
+   "level": "L0",
+   "hard": false,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "controls": [
+     {
+      "name": "MaxText 默认的 reset_attention_mask 与 packing",
+      "steps": 5,
+      "units": 80,
+      "same": 12,
+      "index_same": {
+       "document_index": true,
+       "sample_index": true,
+       "shuffle_index": true
+      },
+      "localized": {
+       "position：position_ids 不同（EOD 后是否重置，reset_position_ids / reset_attention_mask）": 68
+      },
+      "config": {
+       "reset_attention_mask": true,
+       "packing_max_segments_per_sample": 25,
+       "mmap_npy_split": "9999,1,0",
+       "data_shuffle_seed": 1234
+      }
+     },
+     {
+      "name": "不设 mmap_npy_split",
+      "steps": 5,
+      "units": 80,
+      "same": 0,
+      "index_same": {
+       "document_index": false,
+       "sample_index": false,
+       "shuffle_index": false
+      },
+      "localized": {
+       "index/shuffle：这一步根本没有这个样本（索引重建或打乱不同）": 80
+      },
+      "config": {
+       "reset_attention_mask": false,
+       "packing_max_segments_per_sample": 0,
+       "mmap_npy_split": "",
+       "data_shuffle_seed": 1234
+      }
+     },
+     {
+      "name": "MaxText 默认种子 0",
+      "steps": 5,
+      "units": 80,
+      "same": 0,
+      "index_same": {
+       "document_index": false,
+       "sample_index": false,
+       "shuffle_index": false
+      },
+      "localized": {
+       "index/shuffle：这一步根本没有这个样本（索引重建或打乱不同）": 80
+      },
+      "config": {
+       "reset_attention_mask": false,
+       "packing_max_segments_per_sample": 0,
+       "mmap_npy_split": "9999,1,0",
+       "data_shuffle_seed": 0
+      }
+     }
+    ]
+   },
+   "message": "MaxText 默认的 reset_attention_mask 与 packing：68/80 个单元不同（position）；不设 mmap_npy_split：80/80 个单元不同，索引不同（index/shuffle）；MaxText 默认种子 0：80/80 个单元不同，索引不同（index/shuffle）"
+  },
+  {
+   "id": "L0.native.coverage",
+   "type": "coverage",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {},
+   "worst": [],
+   "coverage": {
+    "expected": 64000,
+    "compared": 64000,
+    "missing": []
+   },
+   "evidence": [],
+   "message": "全部比到"
+  }
+ ]
+}

@@ -1,0 +1,55 @@
+# 混元 4 · 00 · tiny 的检查清单骨架（生成 alignments/00-tiny/CHECKS.md），格式同 01-mini/dashboard/checks.yaml。
+columns:
+  tiny: hy4-tiny · CPU 冒烟
+
+header:
+  - "[janus](../../../../README.md) › [混元 4](../../README.md) › [tiny](README.md) ｜ 检查清单"
+  - ""
+  - "# 混元 4 · tiny（hy4-tiny，5.4M）· 检查清单"
+  - ""
+  - "这一页回答：hy4-tiny 上做过哪些检查、结果如何。页面由 `models/hunyuan4/dashboard/build.py` 按 [`dashboard/checks.yaml`](dashboard/checks.yaml) 从结果文件生成。hy4-tiny 只做了语义检查（CPU），没有 GPU 对 TPU 的数值比较；做了什么、没做什么见 [README](README.md)。"
+  - ""
+
+summary_lead:
+  - "## 规模"
+  - ""
+
+how_to_read: []
+
+evidence_sources:
+  - {match: "hy4-*-smoke*", source: "TPU 一侧 CPU 冒烟（`frameworks/maxtext/cpu_smoke.py`）"}
+
+levels:
+  - id: L0
+    title: L0 · 地基：权重、数据、设置
+    purpose: 转换与链路逐位
+    lead:
+      - "L0 共 {rows} 项检查，检查条数 {checks}。一条检查是冒烟脚本的一步（`ok` 为真才过）。"
+    tables:
+      - rows:
+          - name: CPU 冒烟各步
+            what: hy4-tiny 维度、8 个假 CPU 设备，四个阶段（A–D）各走一遍：生成 HF 目录、转换、往返逐位、RoPE 去交错与负对照、训练、初始权重等于 HF、索引器冻结、数据指纹、学习率常数
+            objects: 冒烟脚本的每一步
+            src: {tiny: "hy4-tiny-smoke:*"}
+  - id: L1
+    title: L1–L4 · GPU 对 TPU
+    purpose: 两边逐层与多步比较
+    lead:
+      - "hy4-tiny 上没有做 GPU 对 TPU 的比较。"
+    tables:
+      - rows:
+          - name: T0：两边逐层对 FP64
+            what: hy4-tiny 两边逐层前向 / 反向、第 1 步更新对 FP64 的 R
+            objects: 7 层 + MTP
+            src: {tiny: "todo: 待做"}
+          - name: 多步比较
+            what: GPU 对 TPU 的逐步曲线
+            objects: —
+            src: {tiny: "todo: 没有做，L4 在 hy4-mini 上做"}
+
+unlisted_lead:
+  - "## 未列入本页的结果文件"
+  - ""
+
+unlisted_reasons:
+  hy4-cpu-smoke: 同一份冒烟结果里「不去交错的检查点必须判不一致」那一条负对照，列在 hy4-mini 检查清单 L0 的负对照一行（真实权重一列）

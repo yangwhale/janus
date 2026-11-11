@@ -1,0 +1,42 @@
+# 混元 4 hy4-mid · L0 权重转换（HF → MaxText）逐张量逐位
+#
+# 两个「运行」都只有参数清单（params_sha/rank0.init.json），由 models/hunyuan4/model/verify_ckpt.py 写出：
+#   hy4-mid-maxtext-ckpt：读转换后的 MaxText 检查点，按 maxtext 分支的 Hy4 映射把每个张量还原回 HF 的命名、形状与列序
+#                       （拆栈、反转置、拼回 iHC 的 pre/post 与专家 gate/up、RoPE 列逆置换），按检查点里实际存的 dtype 还原
+#                       （只有 HF 原件是 BF16 且值是 BF16 精确值时才转回 BF16），逐张量算原始字节的 sha256
+#     JAX_PLATFORMS=cpu python verify_ckpt.py maxtext --ckpt <转换输出>/0/items --hf <HF 目录> --stage mid --janus-run <运行根>/hy4-mid-maxtext-ckpt
+#   hy4-mid-hf：随机初始化 HF 目录的全部张量：tensor_sha256.json（make_tiny_hf.py 写的逐张量 sha256）+ safetensors 头里的 dtype 与形状
+#     python verify_ckpt.py hf-manifest --hf <HF 目录> --stage mid --janus-run <运行根>/hy4-mid-hf
+#   随机初始化的 HF 目录按发布检查点的 dtype 分布存（hy4_map.hf_dtype），dtype 规则与真实权重相同；RoPE 另用 verify_ckpt.py rope
+# 全量不抽样：checkpoint_equal 逐项比 sha256，数清两边张量数；dtype_manifest 查 dtype 清单（规则 = hy4_map.hf_dtype）。
+schema_version: 1
+model: hunyuan4-mid
+stage: hy4-mid-l0-ckpt-convert
+description: hy4-mid 的 HF → MaxText 权重转换后，逐张量还原回 HF 命名与形状，对 HF 原件逐位
+runs:
+  test: hy4-mid-maxtext-ckpt
+  golden: [hy4-mid-hf]
+  root: /data/janus-runs
+checks:
+  - id: L0.ckpt.convert.bitwise
+    type: checkpoint_equal
+    level: L0
+    select: {kind: checkpoint, which: init, manifest: true}
+  # 发布的检查点：主干每层的 iHC、hc_head、主干路由偏置与 sink 存 FP32，其余（含 MTP 层的路由偏置与 sink）BF16
+  - id: L0.ckpt.convert.dtype
+    type: dtype_manifest
+    level: L0
+    select: {kind: checkpoint, which: init}
+    params: &rules
+      rules:
+        - {pattern: "model.hc_head.*", dtype: float32}
+        - {pattern: "model.layers.*.hc_attn_layer.*", dtype: float32}
+        - {pattern: "model.layers.*.hc_mlp_layer.*", dtype: float32}
+        - {pattern: "model.layers.*.mlp.gate.e_score_correction_bias", dtype: float32}
+        - {pattern: "model.layers.*.self_attn.learnable_sink_param", dtype: float32}
+        - {pattern: "*", dtype: bfloat16}
+  - id: L0.ckpt.source.dtype
+    type: dtype_manifest
+    level: L0
+    select: {kind: checkpoint, which: init, run: hy4-mid-hf}
+    params: *rules

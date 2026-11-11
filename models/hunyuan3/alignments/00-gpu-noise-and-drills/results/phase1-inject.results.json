@@ -1,0 +1,207 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.0.1",
+  "commit": null
+ },
+ "catalog": {
+  "path": "catalogs/hunyuan3-4l/phase1-inject.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "560458c08342ae06db3e5977e24a579f285ad9834bff31eb4fa43f34b412cf3d",
+  "raw_sha256": "705b047e96005917e0b93bb9f450112a3eb6c60e33837b316f1e7da91f1c6710"
+ },
+ "runs": {
+  "i-weight": {
+   "path": "/data/janus-runs2/i-weight",
+   "meta_sha256": "6729249f2acf967b0b309d593cab20fabf8632d5d36e20854ccfec38448aa1f5"
+  },
+  "d-a": {
+   "path": "/data/janus-runs2/d-a",
+   "meta_sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+  }
+ },
+ "started_at": "2026-11-03T21:04:20+00:00",
+ "finished_at": "2026-11-03T21:04:27+00:00",
+ "summary": {
+  "pass": 3,
+  "fail": 2,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": true
+ },
+ "checks": [
+  {
+   "id": "L2.seam.inputs",
+   "type": "bitwise_equal",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 4,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/i-weight",
+     "sha256": "6729249f2acf967b0b309d593cab20fabf8632d5d36e20854ccfec38448aa1f5"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/L2.seam.inputs.jsonl"
+  },
+  {
+   "id": "L2.inject.layer0",
+   "type": "bitwise_equal",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 10,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/i-weight",
+     "sha256": "6729249f2acf967b0b309d593cab20fabf8632d5d36e20854ccfec38448aa1f5"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/L2.inject.layer0.jsonl"
+  },
+  {
+   "id": "L2.inject.layer1",
+   "type": "bitwise_equal",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 10,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/i-weight",
+     "sha256": "6729249f2acf967b0b309d593cab20fabf8632d5d36e20854ccfec38448aa1f5"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/L2.inject.layer1.jsonl"
+  },
+  {
+   "id": "L2.inject.layer2",
+   "type": "bitwise_equal",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 10,
+    "differ": 6
+   },
+   "worst": [
+    {
+     "name": "layers.2.attn.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.2.attn.proj.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.2.mlp.experts.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.2.mlp.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.2.mlp.shared.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/i-weight",
+     "sha256": "6729249f2acf967b0b309d593cab20fabf8632d5d36e20854ccfec38448aa1f5"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "6 / 10 个张量不同",
+   "details": "details/L2.inject.layer2.jsonl"
+  },
+  {
+   "id": "L2.inject.layer3",
+   "type": "bitwise_equal",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 10,
+    "differ": 1
+   },
+   "worst": [
+    {
+     "name": "layers.3.mlp.experts.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/i-weight",
+     "sha256": "6729249f2acf967b0b309d593cab20fabf8632d5d36e20854ccfec38448aa1f5"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "1 / 10 个张量不同",
+   "details": "details/L2.inject.layer3.jsonl"
+  }
+ ]
+}

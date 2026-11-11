@@ -1,0 +1,64 @@
+# 第一阶段 · TF32 开 / 关。
+# g61-notf32：确定性、全量抓数，与 d-a 只差 TF32——环境里去掉 TORCH_ALLOW_TF32_CUBLAS_OVERRIDE、设 NVIDIA_TF32_OVERRIDE=0，
+# 训练脚本 --no-tf32 再把 torch 的两个开关设为 False（run_check.sh 的 TF32=off）。只设 torch 开关不够：TE 的 FP32 GEMM
+# 不看它（results/phase1-kernels 的 TF32.switch.matrix）。运行里实测生效与否记在 meta.json 的 tf32 字段（TF32.in_run）。
+# 尺子同 phase1-parallel-ext：默认设置运行两两的差（TF32 带来的差与 GPU 自己重跑的噪声比）。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase1-tf32
+runs:
+  test: g61-notf32
+  golden: [d-a]
+  noise:
+    - [s-b, s-c]
+    - [s-b, s-d]
+    - [s-c, s-d]
+  root: /data/janus-runs2
+checks:
+  - id: TF32.step1.bitwise
+    type: bitwise_equal
+    level: L3
+    hard: false
+    select: {kind: tensor, step: 1, name: "*"}
+  - id: TF32.step1.coverage
+    type: coverage
+    level: L3
+    select: {kind: tensor, step: 1, name: "*"}
+  - id: TF32.step1.fwd.bitwise
+    type: bitwise_equal
+    level: L3
+    select: {kind: tensor, step: 1, name: "*.out"}
+  - id: TF32.step1.bwd.tol
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "*.grad"}
+    metrics: [rel_l2, cosine]
+    threshold: calibrated
+  - id: TF32.step1.grads.tol
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "grad.*"}
+    metrics: [rel_l2, cosine, norm_ratio]
+    threshold: calibrated
+  - id: TF32.step1.updated
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "main_param_after.*"}
+    metrics: [rel_l2, max_abs]
+    threshold: calibrated
+  - id: TF32.loss.exact
+    type: loss_series
+    level: L4
+    hard: false
+    select: {kind: metrics, field: lm_loss, window: "1:31"}
+    threshold: exact
+  - id: TF32.loss
+    type: loss_series
+    level: L4
+    select: {kind: metrics, field: lm_loss, window: "1:31"}
+    threshold: calibrated
+  - id: TF32.grad_norm
+    type: loss_series
+    level: L4
+    select: {kind: metrics, field: grad_norm, window: "1:31"}
+    threshold: calibrated

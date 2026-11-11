@@ -1,0 +1,51 @@
+# 03 · B200×8 自比，整层重算 + 路由回放 · 运行清单。数据位置写成占位，不写桶名。
+# 字段出处：各运行目录的 meta.json；完整参数见 ../../frameworks/megatron/README.md「第一阶段每次运行的参数」末尾的重算 golden 表。
+# 运行目录在 POC Pod 的 /data/rc/runs/（不对外）；rc-* 另有一份在 gs://<POC 桶>/janus/hunyuan3-4l/golden/。
+schema: 1
+alignment: 03-gpu-remat-golden
+code:
+  framework: "nemo:26.10 容器自带 Megatron-Bridge 0.7.0 / Megatron-Core 0.20.0（未改源码）"
+  janus: "24649e4b（本实践 PR 的分支提交；train_hy3.py sha256 09b213f9eb14500d9989ea04c7930027fd3916aa99390b2f8176f0985cc89223）"
+  image: nvcr.io/nvidia/nemo@sha256:fc75bf516de6845fd85fe627c7c18e69e7568428fe56438e31ff3b1917044b6c
+golden:
+  - name: rc-a
+    steps: 1000
+    setting: 默认（同 g1k-a）+ 整层重算（full / uniform / 1）+ 路由回放；分布式优化器关
+    dump: --dump-steps 1,1000 --full --save-batches
+    location: gs://<POC 桶>/janus/hunyuan3-4l/golden/rc-a/
+    series: results/series/rc-a.metrics.jsonl
+  - name: rc-b
+    steps: 1000
+    setting: 同 rc-a
+    dump: --dump-steps 1 --full
+    location: gs://<POC 桶>/janus/hunyuan3-4l/golden/rc-b/
+    series: results/series/rc-b.metrics.jsonl
+  - name: rc-c
+    steps: 1000
+    setting: 同 rc-a
+    dump: --dump-steps 1 --full
+    location: gs://<POC 桶>/janus/hunyuan3-4l/golden/rc-c/
+    series: results/series/rc-c.metrics.jsonl
+  - name: rc-d
+    steps: 1000
+    setting: 同 rc-a（补噪声参照：5 份重跑两两配对得到 10 对比较）
+    dump: --dump-steps 1 --full
+    location: gs://<POC 桶>/janus/hunyuan3-4l/golden/rc-d/
+    series: results/series/rc-d.metrics.jsonl
+  - name: rc-e
+    steps: 1000
+    setting: 同 rc-d
+    dump: --dump-steps 1 --full
+    location: gs://<POC 桶>/janus/hunyuan3-4l/golden/rc-e/
+    series: results/series/rc-e.metrics.jsonl
+test:
+  - name: rv-det
+    steps: 2
+    role: 回放验证（重算与首次前向逐位；对 r-remat、d-a）
+    setting: 确定性 + 整层重算 + 路由回放；--dump-steps 1 --full
+    results: [remat-replay, remat-replay-base]
+references:
+  - {name: g1k-a/b/c, from: ../00-gpu-noise-and-drills/runs.yaml, role: 不重算的归因参照, results: [remat-vs-g1k]}
+  - {name: r-remat, from: ../00-gpu-noise-and-drills/runs.yaml, role: 整层重算、不回放（确定性）}
+  - {name: d-a, from: ../00-gpu-noise-and-drills/runs.yaml, role: 不重算的确定性基线（全量抓数）}
+  - {name: t-a, from: ../01-v5p-acceptance/runs.yaml, role: TPU 1000 步，对 rc 与对 g1k 各比一次, results: [remat-offset.t-a-vs-rc]}

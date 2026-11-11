@@ -1,0 +1,48 @@
+# 混元 4 · 00 · T1 的 GPU 一侧自比（计划，待做）：被测一侧（GPU，Megatron-Bridge B200 × 8）同设置 8 份重跑的散布。
+# 这 28 对就是 T1 L4 的噪声尺子（PROTOCOL.md 第 3 节；t1-l4-nozm.yaml、t1s-l4.yaml 同一组）；这里 GPU 自比，回答「GPU 重跑本来就差多少」。
+# g1-b 当被测、g1-a 当参照，噪声取 8 份两两 28 对（含 g1-a~g1-b 本身）。还没跑，没有结果文件。
+schema_version: 1
+model: hunyuan4-mini
+stage: t1-gpu-noise
+description: T1 GPU 自比（g1-b 对 g1-a，噪声 g1-a..h 两两 28 对）
+runs:
+  test: g1-b
+  golden: [g1-a]
+  noise:
+    - [g1-a, g1-b]
+    - [g1-a, g1-c]
+    - [g1-a, g1-d]
+    - [g1-a, g1-e]
+    - [g1-a, g1-f]
+    - [g1-a, g1-g]
+    - [g1-a, g1-h]
+    - [g1-b, g1-c]
+    - [g1-b, g1-d]
+    - [g1-b, g1-e]
+    - [g1-b, g1-f]
+    - [g1-b, g1-g]
+    - [g1-b, g1-h]
+    - [g1-c, g1-d]
+    - [g1-c, g1-e]
+    - [g1-c, g1-f]
+    - [g1-c, g1-g]
+    - [g1-c, g1-h]
+    - [g1-d, g1-e]
+    - [g1-d, g1-f]
+    - [g1-d, g1-g]
+    - [g1-d, g1-h]
+    - [g1-e, g1-f]
+    - [g1-e, g1-g]
+    - [g1-e, g1-h]
+    - [g1-f, g1-g]
+    - [g1-f, g1-h]
+    - [g1-g, g1-h]
+  root: /data/janus-runs
+checks:
+  - {id: L4.loss, type: loss_series, level: L4, select: {kind: metrics, field: lm_loss, window: "1:301"}, threshold: calibrated}
+  - {id: L4.mtp_loss, type: loss_series, level: L4, select: {kind: metrics, field: mtp_loss_mt, window: "1:301"}, threshold: calibrated}
+  - {id: L4.indexer_loss, type: loss_series, level: L4, select: {kind: metrics, field: indexer_loss, window: "1:301"}, threshold: calibrated}
+  - {id: L4.grad_norm, type: loss_series, level: L4, select: {kind: metrics, field: grad_norm, window: "1:301"}, threshold: calibrated}
+  - {id: L4.param_norm, type: loss_series, level: L4, select: {kind: metrics, field: param_norm, window: "1:301"}, threshold: calibrated}
+  - {id: L4.router.bias_std, type: router_stats, level: L4, select: {kind: metrics, prefix: "router.bias_std.", window: "1:301"}, threshold: calibrated}
+  - {id: L0.settings.lr, type: scalar_series, level: L0, select: {kind: metrics, field: lr, window: "1:301"}, params: {equals: 1.0e-5, rtol: 0.0, abs_ulp: 0}}

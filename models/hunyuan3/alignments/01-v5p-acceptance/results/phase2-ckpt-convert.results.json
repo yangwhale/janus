@@ -1,0 +1,115 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.0.1",
+  "commit": null
+ },
+ "catalog": {
+  "path": "catalogs/hunyuan3-4l/phase2-ckpt-convert.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "3ce397423f5cb858b0eacb6bc33d651ad8608ef570974430837b15f0604c79f0",
+  "raw_sha256": "359cd74f42b3302f3239b9cfb729bf9ca2c60d85f3c371c9e02edf4df8fbef8b"
+ },
+ "runs": {
+  "hy3-4l-maxtext-ckpt": {
+   "path": "/tmp/janus-runs/hy3-4l-maxtext-ckpt",
+   "meta_sha256": "c1fe75ca699c3314e0e08e246fcb9129fbe55000d62543c920bd62ed0e244cfa"
+  },
+  "hy3-4l-hf": {
+   "path": "/tmp/janus-runs/hy3-4l-hf",
+   "meta_sha256": "972c7b2d4af08c98a22e25d6432e3b2739f80f2c3224308bb83a676b77c032bc"
+  }
+ },
+ "started_at": "2026-11-04T08:33:20+00:00",
+ "finished_at": "2026-11-04T08:33:20+00:00",
+ "summary": {
+  "pass": 3,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L0.ckpt.convert.bitwise",
+   "type": "checkpoint_equal",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "params": 1781,
+    "differ": 0,
+    "only_one_side": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/janus-runs/hy3-4l-maxtext-ckpt",
+     "sha256": "c1fe75ca699c3314e0e08e246fcb9129fbe55000d62543c920bd62ed0e244cfa"
+    },
+    {
+     "path": "/tmp/janus-runs/hy3-4l-hf",
+     "sha256": "972c7b2d4af08c98a22e25d6432e3b2739f80f2c3224308bb83a676b77c032bc"
+    }
+   ],
+   "message": "全部参数逐位相同"
+  },
+  {
+   "id": "L0.ckpt.convert.dtype",
+   "type": "dtype_manifest",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "entries": 1781,
+    "wrong_dtype": 0,
+    "unmatched": 0,
+    "rule_hits": {
+     "*.expert_bias": 3,
+     "* !*.expert_bias": 1778
+    }
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/janus-runs/hy3-4l-maxtext-ckpt",
+     "sha256": "c1fe75ca699c3314e0e08e246fcb9129fbe55000d62543c920bd62ed0e244cfa"
+    }
+   ],
+   "message": "1781 项 dtype 全部符合规则"
+  },
+  {
+   "id": "L0.ckpt.source.dtype",
+   "type": "dtype_manifest",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "entries": 1781,
+    "wrong_dtype": 0,
+    "unmatched": 0,
+    "rule_hits": {
+     "*.expert_bias": 3,
+     "* !*.expert_bias": 1778
+    }
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/janus-runs/hy3-4l-hf",
+     "sha256": "972c7b2d4af08c98a22e25d6432e3b2739f80f2c3224308bb83a676b77c032bc"
+    }
+   ],
+   "message": "1781 项 dtype 全部符合规则"
+  }
+ ]
+}

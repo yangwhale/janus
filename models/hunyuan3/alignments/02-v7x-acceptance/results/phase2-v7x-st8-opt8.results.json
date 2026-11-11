@@ -1,0 +1,97 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "77da012463b7ef06581d0af84b59671c61b8d131"
+ },
+ "catalog": {
+  "path": "models/hunyuan3/alignments/02-b200x8-to-v7x4-4layers/catalogs/phase2-v7x-st8-opt8.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "1e7b9ffccf5b23da369e4fb12850814cc43a5aaf1df55dbe3c22037ff1275fa2",
+  "raw_sha256": "5617de2e559e133376bae0612c0573e0b543287236e7b704209767917e225409"
+ },
+ "runs": {
+  "t-v7x-st8-prod-gm": {
+   "path": "/tmp/jr-fill/t-v7x-st8-prod-gm",
+   "meta_sha256": "e88ab7c32c652d3fe652175b0e82613dc01b999ed6d7549b5dd7895ac40e4498"
+  },
+  "g1k-a": {
+   "path": "/tmp/jr-fill/g1k-a",
+   "meta_sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+  }
+ },
+ "started_at": "2026-11-05T07:42:32+00:00",
+ "finished_at": "2026-11-05T07:50:36+00:00",
+ "summary": {
+  "pass": 1,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L1.optim.adamw.8steps",
+   "type": "optimizer_step",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "rel_l2": 0.005
+    },
+    "source": "同 phase1-opt8 / phase1-full 的 L1.optim.adamw.replay：FP32 存储舍入地板实测最大 1.79e-3，取约 3 倍"
+   },
+   "metrics": {
+    "rel_l2_max": 0.004787435312731059,
+    "max_abs_max": 1.1274179589904065e-07,
+    "tensors": 66,
+    "lr": 1e-05,
+    "clip_coeff": 0.04150255668424629,
+    "weight_decay": 0.033,
+    "steps": "1:9"
+   },
+   "worst": [
+    {
+     "name": "update.decoder.final_layernorm.weight",
+     "metric": "rel_l2",
+     "value": 0.004787435312731059,
+     "location": null
+    },
+    {
+     "name": "update.decoder.layers.1.self_attention.q_layernorm.weight",
+     "metric": "rel_l2",
+     "value": 0.0034927688555189524,
+     "location": null
+    },
+    {
+     "name": "update.decoder.layers.2.self_attention.q_layernorm.weight",
+     "metric": "rel_l2",
+     "value": 0.0034188985128063678,
+     "location": null
+    },
+    {
+     "name": "update.decoder.layers.2.self_attention.k_layernorm.weight",
+     "metric": "rel_l2",
+     "value": 0.0032391463843719948,
+     "location": null
+    },
+    {
+     "name": "update.decoder.layers.1.self_attention.k_layernorm.weight",
+     "metric": "rel_l2",
+     "value": 0.0031927722651810754,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/jr-fill/t-v7x-st8-prod-gm",
+     "sha256": "e88ab7c32c652d3fe652175b0e82613dc01b999ed6d7549b5dd7895ac40e4498"
+    }
+   ],
+   "message": "连续 8 步重放：全部在门槛内",
+   "details": "details/L1.optim.adamw.8steps.jsonl"
+  }
+ ]
+}

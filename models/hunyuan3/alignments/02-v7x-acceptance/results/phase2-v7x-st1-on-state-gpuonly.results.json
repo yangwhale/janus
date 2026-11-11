@@ -1,0 +1,860 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "7cd0ca6dd987ad11e5da65838063d8bfaedae5bd"
+ },
+ "catalog": {
+  "path": "models/hunyuan3/alignments/02-v7x-acceptance/catalogs/phase2-v7x-st1-on-state-gpuonly.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "340c6f9cb331dcf6218128a82833d321b3d784c943fc208477cf8dd381c466b5",
+  "raw_sha256": "a3034cbc31600191f30dde91b8ba650e15b05ff3cf3a5a148cfc5248b2db9f3f"
+ },
+ "runs": {
+  "t-v7x-st1n-base-gm": {
+   "path": "/tmp/fill-runs/t-v7x-st1n-base-gm",
+   "meta_sha256": "1dfb740b1c1967db420b84852817a1268c5fa4331f8e5922acc7d38461a4dba8"
+  },
+  "g1k-a": {
+   "path": "/tmp/fill-runs/g1k-a",
+   "meta_sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+  },
+  "g1k-b": {
+   "path": "/tmp/fill-runs/g1k-b",
+   "meta_sha256": "20ba1aa99be3b12587f2de807208a5906be631a7ce882cad95ee969c237f5bd2"
+  },
+  "g1k-c": {
+   "path": "/tmp/fill-runs/g1k-c",
+   "meta_sha256": "dd91c737df4f227d97184e55846444cbdfdd8f1b9f0570c5b5d9f04095b3a88f"
+  }
+ },
+ "started_at": "2026-11-07T16:21:01+00:00",
+ "finished_at": "2026-11-07T17:06:05+00:00",
+ "summary": {
+  "pass": 3,
+  "fail": 8,
+  "inconclusive": 1,
+  "error": 0,
+  "hard_fail": true
+ },
+ "checks": [
+  {
+   "id": "L1.optim.adamw.replay",
+   "type": "optimizer_step",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "rel_l2": 0.005
+    },
+    "source": "沿用 phase1-full 的 L1.optim.adamw.replay：FP64 重放的更新量舍入到 FP32 后自身误差最大 1.79e-3，门槛取约 3 倍"
+   },
+   "metrics": {
+    "rel_l2_max": 0.002126998378831126,
+    "max_abs_max": 1.162161584744581e-07,
+    "cosine_min": 0.9999992162767796,
+    "tensors": 144,
+    "oot_frac_max": 0.0,
+    "mean_diff_max": 0.001953069815798535,
+    "norm_max_max": 0.0105935403363991,
+    "lr": 1e-05,
+    "clip_coeff": 0.057019239198803896,
+    "weight_decay": 0.033
+   },
+   "worst": [
+    {
+     "name": "update.decoder.final_layernorm.weight",
+     "metric": "rel_l2",
+     "value": 0.002126998378831126,
+     "location": null
+    },
+    {
+     "name": "update.decoder.layers.2.self_attention.q_layernorm.weight",
+     "metric": "rel_l2",
+     "value": 0.0017829585842822364,
+     "location": null
+    },
+    {
+     "name": "update.decoder.layers.1.self_attention.q_layernorm.weight",
+     "metric": "rel_l2",
+     "value": 0.0016746739451610673,
+     "location": null
+    },
+    {
+     "name": "update.decoder.layers.2.self_attention.k_layernorm.weight",
+     "metric": "rel_l2",
+     "value": 0.001620630545800387,
+     "location": null
+    },
+    {
+     "name": "update.decoder.layers.3.self_attention.q_layernorm.weight",
+     "metric": "rel_l2",
+     "value": 0.0015918026053461474,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/t-v7x-st1n-base-gm",
+     "sha256": "1dfb740b1c1967db420b84852817a1268c5fa4331f8e5922acc7d38461a4dba8"
+    }
+   ],
+   "message": "全部在门槛内",
+   "details": "details/L1.optim.adamw.replay.jsonl"
+  },
+  {
+   "id": "L2.layer0.grads",
+   "type": "tensor_tolerance",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 0.000534229238508907,
+      "cosine": 1.2520949466132691e-07,
+      "norm_ratio": 0.00021144643341475255
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.0027648626003084205,
+    "cosine_min": 0.9999979506329366,
+    "norm_ratio_dev_max": 0.0018809629196090416,
+    "tensors": 8,
+    "oot_frac_max": 7.519355187049279e-07,
+    "mean_diff_max": 0.002226941007056943,
+    "norm_max_max": 0.004563823930369128
+   },
+   "r1": 16.367505267287353,
+   "worst": [
+    {
+     "name": "grad.decoder.layers.0.self_attention.q_layernorm.weight",
+     "metric": "rel_l2",
+     "value": 0.0027648626003084205,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.0.self_attention.k_layernorm.weight",
+     "metric": "rel_l2",
+     "value": 0.0018805183900887513,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.0.self_attention.linear_qkv.layer_norm_weight",
+     "metric": "rel_l2",
+     "value": 0.0013652772504197054,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.0.mlp.linear_fc1.layer_norm_weight",
+     "metric": "rel_l2",
+     "value": 0.000664242212125645,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.0.mlp.linear_fc1.weight",
+     "metric": "rel_l2",
+     "value": 0.0005626336365642589,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/t-v7x-st1n-base-gm",
+     "sha256": "1dfb740b1c1967db420b84852817a1268c5fa4331f8e5922acc7d38461a4dba8"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "超过噪声参照两倍",
+   "details": "details/L2.layer0.grads.jsonl"
+  },
+  {
+   "id": "L2.layer1.grads",
+   "type": "tensor_tolerance",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 0.0005269452414689117,
+      "cosine": 1.38662137549872e-07,
+      "norm_ratio": 0.0002505115166088201
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.03859094804928008,
+    "cosine_min": 0.9992591956798453,
+    "norm_ratio_dev_max": 0.004302143881179221,
+    "tensors": 13,
+    "oot_frac_max": 0.470702330271403,
+    "mean_diff_max": 0.06335600133613896,
+    "norm_max_max": 0.0412832087149329
+   },
+   "r1": 5342.513343905596,
+   "worst": [
+    {
+     "name": "grad.decoder.layers.1.mlp.experts.linear_fc2.weight1",
+     "metric": "rel_l2",
+     "value": 0.03859094804928008,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.1.mlp.experts.linear_fc1.weight1",
+     "metric": "rel_l2",
+     "value": 0.0375566823111949,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.1.mlp.experts.linear_fc1.weight0",
+     "metric": "rel_l2",
+     "value": 0.03261047876277303,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.1.mlp.experts.linear_fc2.weight0",
+     "metric": "rel_l2",
+     "value": 0.028279524359470204,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.1.mlp.router.weight",
+     "metric": "rel_l2",
+     "value": 0.015949992306610383,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/t-v7x-st1n-base-gm",
+     "sha256": "1dfb740b1c1967db420b84852817a1268c5fa4331f8e5922acc7d38461a4dba8"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "超过噪声参照两倍",
+   "details": "details/L2.layer1.grads.jsonl"
+  },
+  {
+   "id": "L2.layer2.grads",
+   "type": "tensor_tolerance",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 0.00013627032753806698,
+      "cosine": 9.255688326881284e-09,
+      "norm_ratio": 1.0901363836191003e-05
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.06773524866992862,
+    "cosine_min": 0.997722028202528,
+    "norm_ratio_dev_max": 0.004238671353784751,
+    "tensors": 13,
+    "oot_frac_max": 0.6779046058654785,
+    "mean_diff_max": 0.09392756858085395,
+    "norm_max_max": 0.042484723267317615
+   },
+   "r1": 246115.8713454203,
+   "worst": [
+    {
+     "name": "grad.decoder.layers.2.mlp.experts.linear_fc2.weight0",
+     "metric": "rel_l2",
+     "value": 0.06773524866992862,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.2.mlp.experts.linear_fc1.weight0",
+     "metric": "rel_l2",
+     "value": 0.06648947182312587,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.2.mlp.router.weight",
+     "metric": "rel_l2",
+     "value": 0.029864995479200428,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.2.mlp.experts.linear_fc1.weight1",
+     "metric": "rel_l2",
+     "value": 0.004014682942044431,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.2.mlp.experts.linear_fc2.weight1",
+     "metric": "rel_l2",
+     "value": 0.0030677185593028775,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/t-v7x-st1n-base-gm",
+     "sha256": "1dfb740b1c1967db420b84852817a1268c5fa4331f8e5922acc7d38461a4dba8"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "超过噪声参照两倍",
+   "details": "details/L2.layer2.grads.jsonl"
+  },
+  {
+   "id": "L2.layer3.grads",
+   "type": "tensor_tolerance",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 3.849894019154551e-06,
+      "cosine": 7.40940642174337e-12,
+      "norm_ratio": 5.4464066701065406e-08
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.10041066336054051,
+    "cosine_min": 0.9950088297922542,
+    "norm_ratio_dev_max": 0.006697324153407402,
+    "tensors": 13,
+    "oot_frac_max": 0.7825316588083903,
+    "mean_diff_max": 0.13071435544221827,
+    "norm_max_max": 0.08696774549385054
+   },
+   "r1": 673626188.6105816,
+   "worst": [
+    {
+     "name": "grad.decoder.layers.3.mlp.experts.linear_fc1.weight0",
+     "metric": "rel_l2",
+     "value": 0.10041066336054051,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.3.mlp.experts.linear_fc2.weight0",
+     "metric": "rel_l2",
+     "value": 0.09927855354820292,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.3.mlp.experts.linear_fc1.weight1",
+     "metric": "rel_l2",
+     "value": 0.06681001548138223,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.3.mlp.experts.linear_fc2.weight1",
+     "metric": "rel_l2",
+     "value": 0.05308306456282294,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.3.mlp.router.weight",
+     "metric": "rel_l2",
+     "value": 0.035490260641933884,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/t-v7x-st1n-base-gm",
+     "sha256": "1dfb740b1c1967db420b84852817a1268c5fa4331f8e5922acc7d38461a4dba8"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "超过噪声参照两倍",
+   "details": "details/L2.layer3.grads.jsonl"
+  },
+  {
+   "id": "L3.step1.grads.all",
+   "type": "tensor_tolerance",
+   "level": "L3",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 0.000534229238508907,
+      "cosine": 1.38662137549872e-07,
+      "norm_ratio": 0.0002505115166088201
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.10041066336054051,
+    "cosine_min": 0.9950088297922542,
+    "norm_ratio_dev_max": 0.006697324153407402,
+    "tensors": 50,
+    "oot_frac_max": 0.7825316588083903,
+    "mean_diff_max": 0.13071435544221827,
+    "norm_max_max": 0.08696774549385054
+   },
+   "r1": 35995.191592590316,
+   "worst": [
+    {
+     "name": "grad.decoder.layers.3.mlp.experts.linear_fc1.weight0",
+     "metric": "rel_l2",
+     "value": 0.10041066336054051,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.3.mlp.experts.linear_fc2.weight0",
+     "metric": "rel_l2",
+     "value": 0.09927855354820292,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.2.mlp.experts.linear_fc2.weight0",
+     "metric": "rel_l2",
+     "value": 0.06773524866992862,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.3.mlp.experts.linear_fc1.weight1",
+     "metric": "rel_l2",
+     "value": 0.06681001548138223,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.2.mlp.experts.linear_fc1.weight0",
+     "metric": "rel_l2",
+     "value": 0.06648947182312587,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/t-v7x-st1n-base-gm",
+     "sha256": "1dfb740b1c1967db420b84852817a1268c5fa4331f8e5922acc7d38461a4dba8"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "超过噪声参照两倍",
+   "details": "details/L3.step1.grads.all.jsonl"
+  },
+  {
+   "id": "L3.step1.grads.dist",
+   "type": "tensor_tolerance",
+   "level": "L3",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "std_ratio": 0.0002505318873851081,
+      "zero_frac_diff": 1.3987223307291666e-05,
+      "rel_err_p99": 0.043302694251155426
+     }
+    }
+   },
+   "metrics": {
+    "std_ratio_dev_max": 0.0066973221755173284,
+    "zero_frac_diff_max": 0.0078125,
+    "rel_err_p99_max": 1.6772632899275115,
+    "tensors": 50,
+    "oot_frac_max": 0.7825316588083903,
+    "mean_diff_max": 0.13071435544221827,
+    "norm_max_max": 0.08696774549385054
+   },
+   "r1": 558.5454545454546,
+   "worst": [
+    {
+     "name": "grad.decoder.layers.3.mlp.experts.linear_fc2.weight0",
+     "metric": "std_ratio",
+     "value": 1.0066973221755173,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.3.mlp.experts.linear_fc1.weight0",
+     "metric": "std_ratio",
+     "value": 1.006183474586661,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.2.mlp.experts.linear_fc1.weight0",
+     "metric": "std_ratio",
+     "value": 1.004238670299523,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.2.mlp.experts.linear_fc2.weight0",
+     "metric": "std_ratio",
+     "value": 1.003830182820961,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.1.mlp.experts.linear_fc1.weight1",
+     "metric": "std_ratio",
+     "value": 1.002998179608449,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/t-v7x-st1n-base-gm",
+     "sha256": "1dfb740b1c1967db420b84852817a1268c5fa4331f8e5922acc7d38461a4dba8"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "超过噪声参照两倍",
+   "details": "details/L3.step1.grads.dist.jsonl"
+  },
+  {
+   "id": "L3.step1.updated",
+   "type": "tensor_tolerance",
+   "level": "L3",
+   "hard": true,
+   "status": "inconclusive",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 4.132884754723634e-05,
+      "max_abs": 1.637078821659088e-05,
+      "cosine": 8.539356999293091e-10
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 5.238543321712031e-05,
+    "max_abs_max": 1.9573606550693512e-05,
+    "cosine_min": 0.9999999986283146,
+    "tensors": 50,
+    "oot_frac_max": 0.0,
+    "mean_diff_max": 2.235593753965553e-05,
+    "norm_max_max": 0.0003578519497848768
+   },
+   "r1": 1.606309973946798,
+   "worst": [
+    {
+     "name": "main_param_after.decoder.layers.0.self_attention.linear_qkv.layer_norm_weight",
+     "metric": "rel_l2",
+     "value": 5.238543321712031e-05,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.3.self_attention.linear_qkv.layer_norm_weight",
+     "metric": "rel_l2",
+     "value": 4.1080011240762146e-05,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.1.self_attention.linear_qkv.layer_norm_weight",
+     "metric": "rel_l2",
+     "value": 3.076035063231499e-05,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.2.self_attention.linear_qkv.layer_norm_weight",
+     "metric": "rel_l2",
+     "value": 2.8953550237661876e-05,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.3.mlp.experts.linear_fc2.weight0",
+     "metric": "rel_l2",
+     "value": 2.7639238106102086e-05,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/t-v7x-st1n-base-gm",
+     "sha256": "1dfb740b1c1967db420b84852817a1268c5fa4331f8e5922acc7d38461a4dba8"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "介于噪声参照一到两倍之间，或参照不足",
+   "details": "details/L3.step1.updated.jsonl"
+  },
+  {
+   "id": "L3.step1.optim_state",
+   "type": "tensor_tolerance",
+   "level": "L3",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 0.0010074609079274515,
+      "cosine": 4.6556737043346175e-07
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.10039277379447561,
+    "cosine_min": 0.9950088297934085,
+    "tensors": 100,
+    "oot_frac_max": 0.7825084527333578,
+    "mean_diff_max": 0.13069601877307016,
+    "norm_max_max": 0.08689595777029459
+   },
+   "r1": 10720.61859048343,
+   "worst": [
+    {
+     "name": "exp_avg.decoder.layers.3.mlp.experts.linear_fc1.weight0",
+     "metric": "rel_l2",
+     "value": 0.10039277379447561,
+     "location": null
+    },
+    {
+     "name": "exp_avg.decoder.layers.3.mlp.experts.linear_fc2.weight0",
+     "metric": "rel_l2",
+     "value": 0.09925980496691406,
+     "location": null
+    },
+    {
+     "name": "exp_avg_sq.decoder.layers.3.mlp.experts.linear_fc2.weight0",
+     "metric": "rel_l2",
+     "value": 0.08725217173746687,
+     "location": null
+    },
+    {
+     "name": "exp_avg.decoder.layers.2.mlp.experts.linear_fc2.weight0",
+     "metric": "rel_l2",
+     "value": 0.06772087365779073,
+     "location": null
+    },
+    {
+     "name": "exp_avg.decoder.layers.3.mlp.experts.linear_fc1.weight1",
+     "metric": "rel_l2",
+     "value": 0.0668028588929468,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/t-v7x-st1n-base-gm",
+     "sha256": "1dfb740b1c1967db420b84852817a1268c5fa4331f8e5922acc7d38461a4dba8"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "超过噪声参照两倍",
+   "details": "details/L3.step1.optim_state.jsonl"
+  },
+  {
+   "id": "L3.step1.fake_fp32.main_param",
+   "type": "fake_fp32",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "low16_zero_frac": 0.99
+    },
+    "source": "推断：真 FP32 张量的低 16 位近似均匀，全为 0 的概率约 2⁻¹⁶ ≈ 1.5e-5；BF16 舍入后存成 FP32 的张量这一比例是 1。0.99 两头都留足余量（容得下少量元素恰好落在 BF16 网格上）"
+   },
+   "metrics": {
+    "low16_zero_frac_max": 0.0078125,
+    "tensors": 50,
+    "fake": 0,
+    "skipped_non_fp32": 0
+   },
+   "worst": [
+    {
+     "name": "main_param_after.decoder.layers.1.self_attention.q_layernorm.weight",
+     "metric": "low16_zero_frac",
+     "value": 0.0078125,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.1.mlp.experts.linear_fc1.weight0",
+     "metric": "low16_zero_frac",
+     "value": 0.002756834030151367,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.1.mlp.experts.linear_fc2.weight0",
+     "metric": "low16_zero_frac",
+     "value": 0.0010205904642740886,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.1.mlp.experts.linear_fc1.weight1",
+     "metric": "low16_zero_frac",
+     "value": 0.00028554598490397137,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.0.self_attention.linear_qkv.layer_norm_weight",
+     "metric": "low16_zero_frac",
+     "value": 0.000244140625,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/t-v7x-st1n-base-gm",
+     "sha256": "1dfb740b1c1967db420b84852817a1268c5fa4331f8e5922acc7d38461a4dba8"
+    }
+   ],
+   "message": "50 个 float32 张量低 16 位全 0 的比例最高 7.81e-03",
+   "details": "details/L3.step1.fake_fp32.main_param.jsonl"
+  },
+  {
+   "id": "L3.step1.fake_fp32.optim_state",
+   "type": "fake_fp32",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "low16_zero_frac": 0.99
+    },
+    "source": "推断：真 FP32 张量的低 16 位近似均匀，全为 0 的概率约 2⁻¹⁶ ≈ 1.5e-5；BF16 舍入后存成 FP32 的张量这一比例是 1。0.99 两头都留足余量（容得下少量元素恰好落在 BF16 网格上）"
+   },
+   "metrics": {
+    "low16_zero_frac_max": 1.8437703450520832e-05,
+    "tensors": 100,
+    "fake": 0,
+    "skipped_non_fp32": 0
+   },
+   "worst": [
+    {
+     "name": "exp_avg.decoder.layers.3.mlp.shared_experts.linear_fc1.weight",
+     "metric": "low16_zero_frac",
+     "value": 1.8437703450520832e-05,
+     "location": null
+    },
+    {
+     "name": "exp_avg_sq.decoder.layers.3.mlp.router.weight",
+     "metric": "low16_zero_frac",
+     "value": 1.7801920572916668e-05,
+     "location": null
+    },
+    {
+     "name": "exp_avg.decoder.layers.1.self_attention.linear_proj.weight",
+     "metric": "low16_zero_frac",
+     "value": 1.77919864654541e-05,
+     "location": null
+    },
+    {
+     "name": "exp_avg.decoder.layers.1.self_attention.linear_qkv.weight",
+     "metric": "low16_zero_frac",
+     "value": 1.7690658569335938e-05,
+     "location": null
+    },
+    {
+     "name": "exp_avg.decoder.layers.1.mlp.shared_experts.linear_fc2.weight",
+     "metric": "low16_zero_frac",
+     "value": 1.7484029134114582e-05,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/t-v7x-st1n-base-gm",
+     "sha256": "1dfb740b1c1967db420b84852817a1268c5fa4331f8e5922acc7d38461a4dba8"
+    }
+   ],
+   "message": "100 个 float32 张量低 16 位全 0 的比例最高 1.84e-05",
+   "details": "details/L3.step1.fake_fp32.optim_state.jsonl"
+  },
+  {
+   "id": "L3.step1.bias_after",
+   "type": "tensor_tolerance",
+   "level": "L3",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 0.0,
+      "max_abs": 0.0
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.012682869295192798,
+    "max_abs_max": 0.001999999978579581,
+    "tensors": 3,
+    "oot_frac_max": 0.005208333333333333,
+    "mean_diff_max": 0.0020034322895777644,
+    "norm_max_max": 0.017386126882209328
+   },
+   "r1": Infinity,
+   "worst": [
+    {
+     "name": "buffer_after.decoder.layers.1.mlp.router.expert_bias",
+     "metric": "rel_l2",
+     "value": 0.012682869295192798,
+     "location": null
+    },
+    {
+     "name": "buffer_after.decoder.layers.2.mlp.router.expert_bias",
+     "metric": "rel_l2",
+     "value": 0.0,
+     "location": null
+    },
+    {
+     "name": "buffer_after.decoder.layers.3.mlp.router.expert_bias",
+     "metric": "rel_l2",
+     "value": 0.0,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/t-v7x-st1n-base-gm",
+     "sha256": "1dfb740b1c1967db420b84852817a1268c5fa4331f8e5922acc7d38461a4dba8"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "超过噪声参照两倍",
+   "details": "details/L3.step1.bias_after.jsonl"
+  }
+ ]
+}

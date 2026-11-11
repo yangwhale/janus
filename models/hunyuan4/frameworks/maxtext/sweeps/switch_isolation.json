@@ -1,0 +1,12 @@
+[
+ {"name": "base", "overrides": [], "save_ops": "^(lm_head|hc_head|embed|cross_entropy)$|norm|layernorm|self_attn|mlp|_hc\\.out|residual|eh_proj"},
+ {"name": "M13", "overrides": ["logits_matmul_precision=default"], "save_ops": "^lm_head$"},
+ {"name": "M27", "overrides": ["indexer_weights_proj_bf16_weight=false"], "save_ops": "\\.self_attn$"},
+ {"name": "M23", "overrides": ["indexer_fp32_scores=false"], "save_ops": "\\.self_attn$"},
+ {"name": "M9", "overrides": ["rmsnorm_single_rounding=false"], "save_ops": "norm|layernorm"},
+ {"name": "M8", "overrides": ["routed_gate_bf16_rounding=false"], "save_ops": "mlp\\.gate\\.logits$|mlp\\(own routing\\)$|routed_experts$"},
+ {"name": "M10", "overrides": ["mlp_activation_round_per_op=false"], "save_ops": "^0\\.mlp$|shared_experts$|mlp\\(own routing\\)$|routed_experts$"},
+ {"name": "M12", "overrides": ["dense_fp32_accumulation=false"], "save_ops": "gate_proj$|\\.self_attn$|^0\\.mlp$|shared_experts$|mlp\\(own routing\\)$|routed_experts$|eh_proj$|mlp\\.gate\\.logits$"},
+ {"name": "M28", "overrides": ["ihc_stream_sum_unrolled=false"], "save_ops": "_hc\\.out$|residual$|^hc_head$"},
+ {"name": "M36", "overrides": ["ihc_force_bf16_rounding=false"], "save_ops": "_hc\\.out$|residual$|^hc_head$"}
+]

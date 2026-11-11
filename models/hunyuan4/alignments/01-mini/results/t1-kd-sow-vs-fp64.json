@@ -1,0 +1,141 @@
+{
+ "what": "TPU 索引器 KD 第 1 步第 0 行：TPU 图里的 KL 对 CPU FP64 在 TPU 自己 sow 出的同一份输入上重算；拆成教师分布行和、学生 log q 平移两项（analysis/kd_sow_vs_fp64.py）",
+ "runs": {
+  "tw-kd1s": {
+   "setting": "现行一代（t1zw-a 的配置，sa_use_base2_exp 开）+ debug_sow_indexer；MaxText 1e880fdc，janus 6717070",
+   "layers": {
+    "decoder/dense_layers/self_attention": {
+     "kl_row_mean_fp64": 0.00010981679594496953,
+     "kl_row_mean_tpu": 0.00010983081895599156,
+     "rel_tpu_vs_fp64": 0.00012769459262917948,
+     "fp64_formula_on_tpu_p_and_logq_rel": 0.0003055935036022639,
+     "swap_tpu_p_only_rel": 0.00015624781366696538,
+     "swap_tpu_logq_only_rel": 0.00014934569029079192,
+     "target_rowsum_minus1_mean": 1.715729069928784e-08,
+     "target_rowsum_minus1_frac_pos": 0.609130859375,
+     "logq_exp_rowsum_minus1_mean": -1.6399444524475663e-08,
+     "target_rel_l2": 6.714102733489659e-08,
+     "logq_mean_err": -1.662950212581921e-08,
+     "pred_from_rowsum_rel": 0.0001562355790082016,
+     "pred_from_logq_shift_rel": 0.00015142949657857846
+    },
+    "decoder/moe_layers/layers_0/self_attention": {
+     "kl_row_mean_fp64": 0.00010775803389434825,
+     "kl_row_mean_tpu": 0.0001077719954531986,
+     "rel_tpu_vs_fp64": 0.00012956397166674627,
+     "fp64_formula_on_tpu_p_and_logq_rel": 0.000312482317210927,
+     "swap_tpu_p_only_rel": 0.00016238995408679457,
+     "swap_tpu_logq_only_rel": 0.00015009235944196675,
+     "target_rowsum_minus1_mean": 1.7497278292921692e-08,
+     "target_rowsum_minus1_frac_pos": 0.598876953125,
+     "logq_exp_rowsum_minus1_mean": -1.6174644522728467e-08,
+     "target_rel_l2": 6.864518523230237e-08,
+     "logq_mean_err": -1.3307710047342371e-08,
+     "pred_from_rowsum_rel": 0.00016237562676836662,
+     "pred_from_logq_shift_rel": 0.00012349622173312815
+    },
+    "decoder/moe_layers_remainder/layers_0/self_attention": {
+     "kl_row_mean_fp64": 3.864941709180588e-05,
+     "kl_row_mean_tpu": 3.8657945257813964e-05,
+     "rel_tpu_vs_fp64": 0.00022065445354146895,
+     "fp64_formula_on_tpu_p_and_logq_rel": 0.0007272698717804005,
+     "swap_tpu_p_only_rel": 0.0003782124295741429,
+     "swap_tpu_logq_only_rel": 0.0003490574377720268,
+     "target_rowsum_minus1_mean": 1.4617675958561449e-08,
+     "target_rowsum_minus1_frac_pos": 0.580810546875,
+     "logq_exp_rowsum_minus1_mean": -1.3490938333647878e-08,
+     "target_rel_l2": 6.906089502531438e-08,
+     "logq_mean_err": -1.3750884439673122e-08,
+     "pred_from_rowsum_rel": 0.00037821206782600003,
+     "pred_from_logq_shift_rel": 0.00035578504087163757
+    },
+    "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention": {
+     "kl_row_mean_fp64": 7.986373240848293e-05,
+     "kl_row_mean_tpu": 7.988452776785948e-05,
+     "rel_tpu_vs_fp64": 0.0002603855185503434,
+     "fp64_formula_on_tpu_p_and_logq_rel": 0.000505668126784764,
+     "swap_tpu_p_only_rel": 0.0002385110865852358,
+     "swap_tpu_logq_only_rel": 0.0002671570364951581,
+     "target_rowsum_minus1_mean": 1.904756885551251e-08,
+     "target_rowsum_minus1_frac_pos": 0.60546875,
+     "logq_exp_rowsum_minus1_mean": -2.133496945869737e-08,
+     "target_rel_l2": 6.701491993463466e-08,
+     "logq_mean_err": -2.2690012318110013e-08,
+     "pred_from_rowsum_rel": 0.0002385008599158499,
+     "pred_from_logq_shift_rel": 0.0002841090897437187
+    }
+   }
+  },
+  "t1zdiag2": {
+   "setting": "t1z 一代（M31、M33 起；KD 写法 M20 / M23 / M33 与现行相同）+ debug_sow_indexer",
+   "layers": {
+    "decoder/dense_layers/self_attention": {
+     "kl_row_mean_fp64": 0.00010978576772460206,
+     "kl_row_mean_tpu": 0.00010979638804631264,
+     "rel_tpu_vs_fp64": 9.673678046517864e-05,
+     "fp64_formula_on_tpu_p_and_logq_rel": 0.00027573715765139006,
+     "swap_tpu_p_only_rel": 0.00014245556878300647,
+     "swap_tpu_logq_only_rel": 0.00013328158648984179,
+     "target_rowsum_minus1_mean": 1.563867613185721e-08,
+     "target_rowsum_minus1_frac_pos": 0.59423828125,
+     "logq_exp_rowsum_minus1_mean": -1.4632363656152817e-08,
+     "target_rel_l2": 6.83658236916586e-08,
+     "logq_mean_err": -1.662473598301603e-08,
+     "pred_from_rowsum_rel": 0.00014244720837665296,
+     "pred_from_logq_shift_rel": 0.00015142888124368935
+    },
+    "decoder/moe_layers/layers_0/self_attention": {
+     "kl_row_mean_fp64": 0.00010781986761605874,
+     "kl_row_mean_tpu": 0.00010783788323909249,
+     "rel_tpu_vs_fp64": 0.00016709001255588163,
+     "fp64_formula_on_tpu_p_and_logq_rel": 0.0003481603954826884,
+     "swap_tpu_p_only_rel": 0.00014999336297050192,
+     "swap_tpu_logq_only_rel": 0.000198167026984164,
+     "target_rowsum_minus1_mean": 1.6172236882994184e-08,
+     "target_rowsum_minus1_frac_pos": 0.587646484375,
+     "logq_exp_rowsum_minus1_mean": -2.1366341210085453e-08,
+     "target_rel_l2": 7.00571007131212e-08,
+     "logq_mean_err": -2.3193811491640235e-08,
+     "pred_from_rowsum_rel": 0.00014999310647071767,
+     "pred_from_logq_shift_rel": 0.00021511630467060356
+    },
+    "decoder/moe_layers_remainder/layers_0/self_attention": {
+     "kl_row_mean_fp64": 3.863771199992159e-05,
+     "kl_row_mean_tpu": 3.865137731962065e-05,
+     "rel_tpu_vs_fp64": 0.00035367828454968553,
+     "fp64_formula_on_tpu_p_and_logq_rel": 0.0008652240075388562,
+     "swap_tpu_p_only_rel": 0.0004162292567548853,
+     "swap_tpu_logq_only_rel": 0.00044899476346094147,
+     "target_rowsum_minus1_mean": 1.6082012166407367e-08,
+     "target_rowsum_minus1_frac_pos": 0.579833984375,
+     "logq_exp_rowsum_minus1_mean": -1.7349676737567514e-08,
+     "target_rel_l2": 6.977389050532126e-08,
+     "logq_mean_err": -1.7687043648191902e-08,
+     "pred_from_rowsum_rel": 0.0004162257891057318,
+     "pred_from_logq_shift_rel": 0.0004577663306830331
+    },
+    "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention": {
+     "kl_row_mean_fp64": 7.990305826631629e-05,
+     "kl_row_mean_tpu": 7.992136156032004e-05,
+     "rel_tpu_vs_fp64": 0.00022906875407380234,
+     "fp64_formula_on_tpu_p_and_logq_rel": 0.0004754687547323666,
+     "swap_tpu_p_only_rel": 0.00022402442008195855,
+     "swap_tpu_logq_only_rel": 0.00025144432728740895,
+     "target_rowsum_minus1_mean": 1.78992962673874e-08,
+     "target_rowsum_minus1_frac_pos": 0.59326171875,
+     "logq_exp_rowsum_minus1_mean": -2.0091744253134675e-08,
+     "target_rel_l2": 6.637926050113596e-08,
+     "logq_mean_err": -2.322969046971176e-08,
+     "pred_from_rowsum_rel": 0.00022401265553227237,
+     "pred_from_logq_shift_rel": 0.00029072342127741064
+    }
+   }
+  }
+ },
+ "cpu_control": {
+  "what": "同一写法在 CPU 的 JAX FP32 上（kd_norm_probe.py --cpu，t1zdiag2 第 0 层的输入）",
+  "kl_rel_vs_fp64": -2.5260768140578094e-06
+ },
+ "reading": "四个产出层 TPU 记下的 KL 都高于 FP64（tw-kd1s：+1.28e-4、+1.30e-4、+2.21e-4、+2.60e-4）。两项同向：教师分布 p 每行之和平均 1 + 1.5e-8 至 1 + 1.9e-8（58–61% 的行偏正），学生 log q 整体偏低 1.3e-8 至 2.3e-8；KL ≈ 真 KL + (Σp − 1) − ε，所以 1e-8 级偏差在 KL ≈ 1e-4 上成为 1e-4 级相对偏差。CPU 上同一 FP32 写法不偏（−2.5e-6），偏差是 TPU 的 FP32 算术带来的。",
+ "correction_2026_11_09": "cpu_control 与 reading 末句「CPU 上同一 FP32 写法不偏，偏差是 TPU 的 FP32 算术带来的」不成立，撤回。那个 −2.5e-6 来自 kd_norm_probe.py 自己的逐步写法；直接调 MaxText 的 calculate_indexer_loss（同一份输入，CPU，frameworks/maxtext/kd_genkl_check.py --cpu）第 0 层是 +2.68e-4、第 5 层 +8.46e-4，同样偏高。两种写法在 CPU 上为何差这么多未查。成立的是：KL ≪ 1 时，FP32 里 Σp − 1 与 log q 的整体平移都会直接加到 KL 上，TPU 上实测偏高 +1.0e-4 至 +3.4e-4；改用广义 KL（MaxText 开关 indexer_kd_generalized_kl）后，TPU 上对 FP64 都在 1 个 FP32 ulp 内（t1zg-kd-generalized.json）。"
+}

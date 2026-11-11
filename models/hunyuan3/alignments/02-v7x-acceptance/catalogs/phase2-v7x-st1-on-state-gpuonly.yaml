@@ -1,0 +1,73 @@
+# 第 1 步状态读，噪声只取 GPU 第 1 步重跑（g1k-a/b/c 3 对）：项目负责人 2026-11-07 19:59 决定尺子只来自参照一侧（GPU），
+# 2026-11-08 07:25 批准按此重判。检查段与 phase2-v7x-st1-on-state-xnoise.yaml 逐字相同，只删去 TPU 执行扰动 21 对；
+# phase2-v7x-st1-on-state-xnoise.yaml 与它的结果保留作历史（判法变更记录）。超出 GPU 噪声的张量对 FP64 定责：phase2-*st1-fp64-* 的逐张量 R 比（偏差台账 #5 / #17 / #20）。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-v7x-st1-on-state-gpuonly
+description: v7x 第 1 步状态读 + 动量反推梯度（t-v7x-st1n-base 对 g1k-a），噪声只用 GPU 3 对
+runs:
+  test: t-v7x-st1n-base-gm
+  golden: [g1k-a, g1k-b, g1k-c]
+  noise:
+    - [g1k-a, g1k-b]
+    - [g1k-a, g1k-c]
+    - [g1k-b, g1k-c]
+  root: /data/janus-runs
+checks:
+  # ---------------- L1 优化器：FP64 重放一步 AdamW。梯度是从 m 反推的，所以 exp_avg 那一项按构造吻合；
+  # 有信息量的是更新量（update.*，用 m、v、偏差修正、权重衰减、eps 重算）与 exp_avg_sq（v = (1 − β2)·ĝ²）
+  - id: L1.optim.adamw.replay
+    type: optimizer_step
+    level: L1
+    select: {kind: tensor, step: 1, name: "decoder.*"}
+    params: {replay_from: test}
+    metrics: [rel_l2, max_abs, cosine]
+    threshold: {rel_l2: 5.0e-3}
+    source: "沿用 phase1-full 的 L1.optim.adamw.replay：FP64 重放的更新量舍入到 FP32 后自身误差最大 1.79e-3，门槛取约 3 倍"
+  # ---------------- L2 逐层参数梯度
+  - id: L2.layer{i}.grads
+    foreach: {i: [0, 1, 2, 3]}
+    type: tensor_tolerance
+    level: L2
+    select: {kind: tensor, step: 1, name: "grad.decoder.layers.{i}.*"}
+    metrics: [rel_l2, cosine, norm_ratio]
+    threshold: calibrated
+  # ---------------- L3 整网
+  - id: L3.step1.grads.all
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "grad.*"}
+    metrics: [rel_l2, cosine, norm_ratio]
+    threshold: calibrated
+  - id: L3.step1.grads.dist
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "grad.*"}
+    metrics: [std_ratio, zero_frac_diff, rel_err_p99]
+    threshold: calibrated
+  - id: L3.step1.updated
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "main_param_after.*"}
+    metrics: [rel_l2, max_abs, cosine]
+    threshold: calibrated
+  - id: L3.step1.optim_state
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "exp_avg*"}
+    metrics: [rel_l2, cosine]
+    threshold: calibrated
+  - id: L3.step1.fake_fp32.main_param
+    type: fake_fp32
+    level: L3
+    select: {kind: tensor, step: 1, name: "main_param_after.*"}
+  - id: L3.step1.fake_fp32.optim_state
+    type: fake_fp32
+    level: L3
+    select: {kind: tensor, step: 1, name: "exp_avg*"}
+  - id: L3.step1.bias_after
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "buffer_after.*"}
+    metrics: [rel_l2, max_abs]
+    threshold: calibrated

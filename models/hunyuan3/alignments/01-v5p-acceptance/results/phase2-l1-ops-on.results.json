@@ -1,0 +1,359 @@
+{
+ "schema_version": 1,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": null
+ },
+ "catalog": {
+  "path": "models/hunyuan3/analysis/l1_replay_results.py",
+  "sha256": "116c9323cf9b3de4507bebb851c8d9fd9dde354793ea016e29035313ca8d8f03"
+ },
+ "runs": {
+  "r-l2-on": {
+   "path": "/tmp/fill-runs/r-l2-on",
+   "meta_sha256": "d050a4164df52211a7ce9e3c59240454a88cd7e554a6ae2b1d5893aaae59124e"
+  },
+  "g1k-a": {
+   "path": "/tmp/fill-runs/g1k-a",
+   "meta_sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+  }
+ },
+ "started_at": "2026-11-05T09:25:03+00:00",
+ "finished_at": "2026-11-05T09:29:37+00:00",
+ "environment": {
+  "hf_config_sha256": "ce080ff3da244dc3dc203af51ac614ec0c5c78298d907a4f04af895d79ddbed7",
+  "numpy": "2.4.6",
+  "reference": "models/hunyuan3/analysis/fp64_forward.py（FP64，中间不舍入）"
+ },
+ "summary": {
+  "pass": 7,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L1.ops.router.gemm",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "r_ratio": 1.2
+    },
+    "source": "推断：同 GPU 侧 phase1-l1 的 L1.rratio 起点。只差舍入顺序时 R≈1；多一次同量级的独立舍入误差方差约翻倍、R≈√2≈1.41，取两者之间"
+   },
+   "metrics": {
+    "rel_l2": 5.7199244243170354e-08,
+    "cr_match_frac": 0.500213623046875,
+    "ulp_max": 40288,
+    "ulp_p999": 8.0,
+    "nonfinite_mismatch": 0,
+    "r_ratio": 0.015219720856317318,
+    "vs_ref_rel_l2": 3.956071650793631e-06,
+    "vs_ref_cosine": 0.9999999999997401,
+    "vs_ref_oot_frac": 0.0,
+    "vs_ref_mean_diff": 3.912143244592022e-06,
+    "vs_ref_norm_max": 6.3404511374155745e-06,
+    "cases": 3,
+    "vs_ref_cases": 3,
+    "vs_ref_worst": "layers.3.mlp.router.logits"
+   },
+   "worst": [
+    {
+     "name": "layers.1.mlp.router.logits",
+     "metric": "r_ratio",
+     "value": 0.015219720856317318,
+     "location": null
+    },
+    {
+     "name": "layers.2.mlp.router.logits",
+     "metric": "r_ratio",
+     "value": 0.013681131480317367,
+     "location": null
+    },
+    {
+     "name": "layers.3.mlp.router.logits",
+     "metric": "r_ratio",
+     "value": 0.012059112050096967,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "全部在门槛内",
+   "details": "details/L1.ops.router.gemm.jsonl"
+  },
+  {
+   "id": "L1.ops.router.topk",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "expect_match_frac": 1.0,
+    "cases": 3
+   },
+   "worst": [
+    {
+     "name": "layers.1.mlp.router.topk_idx",
+     "metric": "expect_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.2.mlp.router.topk_idx",
+     "metric": "expect_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.3.mlp.router.topk_idx",
+     "metric": "expect_match_frac",
+     "value": 1.0,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "逐位全中（expect_match_frac）",
+   "details": "details/L1.ops.router.topk.jsonl"
+  },
+  {
+   "id": "L1.ops.router.precision",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "bit_match_frac": 1.0,
+    "cases": 3
+   },
+   "worst": [
+    {
+     "name": "layers.1.router.probe",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.2.router.probe",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.3.router.probe",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "逐位全中（bit_match_frac）",
+   "details": "details/L1.ops.router.precision.jsonl"
+  },
+  {
+   "id": "L1.ops.rmsnorm",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "r_ratio": 1.2
+    },
+    "source": "推断：同 GPU 侧 phase1-l1 的 L1.rratio 起点。只差舍入顺序时 R≈1；多一次同量级的独立舍入误差方差约翻倍、R≈√2≈1.41，取两者之间"
+   },
+   "metrics": {
+    "rel_l2": 0.0016704633183421528,
+    "cr_match_frac": 0.9999871850013733,
+    "ulp_max": 1,
+    "ulp_p999": 0.0,
+    "nonfinite_mismatch": 0,
+    "r_ratio": 1.0000000003473446,
+    "vs_ref_rel_l2": 1.9737388568986013e-05,
+    "vs_ref_cosine": 0.999999999805218,
+    "vs_ref_oot_frac": 0.0,
+    "vs_ref_mean_diff": 6.59322386056655e-08,
+    "vs_ref_norm_max": 0.002008032128514056,
+    "cases": 3,
+    "vs_ref_cases": 3,
+    "vs_ref_worst": "layers.3.mlp_norm.out"
+   },
+   "worst": [
+    {
+     "name": "layers.2.mlp_norm.out",
+     "metric": "r_ratio",
+     "value": 1.0000000003473446,
+     "location": null
+    },
+    {
+     "name": "layers.1.mlp_norm.out",
+     "metric": "r_ratio",
+     "value": 1.0000000000442089,
+     "location": null
+    },
+    {
+     "name": "layers.3.mlp_norm.out",
+     "metric": "r_ratio",
+     "value": 0.9999999994675876,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "全部在门槛内",
+   "details": "details/L1.ops.rmsnorm.jsonl"
+  },
+  {
+   "id": "L1.ops.act",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "rel_l2": 0.0023470982024869644,
+    "cr_match_frac": 0.7372400760650635,
+    "ulp_max": 1,
+    "ulp_p999": 1.0,
+    "nonfinite_mismatch": 0,
+    "emulate_match_frac": 1.0,
+    "cases": 1
+   },
+   "worst": [
+    {
+     "name": "layers.0.mlp.act.out",
+     "metric": "rel_l2",
+     "value": 0.0023470982024869644,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "逐位全中（emulate_match_frac）",
+   "details": "details/L1.ops.act.jsonl"
+  },
+  {
+   "id": "L1.ops.attn.core",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "r_ratio": 1.2
+    },
+    "source": "推断：同 GPU 侧 phase1-l1 的 L1.rratio 起点。只差舍入顺序时 R≈1；多一次同量级的独立舍入误差方差约翻倍、R≈√2≈1.41，取两者之间"
+   },
+   "metrics": {
+    "rel_l2": 0.0033714558735228146,
+    "cr_match_frac": 0.5883747339248657,
+    "ulp_max": 13888,
+    "ulp_p999": 125.0,
+    "nonfinite_mismatch": 0,
+    "r_ratio": 1.002086599089989,
+    "vs_ref_rel_l2": 0.0045272236977968675,
+    "vs_ref_cosine": 0.9999897843052136,
+    "vs_ref_oot_frac": 0.00043132901191711426,
+    "vs_ref_mean_diff": 0.0028406337272464106,
+    "vs_ref_norm_max": 0.008928571428571428,
+    "cases": 4,
+    "vs_ref_cases": 4,
+    "vs_ref_worst": "layers.3.attn.core.out"
+   },
+   "worst": [
+    {
+     "name": "layers.0.attn.core.out",
+     "metric": "r_ratio",
+     "value": 1.002086599089989,
+     "location": null
+    },
+    {
+     "name": "layers.1.attn.core.out",
+     "metric": "r_ratio",
+     "value": 0.8677599688761869,
+     "location": null
+    },
+    {
+     "name": "layers.2.attn.core.out",
+     "metric": "r_ratio",
+     "value": 0.8372375204623704,
+     "location": null
+    },
+    {
+     "name": "layers.3.attn.core.out",
+     "metric": "r_ratio",
+     "value": 0.8329087645293635,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "全部在门槛内",
+   "details": "details/L1.ops.attn.core.jsonl"
+  },
+  {
+   "id": "L1.ops.moe",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "r_ratio": 1.2
+    },
+    "source": "推断：同 GPU 侧 phase1-l1 的 L1.rratio 起点。只差舍入顺序时 R≈1；多一次同量级的独立舍入误差方差约翻倍、R≈√2≈1.41，取两者之间"
+   },
+   "metrics": {
+    "rel_l2": 0.003764063567202224,
+    "cr_match_frac": 0.4044427275657654,
+    "ulp_max": 14616,
+    "ulp_p999": 267.0,
+    "nonfinite_mismatch": 0,
+    "r_ratio": 0.9333224169124615,
+    "vs_ref_rel_l2": 0.0039094085902593055,
+    "vs_ref_cosine": 0.9999923586527293,
+    "vs_ref_oot_frac": 5.1856040954589844e-05,
+    "vs_ref_mean_diff": 0.0031651823326580546,
+    "vs_ref_norm_max": 0.00684931506849315,
+    "cases": 3,
+    "vs_ref_cases": 3,
+    "vs_ref_worst": "layers.2.mlp.out"
+   },
+   "worst": [
+    {
+     "name": "layers.3.mlp.out",
+     "metric": "r_ratio",
+     "value": 0.9333224169124615,
+     "location": null
+    },
+    {
+     "name": "layers.2.mlp.out",
+     "metric": "r_ratio",
+     "value": 0.9076952526341112,
+     "location": null
+    },
+    {
+     "name": "layers.1.mlp.out",
+     "metric": "r_ratio",
+     "value": 0.8977140944864439,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "全部在门槛内",
+   "details": "details/L1.ops.moe.jsonl"
+  }
+ ]
+}

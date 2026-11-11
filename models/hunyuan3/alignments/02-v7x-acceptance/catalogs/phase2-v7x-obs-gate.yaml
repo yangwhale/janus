@@ -1,0 +1,67 @@
+# 对齐实践 02 · 观测构建过标定三关的第三关与「观测不改数值」。照 01 的 phase2-obs-gate.yaml 复制，两个运行都换成 v7x 上的：
+# 被测 obs-v7x-t1：同 01 的 obs-t1（maxtext 237a3270、janus 8c3c7138、yml 7704115、每设备 2 行不累积，--observe --full，1000 步）。
+# 基线 reg-v7x-t1：同提交、同 yml、同覆盖，按日常回归 T1 档的参数（--no-hooks --state-sha --hlo-dir），1000 步。噪声参照同 01（GPU 45 对）。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-v7x-obs-gate
+description: 观测构建（每步同一个加钩子程序）对生产构建 T1 LKG：第三关 loss 与观测不改数值
+runs:
+  test: obs-v7x-t1
+  lkg: reg-v7x-t1
+  golden: [reg-v7x-t1]
+  noise:
+    - [g1k-a, g1k-b]
+    - [g1k-a, g1k-c]
+    - [g1k-a, g-ctl]
+    - [g1k-a, g-ctl-b]
+    - [g1k-a, g-ctl-c]
+    - [g1k-a, g-gn-a]
+    - [g1k-a, g-gn-b]
+    - [g1k-a, g-rs-a]
+    - [g1k-a, g-rs-b]
+    - [g1k-b, g1k-c]
+    - [g1k-b, g-ctl]
+    - [g1k-b, g-ctl-b]
+    - [g1k-b, g-ctl-c]
+    - [g1k-b, g-gn-a]
+    - [g1k-b, g-gn-b]
+    - [g1k-b, g-rs-a]
+    - [g1k-b, g-rs-b]
+    - [g1k-c, g-ctl]
+    - [g1k-c, g-ctl-b]
+    - [g1k-c, g-ctl-c]
+    - [g1k-c, g-gn-a]
+    - [g1k-c, g-gn-b]
+    - [g1k-c, g-rs-a]
+    - [g1k-c, g-rs-b]
+    - [g-ctl, g-ctl-b]
+    - [g-ctl, g-ctl-c]
+    - [g-ctl, g-gn-a]
+    - [g-ctl, g-gn-b]
+    - [g-ctl, g-rs-a]
+    - [g-ctl, g-rs-b]
+    - [g-ctl-b, g-ctl-c]
+    - [g-ctl-b, g-gn-a]
+    - [g-ctl-b, g-gn-b]
+    - [g-ctl-b, g-rs-a]
+    - [g-ctl-b, g-rs-b]
+    - [g-ctl-c, g-gn-a]
+    - [g-ctl-c, g-gn-b]
+    - [g-ctl-c, g-rs-a]
+    - [g-ctl-c, g-rs-b]
+    - [g-gn-a, g-gn-b]
+    - [g-gn-a, g-rs-a]
+    - [g-gn-a, g-rs-b]
+    - [g-gn-b, g-rs-a]
+    - [g-gn-b, g-rs-b]
+    - [g-rs-a, g-rs-b]
+  root: /data/janus-runs
+checks:
+  - {id: OBS.gate3.loss, type: loss_series, level: L4, compare: lkg, select: {kind: metrics, field: lm_loss, window: "1:1001"}, threshold: calibrated}
+  - {id: OBS.gate3.grad_norm, type: loss_series, level: L4, hard: false, compare: lkg, select: {kind: metrics, field: grad_norm, window: "1:1001"}, threshold: calibrated}
+  - {id: OBS.gate3.param_norm, type: loss_series, level: L4, hard: false, compare: lkg, select: {kind: metrics, field: param_norm, window: "1:1001"}, threshold: calibrated}
+  - id: DET.hooks.noop
+    type: determinism
+    level: L4
+    compare: lkg
+    select: {kind: metrics, fields: [lm_loss, grad_norm, param_norm, router.bias_std.1, router.bias_std.2, router.bias_std.3]}

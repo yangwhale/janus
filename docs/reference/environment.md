@@ -1,0 +1,235 @@
+[janus](../../README.md) › [文档](../README.md) › 参考 · 环境 ｜ 上手步骤见[第 1 章 准备环境与数据](../guide/01-environment-data.md)
+
+# 环境：两边要钉死的版本与开关
+
+## 一句话
+
+先让每一边**自己可复现、开关可查**，再谈两边对齐。
+
+没钉死的版本和开关，会让同一份代码在不同时间跑出不同的数，噪声参照也就失去意义。
+
+## 每次运行都要记下的
+
+写进运行目录的 `meta.json`（字段见 `dump-format.md`），每次报告照抄：
+
+- 镜像的 `@sha256:` digest，不写 tag（tag 会被重新指向）；
+- 代码仓库与 commit；
+- 关键库版本：
+  - TPU 侧 jax / jaxlib / libtpu；
+  - GPU 侧 torch / CUDA / Transformer Engine / cuBLAS / NCCL / Megatron；
+- 硬件型号、卡数、拓扑；
+- 并行方式（dp / fsdp / tp / ep / cp / pp）；
+- 确定性相关的环境变量与开关，**原样列出**；
+- 运行时实际生效的模型、优化器、调度器配置（不是配置文件里写的值）。
+
+`L0.config.diff` 会逐项对照这些字段；版本或并行方式不一致，直接报。
+
+第一阶段的缺口：
+
+- `meta.json` 的 `versions.megatron_core`、`versions.megatron_bridge` 是 `null`（训练脚本取版本的写法取不到）。
+- 镜像 digest 也没记（`image` 字段是 tag）。
+- 两者版本以镜像为准：Megatron-Core 0.20.0、Megatron-Bridge 0.7.0（复现审计在容器里用 `importlib.metadata` 读到）。
+- TPU 侧对照前要补上。
+
+## GPU 侧
+
+### 第一阶段的环境（混元 3）
+
+- 硬件：单机 8 卡 B200（GKE Pod）。
+- 镜像 `nvcr.io/nvidia/nemo:26.10`：
+  - torch 2.14a、CUDA 13.4；
+  - Megatron-Core 0.20.0、Megatron-Bridge 0.7.0；
+  - Transformer Engine 2.20.2、cuBLAS 13.8。
+  - 出处：`models/hunyuan3/frameworks/megatron/README.md`；TE 与 cuBLAS 版本取自 `phase1-l1.results.json` 的 `environment`。
+- 起 Pod、下权重、转格式、训练的步骤见 `models/hunyuan3/frameworks/megatron/README.md`。
+
+### 两种设置
+
+第一阶段用到两种设置，名字在结果里反复出现：
+
+| 设置 | 怎么开 | 性质 |
+|---|---|---|
+| **确定性设置** | Megatron `deterministic_mode=True`（同时关掉 `cross_entropy_loss_fusion`），训练脚本 `--deterministic` | 同配置重跑逐步逐位相同（见注 1） |
+| **默认设置** | 不加 `--deterministic`，下面三个环境变量也**都不设** | 第 1 步前向逐位相同，第 2 步起不同（见注 2）；用来量噪声 |
+
+注 1：`phase1-determinism`：1000 步 loss、学习率逐位，第 1、1000 步各 24 个张量逐位。
+
+注 2：反向与更新里有非确定累加。
+
+下面三个环境变量由 `models/hunyuan3/frameworks/megatron/run.sh` 管：
+
+- 参数里有 `--deterministic` 就设，没有就 `unset`；
+- `JANUS_DET_ENV=1` / `0` 可强制设 / 不设。
+
+| 变量 | 值 | 为什么 |
+|---|---|---|
+| `NVTE_ALLOW_NONDETERMINISTIC_ALGO` | `0` | 不让 Transformer Engine 选非确定算法 |
+| `CUBLAS_WORKSPACE_CONFIG` | `:4096:8` | cuBLAS 确定性需要的固定工作区 |
+| `NCCL_ALGO` | `Ring` | 固定集合通信算法；算法变了，归约顺序就变 |
+
+第一阶段实际怎么设的（每次运行 `meta.json` 的 `determinism` 字段）：
+
+- 默认设置的 18 次运行三个变量**都没设**，起它们的脚本显式 `unset` 了。
+  - 这 18 次：`rd-golden-2..5`、`s-a..i`、`g1k-a..c`（第一阶段 GPU golden）、`i-nd`、`t-full`。
+- 确定性设置里，只有 1000 步噪声底的 `rd-golden-1`、`rd-det-b`（以及早期的 `dump-a/b`、`gd-a/b`）设了三个变量。
+  - 全覆盖与补充批次的 27 次确定性运行**没设**，只开了 `deterministic_mode`；
+  - 这 27 次：`d-a`、`d-b`、`f-*`、`p-*`、`r-*`、`h-light*`、`m-opt8`、`t-2l`、`i-weight`、`g1k-det`（第一阶段 GPU golden 的确定性设置版）。
+- 在确定性设置下这三个变量不改结果。
+  - 设了三个变量的复现运行与没设的 `d-a`，30 步 lm_loss、grad_norm 逐步逐位相同（`models/hunyuan3/alignments/00-gpu-noise-and-drills/results/repro-audit.md`）。
+  - 真正让重跑逐位相同的是 `deterministic_mode`。
+- 「只设三个变量、不开 `deterministic_mode`」这种组合第一阶段没有跑过，它是否逐位、算哪一种设置，未确认。
+  - `run.sh` 不加 `--deterministic` 起的就是第一阶段的默认设置（三个变量都不设）；
+  - 做法见 `models/hunyuan3/frameworks/megatron/README.md`「两种设置怎么起」。
+
+**用途分工**：
+
+- 确定性设置做「应当逐位」的检查——任何一位不同都是信号。
+  - 包括基线、故障注入、存档续训、抓数不改数值这类。
+- 默认设置做噪声参照。
+- 两者**不能混着当参照**（理由与数据见 `judging.md`「噪声参照只能用同一种设置的运行对」）。
+
+### 第一阶段踩到的坑
+
+1. **NCCL 版本冲突**。节点把 NCCL 2.27 挂到 `/usr/local/nvidia/lib64`，而 torch 需要容器里自带的 2.31。
+   - 处理：`LD_LIBRARY_PATH` 前置 `/usr/lib/x86_64-linux-gnu`，让容器里的版本先被找到。
+2. **NCCL 网络插件**。容器默认启用 GCP 的 NCCL 插件，它要求 RDMA 网卡，单机 Pod 没挂。
+   - 处理：`NCCL_ENV_PLUGIN`、`NCCL_NET_PLUGIN`、`NCCL_PROFILER_PLUGIN`、`NCCL_TUNER_PLUGIN` 都设为 `none`。
+   - 多机运行要重新评估。
+3. **确定性模式要 Triton 缓存目录**。容器默认开了 `TRITON_CACHE_AUTOTUNING=1`，Megatron 确定性模式要求设 `TRITON_CACHE_DIR`。
+4. **TF32 默认是开的**。镜像设了 `TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=1`。
+   - 进程里 `torch.backends.cuda.matmul.allow_tf32`、`torch.backends.cudnn.allow_tf32` 默认都是 True，`float32_matmul_precision` 是 high（`phase1-l1.results.json` 的 `environment`）。
+   - 影响：**FP32 输入**的矩阵乘会先降到 TF32。
+     - 同一个路由 GEMM「先升 FP32 再乘」，开 TF32 时对 FP64 的 rel_L2 是 7.4e-6–7.7e-6，关掉是 7.5e-7–7.6e-7，差 10 倍（`../dev/design/0003-l1-op-replay.md`）。
+   - **只有 `NVIDIA_TF32_OVERRIDE=0` 关得干净**（`models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-kernels.results.json` 的 `TF32.switch.matrix`）：
+     - torch 的两个开关（或 `set_float32_matmul_precision("highest")`、或去掉 `TORCH_ALLOW_TF32_CUBLAS_OVERRIDE`）只管 torch 自己的 matmul；
+     - Transformer Engine 的 FP32 GEMM 照样走 TF32（rel_L2 2.94e-4 不变）；
+     - 设了 `NVIDIA_TF32_OVERRIDE=0` 之后两者都是 IEEE FP32（1.15e-6），而 torch 开关读回来仍是 True——**读回值不能当证据**。
+   - 第一阶段没有关。
+     - 训练里输入是 FP32 的 GEMM 只有路由反向的两个，其余都是 BF16 输入。
+     - 出处：第 1 步 GEMM 清单，`TF32.gemm_inventory`；清单覆盖 TE 与 torch 的 GEMM，不含 cuDNN 注意力等自带 kernel。
+     - 关掉 TF32 后：第 1 步前向逐位不变，反向从路由的 dx 起不同；
+     - 参数梯度最大差到默认设置噪声上限的 4.95 倍，30 步 loss 在噪声内（`models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-tf32.results.json`）。
+   - 要求：对齐运行用 `models/hunyuan3/frameworks/megatron/run_check.sh` 的 `TF32=off`。
+     - 它做的事：去掉 `TORCH_ALLOW_TF32_CUBLAS_OVERRIDE`、设 `NVIDIA_TF32_OVERRIDE=0`、训练脚本 `--no-tf32` 再关 torch 开关。
+     - 给了 `--janus-run` 时，训练脚本把开关读回值和一次实测（FP32 GEMM 对 FP64 的 rel_L2，torch 与 TE 各一个）写进 `meta.json` 的 `tf32`。
+     - 以实测为准，≤ 1e-5 才算关了。
+     - 做法与数字见 `../dev/design/0004-l1-gpu-kernels.md`「一、TF32 开 / 关」。
+5. **抓梯度要关分布式优化器**。
+   - 抓逐参数梯度、主权重、优化器状态时，需要每个 rank 上都有完整的已归约梯度，所以关掉分布式优化器。
+   - 对照运行的优化器配置必须一致。
+     - 第一阶段第一次拿「开着分布式优化器的轻量运行」对「关掉的全量抓数运行」，第 1 步梯度范数就不同；
+     - 那是配置不同，不是钩子改了数值（`models/hunyuan3/alignments/00-gpu-noise-and-drills/catalogs/phase1-hooks.yaml` 的注释）。
+
+另外：GPU 抓数时**独占节点**，不和别的作业共享，避免资源争用改变执行。
+
+## TPU 侧
+
+### 现状与已定的
+
+脚本与配置在 CPU 上核对过（`models/hunyuan3/frameworks/maxtext/README.md`）。已在 TPU v5p-8 上跑过：
+
+- 30 步只看 loss 的 `t-loss30`；
+- 第 1 步全量抓数的 1000 步 `t-a`；
+- 结果与结论见 [`../../models/hunyuan3/alignments/01-v5p-acceptance/README.md`](../../models/hunyuan3/alignments/01-v5p-acceptance/README.md)。
+
+已定的：
+
+- 镜像 MaxText 官方 `tpu_pre_training` 0.2.5，按 digest 钉死（`models/hunyuan3/frameworks/maxtext/run.sh`）。
+- 代码 `maxtext` 的 `hunyuan` 分支，提交号写进 `meta.json`。
+- 配置逐项对 GPU：`models/hunyuan3/frameworks/maxtext/hy3-4layers.yml`（每行注明 GPU 一侧的值与出处）。
+- 对齐阶段不加性能类 libtpu 参数（`LIBTPU_INIT_ARGS` 默认空）。
+- 多主机（v5p 2x2x2 两台主机）的 Pod 必须 `hostNetwork: true` + `dnsPolicy: ClusterFirstWithHostNet`，否则 `jax.distributed` 初始化卡住。
+
+下面的原则与待定项仍然有效。已实测的开关和取值写进对齐实践的 `setup.md`，这里只留跨模型通用的。
+
+### 原则
+
+- **同程序重跑必须逐位相同**。这是 TPU 侧一切比较的前提。
+  - 不逐位，先查是不是有随机性没钉住（数据顺序、RNG）。
+  - 测试模型上已有旁证：
+    - 跨机器原样重跑 3000 步 loss 逐位相同；
+    - 11 个臂各重跑 500 步逐位相同。
+  - 每个模型、每个平台仍要自己实测一次。
+- **开关两边语义对齐**。一边开、一边关的开关，按「配置不一致」处理，不按「精度差」处理。
+- **对齐期间不引入额外精度**。
+  - 编译器可能在某些地方用比声明更高的精度算（excess precision），这会让 TPU 和 GPU 的舍入位置不同。
+  - 对齐测试期间按 GPU 的舍入位置来：开关是 `--xla_allow_excess_precision=false`（下表）。
+  - 要固定某一处的舍入，用 `jax.lax.reduce_precision`，它不会被 excess precision 优化掉；`astype` 来回转可能会被消掉。
+- **只改执行方式的开关，是噪声参照的来源**。
+  - remat 档位、编译器片上内存上限、调度类开关如果确实不改数学，就拿来做扰动臂；
+  - 改不改数学，要先用「同程序、只改这一个开关」验证。
+
+### 待第二阶段确认
+
+表的右边一栏是此前排查在测试模型上已经给出的答案。
+
+- 都是缩小模型、单次运行的结论，换到被测模型要按本仓库的检查再核一次。
+- 每个模型对这些答案的采用情况写在它的配置对照里（混元 3：`models/hunyuan3/config-alignment.md`）。
+
+| 项 | 要确认什么 | 此前排查已有的答案 |
+|---|---|---|
+| 矩阵乘默认精度 | 默认精度下 BF16 / FP32 输入的累加方式；与 GPU 的路由 GEMM（BF16 入、FP32 出）怎么对 | 见注 1 |
+| excess precision 类开关 | 名字、默认值、关掉后是否逐位改变结果 | 见注 2 |
+| RNG 相关开关 | 哪些开关影响 dropout / 初始化的随机数；对齐时 dropout 为 0，是否还有其他随机消费者 | 见注 3 |
+| collective matmul 等融合通信 | 是否改变归约顺序 | 改变，见注 4 |
+| 注意力 kernel 的实现选项 | 与 GPU 侧 softmax 的计算方式（如以 2 为底的指数）是否一致 | 见注 5 |
+| 扰动臂候选 | 哪些开关只改执行方式，能当噪声参照 | 见注 6 |
+| 版本 | jax / jaxlib / libtpu 版本钉死在镜像 digest 里 | 换版本不保证逐位，见注 7 |
+
+注 1（矩阵乘默认精度）：
+- FP32 操作数在 `DEFAULT` 下只算一遍 BF16：相对误差约 2.3e-3，`HIGHEST` 约 1e-7。
+- 路由 logits 因此只有 BF16 级精度，top-k 集合与 FP64 不同的 token 约 1%–2%，`HIGHEST` 为 0。
+- 逐位是否等于「两个操作数先舍 BF16 再乘」还没测。
+
+注 2（excess precision 类开关）：
+- `XLA_FLAGS=--xla_allow_excess_precision=false`，默认开。
+- 关掉后结果逐位改变。
+- 单个算子关掉后多与逐算子执行逐位相同，但**不更准**（有些算子默认更接近正确舍入）。
+- 它让前向与重算、DP 与 FSDP 的舍入位置不同。
+- 改的是舍入位置，不能当扰动臂。
+
+注 3（RNG 相关开关）：
+- 不加 `--xla_tpu_spmd_rng_bit_generator_unsafe=false` 时，随机初始化的权重随并行方式变。
+- MaxText 写死 `unsafe_rbg`，各平台随机位不同。
+- 两边载入同一份检查点、dropout 为 0 时都不起作用。
+
+注 4（collective matmul 等融合通信）：
+- FSDP 下 all-gather 与 matmul 重叠，单个线性层 37.98% 元素与不重叠时不同。
+- 关掉用 `--xla_jf_spmd_threshold_for_windowed_einsum_mib=1000000`。
+- 另外，跨算子融合本身也会改求和（注意力后 RMSNorm 被融进输出投影的输出端），见 `levels.md`「隔离融合与逐算子执行」。
+
+注 5（注意力 kernel 的实现选项）：
+- Tokamax Splash 默认 `sa_use_base2_exp=True`，多一次 BF16 舍入，建议两边都设 `False`；
+- 旧 Splash 的 softmax 在 FP32 里算；
+- dot-product 路径的 softmax 默认 BF16，要 `float32_logits`。
+
+注 6（扰动臂候选）：
+- 测试模型用过：
+  - 多加调度类参数；
+  - 改片上内存上限；
+  - 换 remat 档位（路由结果保存时）；
+  - 换注意力或 MoE kernel。
+- 只改片上内存上限，MoE 模型也会在某一步起跳、留下固定偏移，量级与各 CP 方案相同。
+- 每个臂仍要过 `regression.md` 第五节的三关。
+
+注 7（版本）：
+- v7 上换 jax 版本，梯度范数相对差最大 1.2e-4；
+- 每次升级重跑验收。
+
+## 两边都要统一的配置
+
+这些不是精度问题，是「两边跑的是不是同一个训练」。逐项列进 `config_diff` 的映射表：
+
+- dropout（必须等于 0，两边都断言）、随机路由类开关；
+- Adam β1 / β2 / eps、权重衰减（**实际生效值**，注意调度器会覆盖）及其作用范围（一维参数通常不衰减）；
+- 学习率曲线（预热、衰减方式）、梯度裁剪阈值；
+- 初始化：两边载入同一份 checkpoint，不各自随机初始化；
+- 数据处理约定：分词器、packing、EOS 是否计 loss、loss 的平均方式、数据顺序与种子；
+- 路由：打分函数、top-k、路由计算精度、expert_bias 更新率；
+- MTP、FP8 是否开启；
+- 主权重、优化器状态、梯度通信的 dtype。
+
+混元 3 两边配置的逐项对照：
+
+- TPU 配置文件 `models/hunyuan3/frameworks/maxtext/hy3-4layers.yml` 每行注明 GPU 一侧的值与出处；
+- `config_diff` 的映射表在 `models/hunyuan3/alignments/01-v5p-acceptance/catalogs/phase2-tpu.yaml` 的 `L0.config.diff`。

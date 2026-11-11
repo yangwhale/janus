@@ -1,0 +1,92 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "5c7a718fbd6a1aa1f4c962317c00e6e3ea251cf0"
+ },
+ "catalog": {
+  "path": "models/hunyuan3/alignments/01-b200x8-to-v5p8-4layers/catalogs/phase2-l2-replay-bitwise.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "6eac3b62ef7ca70b73c609f6e71e41e8b545a3996850f253cb2e380a1dce5123",
+  "raw_sha256": "8186aed84b5a127691379821a079bf3717d5d9ac1b28d9b7ab4e68ce7049a713"
+ },
+ "runs": {
+  "r-l2-norm-perop": {
+   "path": "/tmp/fill-runs/r-l2-norm-perop",
+   "meta_sha256": "a4cf76f86913b44db5650fd881f7b704ae966457c1d1ba55ff99fa48d849d978"
+  },
+  "g1k-a": {
+   "path": "/tmp/fill-runs/g1k-a",
+   "meta_sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+  }
+ },
+ "started_at": "2026-11-05T03:19:27+00:00",
+ "finished_at": "2026-11-05T03:19:33+00:00",
+ "summary": {
+  "pass": 0,
+  "fail": 1,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L3.step1.act.bitwise",
+   "type": "bitwise_equal",
+   "level": "L3",
+   "hard": false,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 41,
+    "differ": 41
+   },
+   "worst": [
+    {
+     "name": "layers.0.attn.core.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.0.attn.k_norm.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.0.attn.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.0.attn.proj.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.0.attn.q_norm.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/r-l2-norm-perop",
+     "sha256": "a4cf76f86913b44db5650fd881f7b704ae966457c1d1ba55ff99fa48d849d978"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "41 / 41 个张量不同",
+   "details": "details/L3.step1.act.bitwise.jsonl"
+  }
+ ]
+}

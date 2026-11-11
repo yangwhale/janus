@@ -1,0 +1,62 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "efc69143fe99f66072eb227fbd64787847859ecf"
+ },
+ "catalog": {
+  "path": "models/hunyuan4/alignments/01-mini/catalogs/t1zo-determinism.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "b507f49888432bb25b7085c6ec5d2aca8ab149efe325ca97a5369b4f31229a37",
+  "raw_sha256": "b561bfaaeae425e1124bbc794861b5dbc2614ef70dfddc3211671ecc7b5f202b"
+ },
+ "runs": {
+  "tz-off-qkc": {
+   "path": "/tmp/rw3b2/miniroot/tz-off-qkc",
+   "meta_sha256": "5afdbc51c1bb5b2fd015b1116937ca0454ad2621d786e3e16a4fd29f0854af29"
+  },
+  "tz-off-rep": {
+   "path": "/tmp/rw3b2/miniroot/tz-off-rep",
+   "meta_sha256": "d94594e9ba785c219caca86cb6facf975c7c09a151de7bbba1691408e993b324"
+  }
+ },
+ "started_at": "2026-11-11T02:24:08+00:00",
+ "finished_at": "2026-11-11T02:24:12+00:00",
+ "summary": {
+  "pass": 1,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "DET.tpu.rerun.current",
+   "type": "determinism",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "fields": 47,
+    "first_differ": [],
+    "tensors": 0,
+    "tensors_differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/rw3b2/miniroot/tz-off-qkc",
+     "sha256": "5afdbc51c1bb5b2fd015b1116937ca0454ad2621d786e3e16a4fd29f0854af29"
+    },
+    {
+     "path": "/tmp/rw3b2/miniroot/tz-off-rep",
+     "sha256": "d94594e9ba785c219caca86cb6facf975c7c09a151de7bbba1691408e993b324"
+    }
+   ],
+   "message": "逐位可复现"
+  }
+ ]
+}

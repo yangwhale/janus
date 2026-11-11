@@ -1,0 +1,93 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.0.1",
+  "commit": null
+ },
+ "catalog": {
+  "path": "catalogs/hunyuan3-4l/phase1-opt8.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "e72778c978a6f8411fa756532d8d447ca1ea6af464c60454a0ba8db48560394c",
+  "raw_sha256": "3aba425190883254e06480634a862c25d1ff80da4ef8024c499664065cb3e278"
+ },
+ "runs": {
+  "m-opt8": {
+   "path": "/data/janus-runs2/m-opt8",
+   "meta_sha256": "cf2a5617de646cb0064f0ead6694be38faa1b2ecfcb8cef9609c64852399360d"
+  }
+ },
+ "started_at": "2026-11-03T23:45:28+00:00",
+ "finished_at": "2026-11-03T23:48:40+00:00",
+ "summary": {
+  "pass": 1,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L1.optim.adamw.8steps",
+   "type": "optimizer_step",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "rel_l2": 0.005
+    },
+    "source": "同 phase1-full 的 L1.optim.adamw.replay：FP32 存储舍入地板实测最大 1.79e-3，取约 3 倍"
+   },
+   "metrics": {
+    "rel_l2_max": 0.003371739921377766,
+    "max_abs_max": 1.1219939599627082e-07,
+    "tensors": 42,
+    "lr": 1e-05,
+    "clip_coeff": 0.04151090640238505,
+    "weight_decay": 0.033,
+    "steps": "1:9"
+   },
+   "worst": [
+    {
+     "name": "update.decoder.layers.1.self_attention.q_layernorm.weight",
+     "metric": "rel_l2",
+     "value": 0.003371739921377766,
+     "location": null
+    },
+    {
+     "name": "update.decoder.layers.1.self_attention.k_layernorm.weight",
+     "metric": "rel_l2",
+     "value": 0.003238075759812251,
+     "location": null
+    },
+    {
+     "name": "update.decoder.layers.0.self_attention.k_layernorm.weight",
+     "metric": "rel_l2",
+     "value": 0.0022558034880410835,
+     "location": null
+    },
+    {
+     "name": "update.decoder.layers.0.self_attention.q_layernorm.weight",
+     "metric": "rel_l2",
+     "value": 0.0021148730959566595,
+     "location": null
+    },
+    {
+     "name": "update.decoder.layers.1.mlp.router.weight",
+     "metric": "rel_l2",
+     "value": 0.0005208223552725351,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/m-opt8",
+     "sha256": "cf2a5617de646cb0064f0ead6694be38faa1b2ecfcb8cef9609c64852399360d"
+    }
+   ],
+   "message": "连续 8 步重放：全部在门槛内",
+   "details": "details/L1.optim.adamw.8steps.jsonl"
+  }
+ ]
+}

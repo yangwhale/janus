@@ -1,0 +1,125 @@
+# 第一阶段 · 故障注入：检查真能报警、能定位
+# 被测是一次在训练里真埋了错的运行（用 janus run --test 逐个换：f-weight / f-weight2 / f-gscale / f-data / f-router / f-lr / f-drop / f-grad / f-bias），
+# golden 是同配置的确定性运行 d-a。两边都开确定性，所以除了埋的错以外应逐位相同：哪条检查红、红在哪一层，就是检查的灵敏度与定位能力。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase1-faults
+description: 确定性基线上逐个埋错，记录每条检查是否报警
+runs:
+  test: f-weight
+  golden: [d-a]
+  root: /data/janus-runs2
+checks:
+  - id: L0.config.diff
+    type: config_diff
+    level: L0
+    select: {kind: config}
+    params:
+      mapping:
+        - {test: model_config, ref: model_config, must_equal: true}
+        - {test: optimizer_config, ref: optimizer_config, must_equal: true}
+        - {test: config.args.lr, ref: config.args.lr, must_equal: true}
+        - {test: config.args.data, ref: config.args.data, must_equal: true}
+        - {test: checkpoint.manifest_sha256, ref: checkpoint.manifest_sha256, must_equal: true}
+        # RNG 消费者必须关掉（两边都等于 0）；随机路由开关 meta 里没有记录，暂不断言
+        - {test: model_config.hidden_dropout, equals: 0.0}
+        - {test: model_config.attention_dropout, equals: 0.0}
+  - id: L0.data.fingerprint
+    type: data_fingerprint
+    level: L0
+    select: {kind: tokens, steps: "1:31"}
+  - id: L0.weights.init
+    type: checkpoint_equal
+    level: L0
+    select: {kind: checkpoint, which: init, manifest: true}
+  - id: L0.weights.loaded
+    type: bitwise_equal
+    level: L0
+    select: {kind: tensor, step: 1, name: "param.*"}
+  - id: L0.main_params.loaded
+    type: bitwise_equal
+    level: L0
+    select: {kind: tensor, step: 1, name: "main_param.*"}
+  - id: L1.optim.adamw.replay
+    type: optimizer_step
+    level: L1
+    select: {kind: tensor, step: 1, name: "decoder.layers.*"}
+    # 实际生效的权重衰减是 0.033（Bridge 默认 scheduler.start/end_weight_decay 覆盖了 optimizer.weight_decay=0.1）；
+    # 新运行每步记录 wd，这里的值只给没记 wd 的旧运行用
+    params: {replay_from: test, weight_decay: 0.033}
+    metrics: [rel_l2, max_abs]
+    threshold: {rel_l2: 5.0e-3}
+    source: "实测：FP64 重放的更新量舍入到 FP32 后自身误差最大 1.79e-3（第 2 层 q_layernorm，t-full 第 1 步），门槛取约 3 倍；更新量逐元素误差 p99.9 ≤ 1.2 个 FP32 ULP"
+  # 前向、路由、反向分开：串跑找台阶只看前向（反向会被下游的差带回来，层层都红）
+  - id: L2.layer{i}.fwd
+    foreach: {i: [0, 1, 2, 3]}
+    type: bitwise_equal
+    level: L2
+    select: {kind: tensor, step: 1, name: "layers.{i}.*.out"}
+  - id: L2.layer{i}.router
+    foreach: {i: [1, 2, 3]}
+    type: bitwise_equal
+    level: L2
+    select: {kind: tensor, step: 1, name: "layers.{i}.mlp.router.*"}
+  - id: L2.layer{i}.bwd
+    foreach: {i: [0, 1, 2, 3]}
+    type: bitwise_equal
+    level: L2
+    select: {kind: tensor, step: 1, name: "layers.{i}.*.grad"}
+  - id: L2.layer{i}.grads
+    foreach: {i: [0, 1, 2, 3]}
+    type: bitwise_equal
+    level: L2
+    select: {kind: tensor, step: 1, name: "grad.decoder.layers.{i}.*"}
+  # 梯度缩放：cosine 对缩放是盲的，要看范数比
+  - id: L3.step1.grads.scale
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "grad.*"}
+    metrics: [norm_ratio, cosine]
+    threshold: {norm_ratio: 1.0e-3}
+    source: "推断：确定性基线上未埋错时两边梯度逐位相同（偏离 0）；故意缩放 1/8 时偏离 0.875"
+  - id: L3.step1.embed
+    type: bitwise_equal
+    level: L3
+    select: {kind: tensor, step: 1, name: "embed.out"}
+  - id: L3.step1.loss.per_token
+    type: bitwise_equal
+    level: L3
+    select: {kind: tensor, step: 1, name: "loss.per_token"}
+  - id: L3.step1.logits
+    type: bitwise_equal
+    level: L3
+    select: {kind: tensor, step: 1, name: "logits"}
+  - id: L3.step1.updated
+    type: bitwise_equal
+    level: L3
+    select: {kind: tensor, step: 1, name: "main_param_after.*"}
+  - id: L3.step1.bias_after
+    type: bitwise_equal
+    level: L3
+    select: {kind: tensor, step: 1, name: "buffer_after.*"}
+  - id: L4.loss
+    type: loss_series
+    level: L4
+    select: {kind: metrics, field: lm_loss, window: "1:31"}
+    threshold: exact
+  - id: L4.lr
+    type: scalar_series
+    level: L4
+    select: {kind: metrics, field: lr, window: "1:31"}
+    params: {rtol: 0.0, abs_ulp: 0}
+  - id: L4.grad_norm
+    type: loss_series
+    level: L4
+    select: {kind: metrics, field: grad_norm, window: "1:31"}
+    threshold: exact
+  - id: L4.router.bias_std
+    type: router_stats
+    level: L4
+    select: {kind: metrics, prefix: "router.bias_std.", window: "1:31"}
+    threshold: exact
+  - id: L4.determinism
+    type: determinism
+    level: L4
+    select: {kind: metrics, fields: [lm_loss, grad_norm, param_norm, num_zeros]}

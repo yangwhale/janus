@@ -1,0 +1,172 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "9a3a2dc0c423c36cc71f028e5bd1a6dda1607f05"
+ },
+ "catalog": {
+  "path": "models/hunyuan3/alignments/01-b200x8-to-v5p8-4layers/catalogs/phase2-resume.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "274a4e418d5614a346ed9061709614abdd42d1b631116cd9249ff7045c9fcd4a",
+  "raw_sha256": "521369b6ab292792696096aa135c363d44d4e4aece48ac9adb2be7ea6beeb881"
+ },
+ "runs": {
+  "r-res20": {
+   "path": "/tmp/fill-runs/r-res20",
+   "meta_sha256": "96f13f5d24a017420305a4b7c4c52ed04d55496d5e85b19924a7556ab6c27c3e"
+  },
+  "r-cont20": {
+   "path": "/tmp/fill-runs/r-cont20",
+   "meta_sha256": "722e88639eb58d207978d153c83df39c314c6273acd952e49c93bd8b02f9eed3"
+  }
+ },
+ "started_at": "2026-11-06T02:57:33+00:00",
+ "finished_at": "2026-11-06T03:08:36+00:00",
+ "summary": {
+  "pass": 5,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L0.resume.data",
+   "type": "data_fingerprint",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "units_per_field": {
+     "tokens": 160,
+     "labels": 160,
+     "loss_mask": 160,
+     "position_ids": 160
+    },
+    "units": 650,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/r-res20",
+     "sha256": "96f13f5d24a017420305a4b7c4c52ed04d55496d5e85b19924a7556ab6c27c3e"
+    },
+    {
+     "path": "/tmp/fill-runs/r-cont20",
+     "sha256": "722e88639eb58d207978d153c83df39c314c6273acd952e49c93bd8b02f9eed3"
+    }
+   ],
+   "message": "token 与首步 loss 逐位相同",
+   "details": "details/L0.resume.data.jsonl"
+  },
+  {
+   "id": "L4.resume.overlap",
+   "type": "overlap_replay",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "overlap_steps": 10,
+    "first_differ_step": null,
+    "first_differ_fields": []
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/r-res20",
+     "sha256": "96f13f5d24a017420305a4b7c4c52ed04d55496d5e85b19924a7556ab6c27c3e"
+    },
+    {
+     "path": "/tmp/fill-runs/r-cont20",
+     "sha256": "722e88639eb58d207978d153c83df39c314c6273acd952e49c93bd8b02f9eed3"
+    }
+   ],
+   "message": "重叠步全部逐位相同"
+  },
+  {
+   "id": "L3.resume.state",
+   "type": "checkpoint_equal",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "params": 91,
+    "differ": 0,
+    "only_one_side": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/r-res20",
+     "sha256": "96f13f5d24a017420305a4b7c4c52ed04d55496d5e85b19924a7556ab6c27c3e"
+    },
+    {
+     "path": "/tmp/fill-runs/r-cont20",
+     "sha256": "722e88639eb58d207978d153c83df39c314c6273acd952e49c93bd8b02f9eed3"
+    }
+   ],
+   "message": "全部参数逐位相同"
+  },
+  {
+   "id": "L3.resume.step11",
+   "type": "bitwise_equal",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 256,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/r-res20",
+     "sha256": "96f13f5d24a017420305a4b7c4c52ed04d55496d5e85b19924a7556ab6c27c3e"
+    },
+    {
+     "path": "/tmp/fill-runs/r-cont20",
+     "sha256": "722e88639eb58d207978d153c83df39c314c6273acd952e49c93bd8b02f9eed3"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/L3.resume.step11.jsonl"
+  },
+  {
+   "id": "L3.resume.coverage",
+   "type": "coverage",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {},
+   "worst": [],
+   "coverage": {
+    "expected": 256,
+    "compared": 256,
+    "missing": []
+   },
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/r-res20",
+     "sha256": "96f13f5d24a017420305a4b7c4c52ed04d55496d5e85b19924a7556ab6c27c3e"
+    }
+   ],
+   "message": "全部比到"
+  }
+ ]
+}

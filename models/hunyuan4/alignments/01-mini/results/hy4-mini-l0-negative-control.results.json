@@ -1,0 +1,130 @@
+{
+ "schema_version": 1,
+ "stage": "hy4-mini-l0-negative-control",
+ "model": "hunyuan4-mini",
+ "description": "同一个 HF 目录不做 RoPE 列去交错（checkpoint_rope_interleave=false）转换，L0 三道核对都必须判不一致，且只在带 RoPE 列的张量上",
+ "checks": [
+  {
+   "id": "L0.neg.no_deinterleave.roundtrip",
+   "type": "poison_selftest",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 212,
+    "differ": 32,
+    "rope_tensors": 32,
+    "differ_eq_rope_set": true
+   },
+   "message": "往返逐位：32 / 212 个张量对 HF 原件不同，正好是带 RoPE 列的 32 个：True"
+  },
+  {
+   "id": "L0.neg.no_deinterleave.rope",
+   "type": "poison_selftest",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "rows": 32,
+    "failed": 32
+   },
+   "message": "RoPE 去交错核对：32 / 32 条判不一致（检查状态 fail）"
+  },
+  {
+   "id": "L0.neg.no_deinterleave.init_vs_gpu",
+   "type": "poison_selftest",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "rank0_differ": 32,
+    "all_ranks_differ": 256,
+    "differ_from_rope_tensors_only": true
+   },
+   "message": "对 GPU 初始参数清单：rank 0 上 32 个参数不同，都来自带 RoPE 列的 HF 张量：True；8 个 rank 共不同 256 项"
+  }
+ ],
+ "rope_tensors": [
+  "model.layers.0.self_attn.indexer.k_norm.bias",
+  "model.layers.0.self_attn.indexer.k_norm.weight",
+  "model.layers.0.self_attn.indexer.wk.weight",
+  "model.layers.0.self_attn.indexer.wq_b.weight",
+  "model.layers.0.self_attn.kv_a_proj_with_mqa.weight",
+  "model.layers.0.self_attn.q_b_proj.weight",
+  "model.layers.1.self_attn.indexer.k_norm.bias",
+  "model.layers.1.self_attn.indexer.k_norm.weight",
+  "model.layers.1.self_attn.indexer.wk.weight",
+  "model.layers.1.self_attn.indexer.wq_b.weight",
+  "model.layers.1.self_attn.kv_a_proj_with_mqa.weight",
+  "model.layers.1.self_attn.q_b_proj.weight",
+  "model.layers.2.self_attn.kv_a_proj_with_mqa.weight",
+  "model.layers.2.self_attn.q_b_proj.weight",
+  "model.layers.3.self_attn.kv_a_proj_with_mqa.weight",
+  "model.layers.3.self_attn.q_b_proj.weight",
+  "model.layers.4.self_attn.kv_a_proj_with_mqa.weight",
+  "model.layers.4.self_attn.q_b_proj.weight",
+  "model.layers.5.self_attn.indexer.k_norm.bias",
+  "model.layers.5.self_attn.indexer.k_norm.weight",
+  "model.layers.5.self_attn.indexer.wk.weight",
+  "model.layers.5.self_attn.indexer.wq_b.weight",
+  "model.layers.5.self_attn.kv_a_proj_with_mqa.weight",
+  "model.layers.5.self_attn.q_b_proj.weight",
+  "model.layers.6.self_attn.kv_a_proj_with_mqa.weight",
+  "model.layers.6.self_attn.q_b_proj.weight",
+  "model.mtp_layers.0.self_attn.indexer.k_norm.bias",
+  "model.mtp_layers.0.self_attn.indexer.k_norm.weight",
+  "model.mtp_layers.0.self_attn.indexer.wk.weight",
+  "model.mtp_layers.0.self_attn.indexer.wq_b.weight",
+  "model.mtp_layers.0.self_attn.kv_a_proj_with_mqa.weight",
+  "model.mtp_layers.0.self_attn.q_b_proj.weight"
+ ],
+ "roundtrip_differ": [
+  "model.layers.0.self_attn.indexer.k_norm.bias",
+  "model.layers.0.self_attn.indexer.k_norm.weight",
+  "model.layers.0.self_attn.indexer.wk.weight",
+  "model.layers.0.self_attn.indexer.wq_b.weight",
+  "model.layers.0.self_attn.kv_a_proj_with_mqa.weight",
+  "model.layers.0.self_attn.q_b_proj.weight",
+  "model.layers.1.self_attn.indexer.k_norm.bias",
+  "model.layers.1.self_attn.indexer.k_norm.weight",
+  "model.layers.1.self_attn.indexer.wk.weight",
+  "model.layers.1.self_attn.indexer.wq_b.weight",
+  "model.layers.1.self_attn.kv_a_proj_with_mqa.weight",
+  "model.layers.1.self_attn.q_b_proj.weight",
+  "model.layers.2.self_attn.kv_a_proj_with_mqa.weight",
+  "model.layers.2.self_attn.q_b_proj.weight",
+  "model.layers.3.self_attn.kv_a_proj_with_mqa.weight",
+  "model.layers.3.self_attn.q_b_proj.weight",
+  "model.layers.4.self_attn.kv_a_proj_with_mqa.weight",
+  "model.layers.4.self_attn.q_b_proj.weight",
+  "model.layers.5.self_attn.indexer.k_norm.bias",
+  "model.layers.5.self_attn.indexer.k_norm.weight",
+  "model.layers.5.self_attn.indexer.wk.weight",
+  "model.layers.5.self_attn.indexer.wq_b.weight",
+  "model.layers.5.self_attn.kv_a_proj_with_mqa.weight",
+  "model.layers.5.self_attn.q_b_proj.weight",
+  "model.layers.6.self_attn.kv_a_proj_with_mqa.weight",
+  "model.layers.6.self_attn.q_b_proj.weight",
+  "model.mtp_layers.0.self_attn.indexer.k_norm.bias",
+  "model.mtp_layers.0.self_attn.indexer.k_norm.weight",
+  "model.mtp_layers.0.self_attn.indexer.wk.weight",
+  "model.mtp_layers.0.self_attn.indexer.wq_b.weight",
+  "model.mtp_layers.0.self_attn.kv_a_proj_with_mqa.weight",
+  "model.mtp_layers.0.self_attn.q_b_proj.weight"
+ ],
+ "summary": {
+  "pass": 3,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0
+ }
+}

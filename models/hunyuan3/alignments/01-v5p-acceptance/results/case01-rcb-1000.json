@@ -1,0 +1,412 @@
+{
+ "what": "rcb（rcc 的设置只把输出头 dgrad 换成 rr_arms.py dgrad-chunk-bf16：BF16 张量核按 1024 分段、段输出 FP32、段间 FP32 累加）1000 步复核。r_worst = 判定量对噪声上限 N 最差的比值；噪声一律 rcc-a..j 两两 45 对",
+ "runs": {
+  "rcb-a": "run_check.sh rcb-a 1000 nd --recompute --routing-replay --rr-arm dgrad-chunk-bf16 --no-dist-opt --dump-steps 1000 --save-batches（与 rcc-a 只差 --rr-arm）",
+  "rcb-b": "同 rcb-a，--dump-steps 100000、不带 --save-batches（同 rcc-b..j）",
+  "rcc-chk": "对照：rcc-a 的设置原样（--rr-arm dgrad-chunk），同一台机器、同一份检出，看环境能否复现 rcc 的分布；不进噪声带"
+ },
+ "hardware": "8 × B200（1 节点），NeMo 26.10 镜像（与 rcc 同一 digest）",
+ "data_check": "rcb-a 的 data/rank0、3、7.jsonl（逐步 batch 记录）与 rcc-a 逐字节相同",
+ "arm_check": {
+  "how": "训练前 dgrad_accum_ablation.py --check-arm：rr_arms.chunked_dgrad_bf16 在 p2-hl-abl-s1 / p2-hl-abl-s300 上重算",
+  "step1": {
+   "bitwise_vs_B1024": true,
+   "u_rel": -6.88130832161683e-07,
+   "rel_l2": 1.4546331614064794e-06
+  },
+  "step300": {
+   "bitwise_vs_B1024": true,
+   "u_rel": 3.112378976102155e-07,
+   "rel_l2": 1.5227138676092997e-06
+  },
+  "training_call1_rel_l2": "1.45e-06（rcb-a 训练日志第 1 次调用，对 FP64）"
+ },
+ "a_vs_rcc_a": {
+  "catalog": "01 catalogs/phase2-rcb-vs-rcc.yaml",
+  "rcb-a": {
+   "summary": {
+    "pass": 8,
+    "fail": 0,
+    "inconclusive": 0,
+    "error": 0
+   },
+   "L4.loss": {
+    "status": "pass",
+    "r_worst": 0.7718,
+    "worst_metric": "mare"
+   },
+   "L4.loss.tail": {
+    "status": "pass",
+    "r_worst": 0.7656,
+    "worst_metric": "max_step"
+   },
+   "L4.grad_norm": {
+    "status": "pass",
+    "r_worst": 0.8383,
+    "worst_metric": "mare"
+   },
+   "L4.grad_norm.golden_den": {
+    "status": "pass",
+    "r_worst": 0.8298,
+    "worst_metric": "mare"
+   },
+   "L4.param_norm": {
+    "status": "pass",
+    "r_worst": 0.6667,
+    "worst_metric": "max_step"
+   },
+   "L4.lr": {
+    "status": "pass"
+   },
+   "L4.router.bias_std": {
+    "status": "pass",
+    "r_worst": 0.9058,
+    "worst_metric": "max_step"
+   },
+   "L4.health": {
+    "status": "pass"
+   }
+  },
+  "rcb-b": {
+   "summary": {
+    "pass": 8,
+    "fail": 0,
+    "inconclusive": 0,
+    "error": 0
+   },
+   "L4.loss": {
+    "status": "pass",
+    "r_worst": 0.7393,
+    "worst_metric": "mare"
+   },
+   "L4.loss.tail": {
+    "status": "pass",
+    "r_worst": 0.8007,
+    "worst_metric": "max_step"
+   },
+   "L4.grad_norm": {
+    "status": "pass",
+    "r_worst": 0.837,
+    "worst_metric": "max_step"
+   },
+   "L4.grad_norm.golden_den": {
+    "status": "pass",
+    "r_worst": 0.732,
+    "worst_metric": "mare"
+   },
+   "L4.param_norm": {
+    "status": "pass",
+    "r_worst": 0.3333,
+    "worst_metric": "max_step"
+   },
+   "L4.lr": {
+    "status": "pass"
+   },
+   "L4.router.bias_std": {
+    "status": "pass",
+    "r_worst": 0.6947,
+    "worst_metric": "mare"
+   },
+   "L4.health": {
+    "status": "pass"
+   }
+  },
+  "rcc-chk": {
+   "summary": {
+    "pass": 8,
+    "fail": 0,
+    "inconclusive": 0,
+    "error": 0
+   },
+   "L4.loss": {
+    "status": "pass",
+    "r_worst": 0.7651,
+    "worst_metric": "mare"
+   },
+   "L4.loss.tail": {
+    "status": "pass",
+    "r_worst": 0.8738,
+    "worst_metric": "max_step"
+   },
+   "L4.grad_norm": {
+    "status": "pass",
+    "r_worst": 0.7733,
+    "worst_metric": "mare"
+   },
+   "L4.grad_norm.golden_den": {
+    "status": "pass",
+    "r_worst": 0.7645,
+    "worst_metric": "mare"
+   },
+   "L4.param_norm": {
+    "status": "pass",
+    "r_worst": 0.4444,
+    "worst_metric": "max_step"
+   },
+   "L4.lr": {
+    "status": "pass"
+   },
+   "L4.router.bias_std": {
+    "status": "pass",
+    "r_worst": 0.9124,
+    "worst_metric": "max_step"
+   },
+   "L4.health": {
+    "status": "pass"
+   }
+  }
+ },
+ "b_tpu_vs_rcb": {
+  "catalogs": "01 catalogs/phase2-acceptance-rcb-on.yaml、02 catalogs/phase2-v7x-acceptance-rcb.yaml；对 rcb-b 时只把 golden 换成 rcb-b",
+  "v5p t-rmap-on-1000 vs rcb-a": {
+   "summary": {
+    "pass": 6,
+    "fail": 0,
+    "inconclusive": 0,
+    "error": 0
+   },
+   "L4.loss": {
+    "status": "pass",
+    "r_worst": 0.7909,
+    "worst_metric": "mare"
+   },
+   "L4.loss.tail": {
+    "status": "pass",
+    "r_worst": 0.8708,
+    "worst_metric": "max_step"
+   },
+   "L4.grad_norm": {
+    "status": "pass",
+    "r_worst": 0.8607,
+    "worst_metric": "mare"
+   },
+   "L4.param_norm": {
+    "status": "pass",
+    "r_worst": 0.72,
+    "worst_metric": "max_step"
+   },
+   "L4.lr": {
+    "status": "pass"
+   },
+   "L4.router.bias_std": {
+    "status": "pass",
+    "r_worst": 0.825,
+    "worst_metric": "max_step"
+   }
+  },
+  "v7x t-v7x-on-1000 vs rcb-a": {
+   "summary": {
+    "pass": 5,
+    "fail": 0,
+    "inconclusive": 1,
+    "error": 0
+   },
+   "L4.loss": {
+    "status": "pass",
+    "r_worst": 0.8453,
+    "worst_metric": "mare"
+   },
+   "L4.loss.tail": {
+    "status": "pass",
+    "r_worst": 0.8743,
+    "worst_metric": "max_step"
+   },
+   "L4.grad_norm": {
+    "status": "inconclusive",
+    "r_worst": 1.0857,
+    "worst_metric": "mare"
+   },
+   "L4.param_norm": {
+    "status": "pass",
+    "r_worst": 0.5187,
+    "worst_metric": "max_step"
+   },
+   "L4.lr": {
+    "status": "pass"
+   },
+   "L4.router.bias_std": {
+    "status": "pass",
+    "r_worst": 0.7437,
+    "worst_metric": "mare"
+   }
+  },
+  "v5p t-rmap-on-1000 vs rcb-b": {
+   "summary": {
+    "pass": 6,
+    "fail": 0,
+    "inconclusive": 0,
+    "error": 0
+   },
+   "L4.loss": {
+    "status": "pass",
+    "r_worst": 0.7782,
+    "worst_metric": "mare"
+   },
+   "L4.loss.tail": {
+    "status": "pass",
+    "r_worst": 0.7643,
+    "worst_metric": "max_step"
+   },
+   "L4.grad_norm": {
+    "status": "pass",
+    "r_worst": 0.9326,
+    "worst_metric": "mare"
+   },
+   "L4.param_norm": {
+    "status": "pass",
+    "r_worst": 0.4123,
+    "worst_metric": "max_step"
+   },
+   "L4.lr": {
+    "status": "pass"
+   },
+   "L4.router.bias_std": {
+    "status": "pass",
+    "r_worst": 0.869,
+    "worst_metric": "max_step"
+   }
+  },
+  "v7x t-v7x-on-1000 vs rcb-b": {
+   "summary": {
+    "pass": 6,
+    "fail": 0,
+    "inconclusive": 0,
+    "error": 0
+   },
+   "L4.loss": {
+    "status": "pass",
+    "r_worst": 0.8211,
+    "worst_metric": "mare"
+   },
+   "L4.loss.tail": {
+    "status": "pass",
+    "r_worst": 0.8397,
+    "worst_metric": "max_step"
+   },
+   "L4.grad_norm": {
+    "status": "pass",
+    "r_worst": 0.9547,
+    "worst_metric": "mare"
+   },
+   "L4.param_norm": {
+    "status": "pass",
+    "r_worst": 0.5682,
+    "worst_metric": "max_step"
+   },
+   "L4.lr": {
+    "status": "pass"
+   },
+   "L4.router.bias_std": {
+    "status": "pass",
+    "r_worst": 0.6646,
+    "worst_metric": "mare"
+   }
+  }
+ },
+ "context_v7x_grad_norm_vs_single_rcc": {
+  "note": "同一个 TPU 运行对 rcc 单份各当 golden（尺子不变）时 L4.grad_norm 的 r_worst（都是 MARE），看单份 golden 之间的起伏",
+  "rcc-b": {
+   "status": "pass",
+   "r_worst": 0.8425,
+   "worst_metric": "mare"
+  },
+  "rcc-c": {
+   "status": "pass",
+   "r_worst": 0.7017,
+   "worst_metric": "mare"
+  },
+  "rcc-d": {
+   "status": "pass",
+   "r_worst": 0.9573,
+   "worst_metric": "mare"
+  },
+  "rcc-e": {
+   "status": "inconclusive",
+   "r_worst": 1.0132,
+   "worst_metric": "mare"
+  },
+  "rcc-f": {
+   "status": "pass",
+   "r_worst": 0.9062,
+   "worst_metric": "mare"
+  },
+  "rcc-g": {
+   "status": "pass",
+   "r_worst": 0.8811,
+   "worst_metric": "mare"
+  },
+  "rcc-h": {
+   "status": "pass",
+   "r_worst": 0.9159,
+   "worst_metric": "mare"
+  },
+  "rcc-i": {
+   "status": "pass",
+   "r_worst": 0.7639,
+   "worst_metric": "mare"
+  },
+  "rcc-j": {
+   "status": "inconclusive",
+   "r_worst": 1.1108,
+   "worst_metric": "mare"
+  },
+  "rcc-a": {
+   "status": "pass",
+   "r_worst": 0.851,
+   "worst_metric": "mare",
+   "source": "02 results/phase2-v7x-acceptance-rcc.results.json"
+  }
+ },
+ "step_time_s_median_steps_50_1000": {
+  "rc-a..e": [
+   0.2364,
+   0.237,
+   0.2371,
+   0.2355,
+   0.2358
+  ],
+  "rcc-a..j": [
+   0.3822,
+   0.3804,
+   0.3807,
+   0.3815,
+   0.3815,
+   0.3813,
+   0.3804,
+   0.3815,
+   0.381,
+   0.382
+  ],
+  "rcb-a": 0.25,
+  "rcb-b": 0.2498,
+  "rcc-chk": 0.3807
+ },
+ "offsets": {
+  "rcc-a": {
+   "param_norm_1000_minus_rc_mean": 0.020706559812879277,
+   "loss_301_1000_rel_vs_rc_mean": -0.00017058728008510426
+  },
+  "rcb-a": {
+   "param_norm_1000_minus_rc_mean": 0.02004921087382172,
+   "loss_301_1000_rel_vs_rc_mean": -0.00012168608283904827
+  },
+  "rcb-b": {
+   "param_norm_1000_minus_rc_mean": 0.02054222259130256,
+   "loss_301_1000_rel_vs_rc_mean": -0.00015198090031216712
+  },
+  "rcc-chk": {
+   "param_norm_1000_minus_rc_mean": 0.020706559812879277,
+   "loss_301_1000_rel_vs_rc_mean": -0.00013119928438699573
+  }
+ },
+ "offsets_rcc_range": {
+  "param_norm_1000_minus_rc_mean": [
+   0.02004921087382172,
+   0.021199571423949237
+  ],
+  "loss_301_1000_rel_vs_rc_mean": [
+   -0.00019897159448549598,
+   -7.761828030958602e-05
+  ]
+ }
+}

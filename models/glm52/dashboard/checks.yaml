@@ -1,0 +1,5 @@
+# 检查清单 models/glm52/CHECKS.md 的骨架（格式见 janus/report/inventory.py 开头，与 models/hunyuan3/dashboard/checks.yaml 相同）。
+# 有结果文件后按混元 3 的写法补全每级的 lead、tables、rows；现在只定平台列。
+columns:
+  v5p: TPU v5p 8 片
+levels: []

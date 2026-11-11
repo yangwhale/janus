@@ -1,0 +1,55 @@
+{
+ "step": 1,
+ "loss": 12.889273643493652,
+ "grad_norm": 6.3618228526238365,
+ "grad_sq": {
+  "embed_head": 5.793923111687329,
+  "experts": 0.150505494482214,
+  "hc": 5.468491208696323e-06,
+  "indexer": 2.163899954160078e-09,
+  "mtp": 0.018514547168137357,
+  "rest": 34.5098413841741
+ },
+ "indexer_loss_raw": {
+  "indexer_losses/decoder/dense_layers/self_attention/indexer_loss": [
+   2.217828659922816e-05
+  ],
+  "indexer_losses/decoder/moe_layers/layers_0/self_attention/indexer_loss": [
+   2.1474112145369872e-05
+  ],
+  "indexer_losses/decoder/moe_layers_remainder/layers_0/self_attention/indexer_loss": [
+   9.482921086600982e-06
+  ],
+  "indexer_losses/mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/indexer_loss": [
+   1.4641023881267756e-05
+  ]
+ },
+ "note": "indexer_loss_raw：各产出层 aux 里的值（已乘 indexer_loss_scaling_factor），梯度累积的各 microbatch 已相加，要除以 gradient_accumulation_steps；GPU 的逐层值再乘 1 / 产出层数",
+ "gradient_accumulation_steps": 2,
+ "code": [
+  {
+   "repo": "maxtext",
+   "commit": "8611ea6b369d269f3ea91f3e2754c09aa3589346"
+  },
+  {
+   "repo": "janus",
+   "commit": "196c2181699894ee0413dc7cf3fd007df488a525"
+  }
+ ],
+ "gpu_reference": {
+  "runs": "g1s-a/b/c step_1_hf_grads.safetensors（GPU 一侧导出，HF 名字与布局；路由专家只有 0–3）",
+  "grad_norm_gpu_g1_runs": "6.36313–6.36360（g1-a…h 第 1 步）",
+  "kd_per_layer_gpu": {
+   "0": 2.775609e-06,
+   "1": 2.687202e-06,
+   "5": "1.185765e-06–1.185887e-06",
+   "mtp0": "1.831467e-06–1.831565e-06"
+  }
+ },
+ "kd_per_layer_tpu_gpu_convention": {
+  "dense_layers": 2.77228582490352e-06,
+  "moe_layers": 2.684264018171234e-06,
+  "moe_layers_remainder": 1.1853651358251227e-06,
+  "mtp0": 1.8301279851584695e-06
+ }
+}

@@ -1,0 +1,16 @@
+# 对齐实践 02 · v7x 自己跑两次是否逐位：t-v7x-rmap-1000-b 对 t-v7x-rmap-1000-a（同一份代码包、配置、数据，各占一个 2x2x1 切片）。
+# 逐步标量按 0 格容差比（rtol 0、abs_ulp 0）：逐位相同才过。v5p 上同一提交双跑逐位（日常回归首个 LKG reg-t0-lkg1-a / -b）。
+# 运行根：两个运行目录放同一个目录。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-v7x-rmap-repro
+description: 02 · v7x 生产配置 1000 步同程序双跑逐位（t-v7x-rmap-1000-b 对 -a）
+runs:
+  test: t-v7x-rmap-1000-b
+  golden: [t-v7x-rmap-1000-a]
+  root: /data/janus-runs
+checks:
+  - {id: L4.repro.lm_loss, type: scalar_series, level: L4, select: {kind: metrics, field: lm_loss, window: "1:1001"}, params: {rtol: 0.0, abs_ulp: 0}}
+  - {id: L4.repro.grad_norm, type: scalar_series, level: L4, select: {kind: metrics, field: grad_norm, window: "1:1001"}, params: {rtol: 0.0, abs_ulp: 0}}
+  - {id: L4.repro.param_norm, type: scalar_series, level: L4, select: {kind: metrics, field: param_norm, window: "1:1001"}, params: {rtol: 0.0, abs_ulp: 0}}
+  - {id: L0.repro.data.fingerprint, type: data_fingerprint, level: L0, select: {kind: tokens, steps: "1:1001"}, params: {first_loss: false}}

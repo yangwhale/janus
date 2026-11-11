@@ -1,0 +1,21 @@
+# 第一阶段 · NaN 演练：第 5 步在第 0 层 linear_proj 的梯度里埋一个 NaN（关掉框架自带的梯度 NaN 检查），确定性。
+# 期望：健康检查在第 5 步就报（梯度范数先非有限），而不是等 loss。
+# 实测：第 5 步 loss 正常、grad_norm 与 param_norm 已是 NaN，skipped_iter = 0（BF16 无损失缩放，框架没有跳过这次更新，参数被污染），
+# 第 6 步前向 loss 变 NaN，训练在 loss 检查处报错退出——只查 loss 的守卫晚一步，且那时参数已经坏了。
+# 运行没正常结束（没有 DONE），这里只用逐步标量；DONE 是事后补写的，张量抓数不可用。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase1-nan
+runs:
+  test: f-nan
+  golden: [d-a]
+  root: /data/janus-runs2
+checks:
+  - id: L4.health.grad_norm
+    type: health_signals
+    level: L4
+    select: {kind: metrics, fields: [grad_norm]}
+  - id: L4.health.loss
+    type: health_signals
+    level: L4
+    select: {kind: metrics, fields: [lm_loss]}

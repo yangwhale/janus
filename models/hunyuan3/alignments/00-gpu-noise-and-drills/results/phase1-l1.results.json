@@ -1,0 +1,1365 @@
+{
+ "schema_version": 1,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": null
+ },
+ "catalog": {
+  "path": "models/hunyuan3/frameworks/megatron/l1_ops.py",
+  "sha256": "84b09668f343ad5141aedd7e5b5b64f27abc7f32f561f4499a83aae7f35dd673"
+ },
+ "runs": {
+  "d-a": {
+   "path": "/data/janus-runs2/d-a",
+   "meta_sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+  }
+ },
+ "started_at": "2026-11-06T10:29:02+00:00",
+ "finished_at": "2026-11-06T10:33:00+00:00",
+ "environment": {
+  "torch": "2.14.0a0+b2c75dd062.nv26.09",
+  "transformer_engine": "2.20.2+44f31bbe",
+  "cuda": "13.4",
+  "cublas": "13.8.0.4",
+  "device": "NVIDIA B200",
+  "allow_tf32_matmul_default": true,
+  "allow_tf32_cudnn_default": true,
+  "float32_matmul_precision_default": "high",
+  "env": {
+   "TORCH_ALLOW_TF32_CUBLAS_OVERRIDE": "1",
+   "NVIDIA_TF32_OVERRIDE": null,
+   "CUBLAS_WORKSPACE_CONFIG": null,
+   "NVTE_ALLOW_NONDETERMINISTIC_ALGO": null
+  }
+ },
+ "summary": {
+  "pass": 25,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L1.gemm.router.replay",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "rel_l2": 3.955745914080981e-06,
+    "cr_match_frac": 1.7801920572916668e-05,
+    "ulp_max": 472864,
+    "ulp_p999": 173.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 3
+   },
+   "worst": [
+    {
+     "name": "layers.3.router.logits",
+     "metric": "rel_l2",
+     "value": 3.955745914080981e-06,
+     "location": null
+    },
+    {
+     "name": "layers.2.router.logits",
+     "metric": "rel_l2",
+     "value": 3.7973680906541453e-06,
+     "location": null
+    },
+    {
+     "name": "layers.1.router.logits",
+     "metric": "rel_l2",
+     "value": 3.758232150455672e-06,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "逐位全中（bit_match_frac）",
+   "details": "details/L1.gemm.router.replay.jsonl"
+  },
+  {
+   "id": "L1.gemm.router.upcast_fp32",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 7.70413340889089e-06,
+    "cr_match_frac": 1.0172526041666666e-05,
+    "ulp_max": 896544,
+    "ulp_p999": 337.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 2.0345052083333332e-05,
+    "cases": 6
+   },
+   "worst": [
+    {
+     "name": "layers.3.router.logits.upcast_fp32_mm.tf32_on",
+     "metric": "rel_l2",
+     "value": 7.70413340889089e-06,
+     "location": null
+    },
+    {
+     "name": "layers.2.router.logits.upcast_fp32_mm.tf32_on",
+     "metric": "rel_l2",
+     "value": 7.429469864852935e-06,
+     "location": null
+    },
+    {
+     "name": "layers.1.router.logits.upcast_fp32_mm.tf32_on",
+     "metric": "rel_l2",
+     "value": 7.360983404881842e-06,
+     "location": null
+    },
+    {
+     "name": "layers.3.router.logits.upcast_fp32_mm.tf32_off",
+     "metric": "rel_l2",
+     "value": 7.64442813231618e-07,
+     "location": null
+    },
+    {
+     "name": "layers.1.router.logits.upcast_fp32_mm.tf32_off",
+     "metric": "rel_l2",
+     "value": 7.637137507763903e-07,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "诊断：只报数，不判",
+   "details": "details/L1.gemm.router.upcast_fp32.jsonl"
+  },
+  {
+   "id": "L1.gemm.attn_proj.replay",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "rel_l2": 0.0019004991311056894,
+    "cr_match_frac": 0.9947838187217712,
+    "ulp_max": 812,
+    "ulp_p999": 1.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 8
+   },
+   "worst": [
+    {
+     "name": "layers.0.attn.proj.te_gemm",
+     "metric": "rel_l2",
+     "value": 0.0019004991311056894,
+     "location": null
+    },
+    {
+     "name": "layers.0.attn.proj.torch_linear",
+     "metric": "rel_l2",
+     "value": 0.0019004991311056894,
+     "location": null
+    },
+    {
+     "name": "layers.1.attn.proj.te_gemm",
+     "metric": "rel_l2",
+     "value": 0.0016619321011995443,
+     "location": null
+    },
+    {
+     "name": "layers.1.attn.proj.torch_linear",
+     "metric": "rel_l2",
+     "value": 0.0016619321011995443,
+     "location": null
+    },
+    {
+     "name": "layers.3.attn.proj.te_gemm",
+     "metric": "rel_l2",
+     "value": 0.001659154685717645,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "逐位全中（bit_match_frac）",
+   "details": "details/L1.gemm.attn_proj.replay.jsonl"
+  },
+  {
+   "id": "L1.gemm.qkv.replay",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "rel_l2": 0.0016645111350817349,
+    "cr_match_frac": 0.9977782964706421,
+    "ulp_max": 834,
+    "ulp_p999": 1.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 4
+   },
+   "worst": [
+    {
+     "name": "layers.0.attn.qkv",
+     "metric": "rel_l2",
+     "value": 0.0016645111350817349,
+     "location": null
+    },
+    {
+     "name": "layers.3.attn.qkv",
+     "metric": "rel_l2",
+     "value": 0.0016623817176804796,
+     "location": null
+    },
+    {
+     "name": "layers.2.attn.qkv",
+     "metric": "rel_l2",
+     "value": 0.001660043458137365,
+     "location": null
+    },
+    {
+     "name": "layers.1.attn.qkv",
+     "metric": "rel_l2",
+     "value": 0.0016514046565261292,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "逐位全中（bit_match_frac）",
+   "details": "details/L1.gemm.qkv.replay.jsonl"
+  },
+  {
+   "id": "L1.norm.replay",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "rel_l2": 0.001685544732439289,
+    "cr_match_frac": 0.999987781047821,
+    "ulp_max": 1,
+    "ulp_p999": 0.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 11
+   },
+   "worst": [
+    {
+     "name": "layers.0.attn.k_norm",
+     "metric": "rel_l2",
+     "value": 0.001685544732439289,
+     "location": null
+    },
+    {
+     "name": "layers.2.attn.k_norm",
+     "metric": "rel_l2",
+     "value": 0.0016830516250573495,
+     "location": null
+    },
+    {
+     "name": "layers.1.attn.k_norm",
+     "metric": "rel_l2",
+     "value": 0.0016830120700582363,
+     "location": null
+    },
+    {
+     "name": "layers.2.attn.q_norm",
+     "metric": "rel_l2",
+     "value": 0.0016748705229408768,
+     "location": null
+    },
+    {
+     "name": "layers.1.mlp_norm",
+     "metric": "rel_l2",
+     "value": 0.0016704633182682935,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "逐位全中（bit_match_frac）",
+   "details": "details/L1.norm.replay.jsonl"
+  },
+  {
+   "id": "L1.elem.exp.fp32",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 2
+    },
+    "source": "CUDA Programming Guide 数学函数附录：expf 最大 2 ULP（非 fast-math）"
+   },
+   "metrics": {
+    "rel_l2": 3.969878534718239e-08,
+    "cr_match_frac": 0.6903978983561198,
+    "ulp_max": 2,
+    "ulp_p999": 2.0,
+    "nonfinite_mismatch": 0,
+    "cases": 4
+   },
+   "worst": [
+    {
+     "name": "exp.fp32.real.router_logits",
+     "metric": "rel_l2",
+     "value": 3.969878534718239e-08,
+     "location": null
+    },
+    {
+     "name": "exp.fp32.unif[-10,10]",
+     "metric": "rel_l2",
+     "value": 3.924533935689228e-08,
+     "location": null
+    },
+    {
+     "name": "exp.fp32.real.softmax_in",
+     "metric": "rel_l2",
+     "value": 3.9146337042002746e-08,
+     "location": null
+    },
+    {
+     "name": "exp.fp32.unif[-87,88]",
+     "metric": "rel_l2",
+     "value": 3.758497859971572e-08,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "全部在门槛内",
+   "details": "details/L1.elem.exp.fp32.jsonl"
+  },
+  {
+   "id": "L1.elem.sigmoid.fp32",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 4
+    },
+    "source": "推断：torch 的 sigmoid = 1/(1+exp(−x))，expf 2 ULP 经一次加、一次除（各 0 ULP）后的起点"
+   },
+   "metrics": {
+    "rel_l2": 4.536227845035662e-08,
+    "cr_match_frac": 0.6213268703884549,
+    "ulp_max": 3,
+    "ulp_p999": 2.0,
+    "nonfinite_mismatch": 0,
+    "cases": 2
+   },
+   "worst": [
+    {
+     "name": "sigmoid.fp32.real.router_logits",
+     "metric": "rel_l2",
+     "value": 4.536227845035662e-08,
+     "location": null
+    },
+    {
+     "name": "sigmoid.fp32.unif[-30,30]",
+     "metric": "rel_l2",
+     "value": 2.8076089784189553e-08,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "全部在门槛内",
+   "details": "details/L1.elem.sigmoid.fp32.jsonl"
+  },
+  {
+   "id": "L1.elem.silu.fp32",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 4
+    },
+    "source": "推断：silu = x·sigmoid(x)，同 sigmoid 再多一次正确舍入的乘法"
+   },
+   "metrics": {
+    "rel_l2": 5.086331533657261e-08,
+    "cr_match_frac": 0.6085245059086726,
+    "ulp_max": 3,
+    "ulp_p999": 2.0,
+    "nonfinite_mismatch": 0,
+    "cases": 2
+   },
+   "worst": [
+    {
+     "name": "silu.fp32.real.mlp_gate",
+     "metric": "rel_l2",
+     "value": 5.086331533657261e-08,
+     "location": null
+    },
+    {
+     "name": "silu.fp32.unif[-30,30]",
+     "metric": "rel_l2",
+     "value": 1.8005597404184948e-08,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "全部在门槛内",
+   "details": "details/L1.elem.silu.fp32.jsonl"
+  },
+  {
+   "id": "L1.elem.rsqrt.fp32",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 2
+    },
+    "source": "CUDA Programming Guide 数学函数附录：rsqrtf 最大 2 ULP"
+   },
+   "metrics": {
+    "rel_l2": 3.6510048940629475e-08,
+    "cr_match_frac": 0.74066162109375,
+    "ulp_max": 2,
+    "ulp_p999": 1.0,
+    "nonfinite_mismatch": 0,
+    "cases": 3
+   },
+   "worst": [
+    {
+     "name": "rsqrt.fp32.real.rmsnorm_ms",
+     "metric": "rel_l2",
+     "value": 3.6510048940629475e-08,
+     "location": null
+    },
+    {
+     "name": "rsqrt.fp32.logu[1e-37,1e37]",
+     "metric": "rel_l2",
+     "value": 3.534949509549651e-08,
+     "location": null
+    },
+    {
+     "name": "rsqrt.fp32.all[1,4)",
+     "metric": "rel_l2",
+     "value": 3.2446009450720595e-08,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "全部在门槛内",
+   "details": "details/L1.elem.rsqrt.fp32.jsonl"
+  },
+  {
+   "id": "L1.elem.tail",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 1.4505744854736851e-08,
+    "cr_match_frac": 0.7292697429656982,
+    "ulp_max": 45182983,
+    "ulp_p999": 42885260.965000525,
+    "nonfinite_mismatch": 0,
+    "cases": 2
+   },
+   "worst": [
+    {
+     "name": "sigmoid.fp32.unif[-110,110]",
+     "metric": "rel_l2",
+     "value": 1.4505744854736851e-08,
+     "location": null
+    },
+    {
+     "name": "silu.fp32.unif[-110,110]",
+     "metric": "rel_l2",
+     "value": 2.5635349087005604e-09,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "诊断：只报数，不判",
+   "details": "details/L1.elem.tail.jsonl"
+  },
+  {
+   "id": "L1.elem.bf16_vs_fp32",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 0.001245167261150702,
+    "cr_match_frac": 0.702748245963418,
+    "ulp_max": 42396024,
+    "ulp_p999": 2.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 12
+   },
+   "worst": [
+    {
+     "name": "exp.bf16_direct",
+     "metric": "rel_l2",
+     "value": 0.001245167261150702,
+     "location": null
+    },
+    {
+     "name": "exp.fp32_then_bf16",
+     "metric": "rel_l2",
+     "value": 0.001245167261150702,
+     "location": null
+    },
+    {
+     "name": "rsqrt.bf16_direct",
+     "metric": "rel_l2",
+     "value": 0.001202874030851554,
+     "location": null
+    },
+    {
+     "name": "rsqrt.fp32_then_bf16",
+     "metric": "rel_l2",
+     "value": 0.001202874030851554,
+     "location": null
+    },
+    {
+     "name": "sigmoid.bf16_direct",
+     "metric": "rel_l2",
+     "value": 0.00031526943561308566,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "诊断：只报数，不判",
+   "details": "details/L1.elem.bf16_vs_fp32.jsonl"
+  },
+  {
+   "id": "L1.elem.basic",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "bit_match_frac": 1.0,
+     "cr_match_frac": 1.0,
+     "nonfinite_mismatch": 0
+    },
+    "source": "IEEE 754 与 CUDA Programming Guide：x+y、x*y、类型转换都是 RNE 正确舍入（0 ULP）"
+   },
+   "metrics": {
+    "rel_l2": 0.001531071617499858,
+    "cr_match_frac": 1.0,
+    "ulp_max": 0,
+    "ulp_p999": 0.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 8
+   },
+   "worst": [
+    {
+     "name": "mul.bf16",
+     "metric": "rel_l2",
+     "value": 0.001531071617499858,
+     "location": null
+    },
+    {
+     "name": "cast.fp32_to_bf16",
+     "metric": "rel_l2",
+     "value": 0.0014721932990179975,
+     "location": null
+    },
+    {
+     "name": "add.bf16",
+     "metric": "rel_l2",
+     "value": 0.0002972873696901312,
+     "location": null
+    },
+    {
+     "name": "cast.fp32_to_fp16",
+     "metric": "rel_l2",
+     "value": 0.00018471437081610178,
+     "location": null
+    },
+    {
+     "name": "mul.fp32",
+     "metric": "rel_l2",
+     "value": 2.3382337856929795e-08,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "全部在门槛内",
+   "details": "details/L1.elem.basic.jsonl"
+  },
+  {
+   "id": "L1.rratio.clean",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "r_ratio": 1.2
+    },
+    "source": "推断：起点。只差舍入顺序时 R≈1；多一次同量级的独立舍入误差方差约翻倍、R≈√2≈1.41，取两者之间"
+   },
+   "metrics": {
+    "rel_l2": 0.001651582281160586,
+    "cr_match_frac": 0.9999875426292419,
+    "ulp_max": 1,
+    "ulp_p999": 0.0,
+    "nonfinite_mismatch": 0,
+    "r_ratio": 1.0000000034118537,
+    "vs_ref_rel_l2": 2.400607310718731e-05,
+    "vs_ref_cosine": 0.9999999997118554,
+    "vs_ref_oot_frac": 0.0,
+    "vs_ref_mean_diff": 5.8260467603488085e-08,
+    "vs_ref_norm_max": 0.002242152466367713,
+    "cases": 2,
+    "vs_ref_cases": 2,
+    "vs_ref_worst": "layers.1.rmsnorm.torch_fp32_formula"
+   },
+   "worst": [
+    {
+     "name": "layers.1.rmsnorm.torch_fp32_formula",
+     "metric": "r_ratio",
+     "value": 1.0000000034118537,
+     "location": null
+    },
+    {
+     "name": "layers.1.router.sigmoid.fp64_then_fp32",
+     "metric": "r_ratio",
+     "value": 0.4898919624205897,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "全部在门槛内",
+   "details": "details/L1.rratio.clean.jsonl"
+  },
+  {
+   "id": "L1.rratio.drill",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "r_ratio": 1.2
+    },
+    "source": "推断：起点。只差舍入顺序时 R≈1；多一次同量级的独立舍入误差方差约翻倍、R≈√2≈1.41，取两者之间"
+   },
+   "metrics": {
+    "rel_l2": 0.002332312802174637,
+    "cr_match_frac": 6.230672200520833e-05,
+    "ulp_max": 121160,
+    "ulp_p999": 96290.13800000027,
+    "nonfinite_mismatch": 0,
+    "r_ratio": 13157.92760096226,
+    "vs_ref_rel_l2": 0.0028024657812427823,
+    "vs_ref_cosine": 0.9999960734334007,
+    "vs_ref_oot_frac": 0.0,
+    "vs_ref_mean_diff": 0.0013998858973751215,
+    "vs_ref_norm_max": 0.004484304932735426,
+    "cases": 2,
+    "vs_ref_cases": 2,
+    "vs_ref_worst": "layers.1.rmsnorm.extra_bf16_round",
+    "drill_judged": "fail"
+   },
+   "worst": [
+    {
+     "name": "layers.1.router.sigmoid.logits_bf16",
+     "metric": "r_ratio",
+     "value": 13157.92760096226,
+     "location": null
+    },
+    {
+     "name": "layers.1.rmsnorm.extra_bf16_round",
+     "metric": "r_ratio",
+     "value": 1.4121687043610105,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "演练：门槛按期望报警（超线：['r_ratio']）",
+   "details": "details/L1.rratio.drill.jsonl"
+  },
+  {
+   "id": "L1.emulate.gemm",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "emulate_match_frac": 1.0,
+    "cases": 11
+   },
+   "worst": [
+    {
+     "name": "layers.1.router.logits",
+     "metric": "emulate_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.2.router.logits",
+     "metric": "emulate_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.3.router.logits",
+     "metric": "emulate_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.0.attn.proj",
+     "metric": "emulate_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.0.attn.qkv.gemm_part",
+     "metric": "emulate_match_frac",
+     "value": 1.0,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "逐位全中（emulate_match_frac）",
+   "details": "details/L1.emulate.gemm.jsonl"
+  },
+  {
+   "id": "L1.emulate.other_guesses",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "emulate_match_frac": 0.0003751118977864583,
+    "cases": 17
+   },
+   "worst": [
+    {
+     "name": "layers.1.router.logits.fp64",
+     "metric": "emulate_match_frac",
+     "value": 0.0003751118977864583,
+     "location": null
+    },
+    {
+     "name": "layers.1.router.logits.tc_g8_b25_rz",
+     "metric": "emulate_match_frac",
+     "value": 0.00042724609375,
+     "location": null
+    },
+    {
+     "name": "layers.1.router.logits.tc_g16_b25_rne",
+     "metric": "emulate_match_frac",
+     "value": 0.0004475911458333333,
+     "location": null
+    },
+    {
+     "name": "layers.1.router.logits.seq",
+     "metric": "emulate_match_frac",
+     "value": 0.000492095947265625,
+     "location": null
+    },
+    {
+     "name": "layers.1.router.logits.tc_g16_b24_rz",
+     "metric": "emulate_match_frac",
+     "value": 0.0087890625,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "诊断：只报数，不判",
+   "details": "details/L1.emulate.other_guesses.jsonl"
+  },
+  {
+   "id": "L1.extreme.rmsnorm",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 2,
+     "nonfinite_mismatch": 0
+    },
+    "source": "推断：FP32 里算 rsqrt（rsqrtf 2 ULP）再乘一次，输出离正确舍入不超过 2 格；全零行必须出 0 而不是 NaN"
+   },
+   "metrics": {
+    "rel_l2": 0.001991863101992034,
+    "cr_match_frac": 0.0,
+    "ulp_max": 1,
+    "ulp_p999": 1.0,
+    "nonfinite_mismatch": 0,
+    "cases": 16
+   },
+   "worst": [
+    {
+     "name": "rmsnorm.te_bf16.tiny_1e-20",
+     "metric": "rel_l2",
+     "value": 0.001991863101992034,
+     "location": null
+    },
+    {
+     "name": "rmsnorm.te_bf16.normal",
+     "metric": "rel_l2",
+     "value": 0.0015224617652698372,
+     "location": null
+    },
+    {
+     "name": "rmsnorm.te_bf16.subnormal_1e-40",
+     "metric": "rel_l2",
+     "value": 0.0007202593867920387,
+     "location": null
+    },
+    {
+     "name": "rmsnorm.torch_formula_fp32.subnormal_1e-40",
+     "metric": "rel_l2",
+     "value": 8.146951030048442e-08,
+     "location": null
+    },
+    {
+     "name": "rmsnorm.F.rms_norm_fp32.subnormal_1e-40",
+     "metric": "rel_l2",
+     "value": 8.146951030048442e-08,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "全部在门槛内",
+   "details": "details/L1.extreme.rmsnorm.jsonl"
+  },
+  {
+   "id": "L1.extreme.rmsnorm.overflow",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 1.0,
+    "cr_match_frac": 0.0,
+    "ulp_max": 1115684864,
+    "ulp_p999": 1078844337.535,
+    "nonfinite_mismatch": 0,
+    "cases": 12
+   },
+   "worst": [
+    {
+     "name": "rmsnorm.torch_formula_fp32.large_1e18",
+     "metric": "rel_l2",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "rmsnorm.F.rms_norm_fp32.large_1e18",
+     "metric": "rel_l2",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "rmsnorm.te_fp32.large_1e18",
+     "metric": "rel_l2",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "rmsnorm.te_bf16.large_1e18",
+     "metric": "rel_l2",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "rmsnorm.torch_formula_fp32.overflow_1e20",
+     "metric": "rel_l2",
+     "value": 1.0,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "诊断：只报数，不判",
+   "details": "details/L1.extreme.rmsnorm.overflow.jsonl"
+  },
+  {
+   "id": "L1.extreme.sigmoid",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 4,
+     "nonfinite_mismatch": 0
+    },
+    "source": "推断：同 L1.elem.sigmoid.fp32 的起点"
+   },
+   "metrics": {
+    "rel_l2": 8.084535833255661e-10,
+    "cr_match_frac": 0.9411764705882353,
+    "ulp_max": 1,
+    "ulp_p999": 0.9850000000000012,
+    "nonfinite_mismatch": 0,
+    "cases": 2
+   },
+   "worst": [
+    {
+     "name": "sigmoid.bf16",
+     "metric": "rel_l2",
+     "value": 8.084535833255661e-10,
+     "location": null
+    },
+    {
+     "name": "sigmoid.fp32",
+     "metric": "rel_l2",
+     "value": 8.084509923238373e-10,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "全部在门槛内",
+   "details": "details/L1.extreme.sigmoid.jsonl"
+  },
+  {
+   "id": "L1.extreme.softmax",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "rel_l2": 1e-05,
+     "nonfinite_mismatch": 0
+    },
+    "source": "推断：x − max 在 FP32 里舍入一次，exp 把它放大 |x − max| 倍（输入到 −30 时约 2e-6），再加 expf 2 ULP 与 192 项求和，取 1e-5；小概率项的 ULP 随 |x − max| 线性涨，不用 ULP 判"
+   },
+   "metrics": {
+    "rel_l2": 5.224769962532423e-08,
+    "cr_match_frac": 0.21875,
+    "ulp_max": 15,
+    "ulp_p999": 14.618000000000052,
+    "nonfinite_mismatch": 0,
+    "cases": 9
+   },
+   "worst": [
+    {
+     "name": "softmax.fp32.normal",
+     "metric": "rel_l2",
+     "value": 5.224769962532423e-08,
+     "location": null
+    },
+    {
+     "name": "softmax.fp32.half_neg_inf",
+     "metric": "rel_l2",
+     "value": 4.895724184429325e-08,
+     "location": null
+    },
+    {
+     "name": "softmax.fp32.all_zero",
+     "metric": "rel_l2",
+     "value": 2.980232244320645e-08,
+     "location": null
+    },
+    {
+     "name": "softmax.fp32.all_1e30",
+     "metric": "rel_l2",
+     "value": 2.980232244320645e-08,
+     "location": null
+    },
+    {
+     "name": "softmax.fp32.subnormal",
+     "metric": "rel_l2",
+     "value": 2.980232244320645e-08,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "全部在门槛内",
+   "details": "details/L1.extreme.softmax.jsonl"
+  },
+  {
+   "id": "L1.ties.synthetic",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "expect_match_frac": 1.0,
+    "cases": 3
+   },
+   "worst": [
+    {
+     "name": "levels4.gpu_topk_vs_stable",
+     "metric": "expect_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "levels32.gpu_topk_vs_stable",
+     "metric": "expect_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "all_equal.gpu_topk_vs_stable",
+     "metric": "expect_match_frac",
+     "value": 1.0,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "逐位全中（expect_match_frac）",
+   "details": "details/L1.ties.synthetic.jsonl"
+  },
+  {
+   "id": "L1.ties.cpu_torch",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "expect_match_frac": 0.0,
+    "cases": 6
+   },
+   "worst": [
+    {
+     "name": "levels4.cpu_topk_vs_stable",
+     "metric": "expect_match_frac",
+     "value": 0.0,
+     "location": null
+    },
+    {
+     "name": "levels4.gpu_vs_cpu_topk",
+     "metric": "expect_match_frac",
+     "value": 0.0,
+     "location": null
+    },
+    {
+     "name": "all_equal.cpu_topk_vs_stable",
+     "metric": "expect_match_frac",
+     "value": 0.0,
+     "location": null
+    },
+    {
+     "name": "all_equal.gpu_vs_cpu_topk",
+     "metric": "expect_match_frac",
+     "value": 0.0,
+     "location": null
+    },
+    {
+     "name": "levels32.cpu_topk_vs_stable",
+     "metric": "expect_match_frac",
+     "value": 0.26416015625,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "诊断：只报数，不判",
+   "details": "details/L1.ties.cpu_torch.jsonl"
+  },
+  {
+   "id": "L1.ties.real",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "expect_match_frac": 1.0,
+    "cases": 6
+   },
+   "worst": [
+    {
+     "name": "layers.1.replay_vs_captured",
+     "metric": "expect_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.1.gpu_topk_vs_stable",
+     "metric": "expect_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.2.replay_vs_captured",
+     "metric": "expect_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.2.gpu_topk_vs_stable",
+     "metric": "expect_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.3.replay_vs_captured",
+     "metric": "expect_match_frac",
+     "value": 1.0,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "逐位全中（expect_match_frac）",
+   "details": "details/L1.ties.real.jsonl"
+  },
+  {
+   "id": "L1.vjp.fp32",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "rel_l2": 1e-05
+    },
+    "source": "推断：FP32 单位舍入 6e-8，反向含长 4096 的归约，误差按 √4096 倍放大约 4e-6，取 1e-5"
+   },
+   "metrics": {
+    "rel_l2": 1.8816315007981833e-07,
+    "cr_match_frac": 0.206787109375,
+    "ulp_max": 659847,
+    "ulp_p999": 791.1450000001369,
+    "nonfinite_mismatch": 0,
+    "cases": 3
+   },
+   "worst": [
+    {
+     "name": "layers.1.rmsnorm.torch_fp32.dw",
+     "metric": "rel_l2",
+     "value": 1.8816315007981833e-07,
+     "location": null
+    },
+    {
+     "name": "layers.1.router.score_fn_fp32.dlogits",
+     "metric": "rel_l2",
+     "value": 8.384675038784703e-08,
+     "location": null
+    },
+    {
+     "name": "layers.1.rmsnorm.torch_fp32.dx",
+     "metric": "rel_l2",
+     "value": 7.497935377906461e-08,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "全部在门槛内",
+   "details": "details/L1.vjp.fp32.jsonl"
+  },
+  {
+   "id": "L1.vjp.bf16",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "rel_l2": 0.01
+    },
+    "source": "推断：梯度以 BF16 输出，一次舍入相对误差 2^-9≈2e-3，取 1e-2 宽松起点（同 phase1-parallel）"
+   },
+   "metrics": {
+    "rel_l2": 0.0017245141735766393,
+    "cr_match_frac": 0.8997573852539062,
+    "ulp_max": 14243,
+    "ulp_p999": 23.0,
+    "nonfinite_mismatch": 0,
+    "cases": 4
+   },
+   "worst": [
+    {
+     "name": "layers.1.rmsnorm.te_bf16.dw",
+     "metric": "rel_l2",
+     "value": 0.0017245141735766393,
+     "location": null
+    },
+    {
+     "name": "layers.1.router.full.dw",
+     "metric": "rel_l2",
+     "value": 0.0016762636598468468,
+     "location": null
+    },
+    {
+     "name": "layers.1.router.full.dx",
+     "metric": "rel_l2",
+     "value": 0.0016754506456531629,
+     "location": null
+    },
+    {
+     "name": "layers.1.rmsnorm.te_bf16.dx",
+     "metric": "rel_l2",
+     "value": 0.0016584293529984721,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "0671a83e2265160410ff8c68a076176317efa664e5c0ac51676abd72becd277a"
+    }
+   ],
+   "message": "全部在门槛内",
+   "details": "details/L1.vjp.bf16.jsonl"
+  }
+ ]
+}

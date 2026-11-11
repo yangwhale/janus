@@ -1,0 +1,37 @@
+[janus](../../../README.md) › [混元 4](../README.md) ｜ [案例](README.md) 12
+
+# 案例 12：param_norm 待定 = TPU FP32 全局求和的测量误差 + 一个小的真实漂移，漂移约一半随 M28 去掉
+
+> **状态：300 步、1000 步都过；300 步漂移余下的一半根因待查。** 对齐报告 [D12](../alignments/01-mini/DETAILS.md#d12)。
+
+## 现象
+
+两边各自用 FP32 全局求和记 param_norm 时一直待定，TPU 偏低：`t1-l4` 带符号均值 N 2.64e-7、差 4.81e-7，r 1.82；`t1t-l4`（被测 `t1t-a`）MARE N 1.97e-7、TPU 3.62e-7，r 1.84。
+
+## 机制
+
+1. **测量误差**：TPU 记的 `learning/param_norm` 是整棵参数树在 FP32 里一路相加，长求和本身有偏。
+2. **真实漂移**：两边参数随训练走开，方向固定（TPU 偏低），几乎全在输出头与词嵌入，两者都走标量 Adam。第 1 步两边更新一样大，系统差是之后各步积出来的。推断约一半来自 iHC 四路流加权和的舍入（[案例 11](11-ihc-stream-sum-highest-einsum.md)）：它经 `hc_head` 进输出头与词嵌入的梯度，在 Adam 里积成偏短的更新。
+
+## 证据
+
+- **测量误差的大小**：TPU 加记精确值 `param_norm_exact`（每 128 个元素一段 FP32 平方和、主机 FP64 合成，不含路由偏置，同 GPU 的 `param_norm_fp64`）。`t1t-c` 上 FP32 全局求和对精确值逐步误差 −4.4e-7 至 +2.9e-7，平均偏低约 6.4e-8（约 0.34 N，N 1.9e-7）；初始权重上低 2.1e-7（台账 J13）。改比精确值后第 1 步两边只差 1.6e-9。
+- **漂移随步数增长**：两边精确值逐步比（[`t1t-l4.results.json`](../alignments/01-mini/results/t1t-l4.results.json)），前 25 步 ≤ 4.4e-9，第 29 步起超过 5e-9，最大单步 7.6e-7（相对）；1000 步带符号均值长到 −4.30e-6（N 4.05e-6，r 1.06，[`t1u-l4.results.json`](../alignments/01-mini/results/t1u-l4.results.json)）。
+- **定位**（第 300 步更新后主权重，TPU `t1tdump3` 对 GPU `g2d-a`，[`t1-param-norm-locus.json`](../alignments/01-mini/results/t1-param-norm-locus.json)）：两边平方和之差 −7.77e-2，输出头 −7.05e-2（约 91%）、词嵌入 −6.9e-3（9%），其余合计 −3e-4；TPU 输出头 300 步的累计更新沿 GPU 方向短 6e-5，各行一致。第 1 步两边输出头更新大小相同（同一文件 `step1`）。
+- **只改 TPU（M28）**：
+
+| 比较 | 口径 | 判定量 | N | TPU | r | 判定 |
+|---|---|---|---|---|---|---|
+| `t1t-l4`，被测 `t1t-c` | 精确值 | MARE | 1.90e-7 | 3.04e-7 | 1.60 | 待定 |
+| `t1v-l4`（+M28） | 精确值 | MARE | 1.90e-7 | 1.68e-7 | 0.88 | 过 |
+| `t1u-l4`（1000 步） | 精确值 | 带符号均值 | 4.05e-6 | −4.30e-6 | 1.06 | 待定 |
+| `t1w-l4`（+M28，1000 步） | 精确值 | MARE | 4.05e-6 | 1.74e-6 | 0.43 | 过 |
+| `t1zr-l4` / `t1zr300-l4` | 精确值 | MARE | 4.05e-6 / 1.90e-7 | 1.53e-6 / 7.44e-8 | 0.38 / 0.39 | 过 |
+
+300 步带符号均值 −3.0e-7 → −1.7e-7（[`t1v-l4.results.json`](../alignments/01-mini/results/t1v-l4.results.json)），TPU 仍偏低。
+
+## 结论
+
+- **修法**：测量口径两边都比精确值（GPU `param_norm_fp64`、TPU `param_norm_exact`，台账 J13，目录 `t1t-l4.yaml`、`t1u-l4.yaml` 的 `L4.param_norm`，PROTOCOL 变更记录「param_norm」一行）；数值上 TPU 打开 `ihc_stream_sum_unrolled`（台账 M28，[r6](../ROOT-CAUSES.md#r6)）。
+- **定责**：测量误差按语义标准定——TPU 记的量对精确值有偏，不是数值差。真实漂移没有对 CPU FP64 的 R；只改 TPU 一边（M28）后两边的差收拢（r 1.60 → 0.88，N 1.90e-7，TPU 3.04e-7 → 1.68e-7）。归给 iHC 加权和的舍入是推断：91% / 9% 的定位只说明差在哪里，不说明哪边错。
+- 待查：300 步余下约一半的漂移（TPU 仍偏低：带符号均值 −1.7e-7，N 1.90e-7）。t1v 上没有重做逐张量定位，三个假设都没逐个排除：输出头梯度里 MTP 那一份（MTP 与主干共用输出头）的权重两边不同；每步裁剪系数 1 / grad_norm 序列的差在 Adam 的 m、v 里不按比例抵消；小梯度行进入 Adam ε 主导区时两边的数值差（`t1-param-norm-locus.json` 的 `hypotheses_open`）。

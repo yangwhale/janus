@@ -1,0 +1,19 @@
+# 第一阶段 · 尖峰演练：第 15 步学习率临时 ×300，确定性。期望健康检查在 loss / 梯度范数突跳的那一步报。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase1-spike
+runs:
+  test: f-spike
+  golden: [d-a]
+  root: /data/janus-runs2
+checks:
+  - id: L4.health
+    type: health_signals
+    level: L4
+    select: {kind: metrics, fields: [lm_loss, grad_norm]}
+    params: {window: 10, spike_ratio: 3, source: "推断：同 phase1-full"}
+  - id: L4.loss.vs_golden
+    type: loss_series
+    level: L4
+    select: {kind: metrics, field: lm_loss, window: "1:31"}
+    threshold: exact

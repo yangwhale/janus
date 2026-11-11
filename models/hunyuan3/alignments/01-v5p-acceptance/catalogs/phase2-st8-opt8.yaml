@@ -1,0 +1,24 @@
+# 第二阶段 · 优化器连续 8 步 FP64 重放
+#
+# 被测 t-st8-prod-gm：生产配置（同 t-st1-prod）--no-hooks 跑 9 步，第 1–8 步每步训练前后状态读（--full-include 只留第 0 层注意力、
+# 各层路由权重与全部归一化权重，控制数据量；GPU 侧 phase1-opt8 同样只抓一小组参数），梯度由一阶动量反推：
+#   g_k = (m_k − β1·m_{k−1}) / (1 − β1) / 裁剪系数（models/hunyuan3/analysis/grads_from_moments.py --src <运行根>/t-st8-prod --out <运行根>/t-st8-prod-gm）
+# 重放第 k 步用第 k−1 步状态读出的两个动量接着算（janus optimizer_step 的连续多步模式）。一阶动量按构造吻合；
+# 有信息量的是每步的更新量（用 m、v、偏差修正、权重衰减、eps 重算）与二阶动量 v_k = β2·v_{k−1} + (1 − β2)·ĝ_k²。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-st8-opt8
+description: 生产配置第 1–8 步 AdamW 连续 FP64 重放（状态读 + 动量反推梯度）
+runs:
+  test: t-st8-prod-gm
+  golden: [g1k-a]
+  root: /data/janus-runs
+checks:
+  - id: L1.optim.adamw.8steps
+    type: optimizer_step
+    level: L1
+    select: {kind: tensor, steps: "1:9", name: "*"}
+    params: {replay_from: test}
+    metrics: [rel_l2, max_abs]
+    threshold: {rel_l2: 5.0e-3}
+    source: "同 phase1-opt8 / phase1-full 的 L1.optim.adamw.replay：FP32 存储舍入地板实测最大 1.79e-3，取约 3 倍"

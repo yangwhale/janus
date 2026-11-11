@@ -1,0 +1,772 @@
+{
+ "note": "TPU v5p，stage tw20（MaxText 3741e818 + janus 7e5306b，hy4-mini-t1.yml 全开），layer_replay.py --save，输入取 GPU g7-l1-a 每层的输入。只差一个开关的两次运行逐位核对；M41 在 TPU（megablox）上前向逐位不变，只改层输入梯度",
+ "what": "L2 逐层回放：只差一个开关的两次运行逐位核对，与各次运行 TPU 对 GPU 的 rel_L2",
+ "metric": "层输出 / 层输入梯度 · TPU 对 GPU 的 rel_L2；R 等 CPU FP64 参照",
+ "runs": {
+  "g": {
+   "label": "M40 开 / M41 开（全开，t1zu-a）",
+   "overrides": [],
+   "rows": [
+    {
+     "layer": 0,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.00560232542568191
+    },
+    {
+     "layer": 0,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.005740857444591829
+    },
+    {
+     "layer": 1,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.015139492968322957
+    },
+    {
+     "layer": 1,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.008720332993797172
+    },
+    {
+     "layer": 2,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.012847123202672964
+    },
+    {
+     "layer": 2,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.015061091942623124
+    },
+    {
+     "layer": 3,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.008034325749125881
+    },
+    {
+     "layer": 3,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.010002262316545694
+    },
+    {
+     "layer": 4,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.010625312570041923
+    },
+    {
+     "layer": 4,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.014110779415407624
+    },
+    {
+     "layer": 5,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.006634363629873108
+    },
+    {
+     "layer": 5,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.008892138299164456
+    },
+    {
+     "layer": 6,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.004721651560586908
+    },
+    {
+     "layer": 6,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.005690364811356869
+    },
+    {
+     "layer": "mtp0",
+     "quantity": "out",
+     "tpu_vs_gpu": 0.002421356606372373
+    },
+    {
+     "layer": "mtp0",
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.002458948542366456
+    }
+   ]
+  },
+  "h": {
+   "label": "M40 关 / M41 开（t1zu-c）",
+   "overrides": [
+    "moe_mcore_prob_before_fc2=false"
+   ],
+   "rows": [
+    {
+     "layer": 0,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.00560232542568191
+    },
+    {
+     "layer": 0,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.005740857444591829
+    },
+    {
+     "layer": 1,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.01512528926568231
+    },
+    {
+     "layer": 1,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.008702648935629732
+    },
+    {
+     "layer": 2,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.01283844386225727
+    },
+    {
+     "layer": 2,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.015065064230619502
+    },
+    {
+     "layer": 3,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.008024227009018295
+    },
+    {
+     "layer": 3,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.010012774781134067
+    },
+    {
+     "layer": 4,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.010619160274788094
+    },
+    {
+     "layer": 4,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.014121693584852595
+    },
+    {
+     "layer": 5,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.006627085585914549
+    },
+    {
+     "layer": 5,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.008901061802619502
+    },
+    {
+     "layer": 6,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.004709421994132266
+    },
+    {
+     "layer": 6,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.005702577770996196
+    },
+    {
+     "layer": "mtp0",
+     "quantity": "out",
+     "tpu_vs_gpu": 0.002421187760864592
+    },
+    {
+     "layer": "mtp0",
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.0024591462155481767
+    }
+   ]
+  },
+  "i": {
+   "label": "M40 关 / M41 关（t1zu-b）",
+   "overrides": [
+    "moe_mcore_prob_before_fc2=false",
+    "mlp_fused_fc1_dgrad=false"
+   ],
+   "rows": [
+    {
+     "layer": 0,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.00560232542568191
+    },
+    {
+     "layer": 0,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.00589131278653328
+    },
+    {
+     "layer": 1,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.01512528926568231
+    },
+    {
+     "layer": 1,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.008739015985685127
+    },
+    {
+     "layer": 2,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.01283844386225727
+    },
+    {
+     "layer": 2,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.015083369016307087
+    },
+    {
+     "layer": 3,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.008024227009018295
+    },
+    {
+     "layer": 3,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.010018342820192153
+    },
+    {
+     "layer": 4,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.010619160274788094
+    },
+    {
+     "layer": 4,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.014123489329084884
+    },
+    {
+     "layer": 5,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.006627085585914549
+    },
+    {
+     "layer": 5,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.008906375909170079
+    },
+    {
+     "layer": 6,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.004709421994132266
+    },
+    {
+     "layer": 6,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.005709554139795176
+    },
+    {
+     "layer": "mtp0",
+     "quantity": "out",
+     "tpu_vs_gpu": 0.002421187760864592
+    },
+    {
+     "layer": "mtp0",
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.0024592667896564686
+    }
+   ]
+  },
+  "j": {
+   "label": "M40 开 / M41 关",
+   "overrides": [
+    "mlp_fused_fc1_dgrad=false"
+   ],
+   "rows": [
+    {
+     "layer": 0,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.00560232542568191
+    },
+    {
+     "layer": 0,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.00589131278653328
+    },
+    {
+     "layer": 1,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.015139492968322957
+    },
+    {
+     "layer": 1,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.008726672036928736
+    },
+    {
+     "layer": 2,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.012847123202672964
+    },
+    {
+     "layer": 2,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.015065229531717857
+    },
+    {
+     "layer": 3,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.008034325749125881
+    },
+    {
+     "layer": 3,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.010004324487735593
+    },
+    {
+     "layer": 4,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.010625312570041923
+    },
+    {
+     "layer": 4,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.014118587433994856
+    },
+    {
+     "layer": 5,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.006634363629873108
+    },
+    {
+     "layer": 5,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.00889731288013019
+    },
+    {
+     "layer": 6,
+     "quantity": "out",
+     "tpu_vs_gpu": 0.004721651560586908
+    },
+    {
+     "layer": 6,
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.005698051057080897
+    },
+    {
+     "layer": "mtp0",
+     "quantity": "out",
+     "tpu_vs_gpu": 0.002421356606372373
+    },
+    {
+     "layer": "mtp0",
+     "quantity": "in_grad",
+     "tpu_vs_gpu": 0.0024591198212290328
+    }
+   ]
+  }
+ },
+ "pairs": [
+  {
+   "on": "h",
+   "off": "i",
+   "what": "M41（M40 关）",
+   "rows": [
+    {
+     "tensor": "0.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.03519153594970703,
+     "rel_on_vs_off": 0.0039202382792598
+    },
+    {
+     "tensor": "0.out",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    },
+    {
+     "tensor": "1.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.012962162494659424,
+     "rel_on_vs_off": 0.003288521857761331
+    },
+    {
+     "tensor": "1.out",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    },
+    {
+     "tensor": "2.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.008579850196838379,
+     "rel_on_vs_off": 0.0026287250344694956
+    },
+    {
+     "tensor": "2.out",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    },
+    {
+     "tensor": "3.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.01544344425201416,
+     "rel_on_vs_off": 0.0019794474987849604
+    },
+    {
+     "tensor": "3.out",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    },
+    {
+     "tensor": "4.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.01579993963241577,
+     "rel_on_vs_off": 0.0015149798856904729
+    },
+    {
+     "tensor": "4.out",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    },
+    {
+     "tensor": "5.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.009980082511901855,
+     "rel_on_vs_off": 0.0012870684992916698
+    },
+    {
+     "tensor": "5.out",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    },
+    {
+     "tensor": "6.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.043276071548461914,
+     "rel_on_vs_off": 0.001181533713986396
+    },
+    {
+     "tensor": "6.out",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    },
+    {
+     "tensor": "mtp0.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.015933990478515625,
+     "rel_on_vs_off": 7.197701398369293e-05
+    },
+    {
+     "tensor": "mtp0.out",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    }
+   ]
+  },
+  {
+   "on": "g",
+   "off": "j",
+   "what": "M41（M40 开）",
+   "rows": [
+    {
+     "tensor": "0.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.03519153594970703,
+     "rel_on_vs_off": 0.0039202382792598
+    },
+    {
+     "tensor": "0.out",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    },
+    {
+     "tensor": "1.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.01296699047088623,
+     "rel_on_vs_off": 0.003310589848851399
+    },
+    {
+     "tensor": "1.out",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    },
+    {
+     "tensor": "2.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.008578836917877197,
+     "rel_on_vs_off": 0.002638383392441192
+    },
+    {
+     "tensor": "2.out",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    },
+    {
+     "tensor": "3.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.015894532203674316,
+     "rel_on_vs_off": 0.0019918716824235457
+    },
+    {
+     "tensor": "3.out",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    },
+    {
+     "tensor": "4.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.015737593173980713,
+     "rel_on_vs_off": 0.0015226173887449195
+    },
+    {
+     "tensor": "4.out",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    },
+    {
+     "tensor": "5.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.00992882251739502,
+     "rel_on_vs_off": 0.001282907840914007
+    },
+    {
+     "tensor": "5.out",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    },
+    {
+     "tensor": "6.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.04367488622665405,
+     "rel_on_vs_off": 0.0011799519999491517
+    },
+    {
+     "tensor": "6.out",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    },
+    {
+     "tensor": "mtp0.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.015750408172607422,
+     "rel_on_vs_off": 7.19912364771696e-05
+    },
+    {
+     "tensor": "mtp0.out",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    }
+   ]
+  },
+  {
+   "on": "g",
+   "off": "h",
+   "what": "M40（M41 开）",
+   "rows": [
+    {
+     "tensor": "0.in_grad",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    },
+    {
+     "tensor": "0.out",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    },
+    {
+     "tensor": "1.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.010730624198913574,
+     "rel_on_vs_off": 0.003360182083613951
+    },
+    {
+     "tensor": "1.out",
+     "bit_identical": false,
+     "frac_equal": 0.7373942732810974,
+     "rel_on_vs_off": 0.0018713221772929719
+    },
+    {
+     "tensor": "2.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.007148802280426025,
+     "rel_on_vs_off": 0.0027754092448506597
+    },
+    {
+     "tensor": "2.out",
+     "bit_identical": false,
+     "frac_equal": 0.7863932251930237,
+     "rel_on_vs_off": 0.0015580688050921248
+    },
+    {
+     "tensor": "3.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.012668848037719727,
+     "rel_on_vs_off": 0.0021546749097338244
+    },
+    {
+     "tensor": "3.out",
+     "bit_identical": false,
+     "frac_equal": 0.8270793557167053,
+     "rel_on_vs_off": 0.0013200343908877806
+    },
+    {
+     "tensor": "4.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.013350725173950195,
+     "rel_on_vs_off": 0.0017033382639061445
+    },
+    {
+     "tensor": "4.out",
+     "bit_identical": false,
+     "frac_equal": 0.8526481986045837,
+     "rel_on_vs_off": 0.001174065455205424
+    },
+    {
+     "tensor": "5.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.008438706398010254,
+     "rel_on_vs_off": 0.0014586734551677288
+    },
+    {
+     "tensor": "5.out",
+     "bit_identical": false,
+     "frac_equal": 0.8755039572715759,
+     "rel_on_vs_off": 0.0010393190927093878
+    },
+    {
+     "tensor": "6.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.0355718731880188,
+     "rel_on_vs_off": 0.0013610567385484204
+    },
+    {
+     "tensor": "6.out",
+     "bit_identical": false,
+     "frac_equal": 0.8730091452598572,
+     "rel_on_vs_off": 0.0010438294695648404
+    },
+    {
+     "tensor": "mtp0.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.010238885879516602,
+     "rel_on_vs_off": 8.32175103913389e-05
+    },
+    {
+     "tensor": "mtp0.out",
+     "bit_identical": false,
+     "frac_equal": 0.3672358989715576,
+     "rel_on_vs_off": 4.593355965012316e-05
+    }
+   ]
+  },
+  {
+   "on": "j",
+   "off": "i",
+   "what": "M40（M41 关）",
+   "rows": [
+    {
+     "tensor": "0.in_grad",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    },
+    {
+     "tensor": "0.out",
+     "bit_identical": true,
+     "frac_equal": 1.0,
+     "rel_on_vs_off": 0.0
+    },
+    {
+     "tensor": "1.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.009626567363739014,
+     "rel_on_vs_off": 0.0033990228022102763
+    },
+    {
+     "tensor": "1.out",
+     "bit_identical": false,
+     "frac_equal": 0.7373942732810974,
+     "rel_on_vs_off": 0.0018713221772929719
+    },
+    {
+     "tensor": "2.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.006667077541351318,
+     "rel_on_vs_off": 0.002832837318673667
+    },
+    {
+     "tensor": "2.out",
+     "bit_identical": false,
+     "frac_equal": 0.7863932251930237,
+     "rel_on_vs_off": 0.0015580688050921248
+    },
+    {
+     "tensor": "3.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.011919140815734863,
+     "rel_on_vs_off": 0.0022247283885191735
+    },
+    {
+     "tensor": "3.out",
+     "bit_identical": false,
+     "frac_equal": 0.8270793557167053,
+     "rel_on_vs_off": 0.0013200343908877806
+    },
+    {
+     "tensor": "4.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.012420296669006348,
+     "rel_on_vs_off": 0.0017761445042708032
+    },
+    {
+     "tensor": "4.out",
+     "bit_identical": false,
+     "frac_equal": 0.8526481986045837,
+     "rel_on_vs_off": 0.001174065455205424
+    },
+    {
+     "tensor": "5.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.007875561714172363,
+     "rel_on_vs_off": 0.0015336282952256434
+    },
+    {
+     "tensor": "5.out",
+     "bit_identical": false,
+     "frac_equal": 0.8755039572715759,
+     "rel_on_vs_off": 0.0010393190927093878
+    },
+    {
+     "tensor": "6.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.03361910581588745,
+     "rel_on_vs_off": 0.0014338256224225676
+    },
+    {
+     "tensor": "6.out",
+     "bit_identical": false,
+     "frac_equal": 0.8730091452598572,
+     "rel_on_vs_off": 0.0010438294695648404
+    },
+    {
+     "tensor": "mtp0.in_grad",
+     "bit_identical": false,
+     "frac_equal": 0.008407115936279297,
+     "rel_on_vs_off": 8.948549829087063e-05
+    },
+    {
+     "tensor": "mtp0.out",
+     "bit_identical": false,
+     "frac_equal": 0.3672358989715576,
+     "rel_on_vs_off": 4.593355965012316e-05
+    }
+   ]
+  }
+ ]
+}

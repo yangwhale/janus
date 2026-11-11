@@ -1,0 +1,249 @@
+# 混元 4 对齐总览的条目：每行一个检查项，只放 hy4-mini（列 gpu、mini）；其他尺寸在 other-sizes.items.yaml（格式同 models/hunyuan3/dashboard/items.yaml）。
+# src = 结果名（alignments/*/results/ 下不带后缀，或 build.py 现算的 virtual 名）:检查 id 通配；几份结果合成一格时写成列表。
+# todo / 「todo: 说明」= 未开始，「wip: 说明」= 有证据、还没接成正式检查，na = 不适用。通过 / 不通过只能来自结果文件。
+# <列>_why: 这一格非 ✅ 时，说明里接在推导后面的一句结论与出处（根源一览第几行、对齐报告的 D 条目）；不写数字，不改判定。
+# 这里只放现行比较；历代与诊断代的比较在 history.md（build.py 按 HISTORY 生成）。
+columns:
+  gpu: GPU 一侧自身的检查（自比、确定性、故障演练），除逐元素 log 的 ulp 实测外都未完成；mini 列用到的噪声上限 N 写在门槛栏，不在这一列。内容在 01 · mini 的 gpu-noise
+  mini: 01 · hy4-mini 现行（2026-11-11 起对齐配置关 base2）：L4 是 TPU tz-off-rep（现行对齐配置，含 M50，sa_use_base2_exp 关）1000 步对 GPU g3-a（1000 步 golden 的基线一份；噪声 g3 16 份两两 120 对）；同一运行的前 300 步另对 GPU g2-a（前 300 步窗口 golden 的基线一份；噪声 g2 两两 28 对），两个窗口合成一格、写较差的那个；上一代（base2 开的 t1zg-a）见历代比较；L0 学习率取 t1zw-a（学习率设置相同）；L1 / L2 取各项最新的回放（逐层回放没有 M42b；L1 注意力整块与 L2 是 base2 开时测的，未在关 base2 上重测；低阈值 QK-Clip 第 1 步逐头最大 logit 已用关 base2 的 tz-off-qk01 重测）；L4 的 QK-Clip、健康信号、重跑逐位用关 base2 的 tz-off-qkc；L3 取现行配置训练步实际用的第 1 步梯度（tz-off-rep 的第 1 步全量抓数）；路由一致率第 1 步用 base2 关的 tw-ra1z，第 8、30、100 步仍是 base2 开的一代；优化器一步只比各侧优化器作用在自己梯度上的算术，取 mz-opt2
+alignments:
+  01-mini/gpu-noise:
+    column: gpu
+groups:
+- name: L0 地基（设置 / 数据 / 权重 / 配置，必须逐位）
+  items:
+  - name: 设置核对：逐步学习率等于登记的常数 1e-5（两边都要）
+    mini: t1zw-l0-settings:L0.settings.lr
+    say: 两边每一步的学习率都等于登记值
+  - name: 检查点张量名、形状、dtype 与参数量
+    mini: hy4-mini-l0-names:*
+    say: 检查点里每个张量的名字、形状、类型和参数量
+  - name: 权重转换 → MaxText 往返逐位（含 dtype 清单）
+    mini: hy4-mini-l0-ckpt-convert:*
+    say: 权重转换到 TPU 格式再转回来，逐位不变
+  - name: RoPE 列去交错与逆置换逐位
+    mini: hy4-mini-l0-rope:*
+    say: 位置编码相关的列重排，逐位可逆
+  - name: 负对照：不去交错的检查点必须判不一致
+    mini: hy4-mini-l0-negative-control:*
+    say: 故意给错的检查点，检查会报错
+  - name: 初始权重逐位：TPU 载入后对检查点
+    mini: t1-l0-init-vs-gpu-mcore:L0.init.tpu_loaded_eq_ckpt
+    say: TPU 载入后的权重等于检查点
+  - name: 跨侧初始权重逐位：TPU 载入后对 GPU 初始参数清单（8 rank）
+    mini: t1-l0-init-vs-gpu-mcore:L0.init.tpu_vs_gpu_mcore
+    say: TPU 载入后的权重等于 GPU 的初始权重
+  - name: 每 rank 每步输入指纹（TPU 回放 GPU 的 batch）
+    mini: t1zg-l0-data:L0.data.fingerprint
+    say: TPU 每一步吃的数据和 GPU 完全相同
+  - name: Muon / Adam 分区逐参数一致（GPU 239 个参数对 TPU 优化器叶子）
+    mini: t1-l0-muon-partition:L0.optim.partition
+    say: 哪些参数用 Muon、哪些用 Adam（两种优化器），两边一致
+  - name: 配置逐项对照（语义设置 69 项；精度开关见 config-alignment.md）
+    mini: t1-l0-config:L0.config.items
+    say: 69 项训练设置逐项一致
+  - name: GPU 载入自检（每个参数等于检查点张量）
+    gpu: 'wip: hy4-mini 通过（台账 G7）；没有结果文件'
+    say: GPU 载入后的权重等于检查点
+    gpu_say: 做过、通过（每个参数等于检查点里的张量），还没写成结果文件（[GPU 自比计划](../alignments/01-mini/gpu-noise/README.md)）
+  say: 地基：设置、数据、权重、配置（必须逐位相同）
+- name: L1 单算子（对 FP64；逐元素函数按 ULP）
+  items:
+  - name: iHC 混合、写回与 hc_head
+    mini:
+    - t1-l1-op-tpu-r3:L1.mini3.ihc_mix
+    - t1-l1-op-tpu-r3:L1.mini3.ihc_writeback
+    - t1-l1-op-tpu-r3:L1.mini3.hc_head
+    say: 超连接（多路残差流）的混合、写回与输出合并
+  - name: RMSNorm（输入、FFN 前、最后；MTP 的 enorm / hnorm）
+    mini: t1-l1-op-tpu-r3:L1.mini3.norm
+    say: 归一化层（RMSNorm）
+  - name: 输出门投影
+    mini: t1-l1-op-tpu-r3:L1.mini3.gate_proj
+    say: 注意力输出门的投影
+  - name: 注意力整块（含索引器与 top-k）
+    mini: t1-l1-op-tpu-r3:L1.mini3.attn
+    say: 注意力整块（含稀疏注意力的索引器，即给 token——文本切分的最小单位——打分、挑出要看的位置的部件）
+  - name: 稠密 MLP
+    mini: t1-l1-op-tpu-r3:L1.mini3.dense_mlp
+    say: 稠密前馈层
+  - name: MoE 整块、路由 logits、路由专家、共享专家（自选路由）
+    mini:
+    - t1-l1-op-tpu-r3:L1.mini3.moe
+    - t1-l1-op-tpu-r3:L1.mini3.router_logits
+    - t1-l1-op-tpu-r3:L1.mini3.routed_experts
+    - t1-l1-op-tpu-r3:L1.mini3.shared_expert
+    say: MoE 整块（路由、路由专家、共享专家）
+  - name: 输出头（FP32）
+    mini: t1-l1-op-tpu-r3:L1.mini3.lm_head
+    say: 输出头（32 位）
+  - name: 词嵌入、MTP 的 eh_proj、交叉熵
+    mini:
+    - t1-l1-op-tpu-r3:L1.mini3.embed
+    - t1-l1-op-tpu-r3:L1.mini3.eh_proj
+    - t1-l1-op-tpu-r3:L1.mini3.cross_entropy
+    say: 词嵌入、MTP 层的投影、交叉熵
+  - name: 索引器 KD 的输入（教师 q / k、索引器分数）对 CPU FP64
+    mini: t1-layer0-kd-attribution:L1.indexer_kd.inputs
+    say: 索引器蒸馏 loss（让索引器学完整注意力的分布）的输入
+  - name: 索引器 KD 的值（第 0 层第 0 行对 FP64，超越函数开关关 / 开，诊断）
+    mini: t1-step1-transcendental-accuracy:L1.transcendental.kd_row0
+    mini_why: 诊断，只报（[mini 对齐细节 D1](../alignments/01-mini/DETAILS.md#d1)；[根源一览第 25 行](../ROOT-CAUSES.md#r25)）
+    say: 索引器蒸馏 loss 的数值（只看不判）
+    mini_say: 只测了 TPU：第 0 层第 0 行的蒸馏 loss 值离精确值高精度指数开关关时 −1.15e-3、开时 +9.67e-5（现行配置开着）；只看不判（[细节](../alignments/01-mini/DETAILS.md#d1)）
+  - name: 优化器连续 8 步回放（GPU g2o-a 第 1–8 步喂 MaxText 优化器，现行的 M30、M34 都开）
+    mini: t1-optim-replay-adam-acc-r2-tpu:L1.optim_adam_r2.tpu_adam_acc
+    say: 优化器连续 8 步
+  - name: 逐元素函数（FP32；mini 列是 TPU 现行开关写法，gpu 列是 B200 实测的 log；按 CUDA 文档门槛：exp ≤ 2、log ≤ 1、sigmoid / silu ≤ 4、sqrt / 除法 ≤ 1、rsqrt ≤ 2 ulp）
+    gpu: t1-log-ulp:L1.elem.log.gpu_b200
+    mini:
+    - tpu-elementwise-ulp:L1.elem.exp.fp32_mt
+    - tpu-elementwise-ulp:L1.elem.log.fp32_mt
+    - tpu-elementwise-ulp:L1.elem.sigmoid.fp32_mt
+    - tpu-elementwise-ulp:L1.elem.silu.fp32_mt
+    - tpu-elementwise-ulp:L1.elem.sqrt.fp32_mt
+    - tpu-elementwise-ulp:L1.elem.div.fp32_mt
+    - tpu-elementwise-ulp:L1.elem.rsqrt.fp32
+    mini_why: 已定责、已接受：现行开关写法（M32 + M37、M34）下只剩 log 超门槛，真实输入上 1 ulp；GPU 实测 log 1 ulp；MaxText 开关 M51（精确 log，默认关，打开换轨迹，不进对齐配置）同一批输入 ≤ 1 ulp（[根源一览「定责、不修」](../ROOT-CAUSES.md#a-log)；[根源一览第 11、13、14 行](../ROOT-CAUSES.md#r11)；[mini 对齐细节 D14](../alignments/01-mini/DETAILS.md#d14)）；默认实现的数见检查清单
+    say: 指数、对数等基本函数的精度
+    mini_say: 32 位对数函数的最大误差：0.5 到 4 之间全部 2,517 万个 32 位数上，GPU 1 个最小精度单位、TPU 3 个（28.7 万个超过 1 个）；训练里实际出现的输入（索引器蒸馏的目标分布，629 万个数）上 TPU、GPU 都是 1 个。已接受：训练里测到的实际输入上没有超出（[细节](../alignments/01-mini/DETAILS.md#d14)）
+  - name: 逐元素 relu、clamp、加乘与类型转换（TPU，逐位）
+    mini:
+    - tpu-elementwise-ulp:L1.elem.relu.fp32
+    - tpu-elementwise-ulp:L1.elem.clamp.fp32
+    - tpu-elementwise-ulp:L1.elem.basic
+    say: 加减乘、截断、类型转换（逐位）
+  - name: 低阈值 QK-Clip（τ 0.1）：裁剪算法
+    mini: t1-qk-clip-tpu:L1.qkclip.formula
+    say: QK-Clip（注意力打分过大时缩小相关权重）的裁剪公式，低阈值下强制触发
+  - name: 低阈值 QK-Clip（τ 0.1）：第 1 步逐头最大 logit 对 CPU FP64
+    mini: t1zo-qkclip-maxlogit:L1.qkclip.max_logit
+    mini_why: 未定责：现行配置（base2 关，`tz-off-qk01`）第 4 层 8 个头离 FP64 是 GPU 两份中位数的 1.55 倍，最差一个头相对差 −1.19e-2（约 3 个 BF16 舍入单位）；同一量 base2 开时（`mz-qk-a`）第 4 层 0.94、全部层最差 1.05，过。第 3 层反而从 0.92 降到 0.42。还没有查
+    say: 低阈值下第一步每个头的最大注意力打分
+    mini_say: 第 4 层每层 8 个头离精确值：GPU 2.97e-3、TPU 4.61e-3（1.55 倍）；base2 开的上一代是 0.94 倍。其余 7 层 0.35–1.07 倍
+  - name: GPU 算子对 FP64、逐元素函数、极端输入
+    gpu: 'todo: 待做（gpu-noise README「计划（待做）」第 6 项）'
+    say: GPU 算子对精确值、极端输入
+    gpu_say: 还没做（[GPU 自比计划](../alignments/01-mini/gpu-noise/README.md)）
+  say: 单算子：同一个输入，各算一次，比谁离精确值远
+- name: L2 逐层（第 1 步，同一份权重）
+  items:
+  - name: 各层前向 / 反向对 CPU FP64（逐层重算，t1zu-a 一代的开关，无 M42b）
+    mini: t1-l2-layer-vs-fp64:L2.layer.*
+    say: 每一层的输出与层输入梯度
+    mini_say: 所用配置比现行少两个开关（注意力可学习偏置项梯度照 GPU 写法、蒸馏 loss 记录值的稳定写法，后者不影响单层前向和反向），要在现行配置上重跑；最差的第 2 层输入梯度离精确值 GPU 1.23e-2、TPU 1.42e-2
+  - name: 索引器 top-k 与路由逐层翻转（对 CPU FP64；第 1、8、30、100 步；只统计）
+    mini: t1-l2-flip-stats-diag:*
+    mini_why: 只统计、不设过线（[PROTOCOL 第 5 节](../PROTOCOL.md#5-第-1-步与逐层l0l3)），与 L3 路由一致率同一批数，判定在 L3（[mini 对齐细节第 4 节](../alignments/01-mini/DETAILS.md#4-各级现状严格档--参考档)）
+    say: 每层路由和稀疏注意力选中的 token 有多少不同（只统计）
+    mini_say: 只统计不判：路由选择最差一层的翻转率 GPU 1.54e-2、TPU 1.53e-2；稀疏注意力最差一层 GPU 6.68e-4、TPU 6.67e-4；判定在下面的「路由选择」一行（[细节](../alignments/01-mini/DETAILS.md#4-各级现状严格档--参考档)）
+  say: 单层：同一份权重和输入，逐层比
+- name: L3 第 1 步整网
+  items:
+  - name: 全部参数梯度：对 GPU 第 1 步噪声，超出的对 CPU FP64 定责
+    mini: t1zo-step1-train-grad-vs-fp64:L3.step1.grads.vs_gpu
+    mini_why: 未定责 5 个、已接受 1 个（MTP enorm，PROTOCOL 变更记录 2026-11-09）：现行配置（base2 关）超出 GPU 噪声且离精确值比 GPU 远 1.2 倍以上的是 5 个 iHC 小参数，其中第 2、3 层注意力侧 hc_scale 与 base2 开时的 D11 同一批；第 0 层注意力侧 hc_base、第 6 层 MLP 侧 hc_base 与 hc_fn 是关 base2 后新出现的，2026-11-09 的接受不覆盖它们（[mini 对齐细节 D11](../alignments/01-mini/DETAILS.md#d11)；[根源一览「定责、不修」](../ROOT-CAUSES.md#u-mini-step1)）
+    say: 205 个参数梯度
+    mini_say: 177 个超出 GPU 三份之间的波动，其中 171 个离精确值不超过 GPU 的 1.2 倍；离精确值的中位数 TPU 6.40e-3、GPU 6.83e-3；最差一个（第 3 层注意力侧 hc_scale）GPU 1.07e-3、TPU 6.40e-3（5.97 倍）。base2 开的上一代（mz-opt2）是 175 个超出、6 个 iHC 未定责（[历代](history.md)；[细节](../alignments/01-mini/DETAILS.md#d11)）
+  - name: 路由一致率（MoE 路由与 DSA top-k，对 CPU FP64；第 1、8、30、100 步）
+    mini: t1-route-agree:L3.route_agree.*
+    say: 路由和稀疏注意力的选择，不比 GPU 离精确值远
+    mini_say: 判法事后变更：原来对 GPU 三份之间的差判，第一个 MoE 层 GPU 三份完全相同、波动为 0，第 2–5 层 TPU 是 GPU 三份之间差的 2.0–5.7 倍，判不过；改成看谁离精确值远，各层 TPU 翻转率 ÷ GPU 三份最大值为 0.87–1.00（≤ 1.2 算过；第 1 步用 base2 关的 tw-ra1z，第 8、30、100 步是 base2 开的一代）；真实权重上做前瞻验证（[细节](../alignments/01-mini/DETAILS.md#判法变更记录)）
+  - name: 优化器一步：更新后参数、Adam 二阶动量（各侧对 FP64 优化器作用在自己的梯度上；格子写较差的一项）
+    mini:
+    - t1-l3-optim-step1:L3.step1.optim_arith.delta
+    - t1-l3-optim-step1:L3.step1.optim_arith.adam_v
+    say: 优化器走一步本身的误差
+    mini_say: 判法事后变更：两边离精确值都小于一次 16 位舍入（2⁻⁸ ≈ 3.9e-3）时直接算过，不要求 GPU 波动为 0；不加这条时最差一个是 GPU 的 4.55 倍，判不过；Adam 二阶动量（Adam 优化器记的梯度平方均值）99 个全部如此，最差一个离精确值 GPU 2.23e-8、TPU 1.02e-7；真实权重上做前瞻验证（[细节](../alignments/01-mini/DETAILS.md#判法变更记录)）
+  - name: GPU 第 1 步三份的逐张量散布
+    gpu: 'wip: g1s 中位数 rel_L2 2.7e-3（台账 G15）；g1s、g2s 的逐张量散布记在 01 第 1 步比较的结果文件里（gpu_noise_max），没有单独的 GPU 自比检查'
+    say: GPU 第一步三份之间的差
+    gpu_say: 量过（早一代三份的中位数相对差 2.7e-3），没写成单独的检查（[GPU 自比计划](../alignments/01-mini/gpu-noise/README.md)）
+  - name: 只换执行方式（专家并行、梯度累积切分、重算）
+    gpu: 'todo: 待做（gpu-noise README「计划（待做）」第 4 项）'
+    say: 只换并行方式、重算方式
+    gpu_say: 还没做（[GPU 自比计划](../alignments/01-mini/gpu-noise/README.md)）
+  say: 第一步整网：训练第一步的全部梯度
+- name: L4 多步（1000 步；另看同一运行的前 300 步）
+  items:
+  - name: loss（全程）
+    mini:
+    - t1zo-l4:L4.loss
+    - t1zo300-w:L4.loss@前300步
+    mini_why: 待查（不是 base2）：主 loss 1000 步带符号均值 TPU +7.21e-6、噪声上限 4.65e-6（1.55 倍），后段 1.52 倍，前 300 步 1.10 倍。开、关 base2 各 4 份 1000 步两组交叠（主 loss r 开 0.90–1.69、关 0.93–1.55），这份偏高与 base2 无关；8 份 TPU 主 loss 都比 GPU 16 份均值高，平均 +4.3e-6，登记为待查（[知识库](../knowledge.md#mini-上关-base2-为什么离-gpu-更远要点与出处)、[`mini-base2-loo.json`](../alignments/01-mini/gpu-noise/results/mini-base2-loo.json)）
+    say: 主 loss（全程）
+    mini_say: 1000 步主 loss 逐步相对差的带符号平均：TPU +7.21e-6，GPU 16 份的波动上限 4.65e-6（1.55 倍）；前 300 步 1.10 倍。开、关 base2 各 4 份重复两组交叠，这份偏高与 base2 无关；TPU 8 份都偏高（平均 +4.3e-6），原因待查（[知识库](../knowledge.md#mini-上关-base2-为什么离-gpu-更远要点与出处)）
+  - name: loss 后段（第 101 步起）
+    mini:
+    - t1zo-l4:L4.loss.tail
+    - t1zo300-w:L4.loss.tail@前300步
+    mini_why: 待查（不是 base2）：同上一行；主 loss 1000 步带符号均值 TPU +7.21e-6、噪声上限 4.65e-6（1.55 倍），后段 1.52 倍，前 300 步 1.10 倍。开、关 base2 各 4 份 1000 步两组交叠（主 loss r 开 0.90–1.69、关 0.93–1.55），这份偏高与 base2 无关；8 份 TPU 主 loss 都比 GPU 16 份均值高，平均 +4.3e-6，登记为待查（[知识库](../knowledge.md#mini-上关-base2-为什么离-gpu-更远要点与出处)、[`mini-base2-loo.json`](../alignments/01-mini/gpu-noise/results/mini-base2-loo.json)）
+    say: 主 loss（第 101 步起）
+    mini_say: 1000 步主 loss 逐步相对差的带符号平均：TPU +7.21e-6，GPU 16 份的波动上限 4.65e-6（1.55 倍）；前 300 步 1.10 倍。开、关 base2 各 4 份重复两组交叠，这份偏高与 base2 无关；TPU 8 份都偏高（平均 +4.3e-6），原因待查（[知识库](../knowledge.md#mini-上关-base2-为什么离-gpu-更远要点与出处)）
+  - name: MTP loss（全程与后段）
+    mini:
+    - t1zo-l4:L4.mtp_loss*
+    - t1zo300-w:L4.mtp_loss*
+    say: MTP loss
+  - name: 索引器 KD loss
+    mini:
+    - t1zo-l4:L4.indexer_loss
+    - t1zo300-w:L4.indexer_loss@前300步
+    mini_why: 过：M50 改记广义 KL 后（[根源一览第 25 行](../ROOT-CAUSES.md#r25)；[mini 对齐细节 D1](../alignments/01-mini/DETAILS.md#d1)）
+    say: 索引器蒸馏 loss
+  - name: grad_norm（裁剪前）
+    mini:
+    - t1zo-l4:L4.grad_norm
+    - t1zo300-w:L4.grad_norm@前300步
+    mini_why: 1000 步过（r 0.81）；前 300 步平均绝对相对误差 1.23 倍待定。base2 开的上一代同一项（1000 步 1.23、前 300 步 1.32 倍）已定责、已接受：前 10 步的差在 GPU 一侧，同一状态单步 6 次里 5 次 TPU 更近 FP64；这套同一状态证据是在开 base2 的状态上做的，关 base2 后没有重做（[根源一览「定责、不修」](../ROOT-CAUSES.md#a-grad-norm)；[mini 对齐细节 D2](../alignments/01-mini/DETAILS.md#d2)）
+    say: 梯度范数
+    mini_say: 前 300 步平均绝对相对误差：TPU 4.74e-4，GPU 波动上限 3.85e-4（1.23 倍）；1000 步平均绝对相对误差 TPU 2.37e-3、上限 2.93e-3（0.81 倍）。base2 开的上一代前 300 步是 1.32 倍（[细节](../alignments/01-mini/DETAILS.md#d2)）
+  - name: param_norm（更新后参数范数，两边比精确值）
+    mini:
+    - t1zo-l4:L4.param_norm
+    - t1zo300-w:L4.param_norm@前300步
+    say: 参数范数
+  - name: 路由偏置曲线（每层均值、标准差）
+    mini:
+    - t1zo-l4:L4.router.*
+    - t1zo300-w:L4.router.*
+    say: MoE 路由偏置（每层均值、标准差）
+    mini_say: 均值、标准差两个窗口都过（1000 步：标准差 r 0.77、均值 0.20）。base2 开的上一代标准差 1000 步 1.14 倍，当时已定责、已接受（[细节](../alignments/01-mini/DETAILS.md#4-各级现状严格档--参考档)）
+  - name: QK-Clip（每步全局最大 logit；被裁头数见健康信号）
+    mini:
+    - t1zo-l4-qkclip:L4.qkclip.max_logit
+    - t1zo300qk-w:L4.qkclip.max_logit@前300步
+    mini_why: 待定、未定责：关 base2 的现行配置 1000 步平均绝对相对误差 1.09 倍、前 300 步单步最大 1.05 倍；base2 开的上一代（1000 步 1.02、前 300 步 1.77 倍）已定责、已接受（同一状态四次 TPU 更近 FP64，[mini 对齐细节 D29](../alignments/01-mini/DETAILS.md#d29)），那套同一状态证据没在关 base2 上重做
+    say: 每步的最大注意力打分（QK-Clip 用的量）
+    mini_say: 1000 步平均绝对相对误差：TPU 2.02e-3，GPU 16 份的波动上限 1.86e-3（1.09 倍）；前 300 步单步最大 TPU 4.54e-2、上限 4.34e-2（1.05 倍）。base2 开的上一代前 300 步带符号均值 1.77 倍，关后降到 0.70 倍
+  - name: 健康信号（NaN / Inf、跳步、梯度裁剪与 QK-Clip 触发、丢 token、尖峰）
+    mini: t1zo-health:*
+    say: 训练健康：无 NaN、无跳步、无丢 token、无尖峰（某步超过前 20 步中位数 10 倍算尖峰）
+  - name: GPU 自比：同设置 8 份两两的散布（噪声尺子）
+    gpu: 'wip: g1、g2、g3 各自 8 份两两 28 对就是各代 L4 比较的噪声尺子（g1：t1-l4-nozm / t1s-l4；g2：t1zr300-l4、t1zs300-l4、t1z-l4、t1v-l4、t1t-l4；g3：t1zr-l4、t1zs-l4、t1zk-l4、t1w-l4、t1u-l4 的 N）；GPU 自比（catalogs/t1-gpu-noise.yaml）待做'
+    say: GPU 自己同设置 8 份之间的差
+    gpu_say: 量过，就是判定用的波动上限，没写成单独的检查（[GPU 自比计划](../alignments/01-mini/gpu-noise/README.md)）
+  - name: 抓数不改数值（开 / 不开全量抓数）
+    gpu: 'todo: 待做（gpu-noise README「计划（待做）」第 3 项）'
+    mini: t1mz-dump-determinism:DET.tpu.dump_no_effect
+    say: 开全量抓数不改训练数值
+    gpu_say: GPU 侧还没做（[GPU 自比计划](../alignments/01-mini/gpu-noise/README.md)）
+  - name: 故障演练（确定性基线上埋错）
+    gpu: 'todo: 待做，要先有确定性基线（gpu-noise README「计划（待做）」第 5 项）'
+    say: 故意埋错，检查能不能抓到
+    gpu_say: 还没做（[GPU 自比计划](../alignments/01-mini/gpu-noise/README.md)）
+  - name: 同设置重跑逐位（mini 列是 TPU 一侧；gpu 列是 GPU 一侧）
+    gpu: 'wip: hy4-mini 8 卡同设置重跑不逐位（g3 8 份第 1 步的相对极差：loss 2.9e-6、grad_norm 8.2e-5）；hy4-tiny 2 卡 20 步两份逐位相同（台账 G7）；没有结果文件'
+    mini: t1zo-determinism:DET.tpu.rerun.current
+    say: 同设置重跑逐位相同
+    gpu_say: GPU 8 卡重跑本来就不逐位（8 份第 1 步 loss 相对极差 2.9e-6）；小模型 2 卡 20 步两份逐位相同，没写成结果文件（[GPU 自比计划](../alignments/01-mini/gpu-noise/README.md)）
+  say: 训练曲线：1000 步（另看前 300 步）
+  plain_after:
+  - <a href="../alignments/01-mini/figures/l4-items.png"><img src="../alignments/01-mini/figures/l4-items.png" width="560" alt="训练曲线七项的比值"></a>
+  - ''
+  - 图：三个小图各画一个量（带符号均值、平均绝对相对误差、单步最大），横条是这个量（取绝对值）除以 GPU 同一量的波动上限，条旁是 TPU 值 / 上限；图里 7 行是七个量的全程窗口，数取自 `t1zga-l4.results.json`。
+  - ''
+  - 开头说的 9 项是上表前 7 行：MTP loss 一行含全程与第 101 步起两个窗口，路由偏置一行含均值和标准差。主 loss 的逐步曲线见[对齐报告「训练曲线」](../alignments/01-mini/ALIGNMENT-REPORT.md#训练曲线)。
+column_say:
+  gpu: GPU 自己
+  mini: TPU 对 GPU

@@ -1,0 +1,32 @@
+{
+ "layer1": {
+  "layer": 1,
+  "tokens": 48,
+  "same_route_tokens": 4095,
+  "all_tokens": 4096,
+  "gpu_vs_fp64": 1.1761085147576642e-06,
+  "tpu_vs_fp64": 0.003235274404669849,
+  "fp64_input_diff": 1.8800983270907657e-05,
+  "all_bf16_inputs_vs_fp64": 0.0032039892382728237,
+  "gpu_scale_fit": 1.000000018625774,
+  "tpu_scale_fit": 1.0001491252689163,
+  "tpu": "t-swf-g99b@100",
+  "gpu": "g-sdf-100@1",
+  "params": "GPU θ_99（g-sd-300 第 99 步导出）"
+ },
+ "layer2": {
+  "layer": 2,
+  "tokens": 48,
+  "same_route_tokens": 4060,
+  "all_tokens": 4096,
+  "gpu_vs_fp64": 1.3482035995047297e-06,
+  "tpu_vs_fp64": 0.0032303765325971093,
+  "fp64_input_diff": 0.000766110255367805,
+  "all_bf16_inputs_vs_fp64": 0.003223545677878993,
+  "gpu_scale_fit": 0.9999999757796804,
+  "tpu_scale_fit": 0.9999547415966393,
+  "tpu": "t-swf-g99b@100",
+  "gpu": "g-sdf-100@1",
+  "params": "GPU θ_99（g-sd-300 第 99 步导出）"
+ }
+}

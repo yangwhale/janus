@@ -1,0 +1,14 @@
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-t-loss30
+runs:
+  test: t-loss30
+  golden: [g1k-a, g1k-b, g1k-c]
+  noise: [[g1k-a, g1k-b], [g1k-a, g1k-c], [g1k-b, g1k-c]]
+  root: /data/janus-runs        # 运行根目录约定，见 README「运行根目录」；不在这里时用 janus run --root 换
+checks:
+  - {id: L0.config.diff.dropout, type: config_diff, level: L0, select: {kind: config}, params: {mapping: [{test: model_config.hidden_dropout, equals: 0.0}, {test: optimizer_config.lr, ref: optimizer_config.lr, must_equal: true}, {test: optimizer_config.weight_decay, ref: scheduler_config.start_weight_decay, must_equal: true}, {test: model_config.moe_router_bias_update_rate, ref: model_config.moe_router_bias_update_rate, must_equal: true}, {test: checkpoint.manifest_sha256, ref: checkpoint.manifest_sha256, must_equal: true}, {test: data.replay_of.manifest_sha256, ref: data.manifest_sha256, must_equal: true}]}}
+  - {id: L0.data.fingerprint, type: data_fingerprint, level: L0, select: {kind: tokens, steps: "1:31"}, params: {first_loss: false}}
+  - {id: L4.loss, type: multi_golden, level: L4, select: {kind: metrics, field: lm_loss, window: "1:31"}, params: {signed_mean_se_k: 2}, threshold: calibrated}
+  - {id: L4.grad_norm, type: loss_series, level: L4, select: {kind: metrics, field: grad_norm, window: "1:31"}, threshold: calibrated}
+  - {id: L4.lr, type: scalar_series, level: L4, select: {kind: metrics, field: lr, window: "1:31"}, params: {rtol: 0.0, abs_ulp: 0}}

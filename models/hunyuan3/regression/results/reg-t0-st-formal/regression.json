@@ -1,0 +1,584 @@
+{
+ "tier": "T0",
+ "platform": "v5p",
+ "test": "reg-t0-st2",
+ "lkg": "reg-t0-st1",
+ "declare": "数学不变",
+ "scope": [],
+ "class": "通过",
+ "verdict": "PASS",
+ "first_differ": null,
+ "counts": {
+  "pass": 15,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "report": 2
+ },
+ "tier_config": {
+  "path": "models/hunyuan3/regression/tiers/t0.yaml",
+  "sha256": "d95fa250a233d61e1c4b8807fd4a8cece80412e43fd91a73ad974e42d02803cd"
+ },
+ "catalog": {
+  "path": "models/hunyuan3/regression/catalogs/regression-t0.yaml",
+  "sha256": "073bce6705ab380022ef44653ac238a4e1a0422de04066c1b9d0aa0db945d746",
+  "includes": [
+   {
+    "path": "models/hunyuan3/regression/catalogs/regression-common.yaml",
+    "sha256": "06d08d7f207aa847455135e0f4837367dc8d786c020aac76d6e0211cc7c2530a"
+   }
+  ]
+ },
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "74889f06599ca2334918e0786dd253226d29a615"
+ },
+ "commits": {
+  "test": {
+   "maxtext": "237a32705feb9f028910eb28216299139415d007",
+   "janus": "3fff02dc81307f9128565a8a9d4ec61725f7aa46"
+  },
+  "lkg": {
+   "maxtext": "237a32705feb9f028910eb28216299139415d007",
+   "janus": "3fff02dc81307f9128565a8a9d4ec61725f7aa46"
+  }
+ },
+ "rows": {
+  "R01": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R01.run_complete",
+     "status": "pass",
+     "hard": true,
+     "message": "20 步全部完成、无重复、无重启",
+     "metrics": {
+      "planned": 20,
+      "logged": 20,
+      "duplicate": 0,
+      "missing": 0,
+      "extra": 0,
+      "restarts": 0
+     }
+    }
+   ]
+  },
+  "R02": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R02.inputs",
+     "status": "pass",
+     "hard": true,
+     "message": "必须相同的字段都相同；其他不同 0 项",
+     "metrics": {
+      "fields": 7,
+      "must_equal_differ": 0,
+      "other_differ": 0,
+      "missing": 0,
+      "equals_rules": 3
+     }
+    },
+    {
+     "id": "R02.registry",
+     "status": "pass",
+     "hard": true,
+     "metrics": {
+      "tier_config_sha256": "d95fa250a233",
+      "catalog_files": 2
+     },
+     "message": "档位配置与目录的 sha256 与 lkg.yaml 登记的相同"
+    }
+   ]
+  },
+  "R03": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R03.data_fingerprint",
+     "status": "pass",
+     "hard": true,
+     "message": "token 与首步 loss 逐位相同",
+     "metrics": {
+      "units_per_field": {
+       "tokens": 320,
+       "labels": 320,
+       "loss_mask": 320,
+       "position_ids": 320
+      },
+      "units": 1300,
+      "differ": 0
+     }
+    }
+   ]
+  },
+  "R04": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R04.versions",
+     "status": "pass",
+     "hard": true,
+     "message": "必须相同的字段都相同；其他不同 0 项",
+     "metrics": {
+      "fields": 7,
+      "must_equal_differ": 0,
+      "other_differ": 0,
+      "missing": 0,
+      "equals_rules": 0
+     }
+    }
+   ]
+  },
+  "R05": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R05.process_flags",
+     "status": "pass",
+     "hard": true,
+     "message": "必须相同的字段都相同；其他不同 0 项",
+     "metrics": {
+      "fields": 6,
+      "must_equal_differ": 0,
+      "other_differ": 0,
+      "missing": 0,
+      "equals_rules": 0
+     }
+    },
+    {
+     "id": "R05.compiler_flagfile",
+     "status": "pass",
+     "hard": true,
+     "message": "全部规则满足，指纹与参照相同",
+     "metrics": {
+      "rules": 0,
+      "bad": 0,
+      "fingerprint": "8494a7374f44f508",
+      "ref_fingerprint": "8494a7374f44f508",
+      "fingerprint_equal": true
+     }
+    },
+    {
+     "id": "R05.compiler_debug_options",
+     "status": "pass",
+     "hard": true,
+     "message": "全部规则满足，指纹与参照相同",
+     "metrics": {
+      "rules": 0,
+      "bad": 0,
+      "fingerprint": "59407bf7dd627e57",
+      "ref_fingerprint": "59407bf7dd627e57",
+      "fingerprint_equal": true,
+      "ignored_lines": {
+       "test": 3,
+       "ref": 3
+      }
+     }
+    }
+   ]
+  },
+  "R06": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R06.must_equal",
+     "status": "pass",
+     "hard": true,
+     "message": "必须相同的字段都相同；其他不同 0 项",
+     "metrics": {
+      "fields": 25,
+      "must_equal_differ": 0,
+      "other_differ": 0,
+      "missing": 0,
+      "equals_rules": 25
+     }
+    }
+   ]
+  },
+  "R07": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R07.state_init",
+     "status": "pass",
+     "hard": true,
+     "message": "全部参数逐位相同",
+     "metrics": {
+      "params": 91,
+      "differ": 0,
+      "only_one_side": 0
+     }
+    }
+   ]
+  },
+  "R08": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R08.step1_loss",
+     "status": "pass",
+     "hard": true,
+     "message": "逐位可复现",
+     "metrics": {
+      "fields": 2,
+      "first_differ": [],
+      "tensors": 0,
+      "tensors_differ": 0
+     }
+    },
+    {
+     "id": "R08.loss_tolerance",
+     "status": "pass",
+     "hard": false,
+     "message": "在噪声参照内",
+     "metrics": {
+      "d0": 0.0,
+      "signed_mean": 0.0,
+      "mare": 0.0,
+      "max_step": 0.0,
+      "max_step_at": 2,
+      "window": "1:21",
+      "denominator": "golden",
+      "nonfinite_steps": [],
+      "signed_mean_se": 0.0,
+      "first_differ_step": null,
+      "noise_dropped": [],
+      "noise_loo": [
+       {
+        "pair": "reg-t0-r2~cal-vmem64-a",
+        "signed_mean": 0.3806953501041965,
+        "mare": 0.4581279539377648,
+        "max_step": 0.6375390858843107
+       },
+       {
+        "pair": "reg-t0-r2~cal-sabwd1k-a",
+        "signed_mean": 0.5454714293378314,
+        "mare": 0.5968744779589349,
+        "max_step": 0.7721962212813348
+       },
+       {
+        "pair": "reg-t0-r2~cal-vmem48-a",
+        "signed_mean": 1.204827182773999,
+        "mare": 1.2100871145545231,
+        "max_step": 1.074253805037828
+       },
+       {
+        "pair": "reg-t0-r2~cal-vmem40-a",
+        "signed_mean": 0.6425577586792385,
+        "mare": 0.7265088708639907,
+        "max_step": 0.6927446314688319
+       },
+       {
+        "pair": "reg-t0-r2~cal-vmem56-a",
+        "signed_mean": 0.8299945538227284,
+        "mare": 0.8263867848622917,
+        "max_step": 0.7555135030126896
+       },
+       {
+        "pair": "reg-t0-r2~cal-combo-ar2",
+        "signed_mean": 0.6099208149999836,
+        "mare": 0.6320642754322031,
+        "max_step": 0.54625414887178
+       },
+       {
+        "pair": "reg-t0-r2~cal-sabwd256-a",
+        "signed_mean": 0.7558810801297493,
+        "mare": 0.7764057217415286,
+        "max_step": 0.9308787134943279
+       },
+       {
+        "pair": "cal-vmem64-a~cal-sabwd1k-a",
+        "signed_mean": 0.1647741674898362,
+        "mare": 0.5344927344005421,
+        "max_step": 0.48800791066261257
+       },
+       {
+        "pair": "cal-vmem64-a~cal-vmem48-a",
+        "signed_mean": 0.6193078201975126,
+        "mare": 0.7639904213497136,
+        "max_step": 0.9296350508688224
+       },
+       {
+        "pair": "cal-vmem64-a~cal-vmem40-a",
+        "signed_mean": 0.2618630390563394,
+        "mare": 0.489126300229988,
+        "max_step": 0.461534826401297
+       },
+       {
+        "pair": "cal-vmem64-a~cal-vmem56-a",
+        "signed_mean": 0.449300539357687,
+        "mare": 0.6021014375419872,
+        "max_step": 0.7320031570991645
+       },
+       {
+        "pair": "cal-vmem64-a~cal-combo-ar2",
+        "signed_mean": 0.22922458369207652,
+        "mare": 0.44458461063514376,
+        "max_step": 0.39498858158847994
+       },
+       {
+        "pair": "cal-vmem64-a~cal-sabwd256-a",
+        "signed_mean": 0.3751869889036631,
+        "mare": 0.5682261958087172,
+        "max_step": 0.7027673455835891
+       },
+       {
+        "pair": "cal-sabwd1k-a~cal-vmem48-a",
+        "signed_mean": 0.45453472187184046,
+        "mare": 0.5450386875678777,
+        "max_step": 0.60740590752833
+       },
+       {
+        "pair": "cal-sabwd1k-a~cal-vmem40-a",
+        "signed_mean": 0.0970850663683497,
+        "mare": 0.38266130023786066,
+        "max_step": 0.5189277581817692
+       },
+       {
+        "pair": "cal-sabwd1k-a~cal-vmem56-a",
+        "signed_mean": 0.28452498352831623,
+        "mare": 0.4239758055504634,
+        "max_step": 0.5240949525403342
+       },
+       {
+        "pair": "cal-sabwd1k-a~cal-combo-ar2",
+        "signed_mean": 0.06444434271852338,
+        "mare": 0.5058428895936251,
+        "max_step": 0.4041441565444222
+       },
+       {
+        "pair": "cal-sabwd1k-a~cal-sabwd256-a",
+        "signed_mean": 0.21041069264662182,
+        "mare": 0.4960129618640428,
+        "max_step": 0.42880505347790526
+       },
+       {
+        "pair": "cal-vmem48-a~cal-vmem40-a",
+        "signed_mean": 0.3574577865079818,
+        "mare": 0.518791786891013,
+        "max_step": 0.6714667245519829
+       },
+       {
+        "pair": "cal-vmem48-a~cal-vmem56-a",
+        "signed_mean": 0.17001692337816696,
+        "mare": 0.5654690374669598,
+        "max_step": 0.6265559430349538
+       },
+       {
+        "pair": "cal-vmem48-a~cal-combo-ar2",
+        "signed_mean": 0.39009821510152043,
+        "mare": 0.5625467134326352,
+        "max_step": 0.7710648832415169
+       },
+       {
+        "pair": "cal-vmem48-a~cal-sabwd256-a",
+        "signed_mean": 0.2441304797321054,
+        "mare": 0.4892392460744444,
+        "max_step": 0.662204815516261
+       },
+       {
+        "pair": "cal-vmem40-a~cal-vmem56-a",
+        "signed_mean": 0.18743677254006744,
+        "mare": 0.46348174804552045,
+        "max_step": 0.5380728518429946
+       },
+       {
+        "pair": "cal-vmem40-a~cal-combo-ar2",
+        "signed_mean": 0.03264214374349876,
+        "mare": 0.4270414076386448,
+        "max_step": 0.3774036622292537
+       },
+       {
+        "pair": "cal-vmem40-a~cal-sabwd256-a",
+        "signed_mean": 0.11332233473407076,
+        "mare": 0.49006131738243924,
+        "max_step": 0.506757090305446
+       },
+       {
+        "pair": "cal-vmem56-a~cal-combo-ar2",
+        "signed_mean": 0.22008690441757406,
+        "mare": 0.6357661749326008,
+        "max_step": 0.5734185049422673
+       },
+       {
+        "pair": "cal-vmem56-a~cal-sabwd256-a",
+        "signed_mean": 0.0741200380115621,
+        "mare": 0.5838212657213294,
+        "max_step": 0.6903465076369477
+       },
+       {
+        "pair": "cal-combo-ar2~cal-sabwd256-a",
+        "signed_mean": 0.14596067077863287,
+        "mare": 0.5399472403778909,
+        "max_step": 0.5184349270698608
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "R09": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R09.step1_norms",
+     "status": "pass",
+     "hard": true,
+     "message": "逐位可复现",
+     "metrics": {
+      "fields": 2,
+      "first_differ": [],
+      "tensors": 0,
+      "tensors_differ": 0
+     }
+    }
+   ]
+  },
+  "R14": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R14.lr_wd",
+     "status": "pass",
+     "hard": true,
+     "message": "逐位可复现",
+     "metrics": {
+      "fields": 2,
+      "first_differ": [],
+      "tensors": 0,
+      "tensors_differ": 0
+     }
+    }
+   ]
+  },
+  "R15": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R15.state_final",
+     "status": "pass",
+     "hard": true,
+     "message": "全部参数逐位相同",
+     "metrics": {
+      "params": 91,
+      "differ": 0,
+      "only_one_side": 0
+     }
+    }
+   ]
+  },
+  "R17": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R17.health",
+     "status": "pass",
+     "hard": true,
+     "message": "健康",
+     "metrics": {
+      "fields": 3,
+      "problems": 0
+     }
+    }
+   ]
+  },
+  "R18": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R18.dtypes",
+     "status": "pass",
+     "hard": true,
+     "message": "182 项 dtype 全部符合规则",
+     "metrics": {
+      "entries": 182,
+      "wrong_dtype": 0,
+      "unmatched": 0,
+      "rule_hits": {
+       "params/*": 58,
+       "MoEBiasVar/*": 2,
+       "*/opt_state/*/mu/*": 58,
+       "*/opt_state/*/nu/*": 58,
+       "*/opt_state/*/count": 4,
+       "OptState/optimizer/step": 2
+      }
+     }
+    }
+   ]
+  },
+  "R20": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R20.artifact_counts",
+     "status": "pass",
+     "hard": true,
+     "message": "全部规则满足",
+     "metrics": {
+      "rules": 7,
+      "bad": 0
+     }
+    }
+   ]
+  },
+  "R21": {
+   "status": "report",
+   "note": "",
+   "checks": [
+    {
+     "id": "R21.hlo_fingerprint",
+     "status": "pass",
+     "hard": false,
+     "message": "全部规则满足，指纹与参照相同",
+     "metrics": {
+      "rules": 0,
+      "bad": 0,
+      "fingerprint": "209341bb971a111d",
+      "ref_fingerprint": "209341bb971a111d",
+      "fingerprint_equal": true
+     }
+    }
+   ]
+  },
+  "R22": {
+   "status": "report",
+   "checks": [],
+   "metrics": {
+    "test_median_s": 0.9006494283676147,
+    "lkg_median_s": 0.9054528474807739,
+    "rel_diff": -0.00530499089657032,
+    "steps_used": 18,
+    "skip_first": 2,
+    "threshold": 0.008319745869773645
+   },
+   "note": "只报。偏离 LKG -0.53%，在阈值 0.83%内（阈值出自 calibration.yaml）；峰值 HBM、编译期临时区还没记"
+  },
+  "R23": {
+   "status": "pass",
+   "checks": [],
+   "metrics": {
+    "rows": 17,
+    "problems": 0
+   },
+   "note": "每一行都出了结论、单元数对得上"
+  }
+ },
+ "first_lkg": true,
+ "lkg_candidate": true,
+ "created_at": "2026-11-05T16:18:31+08:00"
+}

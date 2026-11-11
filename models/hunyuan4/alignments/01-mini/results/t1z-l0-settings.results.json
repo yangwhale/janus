@@ -1,0 +1,67 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "61e644cff95cd62bc6b23d31f7be64c3559fecce"
+ },
+ "catalog": {
+  "path": "models/hunyuan4/alignments/01-v5p-acceptance/catalogs/t1z-l0-settings.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "ef99b4c8e9ed40451014e1c2d8cce5c3a7c18e83f38d0342b6249e87042ad4f5",
+  "raw_sha256": "399258ed9c82f7b96c0870accb1fe69d17ee0bd7c442c06369ca34af3a856a4e"
+ },
+ "runs": {
+  "t1z-a": {
+   "path": "/tmp/hy4w/t1root/t1z-a",
+   "meta_sha256": "a164f80ccc8721b71f6ffce9bb9b4f228cc00e862642f0cff12353973e6816e6"
+  },
+  "g2-a": {
+   "path": "/tmp/hy4w/t1root/g2-a",
+   "meta_sha256": "12d0f453679d06a5bc40b957650d2c179d8eeff793e7bf90948dcc7f88b5178c"
+  }
+ },
+ "started_at": "2026-11-07T19:59:46+00:00",
+ "finished_at": "2026-11-07T19:59:46+00:00",
+ "summary": {
+  "pass": 1,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L0.settings.lr",
+   "type": "scalar_series",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "rtol": 0.0,
+     "abs_ulp": 0
+    },
+    "source": "规格默认值"
+   },
+   "metrics": {
+    "steps": 300,
+    "bad_steps": 0,
+    "first_bad": null,
+    "equals": 1e-05
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/hy4w/t1root/t1z-a",
+     "sha256": "a164f80ccc8721b71f6ffce9bb9b4f228cc00e862642f0cff12353973e6816e6"
+    },
+    {
+     "path": "/tmp/hy4w/t1root/g2-a",
+     "sha256": "12d0f453679d06a5bc40b957650d2c179d8eeff793e7bf90948dcc7f88b5178c"
+    }
+   ],
+   "message": "两边每一步都等于登记值 1e-05"
+  }
+ ]
+}

@@ -1,0 +1,69 @@
+{
+ "what": "第三关「第 1 步参数梯度」一半的 FP64 版：当前配置（yml a238883b）的扰动臂第 1 步梯度（全量状态读，动量反推）对 FP64 整步参照（models/hunyuan3/analysis/fp64_step.py，golden 第 1 步全局 batch）的距离，与基线 t-st1n-base（v7x：t-v7x-st1n-base）的距离之比。r_pooled_vs_base：全部 50 个张量按能量合起来；r_max_tensor_vs_base：逐张量的最大值（经过路由的张量随近似平局翻转变）",
+ "runs": "t-st1n-<臂>-gm / t-v7x-st1n-<臂>-gm；臂：sa256 / sa1k = splash 反向块 256 / 1024，vmem40 / vmem56 = 片上内存上限 40 / 56 MiB，combo = 48 MiB + sa1k，sa256v48 = 48 MiB + sa256",
+ "threshold": "r_pooled_vs_base ≤ 1.2（同 R-ratio 的线）",
+ "v5p": {
+  "sa256": {
+   "r_pooled_vs_base": 1.0014960365936687,
+   "r_max_tensor_vs_base": 1.0092945990596607,
+   "worst": "decoder.layers.1.self_attention.linear_qkv.layer_norm_weight"
+  },
+  "sa1k": {
+   "r_pooled_vs_base": 1.0019739709054714,
+   "r_max_tensor_vs_base": 1.7578114405077045,
+   "worst": "decoder.layers.1.pre_mlp_layernorm.weight"
+  },
+  "combo": {
+   "r_pooled_vs_base": 1.0072085237602038,
+   "r_max_tensor_vs_base": 1.7416368243539,
+   "worst": "decoder.layers.1.pre_mlp_layernorm.weight"
+  },
+  "vmem40": {
+   "r_pooled_vs_base": 1.0081651942960688,
+   "r_max_tensor_vs_base": 2.909091442103227,
+   "worst": "decoder.layers.1.pre_mlp_layernorm.weight"
+  },
+  "vmem56": {
+   "r_pooled_vs_base": 1.0062052992558463,
+   "r_max_tensor_vs_base": 1.740001688791714,
+   "worst": "decoder.layers.1.pre_mlp_layernorm.weight"
+  },
+  "sa256v48": {
+   "r_pooled_vs_base": 1.0071404186366024,
+   "r_max_tensor_vs_base": 1.7388455293860945,
+   "worst": "decoder.layers.1.pre_mlp_layernorm.weight"
+  }
+ },
+ "v7x": {
+  "sa256": {
+   "r_pooled_vs_base": 1.0033717721652953,
+   "r_max_tensor_vs_base": 1.014328530113312,
+   "worst": "decoder.layers.1.self_attention.linear_qkv.layer_norm_weight"
+  },
+  "sa1k": {
+   "r_pooled_vs_base": 1.0029752125122282,
+   "r_max_tensor_vs_base": 1.0243738822818185,
+   "worst": "decoder.layers.2.self_attention.k_layernorm.weight"
+  },
+  "combo": {
+   "r_pooled_vs_base": 1.0335428624105807,
+   "r_max_tensor_vs_base": 1.4357690249039223,
+   "worst": "decoder.layers.2.pre_mlp_layernorm.weight"
+  },
+  "vmem40": {
+   "r_pooled_vs_base": 1.0153003575424453,
+   "r_max_tensor_vs_base": 1.506903919835757,
+   "worst": "decoder.layers.0.self_attention.k_layernorm.weight"
+  },
+  "vmem56": {
+   "r_pooled_vs_base": 1.0390437055859567,
+   "r_max_tensor_vs_base": 1.613650542704525,
+   "worst": "decoder.layers.3.self_attention.k_layernorm.weight"
+  },
+  "sa256v48": {
+   "r_pooled_vs_base": 1.0341984698157514,
+   "r_max_tensor_vs_base": 1.4408239415216713,
+   "worst": "decoder.layers.2.pre_mlp_layernorm.weight"
+  }
+ }
+}

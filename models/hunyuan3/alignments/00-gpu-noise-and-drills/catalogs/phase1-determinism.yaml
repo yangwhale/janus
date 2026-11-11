@@ -1,0 +1,34 @@
+# 第一阶段 · GPU 确定性自证：同配置、确定性设置两次运行必须逐位相同
+schema_version: 1
+model: hunyuan3-4l
+stage: phase1-determinism
+description: 确定性设置下同配置两次 1000 步，loss、学习率、第 1 与 1000 步全部抓数逐位相同
+runs:
+  test: rd-det-b
+  golden: [rd-golden-1]
+  root: /data/janus-runs
+checks:
+  - id: L4.loss.exact
+    type: loss_series
+    level: L4
+    select: {kind: metrics, field: lm_loss, window: "1:1001"}
+    threshold: exact
+  - id: L4.lr
+    type: scalar_series
+    level: L4
+    select: {kind: metrics, field: lr, window: "1:1001"}
+    params: {rtol: 0.0, abs_ulp: 0}
+  - id: L3.step1.bitwise
+    type: bitwise_equal
+    level: L3
+    select: {kind: tensor, step: 1, name: "*"}
+    threshold: exact
+  - id: L3.step1.coverage
+    type: coverage
+    level: L3
+    select: {kind: tensor, step: 1, name: "*"}
+  - id: L4.step1000.bitwise
+    type: bitwise_equal
+    level: L4
+    select: {kind: tensor, step: 1000, name: "*"}
+    threshold: exact

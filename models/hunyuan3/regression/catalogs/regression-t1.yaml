@@ -1,0 +1,124 @@
+# 混元 3 · 日常回归 · T1 主力：4 层，主切分，1000 步（= golden 长度），不抓张量。
+# T0 的全部行（regression-common.yaml，步数与窗口换成 1000 步）+ R12、R13、R16①、R25（标准第六节）。
+# R25 要 golden g1k-a / g1k-b / g1k-c 的 meta.json 与 metrics.jsonl（run_regression.sh 取回）。
+schema_version: 1
+model: hunyuan3-4l
+stage: regression-t1
+description: T1 主力（1000 步）对 LKG，R25 对 GPU golden
+runs:
+  root: /data/janus-runs
+  test: TEST_RUN
+  lkg: LKG_RUN
+  golden: [g1k-a, g1k-b, g1k-c]
+  # 容差门（role: tolerance）的噪声参照：TPU 执行噪声，基线 + 过了三关的扰动臂两两成对（28 对，正式；README 第五节）。
+  # 必须和 ../calibration.yaml 里 v5p / T1 最新一条的 pairs 相同（tests 核）；运行目录由 run_regression.sh 按那里的位置取回
+  noise:
+    - [reg-t1-fa-a, fa-vmem64-t1]
+    - [reg-t1-fa-a, fa-vmem48-t1]
+    - [reg-t1-fa-a, fa-vmem40-t1]
+    - [reg-t1-fa-a, fa-vmem56-t1]
+    - [reg-t1-fa-a, fa-sabwd1k-t1]
+    - [reg-t1-fa-a, fa-sabwd256-t1]
+    - [reg-t1-fa-a, fa-combo-t1]
+    - [fa-vmem64-t1, fa-vmem48-t1]
+    - [fa-vmem64-t1, fa-vmem40-t1]
+    - [fa-vmem64-t1, fa-vmem56-t1]
+    - [fa-vmem64-t1, fa-sabwd1k-t1]
+    - [fa-vmem64-t1, fa-sabwd256-t1]
+    - [fa-vmem64-t1, fa-combo-t1]
+    - [fa-vmem48-t1, fa-vmem40-t1]
+    - [fa-vmem48-t1, fa-vmem56-t1]
+    - [fa-vmem48-t1, fa-sabwd1k-t1]
+    - [fa-vmem48-t1, fa-sabwd256-t1]
+    - [fa-vmem48-t1, fa-combo-t1]
+    - [fa-vmem40-t1, fa-vmem56-t1]
+    - [fa-vmem40-t1, fa-sabwd1k-t1]
+    - [fa-vmem40-t1, fa-sabwd256-t1]
+    - [fa-vmem40-t1, fa-combo-t1]
+    - [fa-vmem56-t1, fa-sabwd1k-t1]
+    - [fa-vmem56-t1, fa-sabwd256-t1]
+    - [fa-vmem56-t1, fa-combo-t1]
+    - [fa-sabwd1k-t1, fa-sabwd256-t1]
+    - [fa-sabwd1k-t1, fa-combo-t1]
+    - [fa-sabwd256-t1, fa-combo-t1]
+include: [regression-common.yaml]
+vars: {steps: 1000, window: "1:1001", units: 65000}
+checks:
+  # ---------------------------------------------------------------- R12 loss 序列（四个量 + 第一个不同的步）
+  - id: R12.loss
+    row: R12
+    type: loss_series
+    level: regress
+    compare: lkg
+    select: {kind: metrics, field: lm_loss, window: "1:1001"}
+    threshold: exact
+    params: {denominator: golden}
+
+  # ---------------------------------------------------------------- R13 梯度范数（裁剪前）与参数范数序列
+  - id: R13.{f}
+    row: R13
+    type: loss_series
+    level: regress
+    compare: lkg
+    select: {kind: metrics, field: "{f}", window: "1:1001"}
+    threshold: exact
+    params: {denominator: golden}
+    foreach: {f: [raw_grad_norm, param_norm]}
+
+  # ---------------------------------------------------------------- R16① 路由偏置逐层统计（第 1–3 层）
+  # 专家负载变异系数（router.load_cv）TPU 侧还没记（frameworks/maxtext/README.md「和 GPU 抓数的不同」），README 第七节列为缺口
+  - id: R16.bias_stats
+    row: R16
+    type: router_stats
+    level: regress
+    compare: lkg
+    select: {kind: metrics, prefix: "router.bias_", window: "1:1001"}
+    threshold: exact
+    params: {denominator: golden}
+
+  # ---------------------------------------------------------------- R25 对齐门：对 GPU golden（只报，不变差由 regress.py 判）
+  # 对齐现状本身还没过（01 phase2-t-loss30 的 L4.loss 判 fail），所以这里不要求 pass：hard: false，regress.py 拿它的三个量
+  # 与 LKG 同一条检查的三个量比「不变差」；回归门逐位通过时继承 LKG，不看这一条。
+  - id: R25.loss_vs_golden
+    row: R25
+    type: multi_golden
+    level: regress
+    hard: false
+    select: {kind: metrics, field: lm_loss, window: "1:1001"}
+    threshold: calibrated
+    # baseline: g1k-a —— 只对指定的这一份 golden 算三个量，g1k-b / g1k-c 只组噪声带，不取平均、不取各份里最差（docs/reference/judging.md「golden 怎么用：几份只造噪声带，比较只对一份」）
+    # noise_from: golden —— runs.noise 是 TPU 执行噪声（给容差门用）；对 GPU golden 的噪声仍取 golden 两两，不换尺子
+    params: {signed_mean_se_k: 2, noise_from: golden, baseline: g1k-a}   # 与迁移验收 01 phase2-tpu.yaml 的 L4.loss 同窗口、同分母、同参数
+
+  # ---------------------------------------------------------------- 容差门（role: tolerance，见 regression-common.yaml 末尾；噪声参照见上面 runs.noise）
+  - id: R12.loss_tolerance
+    row: R12
+    role: tolerance
+    type: loss_series
+    level: regress
+    hard: false
+    compare: lkg
+    select: {kind: metrics, field: lm_loss, window: "1:1001"}
+    threshold: calibrated
+    params: {denominator: golden}
+  - id: R13.{f}_tolerance
+    row: R13
+    role: tolerance
+    type: loss_series
+    level: regress
+    hard: false
+    compare: lkg
+    select: {kind: metrics, field: "{f}", window: "1:1001"}
+    threshold: calibrated
+    params: {denominator: golden}
+    foreach: {f: [raw_grad_norm, param_norm]}
+  - id: R16.bias_stats_tolerance
+    row: R16
+    role: tolerance
+    type: router_stats
+    level: regress
+    hard: false
+    compare: lkg
+    select: {kind: metrics, prefix: "router.bias_", window: "1:1001"}
+    threshold: calibrated
+    params: {denominator: golden}

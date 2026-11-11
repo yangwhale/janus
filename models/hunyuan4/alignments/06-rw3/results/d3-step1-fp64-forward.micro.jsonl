@@ -1,0 +1,16 @@
+{"row": 0, "loss_sum": 49363.56458719781, "n_tokens": 4093.0, "fwd_s": 99.9, "bwd_s": 0.0, "mtp_mean": 9.459501067968487, "kd": {}, "peak_rss_gib": 257.7}
+{"row": 1, "loss_sum": 49624.2971506651, "n_tokens": 4092.0, "fwd_s": 95.1, "bwd_s": 0.0, "mtp_mean": 9.58466958195056, "kd": {}, "peak_rss_gib": 257.7}
+{"row": 2, "loss_sum": 49208.08740296442, "n_tokens": 4089.0, "fwd_s": 110.5, "bwd_s": 0.0, "mtp_mean": 9.506319586964615, "kd": {}, "peak_rss_gib": 257.7}
+{"row": 3, "loss_sum": 48732.39010233093, "n_tokens": 4088.0, "fwd_s": 104.4, "bwd_s": 0.0, "mtp_mean": 9.59851099892453, "kd": {}, "peak_rss_gib": 257.7}
+{"row": 4, "loss_sum": 48890.39181386809, "n_tokens": 4090.0, "fwd_s": 71.8, "bwd_s": 0.0, "mtp_mean": 9.36616502159831, "kd": {}, "peak_rss_gib": 257.7}
+{"row": 5, "loss_sum": 48657.94207381718, "n_tokens": 4090.0, "fwd_s": 73.4, "bwd_s": 0.0, "mtp_mean": 9.541442118125842, "kd": {}, "peak_rss_gib": 257.7}
+{"row": 6, "loss_sum": 49104.21319215939, "n_tokens": 4093.0, "fwd_s": 74.1, "bwd_s": 0.0, "mtp_mean": 9.199706454348357, "kd": {}, "peak_rss_gib": 257.7}
+{"row": 7, "loss_sum": 49338.65278635343, "n_tokens": 4092.0, "fwd_s": 71.8, "bwd_s": 0.0, "mtp_mean": 9.443687857592439, "kd": {}, "peak_rss_gib": 257.7}
+{"row": 8, "loss_sum": 49445.15235369762, "n_tokens": 4091.0, "fwd_s": 76.1, "bwd_s": 0.0, "mtp_mean": 9.581583290426014, "kd": {}, "peak_rss_gib": 257.7}
+{"row": 9, "loss_sum": 49435.8133299301, "n_tokens": 4090.0, "fwd_s": 76.6, "bwd_s": 0.0, "mtp_mean": 9.445687935815178, "kd": {}, "peak_rss_gib": 257.7}
+{"row": 10, "loss_sum": 50111.28040732838, "n_tokens": 4090.0, "fwd_s": 77.8, "bwd_s": 0.0, "mtp_mean": 9.472549975382293, "kd": {}, "peak_rss_gib": 257.7}
+{"row": 11, "loss_sum": 48919.08862555704, "n_tokens": 4091.0, "fwd_s": 78.2, "bwd_s": 0.0, "mtp_mean": 9.573137251214193, "kd": {}, "peak_rss_gib": 257.7}
+{"row": 12, "loss_sum": 48994.166883760096, "n_tokens": 4093.0, "fwd_s": 77.0, "bwd_s": 0.0, "mtp_mean": 9.203742184153256, "kd": {}, "peak_rss_gib": 257.7}
+{"row": 13, "loss_sum": 48882.19129043083, "n_tokens": 4089.0, "fwd_s": 77.9, "bwd_s": 0.0, "mtp_mean": 9.578784526172711, "kd": {}, "peak_rss_gib": 257.7}
+{"row": 14, "loss_sum": 49031.59637214399, "n_tokens": 4093.0, "fwd_s": 78.0, "bwd_s": 0.0, "mtp_mean": 9.992321213061723, "kd": {}, "peak_rss_gib": 257.7}
+{"row": 15, "loss_sum": 48645.75504887941, "n_tokens": 4089.0, "fwd_s": 72.3, "bwd_s": 0.0, "mtp_mean": 9.44045329634329, "kd": {}, "peak_rss_gib": 257.7}

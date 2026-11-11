@@ -1,0 +1,31 @@
+# 第一阶段 · 梯度累积等价：每 rank 2 个 microbatch（mbs 1）对 1 个 microbatch（mbs 2），全局 batch 相同、确定性，比第 1 步。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase1-ga
+runs:
+  test: p-mbs2
+  golden: [d-a]
+  noise:
+    - [s-b, s-c]
+    - [s-b, s-d]
+    - [s-c, s-d]
+  root: /data/janus-runs2
+checks:
+  - id: L3.ga.loss
+    type: loss_series
+    level: L3
+    select: {kind: metrics, field: lm_loss, window: "1:4"}
+    threshold: {d0: 1.0e-4, signed_mean: 1.0e-3, max_step: 1.0e-3}
+    source: "推断：只换累积方式时首步 loss 的宽松起点"
+  - id: L3.ga.grads
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "grad.*"}
+    metrics: [rel_l2, cosine, norm_ratio]
+    threshold: calibrated   # 尺子 = 默认设置重跑的噪声；norm_ratio 偏离大说明累积没除以 microbatch 数
+  - id: L3.ga.updated
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "main_param_after.*"}
+    metrics: [rel_l2, max_abs]
+    threshold: calibrated

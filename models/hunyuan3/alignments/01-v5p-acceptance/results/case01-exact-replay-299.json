@@ -1,0 +1,237 @@
+{
+ "what": "θ_299（GPU 导出的 FP32 主权重舍 BF16，--params-from + --round-weights-bf16）上 TPU 精确配置逐层隔离回放（v5p，t-v5p-rpx-299）对 GPU 精确同一状态第 300 步 batch（g-lv-f300）；输出头反向沿 ŵ̄ 对 FP64（head_bwd_ref.py，各自的 logits）",
+ "head_dgrad_u_signed": {
+  "gpu_exact_g_lv_f300": -0.0002582,
+  "tpu_exact_replay": -4.489e-06
+ },
+ "head_dh_rel_l2_vs_ref": {
+  "gpu_exact_g_lv_f300": 4.171e-05,
+  "tpu_exact_replay": 1.565e-06
+ },
+ "rows": [
+  {
+   "name": "layers.0.attn.core.out",
+   "rel_l2": 8.194752247167332e-07
+  },
+  {
+   "name": "layers.0.attn.k_norm.out",
+   "rel_l2": 1.0496688512566769e-06
+  },
+  {
+   "name": "layers.0.attn.out",
+   "rel_l2": 1.4067300508307915e-06
+  },
+  {
+   "name": "layers.0.attn.proj.out",
+   "rel_l2": 1.4067300508307915e-06
+  },
+  {
+   "name": "layers.0.attn.q_norm.out",
+   "rel_l2": 9.338417682590298e-07
+  },
+  {
+   "name": "layers.0.attn.qkv.out",
+   "rel_l2": 1.058791977867953e-06
+  },
+  {
+   "name": "layers.0.in",
+   "rel_l2": 0.0
+  },
+  {
+   "name": "layers.0.mlp.fc1.out",
+   "rel_l2": 1.4459932630207038e-06
+  },
+  {
+   "name": "layers.0.mlp.fc2.out",
+   "rel_l2": 2.6827352111909167e-06
+  },
+  {
+   "name": "layers.0.mlp.out",
+   "rel_l2": 2.6827352111909167e-06
+  },
+  {
+   "name": "layers.0.mlp_norm.out",
+   "rel_l2": 9.29463889523347e-07
+  },
+  {
+   "name": "layers.0.out",
+   "rel_l2": 9.961197660966568e-07
+  },
+  {
+   "name": "layers.1.attn.core.out",
+   "rel_l2": 8.39407397598688e-06
+  },
+  {
+   "name": "layers.1.attn.k_norm.out",
+   "rel_l2": 1.0676992261818219e-06
+  },
+  {
+   "name": "layers.1.attn.out",
+   "rel_l2": 8.879925193672414e-06
+  },
+  {
+   "name": "layers.1.attn.proj.out",
+   "rel_l2": 8.879925193672414e-06
+  },
+  {
+   "name": "layers.1.attn.q_norm.out",
+   "rel_l2": 1.0818114818325167e-06
+  },
+  {
+   "name": "layers.1.attn.qkv.out",
+   "rel_l2": 1.0660067600563614e-06
+  },
+  {
+   "name": "layers.1.in",
+   "rel_l2": 0.0
+  },
+  {
+   "name": "layers.1.mlp.out",
+   "rel_l2": 0.0014135185134675847
+  },
+  {
+   "name": "layers.1.mlp.router.logits",
+   "rel_l2": 5.382635553902285e-06
+  },
+  {
+   "name": "layers.1.mlp.router.probs",
+   "rel_l2": 0.006857536823184916
+  },
+  {
+   "name": "layers.1.mlp.router.topk_idx",
+   "set_frac": 0.999755859375,
+   "flipped": 1,
+   "margin_all_p01": 4.0476152475737995e-06,
+   "margin_flipped_max": 5.5551589550617564e-08
+  },
+  {
+   "name": "layers.1.mlp.shared.out",
+   "rel_l2": 1.3308237998170161e-05
+  },
+  {
+   "name": "layers.1.mlp_norm.out",
+   "rel_l2": 9.748368794460642e-06
+  },
+  {
+   "name": "layers.1.out",
+   "rel_l2": 0.0003292493180129178
+  },
+  {
+   "name": "layers.2.attn.core.out",
+   "rel_l2": 8.09420089434333e-06
+  },
+  {
+   "name": "layers.2.attn.k_norm.out",
+   "rel_l2": 9.255677221647989e-07
+  },
+  {
+   "name": "layers.2.attn.out",
+   "rel_l2": 8.205925462980466e-06
+  },
+  {
+   "name": "layers.2.attn.proj.out",
+   "rel_l2": 8.205925462980466e-06
+  },
+  {
+   "name": "layers.2.attn.q_norm.out",
+   "rel_l2": 9.27650855443059e-07
+  },
+  {
+   "name": "layers.2.attn.qkv.out",
+   "rel_l2": 9.532650980552851e-07
+  },
+  {
+   "name": "layers.2.in",
+   "rel_l2": 0.0
+  },
+  {
+   "name": "layers.2.mlp.out",
+   "rel_l2": 0.0031784119892644693
+  },
+  {
+   "name": "layers.2.mlp.router.logits",
+   "rel_l2": 1.6124138641746922e-06
+  },
+  {
+   "name": "layers.2.mlp.router.probs",
+   "rel_l2": 0.007001768653088743
+  },
+  {
+   "name": "layers.2.mlp.router.topk_idx",
+   "set_frac": 0.99951171875,
+   "flipped": 2,
+   "margin_all_p01": 4.727038929062955e-06,
+   "margin_flipped_max": 2.935754509214572e-07
+  },
+  {
+   "name": "layers.2.mlp.shared.out",
+   "rel_l2": 5.317009520289031e-06
+  },
+  {
+   "name": "layers.2.mlp_norm.out",
+   "rel_l2": 4.926948515681168e-06
+  },
+  {
+   "name": "layers.2.out",
+   "rel_l2": 0.0010260023243860573
+  },
+  {
+   "name": "layers.3.attn.core.out",
+   "rel_l2": 1.067517143782928e-05
+  },
+  {
+   "name": "layers.3.attn.k_norm.out",
+   "rel_l2": 9.245516422461462e-07
+  },
+  {
+   "name": "layers.3.attn.out",
+   "rel_l2": 1.2867441546734541e-05
+  },
+  {
+   "name": "layers.3.attn.proj.out",
+   "rel_l2": 1.2867441546734541e-05
+  },
+  {
+   "name": "layers.3.attn.q_norm.out",
+   "rel_l2": 9.14562305814661e-07
+  },
+  {
+   "name": "layers.3.attn.qkv.out",
+   "rel_l2": 9.548843936610076e-07
+  },
+  {
+   "name": "layers.3.in",
+   "rel_l2": 0.0
+  },
+  {
+   "name": "layers.3.mlp.out",
+   "rel_l2": 4.09192856802641e-06
+  },
+  {
+   "name": "layers.3.mlp.router.logits",
+   "rel_l2": 1.5587813524597046e-06
+  },
+  {
+   "name": "layers.3.mlp.router.probs",
+   "rel_l2": 4.280922704634406e-06
+  },
+  {
+   "name": "layers.3.mlp.router.topk_idx",
+   "set_frac": 1.0,
+   "flipped": 0,
+   "margin_all_p01": 5.069347420847553e-06
+  },
+  {
+   "name": "layers.3.mlp.shared.out",
+   "rel_l2": 2.210623712544915e-06
+  },
+  {
+   "name": "layers.3.mlp_norm.out",
+   "rel_l2": 6.144755666727471e-06
+  },
+  {
+   "name": "layers.3.out",
+   "rel_l2": 5.033752517479271e-06
+  }
+ ]
+}

@@ -1,0 +1,5 @@
+# python replay.py check <rw1k-a 运行目录> --steps 1:1001（frameworks/maxtext/replay.py，TPU 回放读 batch 的同一段代码），原样输出
+golden <rw1k-a 运行目录>：16 个 rank × 1 个 microbatch，共 1000 步；核对 1000 步、16000 个单元（每单元 4 个字段：tokens、labels、loss_mask、position_ids）
+  loss_mask 取值 [0.0, 1.0]；每个 microbatch 的 nonpad [4083, 4084, 4085, 4086, 4087, 4088, 4089, 4090, 4091, 4092, 4093, 4094, 4095, 4096]；token / label 最大值 120025
+  batches/*.bin 的 sha256 与索引一致；拼成全局 batch → MaxText 字段 → 还原，再算的指纹与 golden data/rank*.jsonl 不同 0 处 []
+OK

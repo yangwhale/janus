@@ -1,0 +1,249 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "fb8fe475bfc114c0532bf8d30ad800e1fef742cf"
+ },
+ "catalog": {
+  "path": "models/hunyuan3/alignments/01-b200x8-to-v5p8-4layers/catalogs/phase2-obs-grad.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "35be2b07e156b569c0ad8cfa1aba50fec20587f50be933fa7488b1f69551c097",
+  "raw_sha256": "7d29d83e400ba38e99b190e13aea353215ffc316731a97e45caa3d3d006061c6"
+ },
+ "runs": {
+  "obs-t1": {
+   "path": "/tmp/fill-runs/obs-t1",
+   "meta_sha256": "519311756cdf40b511250a21496c4d70806e60def869fa0c1b8c7e31e7d175d5"
+  },
+  "t-st1-t1-gm": {
+   "path": "/tmp/fill-runs/t-st1-t1-gm",
+   "meta_sha256": "ef926d52857cbd75a2fd64fd4cde0226e83aed00331612b6ce7804c6da59390c"
+  },
+  "g1k-a": {
+   "path": "/tmp/fill-runs/g1k-a",
+   "meta_sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+  },
+  "g1k-b": {
+   "path": "/tmp/fill-runs/g1k-b",
+   "meta_sha256": "20ba1aa99be3b12587f2de807208a5906be631a7ce882cad95ee969c237f5bd2"
+  },
+  "g1k-c": {
+   "path": "/tmp/fill-runs/g1k-c",
+   "meta_sha256": "dd91c737df4f227d97184e55846444cbdfdd8f1b9f0570c5b5d9f04095b3a88f"
+  }
+ },
+ "started_at": "2026-11-05T05:35:24+00:00",
+ "finished_at": "2026-11-05T05:58:24+00:00",
+ "summary": {
+  "pass": 0,
+  "fail": 2,
+  "inconclusive": 1,
+  "error": 0,
+  "hard_fail": true
+ },
+ "checks": [
+  {
+   "id": "OBS.gate3.grads",
+   "type": "tensor_tolerance",
+   "level": "L3",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 0.000534229238508907,
+      "cosine": 1.38662137549872e-07,
+      "norm_ratio": 0.0002505115166088201
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.08951426644893723,
+    "cosine_min": 0.9959882310418317,
+    "norm_ratio_dev_max": 0.007358231086109224,
+    "tensors": 50
+   },
+   "r1": 28931.97111378334,
+   "worst": [
+    {
+     "name": "grad.decoder.layers.3.mlp.experts.linear_fc1.weight0",
+     "metric": "rel_l2",
+     "value": 0.08951426644893723,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.3.mlp.experts.linear_fc2.weight0",
+     "metric": "rel_l2",
+     "value": 0.08945155346767883,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.2.mlp.experts.linear_fc2.weight0",
+     "metric": "rel_l2",
+     "value": 0.058266775766763215,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.2.mlp.experts.linear_fc1.weight0",
+     "metric": "rel_l2",
+     "value": 0.05772960243337251,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.3.mlp.experts.linear_fc1.weight1",
+     "metric": "rel_l2",
+     "value": 0.057320050788699936,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/obs-t1",
+     "sha256": "519311756cdf40b511250a21496c4d70806e60def869fa0c1b8c7e31e7d175d5"
+    },
+    {
+     "path": "/tmp/fill-runs/t-st1-t1-gm",
+     "sha256": "ef926d52857cbd75a2fd64fd4cde0226e83aed00331612b6ce7804c6da59390c"
+    }
+   ],
+   "message": "超过噪声参照两倍",
+   "details": "details/OBS.gate3.grads.jsonl"
+  },
+  {
+   "id": "OBS.updated",
+   "type": "tensor_tolerance",
+   "level": "L3",
+   "hard": false,
+   "status": "inconclusive",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 4.132884754723634e-05,
+      "max_abs": 1.637078821659088e-05
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 3.397508133081602e-05,
+    "max_abs_max": 1.96211040019989e-05,
+    "tensors": 50
+   },
+   "r1": 1.1985436340880646,
+   "worst": [
+    {
+     "name": "main_param_after.decoder.layers.1.self_attention.linear_qkv.layer_norm_weight",
+     "metric": "rel_l2",
+     "value": 3.397508133081602e-05,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.3.mlp.experts.linear_fc2.weight0",
+     "metric": "rel_l2",
+     "value": 2.474349891641187e-05,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.3.mlp.experts.linear_fc1.weight0",
+     "metric": "rel_l2",
+     "value": 2.219091613049856e-05,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.3.mlp.experts.linear_fc1.weight1",
+     "metric": "rel_l2",
+     "value": 2.0491179247968106e-05,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.3.mlp.experts.linear_fc2.weight1",
+     "metric": "rel_l2",
+     "value": 1.9783979224059874e-05,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/obs-t1",
+     "sha256": "519311756cdf40b511250a21496c4d70806e60def869fa0c1b8c7e31e7d175d5"
+    },
+    {
+     "path": "/tmp/fill-runs/t-st1-t1-gm",
+     "sha256": "ef926d52857cbd75a2fd64fd4cde0226e83aed00331612b6ce7804c6da59390c"
+    }
+   ],
+   "message": "介于噪声参照一到两倍之间，或参照不足",
+   "details": "details/OBS.updated.jsonl"
+  },
+  {
+   "id": "OBS.optim_state",
+   "type": "tensor_tolerance",
+   "level": "L3",
+   "hard": false,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 0.0010074609079274515,
+      "cosine": 4.6556737043346175e-07
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.08951489694348783,
+    "cosine_min": 0.9959882310414625,
+    "tensors": 100
+   },
+   "r1": 8616.946146381311,
+   "worst": [
+    {
+     "name": "exp_avg.decoder.layers.3.mlp.experts.linear_fc1.weight0",
+     "metric": "rel_l2",
+     "value": 0.08951489694348783,
+     "location": null
+    },
+    {
+     "name": "exp_avg.decoder.layers.3.mlp.experts.linear_fc2.weight0",
+     "metric": "rel_l2",
+     "value": 0.08945246535498856,
+     "location": null
+    },
+    {
+     "name": "exp_avg_sq.decoder.layers.3.mlp.experts.linear_fc2.weight0",
+     "metric": "rel_l2",
+     "value": 0.08129050969609304,
+     "location": null
+    },
+    {
+     "name": "exp_avg.decoder.layers.2.mlp.experts.linear_fc2.weight0",
+     "metric": "rel_l2",
+     "value": 0.0582661663494516,
+     "location": null
+    },
+    {
+     "name": "exp_avg.decoder.layers.2.mlp.experts.linear_fc1.weight0",
+     "metric": "rel_l2",
+     "value": 0.05772921264240945,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/obs-t1",
+     "sha256": "519311756cdf40b511250a21496c4d70806e60def869fa0c1b8c7e31e7d175d5"
+    },
+    {
+     "path": "/tmp/fill-runs/t-st1-t1-gm",
+     "sha256": "ef926d52857cbd75a2fd64fd4cde0226e83aed00331612b6ce7804c6da59390c"
+    }
+   ],
+   "message": "超过噪声参照两倍",
+   "details": "details/OBS.optim_state.jsonl"
+  }
+ ]
+}

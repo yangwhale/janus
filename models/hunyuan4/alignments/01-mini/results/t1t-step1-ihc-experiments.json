@@ -1,0 +1,33 @@
+{
+ "what": "T1 第 1 步，iHC 的 hc_pre / hc_head 参数梯度（45 个张量）对 TPU FP32 参照的 R（TPU ÷ GPU g2s 三份中位数），三种 TPU 写法",
+ "reference": "t1diag18b（dtype=float32、matmul_precision=highest、MoE 稠密实现，现行 t1t 其余设置）",
+ "runs": {
+  "t1diag17": "现行 t1t",
+  "t1diag19": "t1t + ihc_stream_sum_unrolled（四路流加权和改为逐路 FP32 乘加）",
+  "t1diag20": "t1t + XLA --xla_allow_excess_precision=false"
+ },
+ "results": {
+  "t1t (t1diag17)": {
+   "median": 0.8797672817399393,
+   "max": 8.175531433592418,
+   "n_gt_1.2": 12,
+   "n": 45
+  },
+  "+ihc_stream_sum_unrolled (t1diag19)": {
+   "median": 0.7904568276945299,
+   "max": 8.724407214372707,
+   "n_gt_1.2": 5,
+   "n": 45
+  },
+  "+no excess precision (t1diag20)": {
+   "median": 1.0906081344417833,
+   "max": 6.930696049635185,
+   "n_gt_1.2": 18,
+   "n": 45
+  }
+ },
+ "remaining_over_2N_with_unrolled": [
+  "model.layers.3.hc_mlp_layer.hc_pre.hc_base: TPU−GPU 2.38e-2，GPU 噪声 1.12e-2（2.1 N），R 8.7；post 四个元素 TPU 对参照 +4.6%，GPU 约 0%，未定责"
+ ],
+ "conclusion": "四路流加权和用 HIGHEST einsum（TPU 上是多遍 BF16 近似 FP32）时，iHC 梯度 R > 1.2 的张量 12 个；改为逐路 FP32 乘加（同 GPU 的 torch.sum FP32）后 5 个，其中只有第 3 层 FFN 前 hc_base 超过 GPU 噪声两倍。关掉 XLA 的 excess precision 更差（18 个）：TPU 现在部分 BF16 往返被 XLA 省掉，反而更接近 FP32。"
+}

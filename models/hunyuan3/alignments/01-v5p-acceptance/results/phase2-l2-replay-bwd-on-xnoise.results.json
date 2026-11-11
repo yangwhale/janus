@@ -1,0 +1,262 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "5e26b8a1dbe6adad7641779c19368d3668119698"
+ },
+ "catalog": {
+  "path": "models/hunyuan3/alignments/01-b200x8-to-v5p8-4layers/catalogs/phase2-l2-replay-bwd-on-xnoise.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "d401d177f6edcee60f819149138db4bedc3742ce95b3cb096e8d276bd871a181",
+  "raw_sha256": "ae883dfe5c9b31242c32beaeba3d63061e0008e44837261c79efd43ce9200ebc"
+ },
+ "runs": {
+  "r-l2-on": {
+   "path": "/tmp/fill-runs/r-l2-on",
+   "meta_sha256": "d050a4164df52211a7ce9e3c59240454a88cd7e554a6ae2b1d5893aaae59124e"
+  },
+  "g1k-a": {
+   "path": "/tmp/fill-runs/g1k-a",
+   "meta_sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+  },
+  "g1k-b": {
+   "path": "/tmp/fill-runs/g1k-b",
+   "meta_sha256": "20ba1aa99be3b12587f2de807208a5906be631a7ce882cad95ee969c237f5bd2"
+  },
+  "g1k-c": {
+   "path": "/tmp/fill-runs/g1k-c",
+   "meta_sha256": "dd91c737df4f227d97184e55846444cbdfdd8f1b9f0570c5b5d9f04095b3a88f"
+  },
+  "r-l2n-base": {
+   "path": "/tmp/fill-runs/r-l2n-base",
+   "meta_sha256": "c52a107661cd50242fe9a15da7c07d008941ba839518c864c68bfc7891f2236b"
+  },
+  "r-l2n-sa256": {
+   "path": "/tmp/fill-runs/r-l2n-sa256",
+   "meta_sha256": "d3c12f374ffd3624a78188db729bfcd1b609e6ad38221568bdf2e619ad97c219"
+  },
+  "r-l2n-sa1k": {
+   "path": "/tmp/fill-runs/r-l2n-sa1k",
+   "meta_sha256": "51a8b263df7bfabf579d84b0995557b2943bf6a333b496c17dac9110a2ae59e1"
+  },
+  "r-l2n-combo": {
+   "path": "/tmp/fill-runs/r-l2n-combo",
+   "meta_sha256": "5fd1f7a25a586bcbcabefe1c79c6f450b279b0708211ae9af83152d8f3d04754"
+  },
+  "r-l2n-vmem40": {
+   "path": "/tmp/fill-runs/r-l2n-vmem40",
+   "meta_sha256": "1dda6a0104ea0315f8be4984b0ad531876e16a77940387a357521d7a4cf19c02"
+  },
+  "r-l2n-vmem56": {
+   "path": "/tmp/fill-runs/r-l2n-vmem56",
+   "meta_sha256": "6a8dc0e7b1545a4ce8c311427473f846058704864435eb2859f82f6fdf3ac726"
+  },
+  "r-l2n-sa256v48": {
+   "path": "/tmp/fill-runs/r-l2n-sa256v48",
+   "meta_sha256": "d607269a4c4e7ca0c0820c8519b03e3787eeb7be1f1b0b5c3c837ffaef27ec30"
+  }
+ },
+ "started_at": "2026-11-06T07:08:21+00:00",
+ "finished_at": "2026-11-06T07:09:03+00:00",
+ "summary": {
+  "pass": 1,
+  "fail": 3,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": true
+ },
+ "checks": [
+  {
+   "id": "L2.layer0.bwd",
+   "type": "tensor_tolerance",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 24,
+     "upper": {
+      "rel_l2": 0.0021984993366821765,
+      "cosine": 2.416626895707097e-06,
+      "norm_ratio": 9.887164487798472e-06
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.0021156753216360477,
+    "cosine_min": 0.9999977619718895,
+    "norm_ratio_dev_max": 3.316620921456348e-06,
+    "tensors": 1,
+    "oot_frac_max": 0.00010848045349121094,
+    "mean_diff_max": 0.0008229172374594551,
+    "norm_max_max": 0.010638297872340425
+   },
+   "r1": 0.962327022954157,
+   "worst": [
+    {
+     "name": "layers.0.in.grad",
+     "metric": "rel_l2",
+     "value": 0.0021156753216360477,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/r-l2-on",
+     "sha256": "d050a4164df52211a7ce9e3c59240454a88cd7e554a6ae2b1d5893aaae59124e"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "在噪声参照内",
+   "details": "details/L2.layer0.bwd.jsonl"
+  },
+  {
+   "id": "L2.layer1.bwd",
+   "type": "tensor_tolerance",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 24,
+     "upper": {
+      "rel_l2": 0.0017971605850369817,
+      "cosine": 1.6148660204606813e-06,
+      "norm_ratio": 5.917377623010367e-06
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.0057321924988343485,
+    "cosine_min": 0.9999835712042324,
+    "norm_ratio_dev_max": 4.305985999319972e-05,
+    "tensors": 1,
+    "oot_frac_max": 0.0024039745330810547,
+    "mean_diff_max": 0.0016806014761474727,
+    "norm_max_max": 0.034
+   },
+   "r1": 10.173472944144923,
+   "worst": [
+    {
+     "name": "layers.1.in.grad",
+     "metric": "rel_l2",
+     "value": 0.0057321924988343485,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/r-l2-on",
+     "sha256": "d050a4164df52211a7ce9e3c59240454a88cd7e554a6ae2b1d5893aaae59124e"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "超过噪声参照两倍",
+   "details": "details/L2.layer1.bwd.jsonl"
+  },
+  {
+   "id": "L2.layer2.bwd",
+   "type": "tensor_tolerance",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 24,
+     "upper": {
+      "rel_l2": 0.0005584151147108617,
+      "cosine": 1.5591012714200048e-07,
+      "norm_ratio": 2.5294718850599196e-06
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.005413957788300632,
+    "cosine_min": 0.9999853444231682,
+    "norm_ratio_dev_max": 1.4891521676552166e-05,
+    "tensors": 1,
+    "oot_frac_max": 0.004372119903564453,
+    "mean_diff_max": 0.002228977733667608,
+    "norm_max_max": 0.011847882231404958
+   },
+   "r1": 94.00015958187903,
+   "worst": [
+    {
+     "name": "layers.2.in.grad",
+     "metric": "rel_l2",
+     "value": 0.005413957788300632,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/r-l2-on",
+     "sha256": "d050a4164df52211a7ce9e3c59240454a88cd7e554a6ae2b1d5893aaae59124e"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "超过噪声参照两倍",
+   "details": "details/L2.layer2.bwd.jsonl"
+  },
+  {
+   "id": "L2.layer3.bwd",
+   "type": "tensor_tolerance",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 24,
+     "upper": {
+      "rel_l2": 0.00017253538019435546,
+      "cosine": 1.4884207977239328e-08,
+      "norm_ratio": 2.2467736682241224e-07
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.006540338535205988,
+    "cosine_min": 0.9999786123277488,
+    "norm_ratio_dev_max": 1.2392289914231469e-05,
+    "tensors": 1,
+    "oot_frac_max": 0.009417235851287842,
+    "mean_diff_max": 0.002955717270262332,
+    "norm_max_max": 0.009953703703703704
+   },
+   "r1": 1436.9372078073725,
+   "worst": [
+    {
+     "name": "layers.3.in.grad",
+     "metric": "rel_l2",
+     "value": 0.006540338535205988,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/r-l2-on",
+     "sha256": "d050a4164df52211a7ce9e3c59240454a88cd7e554a6ae2b1d5893aaae59124e"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "超过噪声参照两倍",
+   "details": "details/L2.layer3.bwd.jsonl"
+  }
+ ]
+}

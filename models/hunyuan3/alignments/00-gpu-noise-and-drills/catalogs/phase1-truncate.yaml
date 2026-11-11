@@ -1,0 +1,23 @@
+# 第一阶段 · 截断模型对拍：同一份权重截成 2 层（t-2l）对 4 层（d-a），确定性，第 1 步。
+# 前 2 层只依赖 embedding 和自己的权重：embedding 输出、第 0、1 层全部前向输出与路由应逐位相同（反向会受后面层数影响，不比）。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase1-truncate
+runs:
+  test: t-2l
+  golden: [d-a]
+  root: /data/janus-runs2
+checks:
+  - id: L2.truncate.embed
+    type: bitwise_equal
+    level: L2
+    select: {kind: tensor, step: 1, name: "embed.out"}
+  - id: L2.truncate.layer{i}
+    foreach: {i: [0, 1]}
+    type: bitwise_equal
+    level: L2
+    select: {kind: tensor, step: 1, name: "layers.{i}.*.out"}
+  - id: L2.truncate.router1
+    type: bitwise_equal
+    level: L2
+    select: {kind: tensor, step: 1, name: "layers.1.mlp.router.*", exclude: "*.counts"}

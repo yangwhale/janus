@@ -1,0 +1,1455 @@
+{
+ "what": "低阈值 QK-Clip（τ 0.1，30 步，hy4-mini）TPU 对 GPU：裁剪算法、逐层逐头最大 logit / η、被裁的头、裁剪后的权重",
+ "runs": {
+  "tpu": "tw-qk-a",
+  "tpu_ref": "tw-qk-ref",
+  "gpu": [
+   "g6-qk-a",
+   "g6-qk-b"
+  ]
+ },
+ "tau": 0.1,
+ "alpha": 0.5,
+ "verdict": "fail",
+ "checks": {
+  "formula": {
+   "rule": "‖TPU 裁剪后 − GPU 裁剪前 × f(η_TPU)‖ ÷ ‖GPU 裁剪后 − GPU 裁剪前‖ ≤ 0.001",
+   "worst": {
+    "step": 1,
+    "layer": "5",
+    "proj": "kv",
+    "clip_change_norm": 0.040860288000784034,
+    "tpu_resid_over_clip": 0.0005679344816232863,
+    "gpu_resid_over_clip": 1.710980605742178e-06,
+    "tpu_vs_gpu_after_over_clip": 0.07471572748660033
+   },
+   "verdict": "pass"
+  },
+  "max_logit_step1": {
+   "rule": "R = rel_L2(TPU, FP32 参照) ÷ rel_L2(GPU, FP32 参照) ≤ 1.2（每层 8 个头）",
+   "worst": {
+    "layer": "3",
+    "R": 1.2928380346955912,
+    "rel_l2_tpu_vs_ref": 0.006532520100139097,
+    "rel_l2_gpu_vs_ref": 0.005052852658126839
+   },
+   "verdict": "fail"
+  },
+  "clipped_heads": {
+   "rule": "只报：30 步逐步逐头被裁集合的差，TPU 对 GPU-a 与 GPU-b 对 GPU-a",
+   "total_set_diff_tpu_vs_a": 15,
+   "total_set_diff_b_vs_a": 12,
+   "step1_clipped": [
+    47,
+    47,
+    47
+   ],
+   "verdict": "info"
+  },
+  "gpu_bf16_separate_clip": {
+   "rule": "只报（已知语义差）",
+   "max_frac_differ": 0.16112232208251953,
+   "max_frac_differ_in_clipped_rows": 0.2894083658854167,
+   "max_bf16_ulp": 1.0,
+   "lm_loss_mare_tpu_vs_a": 2.6578004371778587e-06,
+   "lm_loss_mare_b_vs_a": 2.752850443108399e-06,
+   "verdict": "info"
+  }
+ },
+ "formula_rows": [
+  {
+   "step": 1,
+   "layer": "0",
+   "proj": "q",
+   "clip_change_norm": 0.5092160293924591,
+   "tpu_resid_over_clip": 2.836632085187834e-05,
+   "gpu_resid_over_clip": 3.312146687262814e-07,
+   "tpu_vs_gpu_after_over_clip": 0.009600387218423882
+  },
+  {
+   "step": 1,
+   "layer": "0",
+   "proj": "kv",
+   "clip_change_norm": 0.340204803515052,
+   "tpu_resid_over_clip": 7.05522316592891e-05,
+   "gpu_resid_over_clip": 4.5302138991672774e-07,
+   "tpu_vs_gpu_after_over_clip": 0.009685656714650596
+  },
+  {
+   "step": 1,
+   "layer": "1",
+   "proj": "q",
+   "clip_change_norm": 0.5664754439660358,
+   "tpu_resid_over_clip": 3.700383581598224e-05,
+   "gpu_resid_over_clip": 2.8736296134017e-07,
+   "tpu_vs_gpu_after_over_clip": 0.021852234186365383
+  },
+  {
+   "step": 1,
+   "layer": "1",
+   "proj": "kv",
+   "clip_change_norm": 0.37925542933878553,
+   "tpu_resid_over_clip": 6.291385889627269e-05,
+   "gpu_resid_over_clip": 3.9156993065157974e-07,
+   "tpu_vs_gpu_after_over_clip": 0.022082800242970053
+  },
+  {
+   "step": 1,
+   "layer": "2",
+   "proj": "q",
+   "clip_change_norm": 0.6705239054610602,
+   "tpu_resid_over_clip": 3.272455294219689e-05,
+   "gpu_resid_over_clip": 2.64980577057785e-07,
+   "tpu_vs_gpu_after_over_clip": 0.014593775079639196
+  },
+  {
+   "step": 1,
+   "layer": "2",
+   "proj": "kv",
+   "clip_change_norm": 0.4514663941167268,
+   "tpu_resid_over_clip": 5.1909621170352135e-05,
+   "gpu_resid_over_clip": 3.6449497558347547e-07,
+   "tpu_vs_gpu_after_over_clip": 0.014959619505621342
+  },
+  {
+   "step": 1,
+   "layer": "3",
+   "proj": "q",
+   "clip_change_norm": 0.25845018181152274,
+   "tpu_resid_over_clip": 9.547627283371148e-05,
+   "gpu_resid_over_clip": 5.099019098747344e-07,
+   "tpu_vs_gpu_after_over_clip": 0.03549034178392619
+  },
+  {
+   "step": 1,
+   "layer": "3",
+   "proj": "kv",
+   "clip_change_norm": 0.17147042070658108,
+   "tpu_resid_over_clip": 0.00013528187882311108,
+   "gpu_resid_over_clip": 6.928218375134007e-07,
+   "tpu_vs_gpu_after_over_clip": 0.03542764748950528
+  },
+  {
+   "step": 1,
+   "layer": "4",
+   "proj": "q",
+   "clip_change_norm": 0.3057117076138178,
+   "tpu_resid_over_clip": 9.079170444579142e-05,
+   "gpu_resid_over_clip": 4.364111744091215e-07,
+   "tpu_vs_gpu_after_over_clip": 0.028718862828124053
+  },
+  {
+   "step": 1,
+   "layer": "4",
+   "proj": "kv",
+   "clip_change_norm": 0.20428859672663555,
+   "tpu_resid_over_clip": 0.00011333468940520391,
+   "gpu_resid_over_clip": 5.925420790361292e-07,
+   "tpu_vs_gpu_after_over_clip": 0.029353008453189142
+  },
+  {
+   "step": 1,
+   "layer": "5",
+   "proj": "q",
+   "clip_change_norm": 0.06193964914798589,
+   "tpu_resid_over_clip": 0.0004869454973477888,
+   "gpu_resid_over_clip": 1.181343002299786e-06,
+   "tpu_vs_gpu_after_over_clip": 0.07428825697051604
+  },
+  {
+   "step": 1,
+   "layer": "5",
+   "proj": "kv",
+   "clip_change_norm": 0.040860288000784034,
+   "tpu_resid_over_clip": 0.0005679344816232863,
+   "gpu_resid_over_clip": 1.710980605742178e-06,
+   "tpu_vs_gpu_after_over_clip": 0.07471572748660033
+  },
+  {
+   "step": 1,
+   "layer": "6",
+   "proj": "q",
+   "clip_change_norm": 0.1364013112884528,
+   "tpu_resid_over_clip": 0.0002367605845443593,
+   "gpu_resid_over_clip": 9.647755781807426e-07,
+   "tpu_vs_gpu_after_over_clip": 0.11523324714959647
+  },
+  {
+   "step": 1,
+   "layer": "6",
+   "proj": "kv",
+   "clip_change_norm": 0.08997370458503748,
+   "tpu_resid_over_clip": 0.00025739563309326314,
+   "gpu_resid_over_clip": 1.3520075858406106e-06,
+   "tpu_vs_gpu_after_over_clip": 0.11515185598547216
+  },
+  {
+   "step": 1,
+   "layer": "mtp0",
+   "proj": "q",
+   "clip_change_norm": 0.49834574927070263,
+   "tpu_resid_over_clip": 4.235685959677273e-05,
+   "gpu_resid_over_clip": 3.1469962037877315e-07,
+   "tpu_vs_gpu_after_over_clip": 0.026268829112555046
+  },
+  {
+   "step": 1,
+   "layer": "mtp0",
+   "proj": "kv",
+   "clip_change_norm": 0.3329403443749698,
+   "tpu_resid_over_clip": 7.013462730738172e-05,
+   "gpu_resid_over_clip": 4.2291207536210365e-07,
+   "tpu_vs_gpu_after_over_clip": 0.02616476700063702
+  }
+ ],
+ "max_logit_step1": [
+  {
+   "layer": "0",
+   "rel_l2_tpu_vs_ref": 0.0008625927735873783,
+   "rel_l2_gpu_vs_ref": 0.0008207724159237988,
+   "R": 1.0509524404721982,
+   "rel_l2_gpu_b_vs_ref": 0.0008207724159237988,
+   "tpu_max_logit": [
+    0.1140023022890091,
+    0.12143169343471527,
+    0.10984185338020325,
+    0.11686310172080994,
+    0.11240676045417786,
+    0.11386409401893616,
+    0.11322503536939621,
+    0.10925066471099854
+   ],
+   "gpu_max_logit": [
+    0.11389395594596863,
+    0.12139374762773514,
+    0.10976268351078033,
+    0.11674745380878448,
+    0.11246812343597412,
+    0.1139468103647232,
+    0.11306869983673096,
+    0.10893570631742477
+   ],
+   "ref_max_logit": [
+    0.11404356360435486,
+    0.12142240256071091,
+    0.10980287194252014,
+    0.11684205383062363,
+    0.11255782842636108,
+    0.11398477107286453,
+    0.11315667629241943,
+    0.10907334834337234
+   ]
+  },
+  {
+   "layer": "1",
+   "rel_l2_tpu_vs_ref": 0.0020904264039844655,
+   "rel_l2_gpu_vs_ref": 0.002331650882828531,
+   "R": 0.8965434831515448,
+   "rel_l2_gpu_b_vs_ref": 0.002331650882828531,
+   "tpu_max_logit": [
+    0.11886394023895264,
+    0.11487092077732086,
+    0.11161935329437256,
+    0.11101969331502914,
+    0.11956787109375,
+    0.12283581495285034,
+    0.11505228281021118,
+    0.11202660948038101
+   ],
+   "gpu_max_logit": [
+    0.11863481998443604,
+    0.11413566768169403,
+    0.11119911819696426,
+    0.11050920188426971,
+    0.11975075304508209,
+    0.12291432917118073,
+    0.11502321064472198,
+    0.11231707036495209
+   ],
+   "ref_max_logit": [
+    0.11881312727928162,
+    0.11446697264909744,
+    0.11133316904306412,
+    0.11083735525608063,
+    0.11958128213882446,
+    0.12277835607528687,
+    0.11547885835170746,
+    0.11207090318202972
+   ]
+  },
+  {
+   "layer": "2",
+   "rel_l2_tpu_vs_ref": 0.0013542320043037988,
+   "rel_l2_gpu_vs_ref": 0.002780282268514959,
+   "R": 0.48708435817458884,
+   "rel_l2_gpu_b_vs_ref": 0.0028390681247517945,
+   "tpu_max_logit": [
+    0.11547160148620605,
+    0.12013041973114014,
+    0.11088638007640839,
+    0.11966365575790405,
+    0.1236317902803421,
+    0.11488836258649826,
+    0.11793064326047897,
+    0.1290997415781021
+   ],
+   "gpu_max_logit": [
+    0.11546112596988678,
+    0.12063691765069962,
+    0.11084320396184921,
+    0.11888809502124786,
+    0.1236095279455185,
+    0.11496929824352264,
+    0.11785493046045303,
+    0.1290443241596222
+   ],
+   "ref_max_logit": [
+    0.11544264853000641,
+    0.12045373022556305,
+    0.11092791706323624,
+    0.1197056770324707,
+    0.12388788163661957,
+    0.11482597887516022,
+    0.11808699369430542,
+    0.12917470932006836
+   ]
+  },
+  {
+   "layer": "3",
+   "rel_l2_tpu_vs_ref": 0.006532520100139097,
+   "rel_l2_gpu_vs_ref": 0.005052852658126839,
+   "R": 1.2928380346955912,
+   "rel_l2_gpu_b_vs_ref": 0.004353796894161372,
+   "tpu_max_logit": [
+    0.10940386354923248,
+    0.09541326761245728,
+    0.0956990048289299,
+    0.10173161327838898,
+    0.11509443819522858,
+    0.10242971777915955,
+    0.09620781242847443,
+    0.10843360424041748
+   ],
+   "gpu_max_logit": [
+    0.10969829559326172,
+    0.09468109160661697,
+    0.09541763365268707,
+    0.1022745668888092,
+    0.11497315764427185,
+    0.10248662531375885,
+    0.09659174829721451,
+    0.10815108567476273
+   ],
+   "ref_max_logit": [
+    0.10913008451461792,
+    0.09443458914756775,
+    0.09416938573122025,
+    0.10204599797725677,
+    0.11507076770067215,
+    0.10236623138189316,
+    0.09657871723175049,
+    0.10853885114192963
+   ]
+  },
+  {
+   "layer": "4",
+   "rel_l2_tpu_vs_ref": 0.0016123329721989465,
+   "rel_l2_gpu_vs_ref": 0.0029269500791519795,
+   "R": 0.5508576943909085,
+   "rel_l2_gpu_b_vs_ref": 0.0027356891357851166,
+   "tpu_max_logit": [
+    0.1048358827829361,
+    0.10810038447380066,
+    0.09633653610944748,
+    0.092710480093956,
+    0.11185544729232788,
+    0.11820410192012787,
+    0.10666315257549286,
+    0.09996020793914795
+   ],
+   "gpu_max_logit": [
+    0.10478600859642029,
+    0.10812189429998398,
+    0.0961981862783432,
+    0.09284529089927673,
+    0.11157574504613876,
+    0.11750921607017517,
+    0.1064094752073288,
+    0.09972622245550156
+   ],
+   "ref_max_logit": [
+    0.10483484715223312,
+    0.10835173726081848,
+    0.09639690071344376,
+    0.0926719680428505,
+    0.11212556809186935,
+    0.11791437864303589,
+    0.10668812692165375,
+    0.1000247374176979
+   ]
+  },
+  {
+   "layer": "5",
+   "rel_l2_tpu_vs_ref": 0.0022227172756594388,
+   "rel_l2_gpu_vs_ref": 0.0067075174382538495,
+   "R": 0.3313770401822575,
+   "rel_l2_gpu_b_vs_ref": 0.006131131457324642,
+   "tpu_max_logit": [
+    0.09872891753911972,
+    0.09265787154436111,
+    0.09759286046028137,
+    0.10415152460336685,
+    0.08990447968244553,
+    0.09629127383232117,
+    0.09694099426269531,
+    0.09732919186353683
+   ],
+   "gpu_max_logit": [
+    0.09837937355041504,
+    0.0929829552769661,
+    0.0977315679192543,
+    0.10449796915054321,
+    0.09021319448947906,
+    0.09455779194831848,
+    0.09712119400501251,
+    0.09791304916143417
+   ],
+   "ref_max_logit": [
+    0.09866972267627716,
+    0.092787966132164,
+    0.09802738577127457,
+    0.10409940779209137,
+    0.08994956314563751,
+    0.0960710421204567,
+    0.09718784689903259,
+    0.09711228311061859
+   ]
+  },
+  {
+   "layer": "6",
+   "rel_l2_tpu_vs_ref": 0.003762695900701481,
+   "rel_l2_gpu_vs_ref": 0.006742993682542654,
+   "R": 0.5580156348719343,
+   "rel_l2_gpu_b_vs_ref": 0.007403868384757602,
+   "tpu_max_logit": [
+    0.1002884954214096,
+    0.08093814551830292,
+    0.1040102019906044,
+    0.09021801501512527,
+    0.10855058580636978,
+    0.08733020722866058,
+    0.08044585585594177,
+    0.10499879717826843
+   ],
+   "gpu_max_logit": [
+    0.1004786491394043,
+    0.0811559185385704,
+    0.1029021143913269,
+    0.09095717966556549,
+    0.1083439514040947,
+    0.08756224811077118,
+    0.07997259497642517,
+    0.10479339212179184
+   ],
+   "ref_max_logit": [
+    0.10082948207855225,
+    0.0811355710029602,
+    0.10456467419862747,
+    0.09075407683849335,
+    0.10874829441308975,
+    0.0875471979379654,
+    0.08033942431211472,
+    0.10508982092142105
+   ]
+  },
+  {
+   "layer": "mtp0",
+   "rel_l2_tpu_vs_ref": 0.008409950100953204,
+   "rel_l2_gpu_vs_ref": 0.00823507221585892,
+   "R": 1.0212357439631807,
+   "rel_l2_gpu_b_vs_ref": 0.008465851941329882,
+   "tpu_max_logit": [
+    0.11561077833175659,
+    0.11271371692419052,
+    0.11660946160554886,
+    0.11418911814689636,
+    0.10594752430915833,
+    0.12141066789627075,
+    0.11192052066326141,
+    0.10772079229354858
+   ],
+   "gpu_max_logit": [
+    0.11544989049434662,
+    0.11270832270383835,
+    0.11706124246120453,
+    0.11394697427749634,
+    0.10507843643426895,
+    0.12128414213657379,
+    0.11203772574663162,
+    0.10758611559867859
+   ],
+   "ref_max_logit": [
+    0.11808383464813232,
+    0.11273805797100067,
+    0.11717654764652252,
+    0.113857701420784,
+    0.10512687265872955,
+    0.12114273011684418,
+    0.11192868649959564,
+    0.10764949023723602
+   ]
+  }
+ ],
+ "per_step": [
+  {
+   "step": 1,
+   "clipped_tpu": 47,
+   "clipped_gpu_a": 47,
+   "clipped_gpu_b": 47,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": -1.3835487749367372e-06,
+   "lm_loss_rel_b_vs_a": 1.5463192190469416e-06
+  },
+  {
+   "step": 2,
+   "clipped_tpu": 22,
+   "clipped_gpu_a": 22,
+   "clipped_gpu_b": 22,
+   "set_diff_tpu_vs_a": 2,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": -1.5474275970843857e-06,
+   "lm_loss_rel_b_vs_a": -1.058766250636685e-06
+  },
+  {
+   "step": 3,
+   "clipped_tpu": 17,
+   "clipped_gpu_a": 17,
+   "clipped_gpu_b": 19,
+   "set_diff_tpu_vs_a": 2,
+   "set_diff_b_vs_a": 2,
+   "lm_loss_rel_tpu_vs_a": 3.425054107700011e-06,
+   "lm_loss_rel_b_vs_a": 1.9571737758285777e-06
+  },
+  {
+   "step": 4,
+   "clipped_tpu": 15,
+   "clipped_gpu_a": 16,
+   "clipped_gpu_b": 15,
+   "set_diff_tpu_vs_a": 1,
+   "set_diff_b_vs_a": 1,
+   "lm_loss_rel_tpu_vs_a": -2.691883140295402e-06,
+   "lm_loss_rel_b_vs_a": -1.631444327451759e-07
+  },
+  {
+   "step": 5,
+   "clipped_tpu": 17,
+   "clipped_gpu_a": 18,
+   "clipped_gpu_b": 18,
+   "set_diff_tpu_vs_a": 1,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": -3.7574635683275553e-06,
+   "lm_loss_rel_b_vs_a": -7.351559155423478e-07
+  },
+  {
+   "step": 6,
+   "clipped_tpu": 15,
+   "clipped_gpu_a": 17,
+   "clipped_gpu_b": 15,
+   "set_diff_tpu_vs_a": 2,
+   "set_diff_b_vs_a": 2,
+   "lm_loss_rel_tpu_vs_a": -5.557979452149965e-06,
+   "lm_loss_rel_b_vs_a": -2.4520497583014555e-06
+  },
+  {
+   "step": 7,
+   "clipped_tpu": 5,
+   "clipped_gpu_a": 5,
+   "clipped_gpu_b": 5,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": 8.99560695445467e-07,
+   "lm_loss_rel_b_vs_a": 1.63556490080994e-07
+  },
+  {
+   "step": 8,
+   "clipped_tpu": 8,
+   "clipped_gpu_a": 8,
+   "clipped_gpu_b": 8,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": -1.3913845143486937e-06,
+   "lm_loss_rel_b_vs_a": 2.1279998454744727e-06
+  },
+  {
+   "step": 9,
+   "clipped_tpu": 6,
+   "clipped_gpu_a": 6,
+   "clipped_gpu_b": 6,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": 4.338525839318521e-06,
+   "lm_loss_rel_b_vs_a": -4.911538686020966e-07
+  },
+  {
+   "step": 10,
+   "clipped_tpu": 5,
+   "clipped_gpu_a": 5,
+   "clipped_gpu_b": 5,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": 2.7069036131503345e-06,
+   "lm_loss_rel_b_vs_a": 1.3124381154668289e-06
+  },
+  {
+   "step": 11,
+   "clipped_tpu": 4,
+   "clipped_gpu_a": 4,
+   "clipped_gpu_b": 4,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": -1.970955021328197e-06,
+   "lm_loss_rel_b_vs_a": 1.1497237624414484e-06
+  },
+  {
+   "step": 12,
+   "clipped_tpu": 3,
+   "clipped_gpu_a": 3,
+   "clipped_gpu_b": 3,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": 2.5468892582152174e-06,
+   "lm_loss_rel_b_vs_a": -6.572617440555399e-07
+  },
+  {
+   "step": 13,
+   "clipped_tpu": 0,
+   "clipped_gpu_a": 0,
+   "clipped_gpu_b": 0,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": -6.9922666353632485e-06,
+   "lm_loss_rel_b_vs_a": -4.3598839020500256e-06
+  },
+  {
+   "step": 14,
+   "clipped_tpu": 6,
+   "clipped_gpu_a": 6,
+   "clipped_gpu_b": 6,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": -1.5642238621691554e-06,
+   "lm_loss_rel_b_vs_a": -4.939654301586806e-07
+  },
+  {
+   "step": 15,
+   "clipped_tpu": 3,
+   "clipped_gpu_a": 4,
+   "clipped_gpu_b": 3,
+   "set_diff_tpu_vs_a": 1,
+   "set_diff_b_vs_a": 1,
+   "lm_loss_rel_tpu_vs_a": 1.152931125623952e-06,
+   "lm_loss_rel_b_vs_a": 2.305862251247904e-06
+  },
+  {
+   "step": 16,
+   "clipped_tpu": 3,
+   "clipped_gpu_a": 3,
+   "clipped_gpu_b": 3,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": 1.1533859085076628e-06,
+   "lm_loss_rel_b_vs_a": -2.80108006351861e-06
+  },
+  {
+   "step": 17,
+   "clipped_tpu": 4,
+   "clipped_gpu_a": 4,
+   "clipped_gpu_b": 4,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": -7.421985653301732e-07,
+   "lm_loss_rel_b_vs_a": -6.020055029900294e-06
+  },
+  {
+   "step": 18,
+   "clipped_tpu": 3,
+   "clipped_gpu_a": 2,
+   "clipped_gpu_b": 3,
+   "set_diff_tpu_vs_a": 1,
+   "set_diff_b_vs_a": 1,
+   "lm_loss_rel_tpu_vs_a": -1.4032417360411497e-06,
+   "lm_loss_rel_b_vs_a": -1.6508726306366467e-07
+  },
+  {
+   "step": 19,
+   "clipped_tpu": 1,
+   "clipped_gpu_a": 1,
+   "clipped_gpu_b": 2,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 1,
+   "lm_loss_rel_tpu_vs_a": 8.261952132397453e-08,
+   "lm_loss_rel_b_vs_a": -3.0569222889870575e-06
+  },
+  {
+   "step": 20,
+   "clipped_tpu": 3,
+   "clipped_gpu_a": 3,
+   "clipped_gpu_b": 3,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": 2.3998487267768086e-06,
+   "lm_loss_rel_b_vs_a": -1.6550680874322818e-06
+  },
+  {
+   "step": 21,
+   "clipped_tpu": 1,
+   "clipped_gpu_a": 1,
+   "clipped_gpu_b": 1,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": -2.7301416323020432e-06,
+   "lm_loss_rel_b_vs_a": 4.053846666145458e-06
+  },
+  {
+   "step": 22,
+   "clipped_tpu": 2,
+   "clipped_gpu_a": 4,
+   "clipped_gpu_b": 3,
+   "set_diff_tpu_vs_a": 2,
+   "set_diff_b_vs_a": 1,
+   "lm_loss_rel_tpu_vs_a": -3.3172265398689995e-06,
+   "lm_loss_rel_b_vs_a": -7.214967724215073e-06
+  },
+  {
+   "step": 23,
+   "clipped_tpu": 0,
+   "clipped_gpu_a": 0,
+   "clipped_gpu_b": 0,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": 1.0775262748565626e-06,
+   "lm_loss_rel_b_vs_a": -4.973198191645674e-07
+  },
+  {
+   "step": 24,
+   "clipped_tpu": 5,
+   "clipped_gpu_a": 5,
+   "clipped_gpu_b": 4,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 1,
+   "lm_loss_rel_tpu_vs_a": 3.234309019318528e-06,
+   "lm_loss_rel_b_vs_a": -1.4927580089162436e-06
+  },
+  {
+   "step": 25,
+   "clipped_tpu": 1,
+   "clipped_gpu_a": 1,
+   "clipped_gpu_b": 1,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": -9.97785498235458e-07,
+   "lm_loss_rel_b_vs_a": -7.317093653726691e-06
+  },
+  {
+   "step": 26,
+   "clipped_tpu": 3,
+   "clipped_gpu_a": 3,
+   "clipped_gpu_b": 3,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": -3.3263637696449845e-07,
+   "lm_loss_rel_b_vs_a": -5.821136596878723e-06
+  },
+  {
+   "step": 27,
+   "clipped_tpu": 1,
+   "clipped_gpu_a": 1,
+   "clipped_gpu_b": 0,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 1,
+   "lm_loss_rel_tpu_vs_a": -7.659736520050151e-06,
+   "lm_loss_rel_b_vs_a": -8.325800565271904e-06
+  },
+  {
+   "step": 28,
+   "clipped_tpu": 2,
+   "clipped_gpu_a": 1,
+   "clipped_gpu_b": 1,
+   "set_diff_tpu_vs_a": 1,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": 5.496290004247133e-06,
+   "lm_loss_rel_b_vs_a": -8.327712127647171e-08
+  },
+  {
+   "step": 29,
+   "clipped_tpu": 1,
+   "clipped_gpu_a": 1,
+   "clipped_gpu_b": 2,
+   "set_diff_tpu_vs_a": 2,
+   "set_diff_b_vs_a": 1,
+   "lm_loss_rel_tpu_vs_a": -3.5876681333554602e-06,
+   "lm_loss_rel_b_vs_a": -7.425638694619441e-06
+  },
+  {
+   "step": 30,
+   "clipped_tpu": 2,
+   "clipped_gpu_a": 2,
+   "clipped_gpu_b": 2,
+   "set_diff_tpu_vs_a": 0,
+   "set_diff_b_vs_a": 0,
+   "lm_loss_rel_tpu_vs_a": -3.592401452700312e-06,
+   "lm_loss_rel_b_vs_a": -5.681006948456307e-06
+  }
+ ],
+ "gpu_bf16_separate_clip_rows": [
+  {
+   "step": 1,
+   "layer": "0",
+   "proj": "q",
+   "frac_differ": 0.034470558166503906,
+   "frac_differ_in_clipped_rows": 0.034470558166503906,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0005140793172369145
+  },
+  {
+   "step": 1,
+   "layer": "0",
+   "proj": "kv",
+   "frac_differ": 0.001220703125,
+   "frac_differ_in_clipped_rows": 0.0028483072916666665,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 5.809433120771638e-05
+  },
+  {
+   "step": 1,
+   "layer": "1",
+   "proj": "q",
+   "frac_differ": 0.03148460388183594,
+   "frac_differ_in_clipped_rows": 0.03148460388183594,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0004533937106879806
+  },
+  {
+   "step": 1,
+   "layer": "1",
+   "proj": "kv",
+   "frac_differ": 0.00066375732421875,
+   "frac_differ_in_clipped_rows": 0.00154876708984375,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 1.1750118506022628e-05
+  },
+  {
+   "step": 1,
+   "layer": "2",
+   "proj": "q",
+   "frac_differ": 0.0302581787109375,
+   "frac_differ_in_clipped_rows": 0.0302581787109375,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0004487292417642869
+  },
+  {
+   "step": 1,
+   "layer": "2",
+   "proj": "kv",
+   "frac_differ": 0.0005596705845424107,
+   "frac_differ_in_clipped_rows": 0.0013058980305989583,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 1.5636443506200753e-05
+  },
+  {
+   "step": 1,
+   "layer": "3",
+   "proj": "q",
+   "frac_differ": 0.018276214599609375,
+   "frac_differ_in_clipped_rows": 0.029241943359375,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0003724984780081328
+  },
+  {
+   "step": 1,
+   "layer": "3",
+   "proj": "kv",
+   "frac_differ": 0.00025885445731026787,
+   "frac_differ_in_clipped_rows": 0.0009663899739583334,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 1.0018638554029367e-05
+  },
+  {
+   "step": 1,
+   "layer": "4",
+   "proj": "q",
+   "frac_differ": 0.01781940460205078,
+   "frac_differ_in_clipped_rows": 0.02851104736328125,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.00034356109594918505
+  },
+  {
+   "step": 1,
+   "layer": "4",
+   "proj": "kv",
+   "frac_differ": 0.00017220633370535715,
+   "frac_differ_in_clipped_rows": 0.0006429036458333333,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 5.172150624835913e-06
+  },
+  {
+   "step": 1,
+   "layer": "5",
+   "proj": "q",
+   "frac_differ": 0.0034112930297851562,
+   "frac_differ_in_clipped_rows": 0.02729034423828125,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0001577843114604549
+  },
+  {
+   "step": 1,
+   "layer": "5",
+   "proj": "kv",
+   "frac_differ": 2.7247837611607144e-05,
+   "frac_differ_in_clipped_rows": 0.0005086263020833334,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 3.7974471343141546e-07
+  },
+  {
+   "step": 1,
+   "layer": "6",
+   "proj": "q",
+   "frac_differ": 0.016448020935058594,
+   "frac_differ_in_clipped_rows": 0.03289604187011719,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0003424027517697699
+  },
+  {
+   "step": 1,
+   "layer": "6",
+   "proj": "kv",
+   "frac_differ": 0.00016948154994419644,
+   "frac_differ_in_clipped_rows": 0.0007909138997395834,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 1.1056229529439101e-05
+  },
+  {
+   "step": 1,
+   "layer": "mtp0",
+   "proj": "q",
+   "frac_differ": 0.030218124389648438,
+   "frac_differ_in_clipped_rows": 0.030218124389648438,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0004661228652019396
+  },
+  {
+   "step": 1,
+   "layer": "mtp0",
+   "proj": "kv",
+   "frac_differ": 0.0005329677036830357,
+   "frac_differ_in_clipped_rows": 0.00124359130859375,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 1.5764800685543834e-05
+  },
+  {
+   "step": 2,
+   "layer": "0",
+   "proj": "q",
+   "frac_differ": 0.16112232208251953,
+   "frac_differ_in_clipped_rows": 0.21482976277669272,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0022586012660202404
+  },
+  {
+   "step": 2,
+   "layer": "0",
+   "proj": "kv",
+   "frac_differ": 0.0658280508858817,
+   "frac_differ_in_clipped_rows": 0.20479838053385416,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.00138385090730527
+  },
+  {
+   "step": 2,
+   "layer": "1",
+   "proj": "q",
+   "frac_differ": 0.15401649475097656,
+   "frac_differ_in_clipped_rows": 0.2464263916015625,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0021931714231954074
+  },
+  {
+   "step": 2,
+   "layer": "1",
+   "proj": "kv",
+   "frac_differ": 0.06386947631835938,
+   "frac_differ_in_clipped_rows": 0.238446044921875,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0013459212162724226
+  },
+  {
+   "step": 2,
+   "layer": "2",
+   "proj": "q",
+   "frac_differ": 0.09246826171875,
+   "frac_differ_in_clipped_rows": 0.24658203125,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0016709898033751736
+  },
+  {
+   "step": 2,
+   "layer": "2",
+   "proj": "kv",
+   "frac_differ": 0.03964941842215402,
+   "frac_differ_in_clipped_rows": 0.2467074924045139,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.001016132287693432
+  },
+  {
+   "step": 2,
+   "layer": "3",
+   "proj": "q",
+   "frac_differ": 0.034012794494628906,
+   "frac_differ_in_clipped_rows": 0.27210235595703125,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0010087778231427362
+  },
+  {
+   "step": 2,
+   "layer": "3",
+   "proj": "kv",
+   "frac_differ": 0.015504019601004464,
+   "frac_differ_in_clipped_rows": 0.2894083658854167,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0006910313801926279
+  },
+  {
+   "step": 2,
+   "layer": "4",
+   "proj": "q",
+   "frac_differ": 0.05963611602783203,
+   "frac_differ_in_clipped_rows": 0.23854446411132812,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0012907726354152204
+  },
+  {
+   "step": 2,
+   "layer": "4",
+   "proj": "kv",
+   "frac_differ": 0.023692539760044644,
+   "frac_differ_in_clipped_rows": 0.22113037109375,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0008194069153204746
+  },
+  {
+   "step": 2,
+   "layer": "5",
+   "proj": "q",
+   "frac_differ": 0.009878158569335938,
+   "frac_differ_in_clipped_rows": 0.03951263427734375,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.00024017257633403326
+  },
+  {
+   "step": 2,
+   "layer": "5",
+   "proj": "kv",
+   "frac_differ": 8.501325334821428e-05,
+   "frac_differ_in_clipped_rows": 0.00079345703125,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 1.149377178032024e-06
+  },
+  {
+   "step": 2,
+   "layer": "mtp0",
+   "proj": "q",
+   "frac_differ": 0.09694766998291016,
+   "frac_differ_in_clipped_rows": 0.25852711995442706,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0018222365095479556
+  },
+  {
+   "step": 2,
+   "layer": "mtp0",
+   "proj": "kv",
+   "frac_differ": 0.03781781877790179,
+   "frac_differ_in_clipped_rows": 0.23531087239583334,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0010971992657275746
+  },
+  {
+   "step": 3,
+   "layer": "0",
+   "proj": "q",
+   "frac_differ": 0.11576366424560547,
+   "frac_differ_in_clipped_rows": 0.23152732849121094,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0019376540208764948
+  },
+  {
+   "step": 3,
+   "layer": "0",
+   "proj": "kv",
+   "frac_differ": 0.05216489519391741,
+   "frac_differ_in_clipped_rows": 0.2434361775716146,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0012549948749623538
+  },
+  {
+   "step": 3,
+   "layer": "1",
+   "proj": "q",
+   "frac_differ": 0.033286094665527344,
+   "frac_differ_in_clipped_rows": 0.26628875732421875,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0010870776882422432
+  },
+  {
+   "step": 3,
+   "layer": "1",
+   "proj": "kv",
+   "frac_differ": 0.013989039829799108,
+   "frac_differ_in_clipped_rows": 0.2611287434895833,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0006690523403709756
+  },
+  {
+   "step": 3,
+   "layer": "2",
+   "proj": "q",
+   "frac_differ": 0.030813217163085938,
+   "frac_differ_in_clipped_rows": 0.2465057373046875,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0009759237295708563
+  },
+  {
+   "step": 3,
+   "layer": "2",
+   "proj": "kv",
+   "frac_differ": 0.012562888009207589,
+   "frac_differ_in_clipped_rows": 0.23450724283854166,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.00058084116085994
+  },
+  {
+   "step": 3,
+   "layer": "3",
+   "proj": "q",
+   "frac_differ": 0.034122467041015625,
+   "frac_differ_in_clipped_rows": 0.272979736328125,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0010370370314999673
+  },
+  {
+   "step": 3,
+   "layer": "3",
+   "proj": "kv",
+   "frac_differ": 0.015004839215959822,
+   "frac_differ_in_clipped_rows": 0.28009033203125,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0006858592004065535
+  },
+  {
+   "step": 3,
+   "layer": "4",
+   "proj": "q",
+   "frac_differ": 0.00687408447265625,
+   "frac_differ_in_clipped_rows": 0.05499267578125,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0002472565276099616
+  },
+  {
+   "step": 3,
+   "layer": "4",
+   "proj": "kv",
+   "frac_differ": 7.411411830357142e-05,
+   "frac_differ_in_clipped_rows": 0.0013834635416666667,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 6.294810696205044e-06
+  },
+  {
+   "step": 3,
+   "layer": "5",
+   "proj": "q",
+   "frac_differ": 0.08658695220947266,
+   "frac_differ_in_clipped_rows": 0.13853912353515624,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0014207305673197101
+  },
+  {
+   "step": 3,
+   "layer": "5",
+   "proj": "kv",
+   "frac_differ": 0.026277269635881697,
+   "frac_differ_in_clipped_rows": 0.098101806640625,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0008682277268681069
+  },
+  {
+   "step": 3,
+   "layer": "mtp0",
+   "proj": "q",
+   "frac_differ": 0.1378488540649414,
+   "frac_differ_in_clipped_rows": 0.2756977081298828,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0020783168899073602
+  },
+  {
+   "step": 3,
+   "layer": "mtp0",
+   "proj": "kv",
+   "frac_differ": 0.06009020124162946,
+   "frac_differ_in_clipped_rows": 0.2804209391276042,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0013156148393581662
+  },
+  {
+   "step": 4,
+   "layer": "0",
+   "proj": "q",
+   "frac_differ": 0.04652214050292969,
+   "frac_differ_in_clipped_rows": 0.18608856201171875,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0012429634059429719
+  },
+  {
+   "step": 4,
+   "layer": "0",
+   "proj": "kv",
+   "frac_differ": 0.02322442190987723,
+   "frac_differ_in_clipped_rows": 0.21676127115885416,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0008159590581751101
+  },
+  {
+   "step": 4,
+   "layer": "1",
+   "proj": "q",
+   "frac_differ": 0.029623031616210938,
+   "frac_differ_in_clipped_rows": 0.2369842529296875,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0009467020425075591
+  },
+  {
+   "step": 4,
+   "layer": "1",
+   "proj": "kv",
+   "frac_differ": 0.012193407331194197,
+   "frac_differ_in_clipped_rows": 0.22761027018229166,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0005724989701728619
+  },
+  {
+   "step": 4,
+   "layer": "2",
+   "proj": "q",
+   "frac_differ": 0.09234809875488281,
+   "frac_differ_in_clipped_rows": 0.2462615966796875,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0016928846118286775
+  },
+  {
+   "step": 4,
+   "layer": "2",
+   "proj": "kv",
+   "frac_differ": 0.03856549944196429,
+   "frac_differ_in_clipped_rows": 0.2399631076388889,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0010259171408025542
+  },
+  {
+   "step": 4,
+   "layer": "3",
+   "proj": "q",
+   "frac_differ": 0.041251182556152344,
+   "frac_differ_in_clipped_rows": 0.16500473022460938,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0009565672303194394
+  },
+  {
+   "step": 4,
+   "layer": "3",
+   "proj": "kv",
+   "frac_differ": 0.013739994594029017,
+   "frac_differ_in_clipped_rows": 0.12823994954427084,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0005748436923855273
+  },
+  {
+   "step": 4,
+   "layer": "4",
+   "proj": "q",
+   "frac_differ": 0.004542350769042969,
+   "frac_differ_in_clipped_rows": 0.03633880615234375,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.00016799299709253628
+  },
+  {
+   "step": 4,
+   "layer": "4",
+   "proj": "kv",
+   "frac_differ": 2.833775111607143e-05,
+   "frac_differ_in_clipped_rows": 0.0005289713541666666,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 1.3733990378753595e-07
+  },
+  {
+   "step": 4,
+   "layer": "5",
+   "proj": "q",
+   "frac_differ": 0.10174560546875,
+   "frac_differ_in_clipped_rows": 0.2034912109375,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0017161738285782068
+  },
+  {
+   "step": 4,
+   "layer": "5",
+   "proj": "kv",
+   "frac_differ": 0.0407562255859375,
+   "frac_differ_in_clipped_rows": 0.19019571940104166,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0010882037572483407
+  },
+  {
+   "step": 4,
+   "layer": "mtp0",
+   "proj": "q",
+   "frac_differ": 0.094451904296875,
+   "frac_differ_in_clipped_rows": 0.2518717447916667,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0017629961212469376
+  },
+  {
+   "step": 4,
+   "layer": "mtp0",
+   "proj": "kv",
+   "frac_differ": 0.03981290544782366,
+   "frac_differ_in_clipped_rows": 0.24772474500868055,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0010856696817244786
+  },
+  {
+   "step": 5,
+   "layer": "0",
+   "proj": "q",
+   "frac_differ": 0.1288013458251953,
+   "frac_differ_in_clipped_rows": 0.2060821533203125,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.00202894263301609
+  },
+  {
+   "step": 5,
+   "layer": "0",
+   "proj": "kv",
+   "frac_differ": 0.05430657523018973,
+   "frac_differ_in_clipped_rows": 0.20274454752604168,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.001244371651335966
+  },
+  {
+   "step": 5,
+   "layer": "1",
+   "proj": "q",
+   "frac_differ": 0.030419349670410156,
+   "frac_differ_in_clipped_rows": 0.24335479736328125,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0009621767844206399
+  },
+  {
+   "step": 5,
+   "layer": "1",
+   "proj": "kv",
+   "frac_differ": 0.012513841901506697,
+   "frac_differ_in_clipped_rows": 0.23359171549479166,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0006000302001848024
+  },
+  {
+   "step": 5,
+   "layer": "2",
+   "proj": "q",
+   "frac_differ": 0.10569953918457031,
+   "frac_differ_in_clipped_rows": 0.2818654378255208,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0018341743967282083
+  },
+  {
+   "step": 5,
+   "layer": "2",
+   "proj": "kv",
+   "frac_differ": 0.045780181884765625,
+   "frac_differ_in_clipped_rows": 0.2848544650607639,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0011126105080346428
+  },
+  {
+   "step": 5,
+   "layer": "3",
+   "proj": "q",
+   "frac_differ": 0.08412837982177734,
+   "frac_differ_in_clipped_rows": 0.1682567596435547,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0013480228948138519
+  },
+  {
+   "step": 5,
+   "layer": "3",
+   "proj": "kv",
+   "frac_differ": 0.02719606672014509,
+   "frac_differ_in_clipped_rows": 0.12691497802734375,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0007773911612745178
+  },
+  {
+   "step": 5,
+   "layer": "4",
+   "proj": "q",
+   "frac_differ": 0.03023815155029297,
+   "frac_differ_in_clipped_rows": 0.24190521240234375,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0008945131182023234
+  },
+  {
+   "step": 5,
+   "layer": "4",
+   "proj": "kv",
+   "frac_differ": 0.011779240199497767,
+   "frac_differ_in_clipped_rows": 0.219879150390625,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0005585706330424619
+  },
+  {
+   "step": 5,
+   "layer": "5",
+   "proj": "q",
+   "frac_differ": 0.045922279357910156,
+   "frac_differ_in_clipped_rows": 0.18368911743164062,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0010896087634458848
+  },
+  {
+   "step": 5,
+   "layer": "5",
+   "proj": "kv",
+   "frac_differ": 0.013672419956752233,
+   "frac_differ_in_clipped_rows": 0.1276092529296875,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0005926110247842071
+  },
+  {
+   "step": 5,
+   "layer": "6",
+   "proj": "q",
+   "frac_differ": 0.04278755187988281,
+   "frac_differ_in_clipped_rows": 0.17115020751953125,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.00104227161507015
+  },
+  {
+   "step": 5,
+   "layer": "6",
+   "proj": "kv",
+   "frac_differ": 0.015342167445591517,
+   "frac_differ_in_clipped_rows": 0.14319356282552084,
+   "max_bf16_ulp": 1.0,
+   "rel_l2": 0.0006596093824185555
+  }
+ ]
+}

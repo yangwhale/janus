@@ -1,0 +1,20 @@
+# 对齐实践 02 · 优化器连续 8 步 FP64 重放。照 01 的 phase2-st8-opt8.yaml 复制。
+# 被测 t-v7x-st8-prod-gm：同 01 的 t-st8-prod（9 步、第 1–8 步状态读、--full-include 同一组参数），跑在 v7x；梯度由一阶动量反推：
+#   python models/hunyuan3/analysis/grads_from_moments.py --src <运行根>/t-v7x-st8-prod --out <运行根>/t-v7x-st8-prod-gm
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-v7x-st8-opt8
+description: 生产配置第 1–8 步 AdamW 连续 FP64 重放（状态读 + 动量反推梯度）
+runs:
+  test: t-v7x-st8-prod-gm
+  golden: [g1k-a]
+  root: /data/janus-runs
+checks:
+  - id: L1.optim.adamw.8steps
+    type: optimizer_step
+    level: L1
+    select: {kind: tensor, steps: "1:9", name: "*"}
+    params: {replay_from: test}
+    metrics: [rel_l2, max_abs]
+    threshold: {rel_l2: 5.0e-3}
+    source: "同 phase1-opt8 / phase1-full 的 L1.optim.adamw.replay：FP32 存储舍入地板实测最大 1.79e-3，取约 3 倍"

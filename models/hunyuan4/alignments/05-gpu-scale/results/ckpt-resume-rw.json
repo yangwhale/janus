@@ -1,0 +1,26 @@
+{
+ "a": "rwck-a",
+ "b": "rwck-d",
+ "steps": [
+  11,
+  20
+ ],
+ "metrics": {
+  "values": 480,
+  "differ": 0,
+  "first_differ": []
+ },
+ "params_sha": {
+  "files": 16,
+  "entries": 3152,
+  "differ": 0,
+  "first_differ": []
+ },
+ "state_sha": {
+  "files": 16,
+  "entries": 14512,
+  "differ": 0,
+  "first_differ": []
+ },
+ "bitwise_identical": true
+}

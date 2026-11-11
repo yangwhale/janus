@@ -1,0 +1,23 @@
+# 第一阶段 · 张量并行 / 上下文并行等价：p-tp2（EP4 + TP2，开序列并行）或 p-cp2（EP4 + CP2）对 p-ep4f（EP4），确定性。
+# TP / CP 下 rank 0 抓到的激活是切开的局部张量（序列或词表维），不能直接和不切的逐元素比；这里只比整网标量：首步 loss、逐步 loss 与梯度范数。
+# 用 janus run --test p-tp2 / p-cp2 切换被测。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase1-tp-cp
+runs:
+  test: p-tp2
+  golden: [p-ep4f]
+  root: /data/janus-runs2
+checks:
+  - id: L3.loss.step1
+    type: loss_series
+    level: L3
+    select: {kind: metrics, field: lm_loss, window: "1:4"}
+    threshold: {d0: 1.0e-4, signed_mean: 1.0e-3, max_step: 1.0e-3}
+    source: "推断：只换并行方式时首步 loss 的宽松起点（BF16 前向、归约分组不同）"
+  - id: L4.grad_norm
+    type: loss_series
+    level: L4
+    select: {kind: metrics, field: grad_norm, window: "1:4"}
+    threshold: {d0: 1.0e-3, signed_mean: 1.0e-2, max_step: 1.0e-2}
+    source: "推断：同上"

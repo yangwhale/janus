@@ -1,0 +1,242 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.0.1",
+  "commit": null
+ },
+ "catalog": {
+  "path": "/data/rc/cat/remat-replay-base.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "43d5f8b5c83ec4d0774b6baa7d32686853c2bd616d6006892067638b9741f803",
+  "raw_sha256": "752e2e2f2a1576cc5b25d9d32d803f7b039acd5e3a6cae80b0dc20949eb23b48"
+ },
+ "runs": {
+  "rv-det": {
+   "path": "/data/rc/runs/rv-det",
+   "meta_sha256": "6a382873679cb92ba633b327ca05fe1ff11257299f6b6518a10683255d166e98"
+  },
+  "d-a": {
+   "path": "/data/rc/runs/d-a",
+   "meta_sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+  }
+ },
+ "started_at": "2026-11-04T14:12:02+00:00",
+ "finished_at": "2026-11-04T14:12:31+00:00",
+ "summary": {
+  "pass": 0,
+  "fail": 4,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "DET.replay.recompute_vs_baseline",
+   "type": "bitwise_equal",
+   "level": "L2",
+   "hard": false,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 57,
+    "differ": 34
+   },
+   "worst": [
+    {
+     "name": "layers.1.mlp.experts.out.recompute",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.1.mlp.out.recompute",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.1.mlp.router.probs.recompute",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.1.out.recompute",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.2.attn.core.out.recompute",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/rc/runs/rv-det",
+     "sha256": "6a382873679cb92ba633b327ca05fe1ff11257299f6b6518a10683255d166e98"
+    },
+    {
+     "path": "/data/rc/runs/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "34 / 57 个张量不同",
+   "details": "details/DET.replay.recompute_vs_baseline.jsonl"
+  },
+  {
+   "id": "DET.replay.fwd_vs_baseline",
+   "type": "bitwise_equal",
+   "level": "L2",
+   "hard": false,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 57,
+    "differ": 34
+   },
+   "worst": [
+    {
+     "name": "layers.1.mlp.experts.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.1.mlp.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.1.mlp.router.probs",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.1.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.2.attn.core.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/rc/runs/rv-det",
+     "sha256": "6a382873679cb92ba633b327ca05fe1ff11257299f6b6518a10683255d166e98"
+    },
+    {
+     "path": "/data/rc/runs/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "34 / 57 个张量不同",
+   "details": "details/DET.replay.fwd_vs_baseline.jsonl"
+  },
+  {
+   "id": "DET.replay.grad_vs_baseline",
+   "type": "bitwise_equal",
+   "level": "L3",
+   "hard": false,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 50,
+    "differ": 50
+   },
+   "worst": [
+    {
+     "name": "grad.decoder.final_layernorm.weight",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.0.mlp.linear_fc1.layer_norm_weight",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.0.mlp.linear_fc1.weight",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.0.mlp.linear_fc2.weight",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.0.self_attention.k_layernorm.weight",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/rc/runs/rv-det",
+     "sha256": "6a382873679cb92ba633b327ca05fe1ff11257299f6b6518a10683255d166e98"
+    },
+    {
+     "path": "/data/rc/runs/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "50 / 50 个张量不同",
+   "details": "details/DET.replay.grad_vs_baseline.jsonl"
+  },
+  {
+   "id": "DET.replay.loss_vs_baseline",
+   "type": "loss_series",
+   "level": "L4",
+   "hard": false,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "d0": 7.485828702447209e-07,
+    "signed_mean": -1.3580891481971494e-06,
+    "mare": 1.3580891481971494e-06,
+    "max_step": 1.3580891481971494e-06,
+    "max_step_at": 2,
+    "window": "1:3",
+    "denominator": "golden",
+    "nonfinite_steps": [],
+    "signed_mean_se": 0.0,
+    "first_differ_step": 1
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/rc/runs/rv-det",
+     "sha256": "6a382873679cb92ba633b327ca05fe1ff11257299f6b6518a10683255d166e98"
+    },
+    {
+     "path": "/data/rc/runs/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": ""
+  }
+ ]
+}

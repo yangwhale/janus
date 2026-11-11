@@ -1,0 +1,6 @@
+$ python verify_ckpt.py names --hf <HF 目录 hy3-4l>
+name_map 展开 1193 个参数项，覆盖 HF 张量 1781 个；tensor_sha256.json 1781 个
+  只在 name_map：0 []
+  只在 HF：0 []
+  形状不符：0 []
+OK

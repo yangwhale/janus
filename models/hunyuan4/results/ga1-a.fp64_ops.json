@@ -1,0 +1,28 @@
+{
+ "run": "ga1-a",
+ "layer": 0,
+ "ops": {
+  "embed": 0.0,
+  "attn_hc.post": 2.0680822450145338e-07,
+  "attn_hc.out": 0.001008274287215408,
+  "input_layernorm": 0.002322997878265492,
+  "self_attn.gate_proj": 0.0016604402654702853,
+  "self_attn(own topk)": 0.0034655937150820776,
+  "self_attn(gpu topk)": 0.003463714009439237,
+  "ffn_hc.post": 4.326819431153208e-05,
+  "ffn_hc.out": 0.0020824691224713508,
+  "post_attention_layernorm": 0.0023332773536942405,
+  "mlp": 0.002334193968405857,
+  "hc_head": 0.0016592779892685232,
+  "final_norm": 0.0023501692100329607,
+  "lm_head": 7.914251214180404e-07
+ },
+ "topk": {
+  "queries": 2048,
+  "queries_with_flip": 1936,
+  "flipped_slots": 6161,
+  "slots": 4194304,
+  "flip_fraction_of_slots": 0.0014688968658447266,
+  "max_flips_in_one_query": 10
+ }
+}

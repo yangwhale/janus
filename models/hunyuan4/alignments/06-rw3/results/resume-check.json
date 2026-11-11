@@ -1,0 +1,78 @@
+{
+ "what": "TPU 从存档续跑的显存与逐位核对（D3，v5p 2x2x4，16 个设备，FSDP 16）",
+ "root_cause": "train_hy4.py --resume 用 state.to_pure_dict() 取形状与切分；它的叶子就是状态里的数组本身，换进存档值后这个字典一直活到 main 结束，旧的初始状态整份留在设备上",
+ "before_fix": {
+  "run": "trw-e-s3（从 trw-e 第 100 步续跑）",
+  "allocator_in_use_bytes_at_train_step_load": 32883713024,
+  "train_step_reserve": "72.80G",
+  "free": "65.10G",
+  "result": "RESOURCE_EXHAUSTED，退出"
+ },
+ "after_fix": {
+  "run": "rfx-v-s1（同一份存档，续跑到第 250 步）",
+  "memory_probe": [
+   {
+    "tag": "after_setup",
+    "live_arrays_bytes": 16437485464,
+    "live_arrays_n": 363,
+    "bytes_in_use": 24519645696,
+    "peak_bytes_in_use": 24520449024,
+    "bytes_limit": 102786654208
+   },
+   {
+    "tag": "after_resume",
+    "live_arrays_bytes": 16437485464,
+    "live_arrays_n": 363,
+    "bytes_in_use": 16443110912,
+    "peak_bytes_in_use": 24520449024,
+    "bytes_limit": 102786654208
+   }
+  ],
+  "memory_at_end_device0": {
+   "bytes_in_use": 17394461696,
+   "peak_bytes_in_use": 30279363584,
+   "bytes_limit": 102786654208
+  },
+  "result": "跑完"
+ },
+ "fresh_reference": {
+  "run": "b2r-on（不中断 250 步，同一配置）",
+  "memory_at_end_device0": {
+   "bytes_in_use": 17394461696,
+   "peak_bytes_in_use": 30279363584,
+   "bytes_limit": 102786654208
+  }
+ },
+ "state_bytes_per_device": 16437485464,
+ "overlap_vs_uninterrupted": {
+  "test": "rfx-v-s1",
+  "reference": "b2r-on",
+  "compared_steps": 150,
+  "first": 101,
+  "last": 250,
+  "fields": 40,
+  "differ_steps": 0,
+  "first_diffs": [],
+  "params_sha_final": "9 个文件（rank0–7 与 buffers）逐字节相同"
+ },
+ "cpu_check": {
+  "stage": "D（hy4-tiny 维度，8 个假 CPU 设备，合成 golden 20 步）",
+  "live_arrays_after_setup": [
+   290,
+   3967972
+  ],
+  "live_arrays_after_resume_before_fix": [
+   580,
+   7935944
+  ],
+  "live_arrays_after_resume_after_fix": [
+   290,
+   3967972
+  ],
+  "bitwise": "跑 20 步 对 跑 10 步存档、续 10 步：第 11–20 步逐步记录全同；state_sha final 全同；存档那一段的 final 等于续跑段的 init"
+ },
+ "code": {
+  "janus_commit": "f46f6981b8329bb89e2648ec325ac0f854fc7697",
+  "maxtext_commit": "b87a55aad08b9f223cb4e248f2877fde9c51ac33"
+ }
+}

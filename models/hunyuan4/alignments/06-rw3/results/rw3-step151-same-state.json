@@ -1,0 +1,236 @@
+{
+ "what": "真实宽度三层：TPU（base2 关）第 150 步更新之后的同一份权重上，第 151 步全局批的前向 loss：TPU、GPU、CPU FP64",
+ "step": 151,
+ "batch": "rw1k-a 第 151 步（tokens 第 2400–2415 行）",
+ "references": {
+  "fp64_bf16_snapshot": {
+   "rows": 16,
+   "lm_loss": 6.59547016991924,
+   "mtp_loss_mt": 0.7321162285567593,
+   "global_tokens": 65454.0,
+   "note": "CPU FP64 前向，BF16 快照（输出头、k_norm 舍 BF16）"
+  },
+  "fp64_gpu_weights": {
+   "rows": 16,
+   "lm_loss": 6.59429960743114,
+   "mtp_loss_mt": 0.7321435177839963,
+   "global_tokens": 65454.0,
+   "note": "CPU FP64 前向，输出头、k_norm 换 FP32 主权重原值"
+  }
+ },
+ "runs": {
+  "tpu_train_step151": {
+   "side": "tpu",
+   "run": "b2r-off（= b2s-off150、b2s2-off151 第 151 步，逐位相同）",
+   "weights": "TPU 自己的 FP32 主权重（输出头 FP32 参与计算）",
+   "lm_loss": 6.594542026519775,
+   "mtp_loss_mt": 0.732150137424469,
+   "indexer_loss": 0.019885223358869553,
+   "ref": "fp64_gpu_weights",
+   "lm_loss.rel_vs_fp64": 3.6761916058836164e-05,
+   "mtp_loss_mt.rel_vs_fp64": 9.041451999314276e-06
+  },
+  "tpu_eval_none": {
+   "side": "tpu",
+   "run": "b2e-off151 eval none（单独编译的前向）",
+   "lm_loss": 6.594583123262138,
+   "mtp_loss_mt": 0.7321687936782837,
+   "indexer_loss": 0.01988234557211399,
+   "ref": "fp64_gpu_weights",
+   "lm_loss.rel_vs_fp64": 4.299407789698506e-05,
+   "mtp_loss_mt.rel_vs_fp64": 3.4523141533515656e-05
+  },
+  "tpu_eval_all_bf16": {
+   "side": "tpu",
+   "run": "b2e-off151 eval all（HF 存 BF16 的参数全部舍 BF16）",
+   "lm_loss": 6.595748540960064,
+   "mtp_loss_mt": 0.7321152687072754,
+   "indexer_loss": 0.01999073289334774,
+   "ref": "fp64_bf16_snapshot",
+   "lm_loss.rel_vs_fp64": 4.220639827812178e-05,
+   "mtp_loss_mt.rel_vs_fp64": -1.311061613495923e-06
+  },
+  "gpu_on_bf16_snapshot_a": {
+   "side": "gpu",
+   "run": "s150-a（2 台，载入 BF16 快照：输出头、k_norm 也舍成 BF16）",
+   "lm_loss": 6.595658779144287,
+   "mtp_loss_mt": 0.7320583462715149,
+   "indexer_loss": 0.019994517788290977,
+   "ref": "fp64_bf16_snapshot",
+   "lm_loss.rel_vs_fp64": 2.8596782365442053e-05,
+   "mtp_loss_mt.rel_vs_fp64": -7.906160659554295e-05
+  },
+  "gpu_on_bf16_snapshot_b": {
+   "side": "gpu",
+   "run": "s150-b",
+   "lm_loss": 6.595648288726807,
+   "mtp_loss_mt": 0.7320632338523865,
+   "indexer_loss": 0.019994238391518593,
+   "ref": "fp64_bf16_snapshot",
+   "lm_loss.rel_vs_fp64": 2.7006233517479217e-05,
+   "mtp_loss_mt.rel_vs_fp64": -7.238564357092692e-05
+  },
+  "gpu_on_gpu_weights_a": {
+   "side": "gpu",
+   "run": "s150v2-a（输出头、k_norm 用 FP32 主权重原值 = GPU 训练时真用的权重）",
+   "lm_loss": 6.594438552856445,
+   "mtp_loss_mt": 0.7321167588233948,
+   "indexer_loss": 0.019893672317266464,
+   "ref": "fp64_gpu_weights",
+   "lm_loss.rel_vs_fp64": 2.1070535701550597e-05,
+   "mtp_loss_mt.rel_vs_fp64": -3.6548791256918456e-05
+  },
+  "gpu_on_gpu_weights_b": {
+   "side": "gpu",
+   "run": "s150v2-b",
+   "lm_loss": 6.594446182250977,
+   "mtp_loss_mt": 0.7321285605430603,
+   "indexer_loss": 0.01989373378455639,
+   "ref": "fp64_gpu_weights",
+   "lm_loss.rel_vs_fp64": 2.222750383840122e-05,
+   "mtp_loss_mt.rel_vs_fp64": -2.0429383819853264e-05
+  }
+ },
+ "eval_variants_step151": {
+  "none": {
+   "pattern": "",
+   "n_hf_tensors": 0,
+   "n_leaves": 0,
+   "lm_loss": 6.594583123262138,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7321687936782837,
+   "indexer_loss": 0.01988234557211399,
+   "loss": 7.346659183502197
+  },
+  "all": {
+   "pattern": ".",
+   "n_hf_tensors": 84,
+   "n_leaves": 87,
+   "lm_loss": 6.595748540960064,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7321152687072754,
+   "indexer_loss": 0.01999073289334774,
+   "loss": 7.347879409790039
+  },
+  "head": {
+   "pattern": "^lm_head\\.",
+   "n_hf_tensors": 1,
+   "n_leaves": 1,
+   "lm_loss": 6.595757134781679,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7321528196334839,
+   "indexer_loss": 0.01988234557211399,
+   "loss": 7.347817420959473
+  },
+  "embed": {
+   "pattern": "embed_tokens",
+   "n_hf_tensors": 1,
+   "n_leaves": 1,
+   "lm_loss": 6.594583123262138,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7321687936782837,
+   "indexer_loss": 0.01988234557211399,
+   "loss": 7.346659183502197
+  },
+  "norm": {
+   "pattern": "norm\\.weight$|norm\\.bias$",
+   "n_hf_tensors": 26,
+   "n_leaves": 26,
+   "lm_loss": 6.594574052005989,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.732168972492218,
+   "indexer_loss": 0.01999073289334774,
+   "loss": 7.346758842468262
+  },
+  "attn": {
+   "pattern": "self_attn\\.(q_a_proj|q_b_proj|kv_a_proj_with_mqa|kv_b_proj|o_proj|linear_gate)\\.",
+   "n_hf_tensors": 24,
+   "n_leaves": 24,
+   "lm_loss": 6.594583123262138,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7321687936782837,
+   "indexer_loss": 0.01988234557211399,
+   "loss": 7.346659183502197
+  },
+  "indexer": {
+   "pattern": "self_attn\\.indexer\\.",
+   "n_hf_tensors": 15,
+   "n_leaves": 15,
+   "lm_loss": 6.594574052005989,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.732168972492218,
+   "indexer_loss": 0.01999073289334774,
+   "loss": 7.346758842468262
+  },
+  "dense": {
+   "pattern": "mlp\\.(gate_proj|up_proj|down_proj)\\.",
+   "n_hf_tensors": 3,
+   "n_leaves": 3,
+   "lm_loss": 6.594583123262138,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7321687936782837,
+   "indexer_loss": 0.01988234557211399,
+   "loss": 7.346659183502197
+  },
+  "shared": {
+   "pattern": "mlp\\.shared_experts\\.",
+   "n_hf_tensors": 9,
+   "n_leaves": 9,
+   "lm_loss": 6.594583123262138,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7321687936782837,
+   "indexer_loss": 0.01988234557211399,
+   "loss": 7.346659183502197
+  },
+  "experts": {
+   "pattern": "mlp\\.experts\\.",
+   "n_hf_tensors": 6,
+   "n_leaves": 9,
+   "lm_loss": 6.594583123262138,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7321687936782837,
+   "indexer_loss": 0.01988234557211399,
+   "loss": 7.346659183502197
+  },
+  "router": {
+   "pattern": "mlp\\.gate\\.weight$",
+   "n_hf_tensors": 3,
+   "n_leaves": 3,
+   "lm_loss": 6.594583123262138,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7321687936782837,
+   "indexer_loss": 0.01988234557211399,
+   "loss": 7.346659183502197
+  },
+  "mtp": {
+   "pattern": "^model\\.mtp_layers\\.",
+   "n_hf_tensors": 26,
+   "n_leaves": 27,
+   "lm_loss": 6.594583123262138,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.732174277305603,
+   "indexer_loss": 0.019905421882867813,
+   "loss": 7.3466877937316895
+  },
+  "mtp_proj": {
+   "pattern": "eh_proj",
+   "n_hf_tensors": 1,
+   "n_leaves": 1,
+   "lm_loss": 6.594583123262138,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7321687936782837,
+   "indexer_loss": 0.01988234557211399,
+   "loss": 7.346659183502197
+  }
+ },
+ "head_rounding_effect": {
+  "tpu_eval_head_minus_none_rel": 0.00017802664665778067,
+  "fp64_bf16_minus_gpuweights_rel": 0.000177511268487196
+ },
+ "gpu_ensemble_step151": {
+  "rw1k_mean_lm_loss": 6.594587087631226,
+  "rw1k_sd_rel": 1.8738838866788705e-05,
+  "rw1k_a_lm_loss": 6.594761371612549
+ },
+ "note": "GPU 一侧换权重用 HF 目录载入（tokens 从第 2400 行起的切片，GPU 第 1 步 = 第 151 步的批）；GPU 代码包同 rw1k，L0 改成只核 index 指向的那份。TPU 的 eval 是单独编译的前向，与训练步记录的 lm_loss 差 6.2e-6（none 一行）"
+}

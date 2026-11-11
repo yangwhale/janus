@@ -1,0 +1,122 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.0.1",
+  "commit": null
+ },
+ "catalog": {
+  "path": "/data/rc/cat/remat-replay.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "99e3ece0af2c07f8ccd8d162ba590ce5eb31da5c295c2c5c07c1404c200b0c04",
+  "raw_sha256": "c61444dc23df7c876b93287f92502d63feab1429756574ebb05defefbeebd3fe"
+ },
+ "runs": {
+  "rv-det": {
+   "path": "/data/rc/runs/rv-det",
+   "meta_sha256": "6a382873679cb92ba633b327ca05fe1ff11257299f6b6518a10683255d166e98"
+  },
+  "r-remat": {
+   "path": "/data/rc/runs/r-remat",
+   "meta_sha256": "f8b8c293c40d9d8b37db625b8d71d5205e1a60dc9777db952d3b8fb55208ab37"
+  }
+ },
+ "started_at": "2026-11-04T14:11:50+00:00",
+ "finished_at": "2026-11-04T14:12:02+00:00",
+ "summary": {
+  "pass": 3,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "DET.replay.vs_first",
+   "type": "bitwise_equal",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 57,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/rc/runs/rv-det",
+     "sha256": "6a382873679cb92ba633b327ca05fe1ff11257299f6b6518a10683255d166e98"
+    },
+    {
+     "path": "/data/rc/runs/rv-det",
+     "sha256": "6a382873679cb92ba633b327ca05fe1ff11257299f6b6518a10683255d166e98"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/DET.replay.vs_first.jsonl"
+  },
+  {
+   "id": "DET.replay.fwd_vs_remat",
+   "type": "bitwise_equal",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 57,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/rc/runs/rv-det",
+     "sha256": "6a382873679cb92ba633b327ca05fe1ff11257299f6b6518a10683255d166e98"
+    },
+    {
+     "path": "/data/rc/runs/r-remat",
+     "sha256": "f8b8c293c40d9d8b37db625b8d71d5205e1a60dc9777db952d3b8fb55208ab37"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/DET.replay.fwd_vs_remat.jsonl"
+  },
+  {
+   "id": "DET.replay.loss_vs_remat",
+   "type": "loss_series",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "d0": 0.0,
+    "signed_mean": 0.0,
+    "mare": 0.0,
+    "max_step": 0.0,
+    "max_step_at": null,
+    "window": "1:2",
+    "denominator": "golden",
+    "nonfinite_steps": [],
+    "signed_mean_se": 0.0,
+    "first_differ_step": null
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/rc/runs/rv-det",
+     "sha256": "6a382873679cb92ba633b327ca05fe1ff11257299f6b6518a10683255d166e98"
+    },
+    {
+     "path": "/data/rc/runs/r-remat",
+     "sha256": "f8b8c293c40d9d8b37db625b8d71d5205e1a60dc9777db952d3b8fb55208ab37"
+    }
+   ],
+   "message": ""
+  }
+ ]
+}

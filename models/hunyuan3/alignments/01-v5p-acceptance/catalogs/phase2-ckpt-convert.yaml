@@ -1,0 +1,42 @@
+# 第二阶段 · L0 权重转换（HF → MaxText）逐张量逐位
+#
+# 两个「运行」都只有参数清单（params_sha/rank0.init.json），由 models/hunyuan3/model/verify_ckpt.py 写出：
+#   hy3-4l-maxtext-ckpt：读转换后的 MaxText 检查点，按 models/hunyuan3/model/name_map.yaml 把每个张量还原回 HF 的命名与形状
+#                        （拼接 / 拆分 / 转置反做），按检查点里实际存的 dtype 还原（只有 HF 原件是 BF16 且值是 BF16 精确值时才转回 BF16），
+#                        逐张量算原始字节的 sha256；另记 stored_dtype（检查点里存的 dtype）
+#     python verify_ckpt.py maxtext --ckpt <转换输出>/0/items --hf <HF 目录> --janus-run <运行根>/hy3-4l-maxtext-ckpt
+#   hy3-4l-hf：HF 原件的 tensor_sha256.json（GPU 侧截层时逐张量算的 sha256）+ safetensors 头里的 dtype 与形状
+#     python verify_ckpt.py hf-manifest --hf <HF 目录> --janus-run <运行根>/hy3-4l-hf
+# 全量不抽样：checkpoint_equal 逐项比 sha256，数清两边张量数（params / only_one_side）；dtype_manifest 查 dtype 清单。
+# 这两条也写在 phase2-tpu.yaml 的 L0（用 select.test_run / ref_run / run 指到这两个运行）。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-ckpt-convert
+description: HF → MaxText 权重转换后，逐张量还原回 HF 命名与形状，对 HF 原件逐位
+runs:
+  test: hy3-4l-maxtext-ckpt
+  golden: [hy3-4l-hf]
+  root: /data/janus-runs
+checks:
+  - id: L0.ckpt.convert.bitwise
+    type: checkpoint_equal
+    level: L0
+    select: {kind: checkpoint, which: init, manifest: true}
+  # expert_bias 必须 FP32（存成 BF16 后偏置更新量会被舍入吃掉），其余参数 BF16
+  - id: L0.ckpt.convert.dtype
+    type: dtype_manifest
+    level: L0
+    select: {kind: checkpoint, which: init}
+    params:
+      rules:
+        - {pattern: "*.expert_bias", dtype: float32}
+        - {pattern: "*", exclude: "*.expert_bias", dtype: bfloat16}
+  # 参照一侧的 dtype 清单也查一遍：确认 HF 原件本身就是「expert_bias FP32、其余 BF16」
+  - id: L0.ckpt.source.dtype
+    type: dtype_manifest
+    level: L0
+    select: {kind: checkpoint, which: init, run: hy3-4l-hf}
+    params:
+      rules:
+        - {pattern: "*.expert_bias", dtype: float32}
+        - {pattern: "*", exclude: "*.expert_bias", dtype: bfloat16}

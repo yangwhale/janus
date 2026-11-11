@@ -1,0 +1,887 @@
+{
+ "schema_version": 1,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": null
+ },
+ "catalog": {
+  "path": "models/hunyuan3/frameworks/megatron/l1_kernels.py",
+  "sha256": "cc18755f7e07aa5216d72f63bbdf0d58e40b4027c3887e38a4000c4e6f2fae24"
+ },
+ "runs": {
+  "g61-obs": {
+   "path": "/data/janus-runs2/g61-obs",
+   "meta_sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+  },
+  "g61-notf32": {
+   "path": "/data/janus-runs2/g61-notf32",
+   "meta_sha256": "36e4f5381ccf1a71bca8fd617955e27e459c5e9738cc45fd608be4d73d35100b"
+  }
+ },
+ "started_at": "2026-11-06T10:29:02+00:00",
+ "finished_at": "2026-11-06T10:43:23+00:00",
+ "environment": {
+  "torch": "2.14.0a0+b2c75dd062.nv26.09",
+  "transformer_engine": "2.20.2+44f31bbe",
+  "cuda": "13.4",
+  "cublas": "13.8.0.4",
+  "device": "NVIDIA B200",
+  "allow_tf32_matmul_default": true,
+  "allow_tf32_cudnn_default": true,
+  "float32_matmul_precision_default": "high",
+  "env": {
+   "TORCH_ALLOW_TF32_CUBLAS_OVERRIDE": "1",
+   "NVIDIA_TF32_OVERRIDE": null,
+   "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+   "NVTE_ALLOW_NONDETERMINISTIC_ALGO": "0",
+   "NVTE_FLASH_ATTN": null,
+   "NVTE_FUSED_ATTN": null
+  },
+  "torch_deterministic_algorithms": false
+ },
+ "summary": {
+  "pass": 16,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "TF32.switch.matrix",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 0.0002942196323971561,
+    "cr_match_frac": 7.2479248046875e-05,
+    "ulp_max": 73059380,
+    "ulp_p999": 2104473.9160000053,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 9.5367431640625e-05,
+    "cases": 12
+   },
+   "worst": [
+    {
+     "name": "default.torch_mm_fp32",
+     "metric": "rel_l2",
+     "value": 0.0002942196323971561,
+     "location": null
+    },
+    {
+     "name": "default.te_general_gemm_fp32",
+     "metric": "rel_l2",
+     "value": 0.0002942196323971561,
+     "location": null
+    },
+    {
+     "name": "torch_false.te_general_gemm_fp32",
+     "metric": "rel_l2",
+     "value": 0.0002942196323971561,
+     "location": null
+    },
+    {
+     "name": "highest.te_general_gemm_fp32",
+     "metric": "rel_l2",
+     "value": 0.0002942196323971561,
+     "location": null
+    },
+    {
+     "name": "no_cublas_override_env.te_general_gemm_fp32",
+     "metric": "rel_l2",
+     "value": 0.0002942196323971561,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "诊断：只报数，不判",
+   "details": "details/TF32.switch.matrix.jsonl"
+  },
+  {
+   "id": "TF32.switch.override_off",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "rel_l2": 1e-05
+    },
+    "source": "推断：IEEE FP32 累加 K=4096，误差约 √K·2^-24 ≈ 4e-6 的量级（实测约 1e-6）；TF32（10 位尾数）约 3e-4，取 1e-5 分开两者"
+   },
+   "metrics": {
+    "rel_l2": 1.1457820951306886e-06,
+    "cr_match_frac": 0.026436805725097656,
+    "ulp_max": 3139288,
+    "ulp_p999": 4680.125000000815,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 4
+   },
+   "worst": [
+    {
+     "name": "NVIDIA_TF32_OVERRIDE=0.torch_mm_fp32",
+     "metric": "rel_l2",
+     "value": 1.1457820951306886e-06,
+     "location": null
+    },
+    {
+     "name": "NVIDIA_TF32_OVERRIDE=0.te_general_gemm_fp32",
+     "metric": "rel_l2",
+     "value": 1.1457820951306886e-06,
+     "location": null
+    },
+    {
+     "name": "NVIDIA_TF32_OVERRIDE=0+torch_false+no_cublas_override_env.torch_mm_fp32",
+     "metric": "rel_l2",
+     "value": 1.1457820951306886e-06,
+     "location": null
+    },
+    {
+     "name": "NVIDIA_TF32_OVERRIDE=0+torch_false+no_cublas_override_env.te_general_gemm_fp32",
+     "metric": "rel_l2",
+     "value": 1.1457820951306886e-06,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "全部在门槛内",
+   "details": "details/TF32.switch.override_off.jsonl"
+  },
+  {
+   "id": "TF32.router_bwd",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 0.0016976797228260652,
+    "cr_match_frac": 0.8965861002604166,
+    "ulp_max": 2129,
+    "ulp_p999": 24.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 0.8966026306152344,
+    "cases": 12
+   },
+   "worst": [
+    {
+     "name": "default.router_bwd.dw",
+     "metric": "rel_l2",
+     "value": 0.0016976797228260652,
+     "location": null
+    },
+    {
+     "name": "torch_false.router_bwd.dw",
+     "metric": "rel_l2",
+     "value": 0.0016976797228260652,
+     "location": null
+    },
+    {
+     "name": "highest.router_bwd.dw",
+     "metric": "rel_l2",
+     "value": 0.0016976797228260652,
+     "location": null
+    },
+    {
+     "name": "no_cublas_override_env.router_bwd.dw",
+     "metric": "rel_l2",
+     "value": 0.0016976797228260652,
+     "location": null
+    },
+    {
+     "name": "NVIDIA_TF32_OVERRIDE=0.router_bwd.dw",
+     "metric": "rel_l2",
+     "value": 0.0016851018479825594,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "诊断：只报数，不判",
+   "details": "details/TF32.router_bwd.jsonl"
+  },
+  {
+   "id": "TF32.in_run",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "probe_rel_l2_*": 1e-05
+    },
+    "source": "同 TF32.switch.override_off"
+   },
+   "metrics": {
+    "cases": 2
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "关 TF32 的运行里，torch 与 TE 的 FP32 GEMM 实测都是 IEEE FP32",
+   "details": "details/TF32.in_run.jsonl"
+  },
+  {
+   "id": "TF32.gemm_inventory",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "calls": 154,
+    "fp32_input_calls": 12,
+    "fp32_input_sites": 2,
+    "cases": 14
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "第 1 步 rank 0 共 154 次 GEMM 调用，输入含 FP32 的 12 次（2 处调用点）",
+   "details": "details/TF32.gemm_inventory.jsonl"
+  },
+  {
+   "id": "L1.kernel.experts.fwd.replay",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "rel_l2": 0.0029091780087115724,
+    "cr_match_frac": 0.6485377574842743,
+    "ulp_max": 1130,
+    "ulp_p999": 2.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 9
+   },
+   "worst": [
+    {
+     "name": "layers.3.experts.act",
+     "metric": "rel_l2",
+     "value": 0.0029091780087115724,
+     "location": null
+    },
+    {
+     "name": "layers.1.experts.act",
+     "metric": "rel_l2",
+     "value": 0.0028749326755861415,
+     "location": null
+    },
+    {
+     "name": "layers.2.experts.act",
+     "metric": "rel_l2",
+     "value": 0.002868858392489769,
+     "location": null
+    },
+    {
+     "name": "layers.1.experts.gemm1",
+     "metric": "rel_l2",
+     "value": 0.0016593059669577572,
+     "location": null
+    },
+    {
+     "name": "layers.3.experts.gemm1",
+     "metric": "rel_l2",
+     "value": 0.00165913512748712,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "逐位全中（bit_match_frac）",
+   "details": "details/L1.kernel.experts.fwd.replay.jsonl"
+  },
+  {
+   "id": "L1.kernel.experts.bwd.replay",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "rel_l2": 0.001659246200361208,
+    "cr_match_frac": 0.9977534227053306,
+    "ulp_max": 1290,
+    "ulp_p999": 1.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 9
+   },
+   "worst": [
+    {
+     "name": "layers.1.experts.gemm1.dgrad",
+     "metric": "rel_l2",
+     "value": 0.001659246200361208,
+     "location": null
+    },
+    {
+     "name": "layers.3.experts.gemm2.dgrad",
+     "metric": "rel_l2",
+     "value": 0.0016590440363110238,
+     "location": null
+    },
+    {
+     "name": "layers.1.experts.gemm2.dgrad",
+     "metric": "rel_l2",
+     "value": 0.0016589828408629785,
+     "location": null
+    },
+    {
+     "name": "layers.2.experts.gemm1.dgrad",
+     "metric": "rel_l2",
+     "value": 0.0016587467023262067,
+     "location": null
+    },
+    {
+     "name": "layers.3.experts.gemm1.dgrad",
+     "metric": "rel_l2",
+     "value": 0.0016587359470674671,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "逐位全中（bit_match_frac）",
+   "details": "details/L1.kernel.experts.bwd.replay.jsonl"
+  },
+  {
+   "id": "L1.kernel.experts.vs_loop",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 0.0016593059669577572,
+    "cr_match_frac": 0.996901621589712,
+    "ulp_max": 1130,
+    "ulp_p999": 1.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 9
+   },
+   "worst": [
+    {
+     "name": "layers.1.experts.gemm1.fwd",
+     "metric": "rel_l2",
+     "value": 0.0016593059669577572,
+     "location": null
+    },
+    {
+     "name": "layers.1.experts.gemm1.dgrad",
+     "metric": "rel_l2",
+     "value": 0.001659246200361208,
+     "location": null
+    },
+    {
+     "name": "layers.3.experts.gemm1.fwd",
+     "metric": "rel_l2",
+     "value": 0.00165913512748712,
+     "location": null
+    },
+    {
+     "name": "layers.2.experts.gemm1.fwd",
+     "metric": "rel_l2",
+     "value": 0.0016587744694550547,
+     "location": null
+    },
+    {
+     "name": "layers.2.experts.gemm2.fwd",
+     "metric": "rel_l2",
+     "value": 0.0016587681935069628,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "诊断：只报数，不判",
+   "details": "details/L1.kernel.experts.vs_loop.jsonl"
+  },
+  {
+   "id": "L1.kernel.experts.wgrad",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "rel_l2": 1e-05
+    },
+    "source": "推断：FP32 主梯度（FP32 出、K = 该专家 token 数 ≤ 数千）的累加误差约 √K·2^-24，取 1e-5；BF16 输入是精确值，FP64 真值与它只差累加舍入"
+   },
+   "metrics": {
+    "rel_l2": 3.4989864965543653e-06,
+    "cr_match_frac": 0.007934941185845269,
+    "ulp_max": 744577648,
+    "ulp_p999": 4206.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 6
+   },
+   "worst": [
+    {
+     "name": "layers.2.experts.gemm2.wgrad",
+     "metric": "rel_l2",
+     "value": 3.4989864965543653e-06,
+     "location": null
+    },
+    {
+     "name": "layers.2.experts.gemm1.wgrad",
+     "metric": "rel_l2",
+     "value": 3.2618011073468817e-06,
+     "location": null
+    },
+    {
+     "name": "layers.3.experts.gemm2.wgrad",
+     "metric": "rel_l2",
+     "value": 2.560229841176199e-06,
+     "location": null
+    },
+    {
+     "name": "layers.3.experts.gemm1.wgrad",
+     "metric": "rel_l2",
+     "value": 2.3130191174670048e-06,
+     "location": null
+    },
+    {
+     "name": "layers.1.experts.gemm1.wgrad",
+     "metric": "rel_l2",
+     "value": 2.2627759401481305e-06,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "全部在门槛内",
+   "details": "details/L1.kernel.experts.wgrad.jsonl"
+  },
+  {
+   "id": "L1.kernel.gemm_row_invariance",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "bit_match_frac": 0.9969346788194444,
+    "cases": 208
+   },
+   "worst": [
+    {
+     "name": "gemm1.torch.M24+64",
+     "metric": "bit_match_frac",
+     "value": 0.9969346788194444,
+     "location": null
+    },
+    {
+     "name": "gemm1.grouped.M24+64",
+     "metric": "bit_match_frac",
+     "value": 0.9969346788194444,
+     "location": null
+    },
+    {
+     "name": "gemm1.torch.M24+512",
+     "metric": "bit_match_frac",
+     "value": 0.9969346788194444,
+     "location": null
+    },
+    {
+     "name": "gemm1.grouped.M24+512",
+     "metric": "bit_match_frac",
+     "value": 0.9969346788194444,
+     "location": null
+    },
+    {
+     "name": "gemm1.torch.M16+64",
+     "metric": "bit_match_frac",
+     "value": 0.9969482421875,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "诊断：只报数，不判",
+   "details": "details/L1.kernel.gemm_row_invariance.jsonl"
+  },
+  {
+   "id": "L1.kernel.attn.fwd.replay",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "rel_l2": 0.0019469724223913575,
+    "cr_match_frac": 0.784159392118454,
+    "ulp_max": 2033,
+    "ulp_p999": 55.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 4
+   },
+   "worst": [
+    {
+     "name": "layers.3.attn.core.out",
+     "metric": "rel_l2",
+     "value": 0.0019469724223913575,
+     "location": null
+    },
+    {
+     "name": "layers.2.attn.core.out",
+     "metric": "rel_l2",
+     "value": 0.0019138029496313723,
+     "location": null
+    },
+    {
+     "name": "layers.1.attn.core.out",
+     "metric": "rel_l2",
+     "value": 0.0018655530621980046,
+     "location": null
+    },
+    {
+     "name": "layers.0.attn.core.out",
+     "metric": "rel_l2",
+     "value": 0.0016594983701057827,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "逐位全中（bit_match_frac）",
+   "details": "details/L1.kernel.attn.fwd.replay.jsonl"
+  },
+  {
+   "id": "L1.kernel.attn.bwd.replay",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "rel_l2": 0.003969272085556939,
+    "cr_match_frac": 0.5254156589508057,
+    "ulp_max": 14004,
+    "ulp_p999": 178.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 12
+   },
+   "worst": [
+    {
+     "name": "layers.3.attn.core.dq",
+     "metric": "rel_l2",
+     "value": 0.003969272085556939,
+     "location": null
+    },
+    {
+     "name": "layers.2.attn.core.dq",
+     "metric": "rel_l2",
+     "value": 0.0034227732854805125,
+     "location": null
+    },
+    {
+     "name": "layers.1.attn.core.dk",
+     "metric": "rel_l2",
+     "value": 0.003139690476243837,
+     "location": null
+    },
+    {
+     "name": "layers.0.attn.core.dk",
+     "metric": "rel_l2",
+     "value": 0.002920897049849385,
+     "location": null
+    },
+    {
+     "name": "layers.1.attn.core.dq",
+     "metric": "rel_l2",
+     "value": 0.002907729380778156,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "逐位全中（bit_match_frac）",
+   "details": "details/L1.kernel.attn.bwd.replay.jsonl"
+  },
+  {
+   "id": "L1.poison.grouped_gemm",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "bit_match_frac": 1.0,
+    "cases": 9
+   },
+   "worst": [
+    {
+     "name": "tail_nan.y",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "tail_nan.dx",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "tail_nan.dw",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "tail_inf.y",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "tail_inf.dx",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "逐位全中（bit_match_frac）",
+   "details": "details/L1.poison.grouped_gemm.jsonl"
+  },
+  {
+   "id": "L1.poison.attn_padding",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "bit_match_frac": 1.0,
+    "cases": 8
+   },
+   "worst": [
+    {
+     "name": "thd_pad_nan.out",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "thd_pad_nan.dq",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "thd_pad_nan.dk",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "thd_pad_nan.dv",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "thd_pad_inf.out",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "逐位全中（bit_match_frac）",
+   "details": "details/L1.poison.attn_padding.jsonl"
+  },
+  {
+   "id": "L1.causal.attn",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "bit_match_frac": 1.0,
+    "cases": 8
+   },
+   "worst": [
+    {
+     "name": "p2048.future_changed.out",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "p2048.future_changed.dq",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "p2048.future_changed.dk",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "p2048.future_changed.dv",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "p3001.future_changed.out",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "逐位全中（bit_match_frac）",
+   "details": "details/L1.causal.attn.jsonl"
+  },
+  {
+   "id": "L1.causal.attn_future_nan",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "bit_match_frac": 0.0,
+    "cases": 8
+   },
+   "worst": [
+    {
+     "name": "p2048.future_nan.dk",
+     "metric": "bit_match_frac",
+     "value": 0.0,
+     "location": null
+    },
+    {
+     "name": "p2048.future_nan.dv",
+     "metric": "bit_match_frac",
+     "value": 0.0,
+     "location": null
+    },
+    {
+     "name": "p3001.future_nan.dk",
+     "metric": "bit_match_frac",
+     "value": 0.0,
+     "location": null
+    },
+    {
+     "name": "p3001.future_nan.dv",
+     "metric": "bit_match_frac",
+     "value": 0.0,
+     "location": null
+    },
+    {
+     "name": "p3001.future_nan.out",
+     "metric": "bit_match_frac",
+     "value": 0.9383538820393202,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "诊断：只报数，不判",
+   "details": "details/L1.causal.attn_future_nan.jsonl"
+  }
+ ]
+}

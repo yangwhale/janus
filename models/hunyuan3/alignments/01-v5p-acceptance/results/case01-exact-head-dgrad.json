@@ -1,0 +1,18 @@
+{
+ "what": "输出头 dgrad 沿 ŵ̄（输出层行均值方向）的带符号相对误差 Σ_t err_t·û / Σ_t |ref_t·û|；参照 = 该实现自己的 logits 在 FP64 里算 softmax − onehot、FP64 乘 BF16 输出层权重（head_bwd_ref.py）",
+ "batch_golden_g1k_a_step1_rank0_micro0": {
+  "gpu_bf16_production_g1k_a": -0.0004428,
+  "tpu_production_replay_t_v7x_headx_prod": -2.588e-05,
+  "tpu_exact_highest_replay_t_v7x_headx_exact2": -1.189e-06,
+  "tpu_exact_high_replay_t_v7x_headx_high2": 2.089e-06,
+  "note": "TPU 回放用检查点里的 FP32 初始权重（未舍 BF16），所以 dh rel_l2 1.66e-3 是权重舍入本身；沿 û 的量不受影响"
+ },
+ "batch_gpu_exact_step1_rank0_micro0": {
+  "gpu_exact_tf32_off_g_bw_d1": -1.551e-06,
+  "gpu_exact_tf32_on_g_bwt_d1": -0.0004005,
+  "dh_rel_l2": {
+   "g_bw_d1": 2.182e-05,
+   "g_bwt_d1": 0.0001633
+  }
+ }
+}

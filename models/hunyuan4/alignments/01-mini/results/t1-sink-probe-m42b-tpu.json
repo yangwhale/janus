@@ -1,0 +1,110 @@
+{
+ "what": "M42b（MaxText splash_dsinks_gpu_order，2c28a4f4）的 TPU 单层探针：GPU 第 1 步的注意力输入（第 1、2、4、6 层与 MTP，BF16 的 q、k、v，固定种子的 BF16 上游梯度，检查点的 sink）上，TPU 按 GPU 写法重算的 sink 梯度对 CPU 上按 GPU 写法算的 dsink 逐元素比，并对 FP64",
+ "run": "tw-sinkprobe2（v5p 2x2x2；MaxText 2c28a4f4，janus 14a53b0；frameworks/maxtext/sink_probe.py，比较 analysis/sink_probe_compare.py）",
+ "inputs": "gs://<POC 桶>/janus/hunyuan4/analysis/mini-l1/gpu/step_1_fwd.safetensors（core.query / key / value）；hy4-mini-seed0 检查点的 learnable_sink_param；因果掩码",
+ "four_elements": {
+  "object": "sink 梯度（每层 8 个头为一个向量）",
+  "metric": "rel_L2；另给逐元素最大相对差",
+  "reference": "FP64（CPU，同一份 BF16 输入）；「GPU 写法」= CPU 上按 Megatron-Core 的写法算（FP64，只有 dp = do·vᵀ 逐位置舍一次 BF16），不是 GPU 跑出来的数",
+  "R": "rel_L2(TPU, FP64) ÷ rel_L2(GPU 写法, FP64)"
+ },
+ "findings": [
+  "M42b 在每层都对上 GPU 写法：对 GPU 写法的 rel_L2 1.1e-6–2.5e-6；R 1.0002–1.0013。",
+  "逐元素最大相对差：第 2、4 层与 MTP 4e-6–7e-6，第 1 层 2.0e-5，第 6 层 1.9e-4。第 6 层大是因为个别头的 |dsink| 小，相对差被放大（整层 rel_L2 仍是 2.5e-6）。",
+  "同一份输入上，M42（splash_dsinks_fp32）的 R：sa_use_base2_exp 开 0.61–2.00、关 0.48–2.14；tokamax 原样：开 1.62–2.88、关 1.36–3.20。第 6 层 M42 R 2.00 → M42b 1.001。"
+ ],
+ "layers": {
+  "1": {
+   "m42b": {
+    "vs_gpu_form_rel_l2": 2.0131239257158683e-06,
+    "vs_gpu_form_elementwise_rel_max": 1.9877001436399386e-05,
+    "rel_l2_vs_fp64": 0.0020616993655863244,
+    "gpu_form_vs_fp64": 0.0020604727543611255,
+    "R": 1.0005953057241852,
+    "signed_mean_rel": 0.007029257371787128
+   },
+   "m42_fp32": {
+    "R_base2": 0.6058255485998398,
+    "R_natural": 0.48073850969316756
+   },
+   "tokamax": {
+    "R_base2": 1.660417515002351,
+    "R_natural": 1.3645454258280807
+   }
+  },
+  "2": {
+   "m42b": {
+    "vs_gpu_form_rel_l2": 1.180373845711969e-06,
+    "vs_gpu_form_elementwise_rel_max": 4.4120776128862465e-06,
+    "rel_l2_vs_fp64": 0.0013429081109786359,
+    "gpu_form_vs_fp64": 0.0013424805866240786,
+    "R": 1.000318458500493,
+    "signed_mean_rel": 0.0021356958945324554
+   },
+   "m42_fp32": {
+    "R_base2": 0.8276837737883755,
+    "R_natural": 0.9232512844266352
+   },
+   "tokamax": {
+    "R_base2": 1.6225898580274132,
+    "R_natural": 2.153374976714431
+   }
+  },
+  "4": {
+   "m42b": {
+    "vs_gpu_form_rel_l2": 1.9383631854904834e-06,
+    "vs_gpu_form_elementwise_rel_max": 6.880526501819821e-06,
+    "rel_l2_vs_fp64": 0.0012710620592032828,
+    "gpu_form_vs_fp64": 0.0012705062515097343,
+    "R": 1.000437469467693,
+    "signed_mean_rel": -0.0005162494059077167
+   },
+   "m42_fp32": {
+    "R_base2": 1.1072671282435451,
+    "R_natural": 1.128005212088154
+   },
+   "tokamax": {
+    "R_base2": 2.5146757144496994,
+    "R_natural": 3.1832838922327427
+   }
+  },
+  "6": {
+   "m42b": {
+    "vs_gpu_form_rel_l2": 2.5117662938614794e-06,
+    "vs_gpu_form_elementwise_rel_max": 0.00018960094533160596,
+    "rel_l2_vs_fp64": 0.0015133404545776188,
+    "gpu_form_vs_fp64": 0.0015113978904410274,
+    "R": 1.0012852764641775,
+    "signed_mean_rel": 0.05129977288437554
+   },
+   "m42_fp32": {
+    "R_base2": 2.004860539559537,
+    "R_natural": 2.137986375342353
+   },
+   "tokamax": {
+    "R_base2": 2.8799924290955405,
+    "R_natural": 3.2011246094241868
+   }
+  },
+  "mtp0": {
+   "m42b": {
+    "vs_gpu_form_rel_l2": 1.087610618290241e-06,
+    "vs_gpu_form_elementwise_rel_max": 5.300752396994369e-06,
+    "rel_l2_vs_fp64": 0.0011600061800459266,
+    "gpu_form_vs_fp64": 0.001159811289516461,
+    "R": 1.0001680364135332,
+    "signed_mean_rel": -9.029853123178669e-05
+   },
+   "m42_fp32": {
+    "R_base2": 1.3515870160030388,
+    "R_natural": 1.3266726117613103
+   },
+   "tokamax": {
+    "R_base2": 2.8733731682564345,
+    "R_natural": 2.9699614882058105
+   }
+  }
+ },
+ "step_time": "待查（tw-t42b-on / off，第 1 步 diag 计时）",
+ "verdict": "pass（诊断；R ≤ 1.2 每层成立）"
+}

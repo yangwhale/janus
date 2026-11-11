@@ -1,0 +1,16 @@
+{
+ "what": "v5p 当前对齐配置 t-rmap-on-1000 对 GPU 生产 golden rc-a..e：loss 逐步相对差 (TPU − mean(rc)) / mean(rc) 的带符号均值（mean(rc) 是同一步 5 份的均值），与第 1000 步 param_norm 绝对差 TPU − mean(rc)。由 results/series/ 里的 metrics.jsonl 现算（03 的 rc-*.metrics.jsonl、01 的 t-rmap-on-1000.metrics.jsonl）；param_norm 是 FP32 记录，3042 附近刻度 2.44e-4。v7x 当前配置的逐步序列没有入库，这里不算。",
+ "test": "t-rmap-on-1000",
+ "golden": [
+  "rc-a",
+  "rc-b",
+  "rc-c",
+  "rc-d",
+  "rc-e"
+ ],
+ "loss_rel_signed_mean": {
+  "steps_1_1000": -9.5084858547703e-05,
+  "steps_301_1000": -0.0001371968637790322
+ },
+ "param_norm_diff_1000": 0.020919503705499665
+}

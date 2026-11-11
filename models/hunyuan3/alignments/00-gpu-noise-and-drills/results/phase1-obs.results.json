@@ -1,0 +1,150 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.0.1",
+  "commit": null
+ },
+ "catalog": {
+  "path": "catalogs/hunyuan3-4l/phase1-obs.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "032b2c6ee9fb6a118f9aeb6b2d0017920d3160b214b1bc7774bf979a109ae2b6",
+  "raw_sha256": "ea01775758beec02eca424919cf5298e62ed75a9936588215e07ada616141928"
+ },
+ "runs": {
+  "g61-obs": {
+   "path": "/data/janus-runs2/g61-obs",
+   "meta_sha256": "4795cd0288db69cff4d0d13305d91ff36647a3216b9f4a4579e9d7ac2a09753f"
+  },
+  "d-a": {
+   "path": "/data/janus-runs2/d-a",
+   "meta_sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+  }
+ },
+ "started_at": "2026-11-04T09:25:37+00:00",
+ "finished_at": "2026-11-04T09:27:26+00:00",
+ "summary": {
+  "pass": 4,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "DET.obs.data",
+   "type": "data_fingerprint",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "units_per_field": {
+     "tokens": 32,
+     "labels": 32,
+     "loss_mask": 32,
+     "position_ids": 32
+    },
+    "first_loss": {
+     "test": 11.4657564163208,
+     "ref": 11.4657564163208
+    },
+    "units": 130,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "4795cd0288db69cff4d0d13305d91ff36647a3216b9f4a4579e9d7ac2a09753f"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "token 与首步 loss 逐位相同",
+   "details": "details/DET.obs.data.jsonl"
+  },
+  {
+   "id": "DET.obs.metrics",
+   "type": "determinism",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "fields": 3,
+    "first_differ": [],
+    "tensors": 0,
+    "tensors_differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "4795cd0288db69cff4d0d13305d91ff36647a3216b9f4a4579e9d7ac2a09753f"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "逐位可复现"
+  },
+  {
+   "id": "DET.obs.step1.bitwise",
+   "type": "bitwise_equal",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 425,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "4795cd0288db69cff4d0d13305d91ff36647a3216b9f4a4579e9d7ac2a09753f"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/DET.obs.step1.bitwise.jsonl"
+  },
+  {
+   "id": "DET.obs.step1.coverage",
+   "type": "coverage",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {},
+   "worst": [],
+   "coverage": {
+    "expected": 425,
+    "compared": 425,
+    "missing": []
+   },
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "4795cd0288db69cff4d0d13305d91ff36647a3216b9f4a4579e9d7ac2a09753f"
+    }
+   ],
+   "message": "全部比到"
+  }
+ ]
+}

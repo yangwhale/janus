@@ -1,0 +1,32 @@
+[
+ {
+  "name": "base",
+  "overrides": [],
+  "save_ops": "^lm_head$|mlp\\.gate\\.logits$|weights_proj$",
+  "override_only": "^(lm_head\\.weight|.*weights_proj\\.weight|.*mlp\\.gate\\.weight)$"
+ },
+ {
+  "name": "M13",
+  "overrides": [
+   "logits_matmul_precision=default"
+  ],
+  "save_ops": "^lm_head$",
+  "override_only": "^lm_head\\.weight$"
+ },
+ {
+  "name": "M27",
+  "overrides": [
+   "indexer_weights_proj_bf16_weight=false"
+  ],
+  "save_ops": "weights_proj$",
+  "override_only": "weights_proj\\.weight$"
+ },
+ {
+  "name": "M8",
+  "overrides": [
+   "routed_gate_bf16_rounding=false"
+  ],
+  "save_ops": "mlp\\.gate\\.logits$",
+  "override_only": "mlp\\.gate\\.weight$"
+ }
+]

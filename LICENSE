@@ -1,0 +1,17 @@
+janus — GPU / TPU training numerics alignment toolkit
+
+Copyright (c) 2026 the janus contributors. All rights reserved.
+
+No license, express or implied, is granted to copy, modify, distribute, or use
+any part of this repository, except as permitted by the GitHub Terms of Service
+for public repositories.
+
+THE SOFTWARE AND DOCUMENTATION ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+KIND, EXPRESS OR IMPLIED. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING FROM THE USE OF THE
+SOFTWARE OR DOCUMENTATION.
+
+Third-party components keep their own licenses. janus depends on, but does not
+include, numpy, ml_dtypes, PyYAML and (optionally) matplotlib; the training
+integrations call into Megatron-LM / Megatron-Bridge and MaxText, which are not
+part of this repository.

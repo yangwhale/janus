@@ -1,0 +1,51 @@
+# 03 · 重算 golden 的噪声底：rc-a 对 rc-b..rc-e（同一设置：默认设置、分布式优化器关、整层重算 + 路由回放），
+# 噪声参照是 rc-b..rc-e 两两 6 对。另核对 rc-a（默认设置）第 1 步重算与首次前向逐位相同。
+# 两两 10 对的逐步数字见 results/remat-offset.rc-noise.json（analysis/offset_attribution.py）。
+schema_version: 1
+model: hunyuan3-4l
+stage: remat-noise
+runs:
+  test: rc-a
+  golden: [rc-b, rc-c, rc-d, rc-e]
+  noise:
+    - [rc-b, rc-c]
+    - [rc-b, rc-d]
+    - [rc-b, rc-e]
+    - [rc-c, rc-d]
+    - [rc-c, rc-e]
+    - [rc-d, rc-e]
+  root: /data/rc/runs
+checks:
+  - id: L0.data.fingerprint
+    type: data_fingerprint
+    level: L0
+    select: {kind: tokens, steps: "1:1001"}
+  - id: DET.replay.vs_first
+    type: bitwise_equal
+    level: L2
+    compare: self
+    select: {kind: tensor, step: 1, name: "*.recompute", ref_rename: {from: .recompute, to: ""}}
+  - id: L3.step1.act.bitwise
+    type: bitwise_equal
+    level: L3
+    select: {kind: tensor, step: 1, name: "*.out", exclude: "*.recompute"}
+  - id: L4.loss
+    type: multi_golden
+    level: L4
+    select: {kind: metrics, field: lm_loss, window: "1:1001"}
+    threshold: calibrated
+  - id: L4.grad_norm
+    type: loss_series
+    level: L4
+    select: {kind: metrics, field: grad_norm, window: "1:1001"}
+    threshold: calibrated
+  - id: L4.param_norm
+    type: loss_series
+    level: L4
+    select: {kind: metrics, field: param_norm, window: "1:1001"}
+    threshold: calibrated
+  - id: L4.router.bias_std
+    type: router_stats
+    level: L4
+    select: {kind: metrics, prefix: "router.bias_std.", window: "1:1001"}
+    threshold: calibrated

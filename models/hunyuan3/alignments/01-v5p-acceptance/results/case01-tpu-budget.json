@@ -1,0 +1,207 @@
+{
+ "what": "第 1000 步 param_norm、带符号均值（1–1000 步 (x−rce-a)/rce-a 的均值）、301–1000 步 loss 相对差，都对 GPU 精确轨迹 rce-a；drift_ratio = 前后 25 步平均的 (x − 4 份 GPU 默认运行均值) / (g-bw-1k − 同一均值)",
+ "runs": {
+  "gpu_exact_rce_a": {
+   "run": "rce-a",
+   "pn_diff_1000": 0.0,
+   "pn_signed_mean": 0.0,
+   "loss_rel_301_1000": 0.0
+  },
+  "gpu_exact_g_bw_1k": {
+   "run": "g-bw-1k",
+   "pn_diff_1000": 0.0,
+   "pn_signed_mean": 7.129746251144757e-09,
+   "loss_rel_301_1000": 3.825229944615161e-05
+  },
+  "gpu_exact_g_bw_1k_p": {
+   "run": "g-bw-1k-p",
+   "pn_diff_1000": -0.0003286746823505382,
+   "pn_signed_mean": -8.085900881967451e-08,
+   "loss_rel_301_1000": 7.524902975534696e-05
+  },
+  "gpu_exact_tf32_g_bw_tf32_1k": {
+   "run": "g-bw-tf32-1k",
+   "pn_diff_1000": -0.013475691099301912,
+   "pn_signed_mean": -1.8830316016116732e-06,
+   "loss_rel_301_1000": 0.000134259877866829,
+   "drift_ratio": {
+    "300": 0.223,
+    "500": 0.213,
+    "700": 0.253,
+    "1000": 0.278
+   }
+  },
+  "tpu_exact_ragged_dot": {
+   "run": "t-v7x-bw-rd-1000b",
+   "pn_diff_1000": 0.00869698471387892,
+   "pn_signed_mean": 1.2037174111514387e-06,
+   "loss_rel_301_1000": -6.2748940714513255e-06,
+   "drift_ratio": {
+    "300": 1.413,
+    "500": 1.532,
+    "700": 1.48,
+    "1000": 1.455
+   }
+  },
+  "tpu_exact_megablox": {
+   "run": "t-v7x-bw-mb-1000b",
+   "pn_diff_1000": 0.00869698471387892,
+   "pn_signed_mean": 1.1658429076580627e-06,
+   "loss_rel_301_1000": 3.517027510096163e-05
+  },
+  "tpu_exact_high": {
+   "run": "t-v7x-bw-high-1000",
+   "pn_diff_1000": 0.00869698471387892,
+   "pn_signed_mean": 1.1349490222366285e-06,
+   "loss_rel_301_1000": 2.9857671721530015e-05
+  },
+  "tpu_exact_head_default": {
+   "run": "t-v7x-bw-rd-hd-1000",
+   "pn_diff_1000": 0.0018610472138789191,
+   "pn_signed_mean": 2.740219903714672e-07,
+   "loss_rel_301_1000": 2.1930350441117895e-05,
+   "drift_ratio": {
+    "300": 1.128,
+    "500": 1.175,
+    "700": 1.099,
+    "1000": 1.088
+   }
+  },
+  "tpu_fp32_storage_matmul_default": {
+   "run": "t-v7x-bw-def-1000",
+   "pn_diff_1000": 0.0018610472138789191,
+   "pn_signed_mean": 3.508950102482017e-07,
+   "loss_rel_301_1000": -1.1663114722340556e-05,
+   "drift_ratio": {
+    "300": 1.16,
+    "500": 1.199,
+    "700": 1.141,
+    "1000": 1.086
+   }
+  },
+  "tpu_production_v7x": {
+   "run": "t-v7x-on-1000",
+   "pn_diff_1000": 0.002349328463878919,
+   "pn_signed_mean": 3.191987396040631e-07,
+   "loss_rel_301_1000": 0.00010206894717182169,
+   "drift_ratio": {
+    "300": 1.094,
+    "500": 1.192,
+    "700": 1.108,
+    "1000": 1.102
+   }
+  },
+  "tpu_production_v7x_ep8": {
+   "run": "t-v7x-ep8-1000",
+   "pn_diff_1000": 0.002349328463878919,
+   "pn_signed_mean": 3.736033273562275e-07,
+   "loss_rel_301_1000": 7.54317075844381e-05
+  },
+  "tpu_production_v5p": {
+   "run": "t-rmap-on-1000",
+   "pn_diff_1000": 0.002349328463878919,
+   "pn_signed_mean": 4.2648372147101066e-07,
+   "loss_rel_301_1000": 7.225252648301949e-05
+  },
+  "tpu_production_logits_fp32_highest": {
+   "run": "t-v7x-logmm-1000",
+   "pn_diff_1000": 0.00894112533887892,
+   "pn_signed_mean": 1.2023530632360687e-06,
+   "loss_rel_301_1000": -4.103480175331237e-06
+  },
+  "gpu_exact_dgrad_chunked": {
+   "run": "g-bwc-1k",
+   "pn_diff_1000": 0.008545529283765063,
+   "pn_signed_mean": 1.1244564061686805e-06,
+   "loss_rel_301_1000": -1.1363386188807082e-05,
+   "drift_ratio": {
+    "300": 1.318,
+    "500": 1.487,
+    "700": 1.452,
+    "1000": 1.446
+   }
+  },
+  "gpu_true_exact_rc_rcec_a": {
+   "run": "rcec-a",
+   "pn_diff_1000": 0.008874203007962933,
+   "pn_signed_mean": 1.195430810417447e-06,
+   "pn_signed_mean_vs_rcec_a": 0.0,
+   "loss_rel_301_1000": -3.436101729499034e-05
+  },
+  "tpu_exact_v5p": {
+   "run": "t-v5p-bw-rd-1000",
+   "pn_diff_1000": 0.00796456283887892,
+   "pn_signed_mean": 1.127245950912165e-06,
+   "pn_signed_mean_vs_rcec_a": -6.818470404965446e-08,
+   "loss_rel_301_1000": 2.9494002605757374e-06,
+   "pn_signed_mean_vs_tpu_exact_v5p": 0.0
+  },
+  "tpu_exact_v5p_round_head_input": {
+   "run": "t-v5p-bw-rd-hin-1000",
+   "pn_diff_1000": 0.00820870346387892,
+   "pn_signed_mean": 1.1587009440096984e-06,
+   "pn_signed_mean_vs_rcec_a": -3.672979619224768e-08,
+   "loss_rel_301_1000": 7.396074131997718e-06,
+   "pn_signed_mean_vs_tpu_exact_v5p": 3.1454916797044695e-08
+  },
+  "tpu_exact_v5p_round_head_cotangent": {
+   "run": "t-v5p-bw-rd-hcot-1000",
+   "pn_diff_1000": 0.0018610472138789191,
+   "pn_signed_mean": 3.222483098727316e-07,
+   "pn_signed_mean_vs_rcec_a": -8.731808062052464e-07,
+   "loss_rel_301_1000": -4.503176321378149e-06,
+   "pn_signed_mean_vs_tpu_exact_v5p": -8.049962054141595e-07
+  },
+  "gpu_prod_dgrad_chunked_rcc_a": {
+   "run": "rcc-a",
+   "pn_diff_1000": 0.0021363845712585317,
+   "pn_signed_mean": 3.7463944235458415e-07,
+   "pn_signed_mean_vs_rcec_a": -8.207897907057029e-07,
+   "loss_rel_301_1000": 3.8855701992270675e-05
+  },
+  "tpu_exact_v5p_round_cot_dgrad_only": {
+   "run": "t-v5p-bw-rd-hcd-1000",
+   "pn_diff_1000": 0.002349328463878919,
+   "pn_signed_mean": 3.569130661931597e-07,
+   "pn_signed_mean_vs_rcec_a": -8.385161533585408e-07,
+   "loss_rel_301_1000": 4.2348400809294576e-05,
+   "pn_signed_mean_vs_tpu_exact_v5p": -7.703315450337395e-07
+  },
+  "tpu_exact_v5p_round_cot_wgrad_only": {
+   "run": "t-v5p-bw-rd-hcw-1000",
+   "pn_diff_1000": 0.00796456283887892,
+   "pn_signed_mean": 1.1932859415067006e-06,
+   "pn_signed_mean_vs_rcec_a": -2.144838925357922e-09,
+   "loss_rel_301_1000": -5.435727900547184e-05,
+   "pn_signed_mean_vs_tpu_exact_v5p": 6.603987678596787e-08
+  },
+  "gpu_exact_dgrad_chunked_dlogits_bf16": {
+   "run": "g-bwcr-1k",
+   "pn_diff_1000": 0.0018077101194649003,
+   "pn_signed_mean": 2.448440802745518e-07,
+   "pn_signed_mean_vs_rcec_a": -9.505849499487649e-07,
+   "loss_rel_301_1000": 5.879162415104754e-05,
+   "pn_signed_mean_vs_g_bwc_1k": -8.796107216058415e-07
+  }
+ },
+ "budget_step1000": {
+  "tpu_prod_minus_gpu_exact": 0.002349328463878919,
+  "part1_tpu_exact_minus_gpu_exact": 0.00869698471387892,
+  "part2_tpu_prod_minus_tpu_exact": -0.00634765625,
+  "part2_head_matmul_default": -0.0068359375,
+  "part2_rest_storage_elementwise": 0.00048828125,
+  "noise": {
+   "gpu_exact_5_copies_max_pair_diff_1000": 0.000329,
+   "gpu_exact_5_copies_max_abs_signed_mean": 1.07e-07,
+   "tpu_exact_3_variants_signed_mean_spread": 7e-08,
+   "fp32_record_step_at_3042": 0.000244
+  },
+  "part1_mechanism": "GPU 精确基线的输出头 dgrad：B200 cuBLAS FP32 一次累加整个词表有偏；分段累加的 g-bwc-1k 实测 +8.546e-3",
+  "part2_mechanism": "TPU 输出头反向流进来的 dlogits 舍 BF16，只经 dgrad 那一路（cot-dgrad 是全部效果，cot-wgrad 无影响）；GPU 精确多舍这一次（g-bwcr-1k）少漂 6.738e-3，两侧共有"
+ },
+ "tpu_exact_vs_gpu_exact_dgrad_chunked_signed_mean": 7.926090727680616e-08,
+ "step_time_median_s": {
+  "t-v7x-on-1000": 0.98,
+  "t-v7x-logmm-1000": 1.075
+ }
+}

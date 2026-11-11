@@ -1,0 +1,2373 @@
+{
+ "what": "逐元素函数对 FP64 的 ULP（TPU v5p，JAX / XLA）：sigmoid、silu、rsqrt、exp、log、log_softmax / LSE、relu、clamp，FP32 与 BF16；softplus 在 hy4-mini 里没有用到（路由打分是 sigmoid，routed_score_func）",
+ "source_run": "gs://<POC 桶>/janus/hunyuan4/analysis/tpu-elem/elem-inputs.npz",
+ "source_runs": {
+  "L1.elem.exp.fp32": "tw-elem3",
+  "L1.elem.log.fp32": "tw-elem3",
+  "L1.elem.sigmoid.fp32": "tw-elem3",
+  "L1.elem.silu.fp32": "tw-elem3",
+  "L1.elem.rsqrt.fp32": "tw-elem3",
+  "L1.elem.relu.fp32": "tw-elem3",
+  "L1.elem.clamp.fp32": "tw-elem3",
+  "L1.elem.exp.fp32_highest": "tw-elem3",
+  "L1.elem.log.fp32_highest": "tw-elem3",
+  "L1.elem.sigmoid.fp32_highest": "tw-elem3",
+  "L1.elem.silu.fp32_highest": "tw-elem3",
+  "L1.elem.tail": "tw-elem3",
+  "L1.elem.sqrt.fp32": "tw-elem3",
+  "L1.elem.div.fp32": "tw-elem3",
+  "L1.elem.bias_correction.fp32": "tw-elem3",
+  "L1.elem.exp.bf16": "tw-elem3",
+  "L1.elem.log.bf16": "tw-elem3",
+  "L1.elem.sigmoid.bf16": "tw-elem3",
+  "L1.elem.silu.bf16": "tw-elem3",
+  "L1.elem.rsqrt.bf16": "tw-elem3",
+  "L1.elem.relu.bf16": "tw-elem3",
+  "L1.elem.clamp.bf16": "tw-elem3",
+  "L1.elem.basic": "tw-elem3",
+  "L1.elem.lse.fp32": "tw-elem3",
+  "L1.elem.exp.fp32_mt": "tw-elem4",
+  "L1.elem.log.fp32_mt": "tw-elem4",
+  "L1.elem.sigmoid.fp32_mt": "tw-elem4",
+  "L1.elem.silu.fp32_mt": "tw-elem4",
+  "L1.elem.sqrt.fp32_mt": "tw-elem4",
+  "L1.elem.div.fp32_mt": "tw-elem4",
+  "L1.elem.bias_correction.fp32_mt": "tw-elem4",
+  "L1.elem.sigmoid_bwd": "tw-elem5",
+  "L1.elem.silu_bwd": "tw-elem5"
+ },
+ "platform": "tpu",
+ "device_kind": "TPU v5",
+ "jax": "0.11.1",
+ "rule": "ulp_max ≤ 门槛（每条检查的 threshold.source）；relu / clamp / 加乘转换逐位；BF16、尾部、LSE 只报",
+ "reference": "FP64（numpy）正确舍入到输出 dtype",
+ "verdict": "fail",
+ "fail_functions": [
+  "exp",
+  "log",
+  "sigmoid",
+  "silu",
+  "sqrt",
+  "div"
+ ],
+ "functions": {
+  "exp": {
+   "fp32": {
+    "ulp_max": 105,
+    "ulp_mean_worst_case": 16.15206813812256,
+    "cr_match_frac_worst_case": 0.021368026733398438,
+    "per_case": {
+     "real.kd_softmax_in": {
+      "ulp_max": 62,
+      "ulp_p999": 30.0,
+      "ulp_mean": 5.736265510577706,
+      "ulp_signed_mean": -2.492285319460095,
+      "cr_match_frac": 0.060228558533360455,
+      "rel_l2": 4.68568783493415e-07
+     },
+     "unif[-87,88]": {
+      "ulp_max": 105,
+      "ulp_p999": 70.0,
+      "ulp_mean": 16.15206813812256,
+      "ulp_signed_mean": -5.39374741188507,
+      "cr_match_frac": 0.021368026733398438,
+      "rel_l2": 2.384549238951893e-06
+     },
+     "unif[-10,10]": {
+      "ulp_max": 63,
+      "ulp_p999": 48.0,
+      "ulp_mean": 10.6076500415802,
+      "ulp_signed_mean": -6.648913681036241,
+      "cr_match_frac": 0.03368425369262695,
+      "rel_l2": 1.2352781531425399e-06
+     },
+     "unif[-1,0]": {
+      "ulp_max": 64,
+      "ulp_p999": 50.0,
+      "ulp_mean": 11.223196506500244,
+      "ulp_signed_mean": -8.34404197935876,
+      "cr_match_frac": 0.033385515213012695,
+      "rel_l2": 1.1479405007437837e-06
+     }
+    },
+    "gate": {
+     "kind": "numeric",
+     "values": {
+      "ulp_max": 2
+     },
+     "source": "CUDA Programming Guide 数学函数附录：expf 最大 2 ULP（混元 3 L1.elem.exp.fp32 同一门槛）"
+    },
+    "status": "fail",
+    "R_vs_hy3_gpu_same_distribution": {
+     "unif[-87,88]": {
+      "rel_l2_tpu": 2.384549238951893e-06,
+      "rel_l2_gpu_hy3_b200": 3.758497859971572e-08,
+      "R": 63.44420903754163
+     },
+     "unif[-10,10]": {
+      "rel_l2_tpu": 1.2352781531425399e-06,
+      "rel_l2_gpu_hy3_b200": 3.924533935689228e-08,
+      "R": 31.475792371396576
+     }
+    }
+   },
+   "bf16": {
+    "bf16_direct": {
+     "ulp_max": 1,
+     "ulp_mean": 8.089142348682481e-05,
+     "cr_match_frac": 0.9999384757363685,
+     "bit_match_frac": 1.0,
+     "excluded_subnormal": 265
+    },
+    "fp32_then_bf16": {
+     "ulp_max": 1,
+     "ulp_mean": 8.089142348682481e-05,
+     "cr_match_frac": 0.9999384757363685,
+     "bit_match_frac": null,
+     "excluded_subnormal": null
+    }
+   },
+   "fp32_accuracy_highest": {
+    "ulp_max": 1,
+    "ulp_mean_worst_case": 0.2641441822052002,
+    "status": "pass",
+    "per_case": {
+     "real.kd_softmax_in": {
+      "ulp_max": 1,
+      "ulp_mean": 0.25016114473148904,
+      "ulp_signed_mean": -0.0013771242810876865,
+      "rel_l2": 2.55854929681403e-08
+     },
+     "unif[-87,88]": {
+      "ulp_max": 1,
+      "ulp_mean": 0.2641441822052002,
+      "ulp_signed_mean": -0.0011170732162462116,
+      "rel_l2": 2.3910864485545048e-08
+     },
+     "unif[-10,10]": {
+      "ulp_max": 1,
+      "ulp_mean": 0.19252610206604004,
+      "ulp_signed_mean": -0.0016062851011915402,
+      "rel_l2": 3.713411670962092e-08
+     },
+     "unif[-1,0]": {
+      "ulp_max": 1,
+      "ulp_mean": 0.1909937858581543,
+      "ulp_signed_mean": 0.0016106009024678958,
+      "rel_l2": 3.361195275689312e-08
+     }
+    }
+   },
+   "fp32_maxtext_accurate": {
+    "ulp_max": 1,
+    "ulp_mean_worst_case": 0.2641441822052002,
+    "status": "pass",
+    "per_case": {
+     "real.kd_softmax_in": {
+      "ulp_max": 1,
+      "ulp_mean": 0.25016114473148904,
+      "ulp_signed_mean": -0.0013771242810876865,
+      "rel_l2": 2.55854929681403e-08
+     },
+     "unif[-87,88]": {
+      "ulp_max": 1,
+      "ulp_mean": 0.2641441822052002,
+      "ulp_signed_mean": -0.0011170732162462116,
+      "rel_l2": 2.3910864485545048e-08
+     },
+     "unif[-10,10]": {
+      "ulp_max": 1,
+      "ulp_mean": 0.19252610206604004,
+      "ulp_signed_mean": -0.0016062851011915402,
+      "rel_l2": 3.713411670962092e-08
+     },
+     "unif[-1,0]": {
+      "ulp_max": 1,
+      "ulp_mean": 0.1909937858581543,
+      "ulp_signed_mean": 0.0016106009024678958,
+      "rel_l2": 3.361195275689312e-08
+     }
+    }
+   }
+  },
+  "log": {
+   "fp32": {
+    "ulp_max": 62,
+    "ulp_mean_worst_case": 5.7978081703186035,
+    "cr_match_frac_worst_case": 0.11640691757202148,
+    "per_case": {
+     "real.kd_target": {
+      "ulp_max": 5,
+      "ulp_p999": 2.0,
+      "ulp_mean": 0.6796596890256306,
+      "ulp_signed_mean": 0.6593669221760737,
+      "cr_match_frac": 0.3792835257323027,
+      "rel_l2": 5.43361050279267e-08
+     },
+     "logu[1e-37,1e37]": {
+      "ulp_max": 53,
+      "ulp_p999": 13.0,
+      "ulp_mean": 0.5464739799499512,
+      "ulp_signed_mean": 0.008940064220571475,
+      "cr_match_frac": 0.531036376953125,
+      "rel_l2": 5.150091670149785e-08
+     },
+     "unif[0.5,2]": {
+      "ulp_max": 61,
+      "ulp_p999": 45.0,
+      "ulp_mean": 5.7978081703186035,
+      "ulp_signed_mean": 0.317630987209236,
+      "cr_match_frac": 0.11640691757202148,
+      "rel_l2": 4.285491141935706e-07
+     },
+     "binade[1,4)": {
+      "ulp_max": 62,
+      "ulp_p999": 43.0,
+      "ulp_mean": 3.449045240879059,
+      "ulp_signed_mean": -0.1408524602376119,
+      "cr_match_frac": 0.22533094882965088,
+      "rel_l2": 2.152501488076006e-07
+     }
+    },
+    "gate": {
+     "kind": "numeric",
+     "values": {
+      "ulp_max": 1
+     },
+     "source": "CUDA Programming Guide 数学函数附录：logf 最大 1 ULP"
+    },
+    "status": "fail"
+   },
+   "bf16": {
+    "bf16_direct": {
+     "ulp_max": 0,
+     "ulp_mean": 0.0,
+     "cr_match_frac": 1.0,
+     "bit_match_frac": 1.0,
+     "excluded_subnormal": 127
+    },
+    "fp32_then_bf16": {
+     "ulp_max": 0,
+     "ulp_mean": 0.0,
+     "cr_match_frac": 1.0,
+     "bit_match_frac": null,
+     "excluded_subnormal": null
+    }
+   },
+   "fp32_accuracy_highest": {
+    "ulp_max": 3,
+    "ulp_mean_worst_case": 0.3878288269042969,
+    "status": "fail",
+    "per_case": {
+     "real.kd_target": {
+      "ulp_max": 1,
+      "ulp_mean": 0.3471826688364524,
+      "ulp_signed_mean": -0.04289879817583842,
+      "rel_l2": 3.1608094924415255e-08
+     },
+     "logu[1e-37,1e37]": {
+      "ulp_max": 2,
+      "ulp_mean": 0.25594520568847656,
+      "ulp_signed_mean": 0.00019296339049335032,
+      "rel_l2": 3.543364941395508e-08
+     },
+     "unif[0.5,2]": {
+      "ulp_max": 3,
+      "ulp_mean": 0.3878288269042969,
+      "ulp_signed_mean": 0.010599951785957185,
+      "rel_l2": 4.209180441185319e-08
+     },
+     "binade[1,4)": {
+      "ulp_max": 3,
+      "ulp_mean": 0.3171601891517639,
+      "ulp_signed_mean": 0.03547026815785009,
+      "rel_l2": 3.683380732992009e-08
+     }
+    }
+   },
+   "fp32_maxtext_accurate": {
+    "ulp_max": 3,
+    "ulp_mean_worst_case": 0.3878288269042969,
+    "status": "fail",
+    "per_case": {
+     "real.kd_target": {
+      "ulp_max": 1,
+      "ulp_mean": 0.3471826688364524,
+      "ulp_signed_mean": -0.04289879817583842,
+      "rel_l2": 3.1608094924415255e-08
+     },
+     "logu[1e-37,1e37]": {
+      "ulp_max": 2,
+      "ulp_mean": 0.25594520568847656,
+      "ulp_signed_mean": 0.00019296339049335032,
+      "rel_l2": 3.543364941395508e-08
+     },
+     "unif[0.5,2]": {
+      "ulp_max": 3,
+      "ulp_mean": 0.3878288269042969,
+      "ulp_signed_mean": 0.010599951785957185,
+      "rel_l2": 4.209180441185319e-08
+     },
+     "binade[1,4)": {
+      "ulp_max": 3,
+      "ulp_mean": 0.3171601891517639,
+      "ulp_signed_mean": 0.03547026815785009,
+      "rel_l2": 3.683380732992009e-08
+     }
+    }
+   }
+  },
+  "sigmoid": {
+   "fp32": {
+    "ulp_max": 83,
+    "ulp_mean_worst_case": 6.943695068359375,
+    "cr_match_frac_worst_case": 0.0836181640625,
+    "per_case": {
+     "real.router_logits": {
+      "ulp_max": 42,
+      "ulp_p999": 33.0,
+      "ulp_mean": 6.943695068359375,
+      "ulp_signed_mean": 5.973784556565197,
+      "cr_match_frac": 0.0836181640625,
+      "rel_l2": 6.45779802377142e-07
+     },
+     "unif[-30,30]": {
+      "ulp_max": 83,
+      "ulp_p999": 57.0,
+      "ulp_mean": 6.708924770355225,
+      "ulp_signed_mean": 4.879187701834425,
+      "cr_match_frac": 0.3450155258178711,
+      "rel_l2": 1.0217918860944566e-07
+     }
+    },
+    "gate": {
+     "kind": "numeric",
+     "values": {
+      "ulp_max": 4
+     },
+     "source": "推断（同混元 3）：sigmoid = 1/(1+exp(−x))，expf 2 ULP 经一次加、一次除后的起点"
+    },
+    "status": "fail",
+    "R_vs_hy3_gpu_same_distribution": {
+     "unif[-30,30]": {
+      "rel_l2_tpu": 1.0217918860944566e-07,
+      "rel_l2_gpu_hy3_b200": 2.8076089784189553e-08,
+      "R": 3.6393667848642397
+     }
+    }
+   },
+   "bf16": {
+    "bf16_direct": {
+     "ulp_max": 1,
+     "ulp_mean": 1.5381065907867414e-05,
+     "cr_match_frac": 0.9999846189340922,
+     "bit_match_frac": 1.0,
+     "excluded_subnormal": 265
+    },
+    "fp32_then_bf16": {
+     "ulp_max": 1,
+     "ulp_mean": 1.5381065907867414e-05,
+     "cr_match_frac": 0.9999846189340922,
+     "bit_match_frac": null,
+     "excluded_subnormal": null
+    }
+   },
+   "fp32_accuracy_highest": {
+    "ulp_max": 83,
+    "ulp_mean_worst_case": 6.943695068359375,
+    "status": "fail",
+    "per_case": {
+     "real.router_logits": {
+      "ulp_max": 42,
+      "ulp_mean": 6.943695068359375,
+      "ulp_signed_mean": 5.973784556565197,
+      "rel_l2": 6.45779802377142e-07
+     },
+     "unif[-30,30]": {
+      "ulp_max": 83,
+      "ulp_mean": 6.708924770355225,
+      "ulp_signed_mean": 4.879187701834425,
+      "rel_l2": 1.0217918860944566e-07
+     }
+    }
+   },
+   "fp32_maxtext_accurate": {
+    "ulp_max": 3,
+    "ulp_mean_worst_case": 0.39330800374348956,
+    "status": "pass",
+    "per_case": {
+     "real.router_logits": {
+      "ulp_max": 3,
+      "ulp_mean": 0.39330800374348956,
+      "ulp_signed_mean": -0.06442599437881331,
+      "rel_l2": 4.6013936725477635e-08
+     },
+     "unif[-30,30]": {
+      "ulp_max": 3,
+      "ulp_mean": 0.37084341049194336,
+      "ulp_signed_mean": 0.07681763042329015,
+      "rel_l2": 3.0285023611812805e-08
+     }
+    }
+   }
+  },
+  "silu": {
+   "fp32": {
+    "ulp_max": 86,
+    "ulp_mean_worst_case": 6.358129262924194,
+    "cr_match_frac_worst_case": 0.08039053281148274,
+    "per_case": {
+     "real.mlp_gate": {
+      "ulp_max": 33,
+      "ulp_p999": 33.0,
+      "ulp_mean": 6.09268053372701,
+      "ulp_signed_mean": -2.3362387147269,
+      "cr_match_frac": 0.08039053281148274,
+      "rel_l2": 6.332622924818647e-07
+     },
+     "unif[-30,30]": {
+      "ulp_max": 86,
+      "ulp_p999": 54.0,
+      "ulp_mean": 6.358129262924194,
+      "ulp_signed_mean": -4.2635069320654,
+      "cr_match_frac": 0.3876786231994629,
+      "rel_l2": 1.943149648671662e-08
+     }
+    },
+    "gate": {
+     "kind": "numeric",
+     "values": {
+      "ulp_max": 4
+     },
+     "source": "推断（同混元 3）：silu = x·sigmoid(x)，同 sigmoid 再多一次正确舍入的乘法"
+    },
+    "status": "fail",
+    "R_vs_hy3_gpu_same_distribution": {
+     "unif[-30,30]": {
+      "rel_l2_tpu": 1.943149648671662e-08,
+      "rel_l2_gpu_hy3_b200": 1.8005597404184948e-08,
+      "R": 1.0791919896087567
+     }
+    }
+   },
+   "bf16": {
+    "bf16_direct": {
+     "ulp_max": 917,
+     "ulp_mean": 0.08447985670388042,
+     "cr_match_frac": 0.9997529377248653,
+     "bit_match_frac": 0.9999227930390204,
+     "excluded_subnormal": 519
+    },
+    "fp32_then_bf16": {
+     "ulp_max": 917,
+     "ulp_mean": 0.08048053612513704,
+     "cr_match_frac": 0.9998301446858449,
+     "bit_match_frac": null,
+     "excluded_subnormal": null
+    }
+   },
+   "fp32_accuracy_highest": {
+    "ulp_max": 86,
+    "ulp_mean_worst_case": 6.358129262924194,
+    "status": "fail",
+    "per_case": {
+     "real.mlp_gate": {
+      "ulp_max": 33,
+      "ulp_mean": 6.09268053372701,
+      "ulp_signed_mean": -2.3362387147269,
+      "rel_l2": 6.332622924818647e-07
+     },
+     "unif[-30,30]": {
+      "ulp_max": 86,
+      "ulp_mean": 6.358129262924194,
+      "ulp_signed_mean": -4.2635069320654,
+      "rel_l2": 1.943149648671662e-08
+     }
+    }
+   },
+   "fp32_maxtext_accurate": {
+    "ulp_max": 4,
+    "ulp_mean_worst_case": 0.4579574267069499,
+    "status": "pass",
+    "per_case": {
+     "real.mlp_gate": {
+      "ulp_max": 2,
+      "ulp_mean": 0.4579574267069499,
+      "ulp_signed_mean": 0.004472004699580386,
+      "rel_l2": 5.3166474879568866e-08
+     },
+     "unif[-30,30]": {
+      "ulp_max": 4,
+      "ulp_mean": 0.3665611743927002,
+      "ulp_signed_mean": -0.0772855709051199,
+      "rel_l2": 1.842762342424042e-08
+     }
+    }
+   }
+  },
+  "rsqrt": {
+   "fp32": {
+    "ulp_max": 2,
+    "ulp_mean_worst_case": 0.30876898765563965,
+    "cr_match_frac_worst_case": 0.6942894458770752,
+    "per_case": {
+     "real.rmsnorm_ms": {
+      "ulp_max": 2,
+      "ulp_p999": 1.0,
+      "ulp_mean": 0.19367327008928573,
+      "ulp_signed_mean": -0.0961078555898374,
+      "cr_match_frac": 0.8070242745535714,
+      "rel_l2": 3.986075772962464e-08
+     },
+     "all[1,4)": {
+      "ulp_max": 2,
+      "ulp_p999": 2.0,
+      "ulp_mean": 0.3012673854827881,
+      "ulp_signed_mean": -0.027666895664177127,
+      "cr_match_frac": 0.701288104057312,
+      "rel_l2": 3.9937186735743745e-08
+     },
+     "logu[1e-37,1e37]": {
+      "ulp_max": 2,
+      "ulp_p999": 2.0,
+      "ulp_mean": 0.30876898765563965,
+      "ulp_signed_mean": -0.025482777844182625,
+      "cr_match_frac": 0.6942894458770752,
+      "rel_l2": 4.096284474442485e-08
+     }
+    },
+    "gate": {
+     "kind": "numeric",
+     "values": {
+      "ulp_max": 2
+     },
+     "source": "CUDA Programming Guide 数学函数附录：rsqrtf 最大 2 ULP（混元 3 L1.elem.rsqrt.fp32 同一门槛）"
+    },
+    "status": "pass",
+    "R_vs_hy3_gpu_same_distribution": {
+     "all[1,4)": {
+      "rel_l2_tpu": 3.9937186735743745e-08,
+      "rel_l2_gpu_hy3_b200": 3.2446009450720595e-08,
+      "R": 1.2308813136604932
+     },
+     "logu[1e-37,1e37]": {
+      "rel_l2_tpu": 4.096284474442485e-08,
+      "rel_l2_gpu_hy3_b200": 3.534949509549651e-08,
+      "R": 1.1587957517855318
+     }
+    }
+   },
+   "bf16": {
+    "bf16_direct": {
+     "ulp_max": 0,
+     "ulp_mean": 0.0,
+     "cr_match_frac": 1.0,
+     "bit_match_frac": 1.0,
+     "excluded_subnormal": 127
+    },
+    "fp32_then_bf16": {
+     "ulp_max": 0,
+     "ulp_mean": 0.0,
+     "cr_match_frac": 1.0,
+     "bit_match_frac": null,
+     "excluded_subnormal": null
+    }
+   }
+  },
+  "sqrt": {
+   "fp32": {
+    "ulp_max": 3,
+    "ulp_mean_worst_case": 0.40024614334106445,
+    "cr_match_frac_worst_case": 0.6118578910827637,
+    "per_case": {
+     "logu[1e-30,1e30]": {
+      "ulp_max": 3,
+      "ulp_p999": 2.0,
+      "ulp_mean": 0.40024614334106445,
+      "ulp_signed_mean": -0.03466513885542177,
+      "cr_match_frac": 0.6118578910827637,
+      "rel_l2": 4.7419009885765285e-08
+     }
+    },
+    "gate": {
+     "kind": "numeric",
+     "values": {
+      "ulp_max": 1
+     },
+     "source": "CUDA Programming Guide 数学函数附录：sqrtf 默认（-prec-sqrt=true）正确舍入；取 1 ULP"
+    },
+    "status": "fail"
+   },
+   "bf16": {},
+   "fp32_maxtext_accurate": {
+    "ulp_max": 1,
+    "ulp_mean_worst_case": 0.1611313819885254,
+    "status": "pass",
+    "per_case": {
+     "logu[1e-30,1e30]": {
+      "ulp_max": 1,
+      "ulp_mean": 0.1611313819885254,
+      "ulp_signed_mean": 0.002937285766160258,
+      "rel_l2": 2.8182116977381485e-08
+     }
+    }
+   }
+  },
+  "div": {
+   "fp32": {
+    "ulp_max": 2,
+    "ulp_mean_worst_case": 0.36272597312927246,
+    "cr_match_frac_worst_case": 0.6418249607086182,
+    "per_case": {
+     "random": {
+      "ulp_max": 2,
+      "ulp_p999": 2.0,
+      "ulp_mean": 0.36241769790649414,
+      "ulp_signed_mean": 0.00012030477356583802,
+      "cr_match_frac": 0.6421115398406982,
+      "rel_l2": 4.3127086710890705e-08
+     },
+     "adam_like": {
+      "ulp_max": 2,
+      "ulp_p999": 2.0,
+      "ulp_mean": 0.36272597312927246,
+      "ulp_signed_mean": 5.327984506431349e-05,
+      "cr_match_frac": 0.6418249607086182,
+      "rel_l2": 3.411717865213835e-08
+     }
+    },
+    "gate": {
+     "kind": "numeric",
+     "values": {
+      "ulp_max": 1
+     },
+     "source": "CUDA Programming Guide 数学函数附录：x / y 默认（-prec-div=true）正确舍入；取 1 ULP（Adam 的 m̂ / (√v̂ + eps) 用到）"
+    },
+    "status": "fail"
+   },
+   "bf16": {},
+   "fp32_maxtext_accurate": {
+    "ulp_max": 1,
+    "ulp_mean_worst_case": 0.12955379486083984,
+    "status": "pass",
+    "per_case": {
+     "random": {
+      "ulp_max": 1,
+      "ulp_mean": 0.12923836708068848,
+      "ulp_signed_mean": -0.0003673804299864081,
+      "rel_l2": 3.006473642080217e-08
+     },
+     "adam_like": {
+      "ulp_max": 1,
+      "ulp_mean": 0.12955379486083984,
+      "ulp_signed_mean": -0.0001820392925089287,
+      "rel_l2": 3.4925933113652717e-08
+     }
+    }
+   }
+  },
+  "bias_correction": {
+   "fp32": {
+    "ulp_max": 108,
+    "ulp_mean_worst_case": 0.605,
+    "cr_match_frac_worst_case": 0.926,
+    "per_case": {
+     "b0.9": {
+      "ulp_max": 69,
+      "ulp_p999": 41.02800000000252,
+      "ulp_mean": 0.261,
+      "ulp_signed_mean": 0.25392138856090607,
+      "cr_match_frac": 0.963,
+      "rel_l2": 8.901882866056871e-08
+     },
+     "b0.95": {
+      "ulp_max": 108,
+      "ulp_p999": 56.05200000000468,
+      "ulp_mean": 0.605,
+      "ulp_signed_mean": 0.3637991967257112,
+      "cr_match_frac": 0.926,
+      "rel_l2": 1.1133416956887913e-07
+     }
+    },
+    "gate": {},
+    "status": "pass"
+   },
+   "bf16": {},
+   "fp32_maxtext_accurate": {
+    "ulp_max": 2,
+    "ulp_mean_worst_case": 0.019,
+    "status": "pass",
+    "per_case": {
+     "b0.9": {
+      "ulp_max": 1,
+      "ulp_mean": 0.006,
+      "ulp_signed_mean": -0.0010786114390939473,
+      "rel_l2": 7.127878644437719e-09
+     },
+     "b0.95": {
+      "ulp_max": 2,
+      "ulp_mean": 0.019,
+      "ulp_signed_mean": 0.0017991967257112264,
+      "rel_l2": 1.0668036448309174e-08
+     }
+    }
+   }
+  },
+  "relu": {
+   "fp32": {
+    "ulp_max": 0,
+    "ulp_mean_worst_case": 0.0,
+    "cr_match_frac_worst_case": 1.0,
+    "per_case": {
+     "real.kd_score_valid": {
+      "ulp_max": 0,
+      "ulp_p999": 0.0,
+      "ulp_mean": 0.0,
+      "ulp_signed_mean": 0.0,
+      "cr_match_frac": 1.0,
+      "rel_l2": 0.0
+     },
+     "unif[-30,30]": {
+      "ulp_max": 0,
+      "ulp_p999": 0.0,
+      "ulp_mean": 0.0,
+      "ulp_signed_mean": 0.0,
+      "cr_match_frac": 1.0,
+      "rel_l2": 0.0
+     }
+    },
+    "gate": {
+     "kind": "exact"
+    },
+    "status": "pass"
+   },
+   "bf16": {
+    "bf16_direct": {
+     "ulp_max": 0,
+     "ulp_mean": 0.0,
+     "cr_match_frac": 1.0,
+     "bit_match_frac": 1.0,
+     "excluded_subnormal": 254
+    },
+    "fp32_then_bf16": {
+     "ulp_max": 0,
+     "ulp_mean": 0.0,
+     "cr_match_frac": 1.0,
+     "bit_match_frac": null,
+     "excluded_subnormal": null
+    }
+   }
+  },
+  "clamp": {
+   "fp32": {
+    "ulp_max": 0,
+    "ulp_mean_worst_case": 0.0,
+    "cr_match_frac_worst_case": 1.0,
+    "per_case": {
+     "real.mlp_gate": {
+      "ulp_max": 0,
+      "ulp_p999": 0.0,
+      "ulp_mean": 0.0,
+      "ulp_signed_mean": 0.0,
+      "cr_match_frac": 1.0,
+      "rel_l2": 0.0
+     },
+     "unif[-30,30]": {
+      "ulp_max": 0,
+      "ulp_p999": 0.0,
+      "ulp_mean": 0.0,
+      "ulp_signed_mean": 0.0,
+      "cr_match_frac": 1.0,
+      "rel_l2": 0.0
+     }
+    },
+    "gate": {
+     "kind": "exact"
+    },
+    "status": "pass"
+   },
+   "bf16": {
+    "bf16_direct": {
+     "ulp_max": 0,
+     "ulp_mean": 0.0,
+     "cr_match_frac": 1.0,
+     "bit_match_frac": 1.0,
+     "excluded_subnormal": 254
+    },
+    "fp32_then_bf16": {
+     "ulp_max": 0,
+     "ulp_mean": 0.0,
+     "cr_match_frac": 1.0,
+     "bit_match_frac": null,
+     "excluded_subnormal": null
+    }
+   }
+  }
+ },
+ "lse_claim_check": {
+  "claim": "TPU FP32 log_softmax 的 LSE 在 KD 输入上系统偏低约 0.95 ulp（results/t1-layer0-kd-attribution.json，图内测得 −0.953）",
+  "isolated_tpu_logsumexp_ulp_signed_mean": -0.9452757574686075,
+  "isolated_tpu_log_softmax_implied_ulp_signed_mean": -0.9466313198277021,
+  "cpu_same_process_logsumexp_ulp_signed_mean": 0.03983166440639252,
+  "breakdown_tpu": {
+   "exp_of_shifted_scores_ulp_signed_mean": -2.492285319460095,
+   "fp32_sum_err_in_lse_ulp_signed_mean": 0.0005582632377260543,
+   "log_of_sum_ulp_signed_mean": -0.6158069967277697
+  },
+  "tpu_accuracy_highest_logsumexp_ulp_signed_mean": 0.03226330503139252,
+  "verdict": "confirmed",
+  "note": "单独编译的 logsumexp / log_softmax 在同一批 KD 输入上复现了偏低；拆开看，偏差来自 TPU 的 FP32 exp（KD 分数近乎均匀，exp 的输入都在 0 附近，逐元素带符号平均偏低约 2.5 ulp）与 log（偏低约 0.6 ulp），FP32 求和本身不贡献偏差；同一进程的 XLA CPU 上同样的程序没有偏差"
+ },
+ "backward": {
+  "what": "sigmoid / silu 的反向（上游梯度 1）：jax 默认实现的自动微分 vs MaxText 精确写法（M39，PyTorch 的解析式）对 FP64 解析导数；输入 [-8, 8]。ULP 最大值被 1 − y 的抵消主导（两种写法都有），看 rel_L2 与平均 ULP",
+  "per_case": {
+   "sigmoid_bwd": {
+    "fp32.default": {
+     "ulp_max": 4056,
+     "ulp_mean": 83.22054100036621,
+     "ulp_signed_mean": 1.8502382795088992,
+     "rel_l2": 6.249802958013216e-07
+    },
+    "fp32.maxtext_accurate": {
+     "ulp_max": 4056,
+     "ulp_mean": 77.28910541534424,
+     "ulp_signed_mean": 1.0143137733214602,
+     "rel_l2": 2.61030007194211e-07
+    },
+    "bf16.default": {
+     "ulp_max": 1,
+     "ulp_mean": 0.022594690322875977,
+     "ulp_signed_mean": 0.0005449053890967205,
+     "rel_l2": 0.0013986532338099195
+    },
+    "bf16.maxtext_accurate": {
+     "ulp_max": 0,
+     "ulp_mean": 0.0,
+     "ulp_signed_mean": -0.014150023733828074,
+     "rel_l2": 0.0013986399043056795
+    }
+   },
+   "silu_bwd": {
+    "fp32.default": {
+     "ulp_max": 2673671,
+     "ulp_mean": 9.705646991729736,
+     "ulp_signed_mean": 1.544936946367693,
+     "rel_l2": 2.176918934531476e-07
+    },
+    "fp32.maxtext_accurate": {
+     "ulp_max": 99468,
+     "ulp_mean": 1.3080699443817139,
+     "ulp_signed_mean": 0.0009415659660816367,
+     "rel_l2": 1.622458889192178e-07
+    },
+    "bf16.default": {
+     "ulp_max": 1,
+     "ulp_mean": 0.0002567768096923828,
+     "ulp_signed_mean": 0.014694320480837061,
+     "rel_l2": 0.0022108427787786203
+    },
+    "bf16.maxtext_accurate": {
+     "ulp_max": 1,
+     "ulp_mean": 1.430511474609375e-06,
+     "ulp_signed_mean": 0.014946924965395163,
+     "rel_l2": 0.0022108427370432014
+    }
+   }
+  }
+ },
+ "lse_breakdown": {
+  "kd_real": {
+   "tpu": {
+    "lse_logsumexp_ulp_signed_mean": -0.9452757574686075,
+    "lse_logsumexp_ulp_absmax": 6.691172098740935,
+    "lse_implied_by_log_softmax_ulp_signed_mean": -0.9466313198277021,
+    "lse_implied_frac_rows_positive": 0.08251953125,
+    "log_softmax_rel_l2": 7.452623188768061e-08,
+    "step_exp_ulp_signed_mean": -2.492285319460095,
+    "step_sum_rel_err_signed_mean": 2.10294139232932e-10,
+    "step_sum_err_in_lse_ulp_signed_mean": 0.0005582632377260543,
+    "step_log_ulp_signed_mean": -0.6158069967277697,
+    "step_log_ulp_absmax": 3.3289767056703568
+   },
+   "cpu": {
+    "lse_logsumexp_ulp_signed_mean": 0.03983166440639252,
+    "lse_logsumexp_ulp_absmax": 1.142782837152481,
+    "lse_implied_by_log_softmax_ulp_signed_mean": 0.0401850864222979,
+    "lse_implied_frac_rows_positive": 0.534912109375,
+    "log_softmax_rel_l2": 2.6494600232749478e-08,
+    "step_exp_ulp_signed_mean": 9.685736049083251e-05,
+    "step_sum_rel_err_signed_mean": -1.8505519082985122e-10,
+    "step_sum_err_in_lse_ulp_signed_mean": -0.00040030443139500065,
+    "step_log_ulp_signed_mean": -0.004478871727769729,
+    "step_log_ulp_absmax": 0.6710232943296432
+   },
+   "tpu_highest": {
+    "lse_logsumexp_ulp_signed_mean": 0.03226330503139252,
+    "lse_logsumexp_ulp_absmax": 1.6779198180884123,
+    "lse_implied_by_log_softmax_ulp_signed_mean": 0.0416499301722979,
+    "lse_implied_frac_rows_positive": 0.52880859375,
+    "log_softmax_rel_l2": 4.112787308367659e-08,
+    "step_exp_ulp_signed_mean": -0.0013771242810876865,
+    "step_sum_rel_err_signed_mean": 2.10294139232932e-10,
+    "step_sum_err_in_lse_ulp_signed_mean": 0.0005582632377260543,
+    "step_log_ulp_signed_mean": 0.03409534702223027,
+    "step_log_ulp_absmax": 1.2027567904442549
+   },
+   "rows": 4096,
+   "lse_mean": 7.129471586477915,
+   "lse_ulp_mean": 4.7344610720756464e-07
+  },
+  "normal_sd0.01": {
+   "tpu": {
+    "lse_logsumexp_ulp_signed_mean": -0.4405985627508926,
+    "lse_logsumexp_ulp_absmax": 1.8967349007725716,
+    "lse_implied_by_log_softmax_ulp_signed_mean": -0.42217829257242556,
+    "lse_implied_frac_rows_positive": 0.205078125,
+    "log_softmax_rel_l2": 7.541824013650799e-08,
+    "step_exp_ulp_signed_mean": -1.6743038260807785,
+    "step_sum_rel_err_signed_mean": -3.589565926588914e-10,
+    "step_sum_err_in_lse_ulp_signed_mean": -0.0003763932681038897,
+    "step_log_ulp_signed_mean": -0.3127950862090074,
+    "step_log_ulp_absmax": 1.4446883965283632
+   },
+   "cpu": {
+    "lse_logsumexp_ulp_signed_mean": -0.019700125250892597,
+    "lse_logsumexp_ulp_absmax": 0.9868816137313843,
+    "lse_implied_by_log_softmax_ulp_signed_mean": -0.003232980072425562,
+    "lse_implied_frac_rows_positive": 0.5029296875,
+    "log_softmax_rel_l2": 4.67562271934643e-08,
+    "step_exp_ulp_signed_mean": -5.859487698441151e-05,
+    "step_sum_rel_err_signed_mean": -2.995419112107366e-10,
+    "step_sum_err_in_lse_ulp_signed_mean": -0.00031409245908970936,
+    "step_log_ulp_signed_mean": -0.0022482112090074224,
+    "step_log_ulp_absmax": 0.5188583862036467
+   },
+   "tpu_highest": {
+    "lse_logsumexp_ulp_signed_mean": -0.020676687750892597,
+    "lse_logsumexp_ulp_absmax": 1.276071349158883,
+    "lse_implied_by_log_softmax_ulp_signed_mean": -0.028623605072425562,
+    "lse_implied_frac_rows_positive": 0.486328125,
+    "log_softmax_rel_l2": 6.209173369399512e-08,
+    "step_exp_ulp_signed_mean": -0.0016883331598690537,
+    "step_sum_rel_err_signed_mean": -3.589565926588914e-10,
+    "step_sum_err_in_lse_ulp_signed_mean": -0.0003763932681038897,
+    "step_log_ulp_signed_mean": -0.009084148709007422,
+    "step_log_ulp_absmax": 0.8789839539676905
+   },
+   "rows": 1024,
+   "lse_mean": 8.180998850774884,
+   "lse_ulp_mean": 9.5367431640625e-07
+  },
+  "normal_sd1": {
+   "tpu": {
+    "lse_logsumexp_ulp_signed_mean": -0.8707986724384682,
+    "lse_logsumexp_ulp_absmax": 1.9707796834409237,
+    "lse_implied_by_log_softmax_ulp_signed_mean": -0.8822413039215462,
+    "lse_implied_frac_rows_positive": 0.0146484375,
+    "log_softmax_rel_l2": 1.0447090412086784e-07,
+    "step_exp_ulp_signed_mean": -6.713335303060283,
+    "step_sum_rel_err_signed_mean": 5.964722824874476e-10,
+    "step_sum_err_in_lse_ulp_signed_mean": 0.0006254465200815579,
+    "step_log_ulp_signed_mean": -0.2982719708197692,
+    "step_log_ulp_absmax": 2.3074202742427588
+   },
+   "cpu": {
+    "lse_logsumexp_ulp_signed_mean": -0.009470547438468202,
+    "lse_logsumexp_ulp_absmax": 0.8015824854373932,
+    "lse_implied_by_log_softmax_ulp_signed_mean": -0.014077241421546205,
+    "lse_implied_frac_rows_positive": 0.46875,
+    "log_softmax_rel_l2": 3.784776916340796e-08,
+    "step_exp_ulp_signed_mean": 0.0004911546046603808,
+    "step_sum_rel_err_signed_mean": 3.315976481521383e-10,
+    "step_sum_err_in_lse_ulp_signed_mean": 0.0003477053355087766,
+    "step_log_ulp_signed_mean": 0.011298341680230806,
+    "step_log_ulp_absmax": 0.5330833829939365
+   },
+   "tpu_highest": {
+    "lse_logsumexp_ulp_signed_mean": 0.001271640061531798,
+    "lse_logsumexp_ulp_absmax": 0.9574094451963902,
+    "lse_implied_by_log_softmax_ulp_signed_mean": 0.016196196078453795,
+    "lse_implied_frac_rows_positive": 0.5029296875,
+    "log_softmax_rel_l2": 4.825430714441993e-08,
+    "step_exp_ulp_signed_mean": 0.1207880165275227,
+    "step_sum_rel_err_signed_mean": 5.964722824874476e-10,
+    "step_sum_err_in_lse_ulp_signed_mean": 0.0006254465200815579,
+    "step_log_ulp_signed_mean": 0.033759279180230806,
+    "step_log_ulp_absmax": 0.9844031296670437
+   },
+   "rows": 1024,
+   "lse_mean": 8.681388328501805,
+   "lse_ulp_mean": 9.5367431640625e-07
+  },
+  "normal_sd5": {
+   "tpu": {
+    "lse_logsumexp_ulp_signed_mean": -0.225032145055593,
+    "lse_logsumexp_ulp_absmax": 1.1629723217338324,
+    "lse_implied_by_log_softmax_ulp_signed_mean": -0.2223017754877219,
+    "lse_implied_frac_rows_positive": 0.2802734375,
+    "log_softmax_rel_l2": 4.55815644552604e-08,
+    "step_exp_ulp_signed_mean": -2.2823773702176435,
+    "step_sum_rel_err_signed_mean": -9.55983975826525e-09,
+    "step_sum_err_in_lse_ulp_signed_mean": -0.0050121092671813715,
+    "step_log_ulp_signed_mean": 0.036102272886637365,
+    "step_log_ulp_absmax": 34.91297438926995
+   },
+   "cpu": {
+    "lse_logsumexp_ulp_signed_mean": 0.010319417444407009,
+    "lse_logsumexp_ulp_absmax": 0.6029252223670483,
+    "lse_implied_by_log_softmax_ulp_signed_mean": -0.0029414239252218977,
+    "lse_implied_frac_rows_positive": 0.5009765625,
+    "log_softmax_rel_l2": 3.602606815432349e-08,
+    "step_exp_ulp_signed_mean": -0.008519222289061998,
+    "step_sum_rel_err_signed_mean": -6.131179833678352e-09,
+    "step_sum_err_in_lse_ulp_signed_mean": -0.0032145040126395556,
+    "step_log_ulp_signed_mean": 0.0038757103866373654,
+    "step_log_ulp_absmax": 0.9995581693947315
+   },
+   "tpu_highest": {
+    "lse_logsumexp_ulp_signed_mean": -0.009211832555592991,
+    "lse_logsumexp_ulp_absmax": 0.5845917128026485,
+    "lse_implied_by_log_softmax_ulp_signed_mean": -0.015636736425221898,
+    "lse_implied_frac_rows_positive": 0.4775390625,
+    "log_softmax_rel_l2": 3.904607706218769e-08,
+    "step_exp_ulp_signed_mean": 0.1657848560342746,
+    "step_sum_rel_err_signed_mean": -9.55983975826525e-09,
+    "step_sum_err_in_lse_ulp_signed_mean": -0.0050121092671813715,
+    "step_log_ulp_signed_mean": 0.034149147886637365,
+    "step_log_ulp_absmax": 2.0518269389867783
+   },
+   "rows": 1024,
+   "lse_mean": 18.8073880699145,
+   "lse_ulp_mean": 1.9073486328125e-06
+  }
+ },
+ "summary": {
+  "pass": 15,
+  "fail": 9,
+  "inconclusive": 0,
+  "error": 0
+ },
+ "checks": [
+  {
+   "id": "L1.elem.exp.fp32",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 2
+    },
+    "source": "CUDA Programming Guide 数学函数附录：expf 最大 2 ULP（混元 3 L1.elem.exp.fp32 同一门槛）"
+   },
+   "metrics": {
+    "rel_l2": 2.384549238951893e-06,
+    "cr_match_frac": 0.021368026733398438,
+    "ulp_max": 105,
+    "ulp_p999": 70.0,
+    "nonfinite_mismatch": 0,
+    "cases": 4,
+    "ulp_mean_max": 16.15206813812256
+   },
+   "worst": [
+    {
+     "name": "exp.fp32.unif[-87,88]",
+     "metric": "rel_l2",
+     "value": 2.384549238951893e-06,
+     "location": null
+    },
+    {
+     "name": "exp.fp32.unif[-10,10]",
+     "metric": "rel_l2",
+     "value": 1.2352781531425399e-06,
+     "location": null
+    },
+    {
+     "name": "exp.fp32.unif[-1,0]",
+     "metric": "rel_l2",
+     "value": 1.1479405007437837e-06,
+     "location": null
+    },
+    {
+     "name": "exp.fp32.real.kd_softmax_in",
+     "metric": "rel_l2",
+     "value": 4.68568783493415e-07,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "超线：['ulp_max']"
+  },
+  {
+   "id": "L1.elem.log.fp32",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 1
+    },
+    "source": "CUDA Programming Guide 数学函数附录：logf 最大 1 ULP"
+   },
+   "metrics": {
+    "rel_l2": 4.285491141935706e-07,
+    "cr_match_frac": 0.11640691757202148,
+    "ulp_max": 62,
+    "ulp_p999": 45.0,
+    "nonfinite_mismatch": 0,
+    "cases": 4,
+    "ulp_mean_max": 5.7978081703186035
+   },
+   "worst": [
+    {
+     "name": "log.fp32.unif[0.5,2]",
+     "metric": "rel_l2",
+     "value": 4.285491141935706e-07,
+     "location": null
+    },
+    {
+     "name": "log.fp32.binade[1,4)",
+     "metric": "rel_l2",
+     "value": 2.152501488076006e-07,
+     "location": null
+    },
+    {
+     "name": "log.fp32.real.kd_target",
+     "metric": "rel_l2",
+     "value": 5.43361050279267e-08,
+     "location": null
+    },
+    {
+     "name": "log.fp32.logu[1e-37,1e37]",
+     "metric": "rel_l2",
+     "value": 5.150091670149785e-08,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "超线：['ulp_max']"
+  },
+  {
+   "id": "L1.elem.sigmoid.fp32",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 4
+    },
+    "source": "推断（同混元 3）：sigmoid = 1/(1+exp(−x))，expf 2 ULP 经一次加、一次除后的起点"
+   },
+   "metrics": {
+    "rel_l2": 6.45779802377142e-07,
+    "cr_match_frac": 0.0836181640625,
+    "ulp_max": 83,
+    "ulp_p999": 57.0,
+    "nonfinite_mismatch": 0,
+    "cases": 2,
+    "ulp_mean_max": 6.943695068359375
+   },
+   "worst": [
+    {
+     "name": "sigmoid.fp32.real.router_logits",
+     "metric": "rel_l2",
+     "value": 6.45779802377142e-07,
+     "location": null
+    },
+    {
+     "name": "sigmoid.fp32.unif[-30,30]",
+     "metric": "rel_l2",
+     "value": 1.0217918860944566e-07,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "超线：['ulp_max']"
+  },
+  {
+   "id": "L1.elem.silu.fp32",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 4
+    },
+    "source": "推断（同混元 3）：silu = x·sigmoid(x)，同 sigmoid 再多一次正确舍入的乘法"
+   },
+   "metrics": {
+    "rel_l2": 6.332622924818647e-07,
+    "cr_match_frac": 0.08039053281148274,
+    "ulp_max": 86,
+    "ulp_p999": 54.0,
+    "nonfinite_mismatch": 0,
+    "cases": 2,
+    "ulp_mean_max": 6.358129262924194
+   },
+   "worst": [
+    {
+     "name": "silu.fp32.real.mlp_gate",
+     "metric": "rel_l2",
+     "value": 6.332622924818647e-07,
+     "location": null
+    },
+    {
+     "name": "silu.fp32.unif[-30,30]",
+     "metric": "rel_l2",
+     "value": 1.943149648671662e-08,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "超线：['ulp_max']"
+  },
+  {
+   "id": "L1.elem.rsqrt.fp32",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 2
+    },
+    "source": "CUDA Programming Guide 数学函数附录：rsqrtf 最大 2 ULP（混元 3 L1.elem.rsqrt.fp32 同一门槛）"
+   },
+   "metrics": {
+    "rel_l2": 4.096284474442485e-08,
+    "cr_match_frac": 0.6942894458770752,
+    "ulp_max": 2,
+    "ulp_p999": 2.0,
+    "nonfinite_mismatch": 0,
+    "cases": 3,
+    "ulp_mean_max": 0.30876898765563965
+   },
+   "worst": [
+    {
+     "name": "rsqrt.fp32.logu[1e-37,1e37]",
+     "metric": "rel_l2",
+     "value": 4.096284474442485e-08,
+     "location": null
+    },
+    {
+     "name": "rsqrt.fp32.all[1,4)",
+     "metric": "rel_l2",
+     "value": 3.9937186735743745e-08,
+     "location": null
+    },
+    {
+     "name": "rsqrt.fp32.real.rmsnorm_ms",
+     "metric": "rel_l2",
+     "value": 3.986075772962464e-08,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "全部在门槛内"
+  },
+  {
+   "id": "L1.elem.relu.fp32",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "rel_l2": 0.0,
+    "cr_match_frac": 1.0,
+    "ulp_max": 0,
+    "ulp_p999": 0.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 2,
+    "ulp_mean_max": 0.0
+   },
+   "worst": [
+    {
+     "name": "relu.fp32.real.kd_score_valid",
+     "metric": "rel_l2",
+     "value": 0.0,
+     "location": null
+    },
+    {
+     "name": "relu.fp32.unif[-30,30]",
+     "metric": "rel_l2",
+     "value": 0.0,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "逐位全中（bit_match_frac）"
+  },
+  {
+   "id": "L1.elem.clamp.fp32",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "rel_l2": 0.0,
+    "cr_match_frac": 1.0,
+    "ulp_max": 0,
+    "ulp_p999": 0.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 2,
+    "ulp_mean_max": 0.0
+   },
+   "worst": [
+    {
+     "name": "clamp.fp32.real.mlp_gate",
+     "metric": "rel_l2",
+     "value": 0.0,
+     "location": null
+    },
+    {
+     "name": "clamp.fp32.unif[-30,30]",
+     "metric": "rel_l2",
+     "value": 0.0,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "逐位全中（bit_match_frac）"
+  },
+  {
+   "id": "L1.elem.exp.fp32_highest",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 2
+    },
+    "source": "CUDA Programming Guide 数学函数附录：expf 最大 2 ULP（混元 3 L1.elem.exp.fp32 同一门槛）"
+   },
+   "metrics": {
+    "rel_l2": 3.713411670962092e-08,
+    "cr_match_frac": 0.7358558177947998,
+    "ulp_max": 1,
+    "ulp_p999": 1.0,
+    "nonfinite_mismatch": 0,
+    "cases": 4,
+    "ulp_mean_max": 0.2641441822052002
+   },
+   "worst": [
+    {
+     "name": "exp.fp32_highest.unif[-10,10]",
+     "metric": "rel_l2",
+     "value": 3.713411670962092e-08,
+     "location": null
+    },
+    {
+     "name": "exp.fp32_highest.unif[-1,0]",
+     "metric": "rel_l2",
+     "value": 3.361195275689312e-08,
+     "location": null
+    },
+    {
+     "name": "exp.fp32_highest.real.kd_softmax_in",
+     "metric": "rel_l2",
+     "value": 2.55854929681403e-08,
+     "location": null
+    },
+    {
+     "name": "exp.fp32_highest.unif[-87,88]",
+     "metric": "rel_l2",
+     "value": 2.3910864485545048e-08,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "全部在门槛内"
+  },
+  {
+   "id": "L1.elem.log.fp32_highest",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 1
+    },
+    "source": "CUDA Programming Guide 数学函数附录：logf 最大 1 ULP"
+   },
+   "metrics": {
+    "rel_l2": 4.209180441185319e-08,
+    "cr_match_frac": 0.6290867328643799,
+    "ulp_max": 3,
+    "ulp_p999": 2.0,
+    "nonfinite_mismatch": 0,
+    "cases": 4,
+    "ulp_mean_max": 0.3878288269042969
+   },
+   "worst": [
+    {
+     "name": "log.fp32_highest.unif[0.5,2]",
+     "metric": "rel_l2",
+     "value": 4.209180441185319e-08,
+     "location": null
+    },
+    {
+     "name": "log.fp32_highest.binade[1,4)",
+     "metric": "rel_l2",
+     "value": 3.683380732992009e-08,
+     "location": null
+    },
+    {
+     "name": "log.fp32_highest.logu[1e-37,1e37]",
+     "metric": "rel_l2",
+     "value": 3.543364941395508e-08,
+     "location": null
+    },
+    {
+     "name": "log.fp32_highest.real.kd_target",
+     "metric": "rel_l2",
+     "value": 3.1608094924415255e-08,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "超线：['ulp_max']"
+  },
+  {
+   "id": "L1.elem.sigmoid.fp32_highest",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 4
+    },
+    "source": "推断（同混元 3）：sigmoid = 1/(1+exp(−x))，expf 2 ULP 经一次加、一次除后的起点"
+   },
+   "metrics": {
+    "rel_l2": 6.45779802377142e-07,
+    "cr_match_frac": 0.0836181640625,
+    "ulp_max": 83,
+    "ulp_p999": 57.0,
+    "nonfinite_mismatch": 0,
+    "cases": 2,
+    "ulp_mean_max": 6.943695068359375
+   },
+   "worst": [
+    {
+     "name": "sigmoid.fp32_highest.real.router_logits",
+     "metric": "rel_l2",
+     "value": 6.45779802377142e-07,
+     "location": null
+    },
+    {
+     "name": "sigmoid.fp32_highest.unif[-30,30]",
+     "metric": "rel_l2",
+     "value": 1.0217918860944566e-07,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "超线：['ulp_max']"
+  },
+  {
+   "id": "L1.elem.silu.fp32_highest",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 4
+    },
+    "source": "推断（同混元 3）：silu = x·sigmoid(x)，同 sigmoid 再多一次正确舍入的乘法"
+   },
+   "metrics": {
+    "rel_l2": 6.332622924818647e-07,
+    "cr_match_frac": 0.08039053281148274,
+    "ulp_max": 86,
+    "ulp_p999": 54.0,
+    "nonfinite_mismatch": 0,
+    "cases": 2,
+    "ulp_mean_max": 6.358129262924194
+   },
+   "worst": [
+    {
+     "name": "silu.fp32_highest.real.mlp_gate",
+     "metric": "rel_l2",
+     "value": 6.332622924818647e-07,
+     "location": null
+    },
+    {
+     "name": "silu.fp32_highest.unif[-30,30]",
+     "metric": "rel_l2",
+     "value": 1.943149648671662e-08,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "超线：['ulp_max']"
+  },
+  {
+   "id": "L1.elem.tail",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 0.7143024512577517,
+    "cr_match_frac": 0.0020666122436523438,
+    "ulp_max": 61778902,
+    "ulp_p999": 61441900.0,
+    "nonfinite_mismatch": 0,
+    "cases": 3,
+    "ulp_mean_max": 5556794.811516762
+   },
+   "worst": [
+    {
+     "name": "exp.fp32.tail",
+     "metric": "rel_l2",
+     "value": 0.7143024512577517,
+     "location": null
+    },
+    {
+     "name": "silu.fp32.tail",
+     "metric": "rel_l2",
+     "value": 0.0007111697953626243,
+     "location": null
+    },
+    {
+     "name": "sigmoid.fp32.tail",
+     "metric": "rel_l2",
+     "value": 0.0006524681927299123,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "诊断：只报数，不判"
+  },
+  {
+   "id": "L1.elem.sqrt.fp32",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 1
+    },
+    "source": "CUDA Programming Guide 数学函数附录：sqrtf 默认（-prec-sqrt=true）正确舍入；取 1 ULP"
+   },
+   "metrics": {
+    "rel_l2": 4.7419009885765285e-08,
+    "cr_match_frac": 0.6118578910827637,
+    "ulp_max": 3,
+    "ulp_p999": 2.0,
+    "nonfinite_mismatch": 0,
+    "cases": 1,
+    "ulp_mean_max": 0.40024614334106445
+   },
+   "worst": [
+    {
+     "name": "sqrt.fp32.logu[1e-30,1e30]",
+     "metric": "rel_l2",
+     "value": 4.7419009885765285e-08,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "超线：['ulp_max']"
+  },
+  {
+   "id": "L1.elem.div.fp32",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 1
+    },
+    "source": "CUDA Programming Guide 数学函数附录：x / y 默认（-prec-div=true）正确舍入；取 1 ULP（Adam 的 m̂ / (√v̂ + eps) 用到）"
+   },
+   "metrics": {
+    "rel_l2": 4.3127086710890705e-08,
+    "cr_match_frac": 0.6418249607086182,
+    "ulp_max": 2,
+    "ulp_p999": 2.0,
+    "nonfinite_mismatch": 0,
+    "cases": 2,
+    "ulp_mean_max": 0.36272597312927246
+   },
+   "worst": [
+    {
+     "name": "div.fp32.random",
+     "metric": "rel_l2",
+     "value": 4.3127086710890705e-08,
+     "location": null
+    },
+    {
+     "name": "div.fp32.adam_like",
+     "metric": "rel_l2",
+     "value": 3.411717865213835e-08,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "超线：['ulp_max']"
+  },
+  {
+   "id": "L1.elem.bias_correction.fp32",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 1.1133416956887913e-07,
+    "cr_match_frac": 0.926,
+    "ulp_max": 108,
+    "ulp_p999": 56.05200000000468,
+    "nonfinite_mismatch": 0,
+    "cases": 2,
+    "ulp_mean_max": 0.605
+   },
+   "worst": [
+    {
+     "name": "bias_correction.fp32.b0.95",
+     "metric": "rel_l2",
+     "value": 1.1133416956887913e-07,
+     "location": null
+    },
+    {
+     "name": "bias_correction.fp32.b0.9",
+     "metric": "rel_l2",
+     "value": 8.901882866056871e-08,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "诊断：只报数，不判"
+  },
+  {
+   "id": "L1.elem.exp.bf16",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 0.0012451672611507474,
+    "cr_match_frac": 0.9999384757363685,
+    "ulp_max": 1,
+    "ulp_p999": 0.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 2,
+    "ulp_mean_max": 8.089142348682481e-05
+   },
+   "worst": [
+    {
+     "name": "exp.bf16_direct",
+     "metric": "rel_l2",
+     "value": 0.0012451672611507474,
+     "location": null
+    },
+    {
+     "name": "exp.fp32_then_bf16",
+     "metric": "rel_l2",
+     "value": 0.0012451672611507474,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "诊断：只报数，不判"
+  },
+  {
+   "id": "L1.elem.log.bf16",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 0.0017436346321203179,
+    "cr_match_frac": 1.0,
+    "ulp_max": 0,
+    "ulp_p999": 0.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 2,
+    "ulp_mean_max": 0.0
+   },
+   "worst": [
+    {
+     "name": "log.bf16_direct",
+     "metric": "rel_l2",
+     "value": 0.0017436346321203179,
+     "location": null
+    },
+    {
+     "name": "log.fp32_then_bf16",
+     "metric": "rel_l2",
+     "value": 0.0017436346321203179,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "诊断：只报数，不判"
+  },
+  {
+   "id": "L1.elem.sigmoid.bf16",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 0.0003156792975980259,
+    "cr_match_frac": 0.9999846189340922,
+    "ulp_max": 1,
+    "ulp_p999": 0.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 2,
+    "ulp_mean_max": 1.5381065907867414e-05
+   },
+   "worst": [
+    {
+     "name": "sigmoid.bf16_direct",
+     "metric": "rel_l2",
+     "value": 0.0003156792975980259,
+     "location": null
+    },
+    {
+     "name": "sigmoid.fp32_then_bf16",
+     "metric": "rel_l2",
+     "value": 0.0003156792975980259,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "诊断：只报数，不判"
+  },
+  {
+   "id": "L1.elem.silu.bf16",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 3.331573850071334e-41,
+    "cr_match_frac": 0.9997529377248653,
+    "ulp_max": 917,
+    "ulp_p999": 0.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 0.9999227930390204,
+    "cases": 2,
+    "ulp_mean_max": 0.08447985670388042
+   },
+   "worst": [
+    {
+     "name": "silu.bf16_direct",
+     "metric": "rel_l2",
+     "value": 3.331573850071334e-41,
+     "location": null
+    },
+    {
+     "name": "silu.fp32_then_bf16",
+     "metric": "rel_l2",
+     "value": 3.3315692216458027e-41,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "诊断：只报数，不判"
+  },
+  {
+   "id": "L1.elem.rsqrt.bf16",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 0.0015543969179446766,
+    "cr_match_frac": 1.0,
+    "ulp_max": 0,
+    "ulp_p999": 0.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 2,
+    "ulp_mean_max": 0.0
+   },
+   "worst": [
+    {
+     "name": "rsqrt.bf16_direct",
+     "metric": "rel_l2",
+     "value": 0.0015543969179446766,
+     "location": null
+    },
+    {
+     "name": "rsqrt.fp32_then_bf16",
+     "metric": "rel_l2",
+     "value": 0.0015543969179446766,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "诊断：只报数，不判"
+  },
+  {
+   "id": "L1.elem.relu.bf16",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 0.0,
+    "cr_match_frac": 1.0,
+    "ulp_max": 0,
+    "ulp_p999": 0.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 2,
+    "ulp_mean_max": 0.0
+   },
+   "worst": [
+    {
+     "name": "relu.bf16_direct",
+     "metric": "rel_l2",
+     "value": 0.0,
+     "location": null
+    },
+    {
+     "name": "relu.fp32_then_bf16",
+     "metric": "rel_l2",
+     "value": 0.0,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "诊断：只报数，不判"
+  },
+  {
+   "id": "L1.elem.clamp.bf16",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 0.0,
+    "cr_match_frac": 1.0,
+    "ulp_max": 0,
+    "ulp_p999": 0.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 2,
+    "ulp_mean_max": 0.0
+   },
+   "worst": [
+    {
+     "name": "clamp.bf16_direct",
+     "metric": "rel_l2",
+     "value": 0.0,
+     "location": null
+    },
+    {
+     "name": "clamp.fp32_then_bf16",
+     "metric": "rel_l2",
+     "value": 0.0,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "诊断：只报数，不判"
+  },
+  {
+   "id": "L1.elem.basic",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "rel_l2": 0.0014671074751457067,
+    "cr_match_frac": 1.0,
+    "ulp_max": 0,
+    "ulp_p999": 0.0,
+    "nonfinite_mismatch": 0,
+    "bit_match_frac": 1.0,
+    "cases": 3,
+    "ulp_mean_max": 0.0
+   },
+   "worst": [
+    {
+     "name": "cast.fp32_to_bf16",
+     "metric": "rel_l2",
+     "value": 0.0014671074751457067,
+     "location": null
+    },
+    {
+     "name": "mul.fp32",
+     "metric": "rel_l2",
+     "value": 2.3198983572004293e-08,
+     "location": null
+    },
+    {
+     "name": "add.fp32",
+     "metric": "rel_l2",
+     "value": 7.212590360136763e-09,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "逐位全中（bit_match_frac）"
+  },
+  {
+   "id": "L1.elem.lse.fp32",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 1.0608559713036391e-07,
+    "cr_match_frac": 0.2001953125,
+    "ulp_max": 7,
+    "ulp_p999": 3.0,
+    "nonfinite_mismatch": 0,
+    "cases": 4,
+    "ulp_mean_max": 0.97021484375
+   },
+   "worst": [
+    {
+     "name": "lse.fp32.normal_sd1",
+     "metric": "rel_l2",
+     "value": 1.0608559713036391e-07,
+     "location": null
+    },
+    {
+     "name": "lse.fp32.kd_real",
+     "metric": "rel_l2",
+     "value": 7.770601519020818e-08,
+     "location": null
+    },
+    {
+     "name": "lse.fp32.normal_sd0.01",
+     "metric": "rel_l2",
+     "value": 7.591068511650082e-08,
+     "location": null
+    },
+    {
+     "name": "lse.fp32.normal_sd5",
+     "metric": "rel_l2",
+     "value": 4.152042758135116e-08,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "诊断：只报数，不判"
+  },
+  {
+   "id": "L1.elem.exp.fp32_mt",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 2
+    },
+    "source": "CUDA Programming Guide 数学函数附录：expf 最大 2 ULP（混元 3 L1.elem.exp.fp32 同一门槛）"
+   },
+   "metrics": {
+    "rel_l2": 3.713411670962092e-08,
+    "cr_match_frac": 0.7358558177947998,
+    "ulp_max": 1,
+    "ulp_p999": 1.0,
+    "nonfinite_mismatch": 0,
+    "cases": 4,
+    "ulp_mean_max": 0.2641441822052002
+   },
+   "worst": [
+    {
+     "name": "exp.fp32_mt.unif[-10,10]",
+     "metric": "rel_l2",
+     "value": 3.713411670962092e-08,
+     "location": null
+    },
+    {
+     "name": "exp.fp32_mt.unif[-1,0]",
+     "metric": "rel_l2",
+     "value": 3.361195275689312e-08,
+     "location": null
+    },
+    {
+     "name": "exp.fp32_mt.real.kd_softmax_in",
+     "metric": "rel_l2",
+     "value": 2.55854929681403e-08,
+     "location": null
+    },
+    {
+     "name": "exp.fp32_mt.unif[-87,88]",
+     "metric": "rel_l2",
+     "value": 2.3910864485545048e-08,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "全部在门槛内"
+  },
+  {
+   "id": "L1.elem.log.fp32_mt",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 1
+    },
+    "source": "CUDA Programming Guide 数学函数附录：logf 最大 1 ULP"
+   },
+   "metrics": {
+    "rel_l2": 4.209180441185319e-08,
+    "cr_match_frac": 0.6290867328643799,
+    "ulp_max": 3,
+    "ulp_p999": 2.0,
+    "nonfinite_mismatch": 0,
+    "cases": 4,
+    "ulp_mean_max": 0.3878288269042969
+   },
+   "worst": [
+    {
+     "name": "log.fp32_mt.unif[0.5,2]",
+     "metric": "rel_l2",
+     "value": 4.209180441185319e-08,
+     "location": null
+    },
+    {
+     "name": "log.fp32_mt.binade[1,4)",
+     "metric": "rel_l2",
+     "value": 3.683380732992009e-08,
+     "location": null
+    },
+    {
+     "name": "log.fp32_mt.logu[1e-37,1e37]",
+     "metric": "rel_l2",
+     "value": 3.543364941395508e-08,
+     "location": null
+    },
+    {
+     "name": "log.fp32_mt.real.kd_target",
+     "metric": "rel_l2",
+     "value": 3.1608094924415255e-08,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "超线：['ulp_max']"
+  },
+  {
+   "id": "L1.elem.sigmoid.fp32_mt",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 4
+    },
+    "source": "推断（同混元 3）：sigmoid = 1/(1+exp(−x))，expf 2 ULP 经一次加、一次除后的起点"
+   },
+   "metrics": {
+    "rel_l2": 4.6013936725477635e-08,
+    "cr_match_frac": 0.6295089721679688,
+    "ulp_max": 3,
+    "ulp_p999": 2.0,
+    "nonfinite_mismatch": 0,
+    "cases": 2,
+    "ulp_mean_max": 0.39330800374348956
+   },
+   "worst": [
+    {
+     "name": "sigmoid.fp32_mt.real.router_logits",
+     "metric": "rel_l2",
+     "value": 4.6013936725477635e-08,
+     "location": null
+    },
+    {
+     "name": "sigmoid.fp32_mt.unif[-30,30]",
+     "metric": "rel_l2",
+     "value": 3.0285023611812805e-08,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "全部在门槛内"
+  },
+  {
+   "id": "L1.elem.silu.fp32_mt",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 4
+    },
+    "source": "推断（同混元 3）：silu = x·sigmoid(x)，同 sigmoid 再多一次正确舍入的乘法"
+   },
+   "metrics": {
+    "rel_l2": 5.3166474879568866e-08,
+    "cr_match_frac": 0.5584260622660319,
+    "ulp_max": 4,
+    "ulp_p999": 2.0,
+    "nonfinite_mismatch": 0,
+    "cases": 2,
+    "ulp_mean_max": 0.4579574267069499
+   },
+   "worst": [
+    {
+     "name": "silu.fp32_mt.real.mlp_gate",
+     "metric": "rel_l2",
+     "value": 5.3166474879568866e-08,
+     "location": null
+    },
+    {
+     "name": "silu.fp32_mt.unif[-30,30]",
+     "metric": "rel_l2",
+     "value": 1.842762342424042e-08,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "全部在门槛内"
+  },
+  {
+   "id": "L1.elem.sqrt.fp32_mt",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 1
+    },
+    "source": "CUDA Programming Guide 数学函数附录：sqrtf 默认（-prec-sqrt=true）正确舍入；取 1 ULP"
+   },
+   "metrics": {
+    "rel_l2": 2.8182116977381485e-08,
+    "cr_match_frac": 0.8388686180114746,
+    "ulp_max": 1,
+    "ulp_p999": 1.0,
+    "nonfinite_mismatch": 0,
+    "cases": 1,
+    "ulp_mean_max": 0.1611313819885254
+   },
+   "worst": [
+    {
+     "name": "sqrt.fp32_mt.logu[1e-30,1e30]",
+     "metric": "rel_l2",
+     "value": 2.8182116977381485e-08,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "全部在门槛内"
+  },
+  {
+   "id": "L1.elem.div.fp32_mt",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 1
+    },
+    "source": "CUDA Programming Guide 数学函数附录：x / y 默认（-prec-div=true）正确舍入；取 1 ULP（Adam 的 m̂ / (√v̂ + eps) 用到）"
+   },
+   "metrics": {
+    "rel_l2": 3.4925933113652717e-08,
+    "cr_match_frac": 0.8704462051391602,
+    "ulp_max": 1,
+    "ulp_p999": 1.0,
+    "nonfinite_mismatch": 0,
+    "cases": 2,
+    "ulp_mean_max": 0.12955379486083984
+   },
+   "worst": [
+    {
+     "name": "div.fp32_mt.adam_like",
+     "metric": "rel_l2",
+     "value": 3.4925933113652717e-08,
+     "location": null
+    },
+    {
+     "name": "div.fp32_mt.random",
+     "metric": "rel_l2",
+     "value": 3.006473642080217e-08,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "全部在门槛内"
+  },
+  {
+   "id": "L1.elem.bias_correction.fp32_mt",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 1.0668036448309174e-08,
+    "cr_match_frac": 0.983,
+    "ulp_max": 2,
+    "ulp_p999": 2.0,
+    "nonfinite_mismatch": 0,
+    "cases": 2,
+    "ulp_mean_max": 0.019
+   },
+   "worst": [
+    {
+     "name": "bias_correction.fp32_mt.b0.95",
+     "metric": "rel_l2",
+     "value": 1.0668036448309174e-08,
+     "location": null
+    },
+    {
+     "name": "bias_correction.fp32_mt.b0.9",
+     "metric": "rel_l2",
+     "value": 7.127878644437719e-09,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "诊断：只报数，不判"
+  },
+  {
+   "id": "L1.elem.sigmoid_bwd",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 0.0013986532338099195,
+    "cr_match_frac": 0.046142578125,
+    "ulp_max": 4056,
+    "ulp_p999": 2474.0,
+    "nonfinite_mismatch": 0,
+    "cases": 4,
+    "ulp_mean_max": 83.22054100036621
+   },
+   "worst": [
+    {
+     "name": "sigmoid_bwd.bf16.default",
+     "metric": "rel_l2",
+     "value": 0.0013986532338099195,
+     "location": null
+    },
+    {
+     "name": "sigmoid_bwd.bf16.maxtext_accurate",
+     "metric": "rel_l2",
+     "value": 0.0013986399043056795,
+     "location": null
+    },
+    {
+     "name": "sigmoid_bwd.fp32.default",
+     "metric": "rel_l2",
+     "value": 6.249802958013216e-07,
+     "location": null
+    },
+    {
+     "name": "sigmoid_bwd.fp32.maxtext_accurate",
+     "metric": "rel_l2",
+     "value": 2.61030007194211e-07,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "诊断：只报数，不判"
+  },
+  {
+   "id": "L1.elem.silu_bwd",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 0.0022108427787786203,
+    "cr_match_frac": 0.1643071174621582,
+    "ulp_max": 2673671,
+    "ulp_p999": 342.0,
+    "nonfinite_mismatch": 0,
+    "cases": 4,
+    "ulp_mean_max": 9.705646991729736
+   },
+   "worst": [
+    {
+     "name": "silu_bwd.bf16.default",
+     "metric": "rel_l2",
+     "value": 0.0022108427787786203,
+     "location": null
+    },
+    {
+     "name": "silu_bwd.bf16.maxtext_accurate",
+     "metric": "rel_l2",
+     "value": 0.0022108427370432014,
+     "location": null
+    },
+    {
+     "name": "silu_bwd.fp32.default",
+     "metric": "rel_l2",
+     "value": 2.176918934531476e-07,
+     "location": null
+    },
+    {
+     "name": "silu_bwd.fp32.maxtext_accurate",
+     "metric": "rel_l2",
+     "value": 1.622458889192178e-07,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "诊断：只报数，不判"
+  }
+ ]
+}

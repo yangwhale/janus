@@ -1,0 +1,20 @@
+# 第二阶段 · 第 1 步激活逐位（只报）：逐层隔离回放的各观测点对 golden
+#
+# GPU 自比里这一条（phase1-full 的 L3.step1.act.bitwise）用来证明 GPU 默认设置下第 1 步前向逐位可复现；跨平台不要求逐位
+# （docs/reference/levels.md「L3 · 第一步整网」），这里只记一个事实：TPU 的前向与 GPU 逐位不同，hard: false。
+# 用隔离回放（r-l2-norm-perop，每层输入是 golden 的、单层单独编译，程序本身就是测量对象），不用加钩子抓的激活。
+# 层输入 layers.k.in 是 golden 原样喂进去的，不算；数值差多大、算不算对齐看 phase2-l2-replay-rratio（FP64 R-ratio）。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-l2-replay-bitwise
+description: 第 1 步逐层隔离回放的激活对 golden 逐位（只报）
+runs:
+  test: r-l2-norm-perop
+  golden: [g1k-a]
+  root: /data/janus-runs
+checks:
+  - id: L3.step1.act.bitwise
+    type: bitwise_equal
+    level: L3
+    hard: false
+    select: {kind: tensor, step: 1, name: "layers.*.out", exclude: "*.routed.out"}     # routed.out 只有 TPU 有（GPU 只有分发缓冲区）

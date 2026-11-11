@@ -1,0 +1,366 @@
+{
+ "run": "<TPU 运行根>/t-a",
+ "step": 1,
+ "params": {
+  "run": "<TPU 运行根>/t-a",
+  "step": 1,
+  "lr": 1e-05,
+  "b1": 0.9,
+  "b2": 0.95,
+  "eps": 1e-08,
+  "wd": 0.033,
+  "out": "../alignments/01-b200x8-to-v5p8-4layers/results/phase2-t-a-adamw-step1.json"
+ },
+ "rows": [
+  {
+   "name": "decoder.final_layernorm.weight",
+   "ndim": 1,
+   "decay": false,
+   "rel_err": 0.002129578958235335,
+   "rel_err_mask_flipped": 0.04289004590476282
+  },
+  {
+   "name": "decoder.layers.0.mlp.linear_fc1.layer_norm_weight",
+   "ndim": 1,
+   "decay": false,
+   "rel_err": 6.549594007892941e-05,
+   "rel_err_mask_flipped": 0.0008195585125993639
+  },
+  {
+   "name": "decoder.layers.0.mlp.linear_fc1.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 6.038117706576205e-05,
+   "rel_err_mask_flipped": 0.0007908281542537095
+  },
+  {
+   "name": "decoder.layers.0.mlp.linear_fc2.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 4.954787041725171e-05,
+   "rel_err_mask_flipped": 0.0006484487720978854
+  },
+  {
+   "name": "decoder.layers.0.self_attention.k_layernorm.weight",
+   "ndim": 1,
+   "decay": false,
+   "rel_err": 0.0010890097724059662,
+   "rel_err_mask_flipped": 0.01348834167889641
+  },
+  {
+   "name": "decoder.layers.0.self_attention.linear_proj.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 1.6634473036303457e-05,
+   "rel_err_mask_flipped": 0.00021884466002912973
+  },
+  {
+   "name": "decoder.layers.0.self_attention.linear_qkv.layer_norm_weight",
+   "ndim": 1,
+   "decay": false,
+   "rel_err": 1.7339189057948988e-05,
+   "rel_err_mask_flipped": 0.0002060657380210955
+  },
+  {
+   "name": "decoder.layers.0.self_attention.linear_qkv.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 4.8137516190265164e-05,
+   "rel_err_mask_flipped": 0.000630743402812945
+  },
+  {
+   "name": "decoder.layers.0.self_attention.q_layernorm.weight",
+   "ndim": 1,
+   "decay": false,
+   "rel_err": 0.0011695240545550785,
+   "rel_err_mask_flipped": 0.013224817100012979
+  },
+  {
+   "name": "decoder.layers.1.mlp.experts.linear_fc1.weight0",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 0.0002684679144024257,
+   "rel_err_mask_flipped": 0.0035145331181175837
+  },
+  {
+   "name": "decoder.layers.1.mlp.experts.linear_fc1.weight1",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 0.00024133279890620028,
+   "rel_err_mask_flipped": 0.0031590702723941137
+  },
+  {
+   "name": "decoder.layers.1.mlp.experts.linear_fc2.weight0",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 0.0001648174615073959,
+   "rel_err_mask_flipped": 0.0021640901362592314
+  },
+  {
+   "name": "decoder.layers.1.mlp.experts.linear_fc2.weight1",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 0.0001503992136085115,
+   "rel_err_mask_flipped": 0.001974765589867559
+  },
+  {
+   "name": "decoder.layers.1.mlp.router.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 0.0003641374883723443,
+   "rel_err_mask_flipped": 0.004773567537421832
+  },
+  {
+   "name": "decoder.layers.1.mlp.shared_experts.linear_fc1.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 7.048815436280184e-05,
+   "rel_err_mask_flipped": 0.0009233867352994187
+  },
+  {
+   "name": "decoder.layers.1.mlp.shared_experts.linear_fc2.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 6.375656228862287e-05,
+   "rel_err_mask_flipped": 0.0008344613301004083
+  },
+  {
+   "name": "decoder.layers.1.pre_mlp_layernorm.weight",
+   "ndim": 1,
+   "decay": false,
+   "rel_err": 5.4044350844706795e-05,
+   "rel_err_mask_flipped": 0.0009522720711297446
+  },
+  {
+   "name": "decoder.layers.1.self_attention.k_layernorm.weight",
+   "ndim": 1,
+   "decay": false,
+   "rel_err": 0.0015167842149066935,
+   "rel_err_mask_flipped": 0.025813564346046324
+  },
+  {
+   "name": "decoder.layers.1.self_attention.linear_proj.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 5.131652947317888e-05,
+   "rel_err_mask_flipped": 0.0006719634881240511
+  },
+  {
+   "name": "decoder.layers.1.self_attention.linear_qkv.layer_norm_weight",
+   "ndim": 1,
+   "decay": false,
+   "rel_err": 2.598986692202329e-05,
+   "rel_err_mask_flipped": 0.0002970462316577687
+  },
+  {
+   "name": "decoder.layers.1.self_attention.linear_qkv.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 4.944644385494721e-05,
+   "rel_err_mask_flipped": 0.0006480159493257818
+  },
+  {
+   "name": "decoder.layers.1.self_attention.q_layernorm.weight",
+   "ndim": 1,
+   "decay": false,
+   "rel_err": 0.00167726034751826,
+   "rel_err_mask_flipped": 0.026653996358340912
+  },
+  {
+   "name": "decoder.layers.2.mlp.experts.linear_fc1.weight0",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 0.0001872464763699161,
+   "rel_err_mask_flipped": 0.002453614435243393
+  },
+  {
+   "name": "decoder.layers.2.mlp.experts.linear_fc1.weight1",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 9.233119855917281e-05,
+   "rel_err_mask_flipped": 0.0012108064423863678
+  },
+  {
+   "name": "decoder.layers.2.mlp.experts.linear_fc2.weight0",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 0.00013598726323584156,
+   "rel_err_mask_flipped": 0.0017862235327938097
+  },
+  {
+   "name": "decoder.layers.2.mlp.experts.linear_fc2.weight1",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 7.335101092220843e-05,
+   "rel_err_mask_flipped": 0.0009625812268862996
+  },
+  {
+   "name": "decoder.layers.2.mlp.router.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 0.00032423848040207285,
+   "rel_err_mask_flipped": 0.004252185047082817
+  },
+  {
+   "name": "decoder.layers.2.mlp.shared_experts.linear_fc1.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 5.7427998562658075e-05,
+   "rel_err_mask_flipped": 0.0007520900969184397
+  },
+  {
+   "name": "decoder.layers.2.mlp.shared_experts.linear_fc2.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 4.989745470285705e-05,
+   "rel_err_mask_flipped": 0.0006536133728850107
+  },
+  {
+   "name": "decoder.layers.2.pre_mlp_layernorm.weight",
+   "ndim": 1,
+   "decay": false,
+   "rel_err": 7.675103459742293e-05,
+   "rel_err_mask_flipped": 0.0014115614360156782
+  },
+  {
+   "name": "decoder.layers.2.self_attention.k_layernorm.weight",
+   "ndim": 1,
+   "decay": false,
+   "rel_err": 0.0016246954522306086,
+   "rel_err_mask_flipped": 0.025748523643273163
+  },
+  {
+   "name": "decoder.layers.2.self_attention.linear_proj.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 6.330145367942661e-05,
+   "rel_err_mask_flipped": 0.0008273381369317799
+  },
+  {
+   "name": "decoder.layers.2.self_attention.linear_qkv.layer_norm_weight",
+   "ndim": 1,
+   "decay": false,
+   "rel_err": 3.081037739856934e-05,
+   "rel_err_mask_flipped": 0.00034297781972123377
+  },
+  {
+   "name": "decoder.layers.2.self_attention.linear_qkv.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 5.6015700926414076e-05,
+   "rel_err_mask_flipped": 0.0007347719604467127
+  },
+  {
+   "name": "decoder.layers.2.self_attention.q_layernorm.weight",
+   "ndim": 1,
+   "decay": false,
+   "rel_err": 0.0017853995677498033,
+   "rel_err_mask_flipped": 0.02579168095284759
+  },
+  {
+   "name": "decoder.layers.3.mlp.experts.linear_fc1.weight0",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 0.00016118738908772103,
+   "rel_err_mask_flipped": 0.0021155265297834245
+  },
+  {
+   "name": "decoder.layers.3.mlp.experts.linear_fc1.weight1",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 0.00013424937738214384,
+   "rel_err_mask_flipped": 0.0017624906824187333
+  },
+  {
+   "name": "decoder.layers.3.mlp.experts.linear_fc2.weight0",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 0.00012860674251484328,
+   "rel_err_mask_flipped": 0.00168967810713671
+  },
+  {
+   "name": "decoder.layers.3.mlp.experts.linear_fc2.weight1",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 0.00011031091742538171,
+   "rel_err_mask_flipped": 0.0014479826321704486
+  },
+  {
+   "name": "decoder.layers.3.mlp.router.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 0.00028340704816942283,
+   "rel_err_mask_flipped": 0.003707404700610901
+  },
+  {
+   "name": "decoder.layers.3.mlp.shared_experts.linear_fc1.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 5.5321193753525784e-05,
+   "rel_err_mask_flipped": 0.0007245620825477372
+  },
+  {
+   "name": "decoder.layers.3.mlp.shared_experts.linear_fc2.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 5.5396584701966046e-05,
+   "rel_err_mask_flipped": 0.0007253619771625814
+  },
+  {
+   "name": "decoder.layers.3.pre_mlp_layernorm.weight",
+   "ndim": 1,
+   "decay": false,
+   "rel_err": 0.00011399971135561317,
+   "rel_err_mask_flipped": 0.001870895431646951
+  },
+  {
+   "name": "decoder.layers.3.self_attention.k_layernorm.weight",
+   "ndim": 1,
+   "decay": false,
+   "rel_err": 0.0013819527101146523,
+   "rel_err_mask_flipped": 0.022201820677777418
+  },
+  {
+   "name": "decoder.layers.3.self_attention.linear_proj.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 6.535885533275324e-05,
+   "rel_err_mask_flipped": 0.000854151842443739
+  },
+  {
+   "name": "decoder.layers.3.self_attention.linear_qkv.layer_norm_weight",
+   "ndim": 1,
+   "decay": false,
+   "rel_err": 3.3045787642989486e-05,
+   "rel_err_mask_flipped": 0.0003655686855755069
+  },
+  {
+   "name": "decoder.layers.3.self_attention.linear_qkv.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 5.920314553389176e-05,
+   "rel_err_mask_flipped": 0.0007770091238837927
+  },
+  {
+   "name": "decoder.layers.3.self_attention.q_layernorm.weight",
+   "ndim": 1,
+   "decay": false,
+   "rel_err": 0.001590708385688788,
+   "rel_err_mask_flipped": 0.022626316597868214
+  },
+  {
+   "name": "embedding.word_embeddings.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 0.0004917282816916838,
+   "rel_err_mask_flipped": 0.006956245077718572
+  },
+  {
+   "name": "output_layer.weight",
+   "ndim": 2,
+   "decay": true,
+   "rel_err": 8.134684011262715e-05,
+   "rel_err_mask_flipped": 0.0010675051300106538
+  }
+ ]
+}

@@ -1,0 +1,33 @@
+{
+ "test": "t-a 第 1 步 grad.output_layer.weight（加钩子的训练步，诊断值）",
+ "ref": "g1k-a 第 1 步 grad.output_layer.weight",
+ "hidden_logits": "t-a 第 1 步 rank 0 第一个 microbatch",
+ "rows": 120832,
+ "unseen_rows_step1": 109741,
+ "row_sum_norm": {
+  "test": 0.00445745995349615,
+  "ref": 0.0013907098184773568
+ },
+ "row_sum_cos_hbar": {
+  "test": -0.40244147465025765,
+  "ref": -0.9788119153236436,
+  "test_minus_ref": -0.10506504232411662
+ },
+ "row_sum_diff_norm": 0.004117672312562679,
+ "row_sum_diff_random_expect": 0.00472043181042535,
+ "unseen_common_mode": {
+  "mean_diff_norm": 6.26532949338515e-08,
+  "random_expect": 1.5618196210317557e-09,
+  "cos_with_mean_ref_grad": -0.09723434210297324,
+  "cos_with_hbar": -0.10347110410074134,
+  "rel_to_mean_ref_grad": 0.0003310454804415926
+ },
+ "bf16_rounding_of_dlogits": {
+  "per_token_sum_mean": -3.201115486911599e-05,
+  "per_token_sum_sd": 0.000135245999558326,
+  "frac_p_target_below_2^-9": 0.99609375,
+  "implied_row_sum_cos_ref": 0.9724891892591728,
+  "implied_row_sum_cos_test": 0.4096870174006743,
+  "note": "单个 microbatch（rank 0 第一个）重算，方向可比，大小只作量级参考"
+ }
+}

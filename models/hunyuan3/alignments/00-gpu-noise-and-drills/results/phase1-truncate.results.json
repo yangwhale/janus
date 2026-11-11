@@ -1,0 +1,142 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.0.1",
+  "commit": null
+ },
+ "catalog": {
+  "path": "catalogs/hunyuan3-4l/phase1-truncate.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "4544788fce51217b322f43cb32927037ad3abca6f8bafefa284da898bdbdc7ef",
+  "raw_sha256": "b6199984e5c1313429f2a8cb3f51941622bc8cc87d90da4e3854126217278164"
+ },
+ "runs": {
+  "t-2l": {
+   "path": "/data/janus-runs2/t-2l",
+   "meta_sha256": "76dd16b321e31dce9e01804d06274f7031bc33736ec8d8f746492634d3d04131"
+  },
+  "d-a": {
+   "path": "/data/janus-runs2/d-a",
+   "meta_sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+  }
+ },
+ "started_at": "2026-11-03T23:50:16+00:00",
+ "finished_at": "2026-11-03T23:50:19+00:00",
+ "summary": {
+  "pass": 4,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L2.truncate.embed",
+   "type": "bitwise_equal",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 1,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/t-2l",
+     "sha256": "76dd16b321e31dce9e01804d06274f7031bc33736ec8d8f746492634d3d04131"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/L2.truncate.embed.jsonl"
+  },
+  {
+   "id": "L2.truncate.layer0",
+   "type": "bitwise_equal",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 10,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/t-2l",
+     "sha256": "76dd16b321e31dce9e01804d06274f7031bc33736ec8d8f746492634d3d04131"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/L2.truncate.layer0.jsonl"
+  },
+  {
+   "id": "L2.truncate.layer1",
+   "type": "bitwise_equal",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 10,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/t-2l",
+     "sha256": "76dd16b321e31dce9e01804d06274f7031bc33736ec8d8f746492634d3d04131"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/L2.truncate.layer1.jsonl"
+  },
+  {
+   "id": "L2.truncate.router1",
+   "type": "bitwise_equal",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 3,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/t-2l",
+     "sha256": "76dd16b321e31dce9e01804d06274f7031bc33736ec8d8f746492634d3d04131"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/L2.truncate.router1.jsonl"
+  }
+ ]
+}

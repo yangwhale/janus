@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "janus"
+dynamic = ["version"]
+description = "GPU（Megatron）与 TPU（MaxText）训练的数值对齐工具：分级检查、噪声参照判定、两侧统一抓数格式"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "See LICENSE." }
+authors = [{ name = "the janus contributors" }]
+keywords = ["numerics", "alignment", "tpu", "gpu", "megatron", "maxtext", "jax"]
+classifiers = [
+  "Private :: Do Not Upload",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Operating System :: POSIX :: Linux",
+  "Topic :: Scientific/Engineering",
+]
+# 核心只依赖这三样：janus run、全部检查、抓数格式读写都在 CPU 上跑，不要 torch / jax。
+dependencies = ["numpy>=1.24", "ml_dtypes>=0.3", "pyyaml>=6"]
+
+[project.optional-dependencies]
+report = ["matplotlib>=3.7"]                 # janus run --html、对齐实践的配图与曲线
+test = ["pytest>=7", "matplotlib>=3.7"]      # CI 跑的就是这一组
+lint = ["ruff==0.17.3"]                     # 版本钉死：规则集随版本变，CI 与本地要一致
+dev = ["janus[report,test,lint]"]
+# 抓数（janus/dump/megatron.py、janus/dump/maxtext.py）要 torch / jax，跟着训练镜像走，不在这里装。
+
+[project.scripts]
+janus = "janus.cli:main"
+
+[project.urls]
+Repository = "https://github.com/yangwhale/janus"
+Changelog = "https://github.com/yangwhale/janus/blob/main/CHANGELOG.md"
+
+[tool.setuptools.dynamic]
+version = { attr = "janus.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["janus*"]
+
+[tool.setuptools.package-data]
+"janus.report" = ["reference_gates.yaml"]   # 参考档门槛（janus/report/gates.py 读）
+
+# ---------------------------------------------------------------- pytest
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --import-mode=importlib"
+
+# ---------------------------------------------------------------- ruff
+# 取舍见 docs/dev/design/0001-repo-standards.md「lint 与格式」。
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+extend-exclude = ["*.ipynb"]
+
+[tool.ruff.lint]
+# E4/E7/E9 语句与语法、F pyflakes、W 空白、B bugbear、I import 排序、UP 新写法。
+select = ["E4", "E7", "E9", "F", "W", "B", "I", "UP"]
+ignore = [
+  "E501",   # 行长交给格式化；本仓库的长行多是带出处的注释，不硬拆
+  "E731",   # 局部 lambda 赋值是本仓库常用写法（短小的取数函数）
+  "E741",   # 推导式里的 l / O 这类短名，不改
+  "B023",   # 循环里定义、当轮就调用的闭包（JAX vjp / jit 的常见写法），全是误报
+  "B905",   # zip(strict=) 要 3.10 且改变行为，逐处判断后再开
+]
+
+[tool.ruff.lint.per-file-ignores]
+# 模型层脚本直接 python 跑，要先改 sys.path 再 import janus
+"models/**/*.py" = ["E402"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["janus"]
+
+[tool.ruff.format]
+# 只对 Makefile 里 FMT_PATHS 列出的路径强制（见设计说明）；老代码的对齐注释不批量改写。
+line-ending = "lf"

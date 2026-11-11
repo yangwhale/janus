@@ -1,0 +1,27 @@
+# 第一阶段 · 存档 / 续训：确定性设置下连续训练 20 步（第 10 步存档）对 从第 10 步存档续训到 20 步。
+# 续训后每步的数据、loss、统计量、第 11 步全部抓数都应与连续训练逐位相同；不同就说明存档或恢复丢了状态（优化器、路由偏置、数据位置、随机数）。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase1-resume
+runs:
+  test: r-resume
+  golden: [r-cont]
+  root: /data/janus-runs2
+checks:
+  - id: L0.resume.data
+    type: data_fingerprint
+    level: L0
+    select: {kind: tokens, steps: "11:21"}
+    params: {first_loss: false}
+  - id: L4.resume.overlap
+    type: overlap_replay
+    level: L4
+    select: {kind: metrics}
+  - id: L3.resume.step11
+    type: bitwise_equal
+    level: L3
+    select: {kind: tensor, step: 11, name: "*"}
+  - id: L3.resume.coverage
+    type: coverage
+    level: L3
+    select: {kind: tensor, step: 11, name: "*"}

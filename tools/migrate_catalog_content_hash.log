@@ -1,0 +1,73 @@
+# 目录指纹迁移到 content-v1
+
+仓库提交 24dde42；历史里 286 个不同的 YAML 版本。
+
+## 结果文件
+
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-determinism.results.json`：phase1-determinism.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-full-noise28.results.json`：phase1-full-noise28.yaml：原文件不同、只差说明文字（跑的那一版 b09982e）
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-full.results.json`：phase1-full.yaml：原文件不同、只差说明文字（跑的那一版 fa9c49b）
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-ga.results.json`：phase1-ga.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-hooks.results.json`：phase1-hooks.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-inject.results.json`：phase1-inject.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-nan.results.json`：phase1-nan.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-noise.results.json`：phase1-noise.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-noise15.results.json`：phase1-noise15.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-obs.results.json`：phase1-obs.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-opt8.results.json`：phase1-opt8.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-parallel-ext.results.json`：phase1-parallel-ext.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-parallel.results.json`：phase1-parallel.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-remat.results.json`：phase1-remat.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-resume.results.json`：phase1-resume.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-spike.results.json`：phase1-spike.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-tf32.results.json`：phase1-tf32.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-tp-cp.cp2.results.json`：phase1-tp-cp.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-tp-cp.tp2.results.json`：phase1-tp-cp.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-truncate.results.json`：phase1-truncate.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-acc-health-rcc.results.json`：phase2-acc-health-rcc.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-acceptance-rc.results.json`：phase2-acceptance-rc.yaml：原文件不同、只差说明文字（跑的那一版 e5446e3）
+- 迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-acceptance-rcc-ep8.results.json`：phase2-acceptance-rcc-ep8.yaml：原文件不同、只差说明文字（跑的那一版 e5446e3）
+- 迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-acceptance-rcc-on.results.json`：phase2-acceptance-rcc-on.yaml：原文件不同、只差说明文字（跑的那一版 e5446e3）
+- 迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-ckpt-convert.results.json`：phase2-ckpt-convert.yaml：原文件不同、只差说明文字（跑的那一版 5cfe9cf）
+- 没迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-cpu/cpu-smoke-init.results.json`：/tmp/hy3-cpu-smoke4/catalog-init.yaml：仓库里找不到这份目录
+- 没迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-cpu/cpu-smoke.results.json`：/tmp/hy3-cpu-smoke4/catalog.yaml：仓库里找不到这份目录
+- 迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-l0-state.results.json`：phase2-l0-state.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-l2-replay-bitwise.results.json`：phase2-l2-replay-bitwise.yaml：原文件不同、只差说明文字（跑的那一版 2072532）
+- 迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-l2-replay-bwd-on-xnoise.results.json`：phase2-l2-replay-bwd-on-xnoise.yaml：原文件不同、只差说明文字（跑的那一版 709ae89）
+- 迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-l2-replay-bwd-on.results.json`：phase2-l2-replay-bwd-on.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-obs-gate.results.json`：phase2-obs-gate.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-obs-grad.results.json`：phase2-obs-grad.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-resume.results.json`：phase2-resume.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-st1-on-state-xnoise.results.json`：phase2-st1-on-state-xnoise.yaml：原文件不同、只差说明文字（跑的那一版 709ae89）
+- 迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-st1-prod-state.results.json`：phase2-st1-prod-state.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-st8-opt8.results.json`：phase2-st8-opt8.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-t-a-coverage.results.json`：phase2-t-a-coverage.yaml：原文件也相同
+- 没迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-t-loss30.results.json`：/tmp/jg/c30.yaml：跑的那一版（a81a4ce，sha256 93f874a668fb…）内容指纹 99409f3dde72… ≠ 现在 models/hunyuan3/alignments/01-v5p-acceptance/catalogs/phase2-t-loss30.yaml 的 137ae5e007f4…（检查真的变了）
+- 迁移 `models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-t-nan8.results.json`：phase2-t-nan8.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/02-v7x-acceptance/results/phase2-v7x-acc-health-rcc.results.json`：phase2-v7x-acc-health-rcc.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/02-v7x-acceptance/results/phase2-v7x-acceptance-rc.results.json`：phase2-v7x-acceptance-rc.yaml：原文件不同、只差说明文字（跑的那一版 e5446e3）
+- 迁移 `models/hunyuan3/alignments/02-v7x-acceptance/results/phase2-v7x-acceptance-rcc-ep8.results.json`：phase2-v7x-acceptance-rcc-ep8.yaml：原文件不同、只差说明文字（跑的那一版 e5446e3）
+- 迁移 `models/hunyuan3/alignments/02-v7x-acceptance/results/phase2-v7x-acceptance-rcc.results.json`：phase2-v7x-acceptance-rcc.yaml：原文件不同、只差说明文字（跑的那一版 e5446e3）
+- 迁移 `models/hunyuan3/alignments/02-v7x-acceptance/results/phase2-v7x-coverage.results.json`：phase2-v7x-coverage.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/02-v7x-acceptance/results/phase2-v7x-l0-state.results.json`：phase2-v7x-l0-state.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/02-v7x-acceptance/results/phase2-v7x-l2-replay-bitwise.results.json`：phase2-v7x-l2-replay-bitwise.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/02-v7x-acceptance/results/phase2-v7x-l2-replay-bwd-on-xnoise.results.json`：phase2-v7x-l2-replay-bwd-on-xnoise.yaml：原文件不同、只差说明文字（跑的那一版 709ae89）
+- 迁移 `models/hunyuan3/alignments/02-v7x-acceptance/results/phase2-v7x-l2-replay-bwd-on.results.json`：phase2-v7x-l2-replay-bwd-on.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/02-v7x-acceptance/results/phase2-v7x-obs-gate.results.json`：phase2-v7x-obs-gate.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/02-v7x-acceptance/results/phase2-v7x-resume.results.json`：phase2-v7x-resume.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/02-v7x-acceptance/results/phase2-v7x-rmap-repro.results.json`：phase2-v7x-rmap-repro.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/02-v7x-acceptance/results/phase2-v7x-st1-on-state-xnoise.results.json`：phase2-v7x-st1-on-state-xnoise.yaml：原文件不同、只差说明文字（跑的那一版 709ae89）
+- 迁移 `models/hunyuan3/alignments/02-v7x-acceptance/results/phase2-v7x-st1-prod-state.results.json`：phase2-v7x-st1-prod-state.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/02-v7x-acceptance/results/phase2-v7x-st8-opt8.results.json`：phase2-v7x-st8-opt8.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/02-v7x-acceptance/results/phase2-v7x-t-loss30.results.json`：phase2-v7x-t-loss30.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/02-v7x-acceptance/results/phase2-v7x-t-nan8.results.json`：phase2-v7x-t-nan8.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/03-gpu-remat-golden/results/remat-noise.results.json`：remat-noise.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/03-gpu-remat-golden/results/remat-replay-base.results.json`：remat-replay-base.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/03-gpu-remat-golden/results/remat-replay.results.json`：remat-replay.yaml：原文件也相同
+- 迁移 `models/hunyuan3/alignments/03-gpu-remat-golden/results/remat-vs-g1k.results.json`：remat-vs-g1k.yaml：原文件也相同
+
+迁移 58，没迁移 3，本来就是 content-v1 0，不是目录写的（独立脚本或没有 catalog）24。
+
+## LKG 登记
+
+- `models/hunyuan3/regression/lkg.yaml`：9 条登记补了 catalog_content_sha256

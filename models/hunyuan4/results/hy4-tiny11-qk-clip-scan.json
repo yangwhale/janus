@@ -1,0 +1,315 @@
+{
+ "layers": 11,
+ "tau": 0.001,
+ "max_logits_leaves": [
+  {
+   "path": "decoder/dense_layers/self_attention/attention_op/max_logits",
+   "shape": [
+    1,
+    1,
+    4
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/self_attention/attention_op/max_logits",
+   "shape": [
+    2,
+    1,
+    4
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/self_attention/attention_op/max_logits",
+   "shape": [
+    2,
+    1,
+    4
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/self_attention/attention_op/max_logits",
+   "shape": [
+    2,
+    1,
+    4
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/self_attention/attention_op/max_logits",
+   "shape": [
+    2,
+    1,
+    4
+   ]
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/self_attention/attention_op/max_logits",
+   "shape": [
+    1,
+    4
+   ]
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/self_attention/attention_op/max_logits",
+   "shape": [
+    1,
+    4
+   ]
+  }
+ ],
+ "wq_b": [
+  {
+   "param": "decoder/dense_layers/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    1,
+    4,
+    48
+   ],
+   "sqrt_scale_per_layer_head": [
+    [
+     0.3111472725868225,
+     0.3131828010082245,
+     0.3536060154438019,
+     0.3656126856803894
+    ]
+   ],
+   "within_head_spread": 2.9802322387695312e-08,
+   "expected_sqrt_scale_per_layer_head": [
+    [
+     0.3111472725868225,
+     0.3131828010082245,
+     0.3536060154438019,
+     0.3656126856803894
+    ]
+   ],
+   "max_logits_shape": [
+    1,
+    1,
+    4
+   ]
+  },
+  {
+   "param": "decoder/moe_layers/layers_0/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    2,
+    4,
+    48
+   ],
+   "sqrt_scale_per_layer_head": [
+    [
+     0.3354667127132416,
+     0.2888959050178528,
+     0.30843910574913025,
+     0.3196418285369873
+    ],
+    [
+     0.3354667127132416,
+     0.2888959050178528,
+     0.30843910574913025,
+     0.3196418285369873
+    ]
+   ],
+   "within_head_spread": 2.9802322387695312e-08,
+   "expected_sqrt_scale_per_layer_head": [
+    [
+     0.34374991059303284,
+     0.34936925768852234,
+     0.30843910574913025,
+     0.3374550938606262
+    ],
+    [
+     0.3354667127132416,
+     0.2888959050178528,
+     0.35581129789352417,
+     0.3196418285369873
+    ]
+   ],
+   "max_logits_shape": [
+    2,
+    1,
+    4
+   ]
+  },
+  {
+   "param": "decoder/moe_layers/layers_1/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    2,
+    4,
+    48
+   ],
+   "sqrt_scale_per_layer_head": [
+    [
+     0.2899637520313263,
+     0.32332324981689453,
+     0.34935706853866577,
+     0.3312218487262726
+    ],
+    [
+     0.2899637520313263,
+     0.32332324981689453,
+     0.34935706853866577,
+     0.3312218487262726
+    ]
+   ],
+   "within_head_spread": 2.9802322387695312e-08,
+   "expected_sqrt_scale_per_layer_head": [
+    [
+     0.2899637520313263,
+     0.32332324981689453,
+     0.34935706853866577,
+     0.349242627620697
+    ],
+    [
+     0.3600126802921295,
+     0.3351427912712097,
+     0.3591165542602539,
+     0.3312218487262726
+    ]
+   ],
+   "max_logits_shape": [
+    2,
+    1,
+    4
+   ]
+  },
+  {
+   "param": "decoder/moe_layers/layers_2/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    2,
+    4,
+    48
+   ],
+   "sqrt_scale_per_layer_head": [
+    [
+     0.31372103095054626,
+     0.3327696919441223,
+     0.35143664479255676,
+     0.3193223476409912
+    ],
+    [
+     0.31372103095054626,
+     0.3327696919441223,
+     0.35143664479255676,
+     0.3193223476409912
+    ]
+   ],
+   "within_head_spread": 2.9802322387695312e-08,
+   "expected_sqrt_scale_per_layer_head": [
+    [
+     0.3272789418697357,
+     0.3327696919441223,
+     0.3655497431755066,
+     0.3193223476409912
+    ],
+    [
+     0.31372103095054626,
+     0.3402269184589386,
+     0.35143664479255676,
+     0.33554235100746155
+    ]
+   ],
+   "max_logits_shape": [
+    2,
+    1,
+    4
+   ]
+  },
+  {
+   "param": "decoder/moe_layers/layers_3/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    2,
+    4,
+    48
+   ],
+   "sqrt_scale_per_layer_head": [
+    [
+     0.336086630821228,
+     0.30527618527412415,
+     0.311535120010376,
+     0.30400264263153076
+    ],
+    [
+     0.336086630821228,
+     0.30527618527412415,
+     0.311535120010376,
+     0.30400264263153076
+    ]
+   ],
+   "within_head_spread": 2.9802322387695312e-08,
+   "expected_sqrt_scale_per_layer_head": [
+    [
+     0.35253581404685974,
+     0.335924357175827,
+     0.3164960741996765,
+     0.32276400923728943
+    ],
+    [
+     0.336086630821228,
+     0.30527618527412415,
+     0.311535120010376,
+     0.30400264263153076
+    ]
+   ],
+   "max_logits_shape": [
+    2,
+    1,
+    4
+   ]
+  },
+  {
+   "param": "decoder/moe_layers_remainder/layers_0/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    4,
+    48
+   ],
+   "sqrt_scale_per_layer_head": [
+    0.32143235206604004,
+    0.29822438955307007,
+    0.3369069993495941,
+    0.30491432547569275
+   ],
+   "within_head_spread": 2.9802322387695312e-08,
+   "expected_sqrt_scale_per_layer_head": [
+    0.32143235206604004,
+    0.29822438955307007,
+    0.3369069993495941,
+    0.30491432547569275
+   ],
+   "max_logits_shape": [
+    1,
+    4
+   ]
+  },
+  {
+   "param": "decoder/moe_layers_remainder/layers_1/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    4,
+    48
+   ],
+   "sqrt_scale_per_layer_head": [
+    0.34193530678749084,
+    0.35336369276046753,
+    0.3026370704174042,
+    0.3532988429069519
+   ],
+   "within_head_spread": 2.9802322387695312e-08,
+   "expected_sqrt_scale_per_layer_head": [
+    0.34193530678749084,
+    0.35336369276046753,
+    0.3026370704174042,
+    0.3532988429069519
+   ],
+   "max_logits_shape": [
+    1,
+    4
+   ]
+  }
+ ]
+}

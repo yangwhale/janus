@@ -1,0 +1,45 @@
+# 第一阶段 · 并行等价：只换专家并行度（EP8 → EP4），同一份权重、同一 batch、确定性设置，比第 1 步。
+# 换并行方式会改专家 GEMM 的分组与通信顺序：逐位相同最好；不逐位时看 ULP 分布（只诊断）与 rel_L2，
+# 分辨「舍入顺序不同」（ULP 集中在 1–2 格）与「算错了」（结构化的大差）。参数名在两种 EP 下指向不同专家，不比参数；专家分发缓冲区（`*.experts.out`）的行数取决于每个 rank 收到多少 token，EP 一变形状就变，不比。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase1-parallel
+runs:
+  test: p-ep4
+  golden: [d-a]
+  root: /data/janus-runs2
+checks:
+  - id: L0.data.fingerprint
+    type: data_fingerprint
+    level: L0
+    select: {kind: tokens, steps: "1:4"}
+  - id: L2.parallel.fwd.bitwise
+    type: bitwise_equal
+    level: L2
+    hard: false
+    select: {kind: tensor, step: 1, name: "*.out", exclude: "*.experts.out"}
+  - id: L2.parallel.fwd.ulp
+    type: ulp_distribution
+    level: L2
+    select: {kind: tensor, step: 1, name: "layers.*.out", exclude: "*.experts.out"}
+  - id: L2.parallel.fwd.tol
+    type: tensor_tolerance
+    level: L2
+    select: {kind: tensor, step: 1, name: "*.out", exclude: "*.experts.out"}
+    metrics: [rel_l2, cosine, max_abs]
+    threshold: {rel_l2: 1.0e-2, cosine: 0.9999}
+    source: "推断：只换并行方式时的宽松起点，BF16 一次舍入相对误差 2^-8≈3.9e-3 的量级；看实测再收紧"
+  - id: L2.parallel.router
+    type: discrete_agreement
+    level: L2
+    select: {kind: tensor, step: 1, name: "layers.*.mlp.router.topk_idx"}
+    params: {mode: topk}
+    threshold: {set_frac: 0.999}
+    source: "推断：路由输入不逐位时允许极少数打平的 token 翻转"
+  - id: L3.parallel.loss
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "loss.per_token"}
+    metrics: [rel_l2, max_abs]
+    threshold: {rel_l2: 1.0e-3}
+    source: "推断：同上"

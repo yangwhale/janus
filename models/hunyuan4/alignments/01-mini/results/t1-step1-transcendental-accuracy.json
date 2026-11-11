@@ -1,0 +1,186 @@
+{
+ "what": "transcendental_accuracy_highest（MaxText e8dee18f，默认关）对 T1 第 1 步的影响：开关关 / 开两组，各自对同设置的 FP32 参照",
+ "kd_row0_layer0": {
+  "off": {
+   "run": "t1diag15",
+   "kd_row0_tpu_in_graph": 0.00010969022122253591,
+   "kd_row0_fp64_same_inputs": 0.00010981703855521345,
+   "kd_row0_rel": -0.0011548056143744212,
+   "lse_ulp_signed_mean": -0.9532231167077043,
+   "lse_frac_rows_positive": 0.08642578125
+  },
+  "on": {
+   "run": "tw-tadiag",
+   "kd_row0_tpu_in_graph": 0.00010979638804631264,
+   "kd_row0_fp64_same_inputs": 0.00010978576772460206,
+   "kd_row0_rel": 9.673678046517864e-05,
+   "lse_ulp_signed_mean": 0.025313016049494763,
+   "lse_frac_rows_positive": 0.510009765625
+  }
+ },
+ "step1_grads": {
+  "off": {
+   "tpu": "t1vdiag",
+   "ref": "t1diag18b",
+   "n_tensors": 205,
+   "R_median": 0.8837763918687634,
+   "R_max": 8.724407214372707,
+   "n_R_gt_1.2": 7,
+   "R_gt_1.2": [
+    [
+     "model.layers.3.hc_mlp_layer.hc_pre.hc_base",
+     8.724407214372707
+    ],
+    [
+     "model.layers.0.hc_attn_layer.hc_pre.hc_scale",
+     4.354048881729037
+    ],
+    [
+     "model.layers.3.hc_attn_layer.hc_pre.hc_scale",
+     2.366464698674939
+    ],
+    [
+     "model.layers.5.hc_attn_layer.hc_pre.hc_scale",
+     2.3021843007190728
+    ],
+    [
+     "model.hc_head.hc_head_scale",
+     1.6886778453776523
+    ],
+    [
+     "model.layers.1.self_attn.indexer.k_norm.weight",
+     1.5922795253615805
+    ],
+    [
+     "model.mtp_layers.0.enorm.weight",
+     1.2310075752232508
+    ]
+   ],
+   "focus_layer3_ffn_hc_base": {
+    "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_base",
+    "tpu_vs_ref": 0.035110844850574474,
+    "gpu_vs_ref": 0.0040244390235169665,
+    "R": 8.724407214372707
+   },
+   "hc_gate_params_R": {
+    "model.hc_head.hc_head_base": 0.7370160244379366,
+    "model.hc_head.hc_head_fn": 0.731291848279863,
+    "model.hc_head.hc_head_scale": 1.6886778453776523,
+    "model.layers.0.hc_attn_layer.hc_pre.hc_base": 0.1642048831736023,
+    "model.layers.0.hc_attn_layer.hc_pre.hc_scale": 4.354048881729037,
+    "model.layers.0.hc_mlp_layer.hc_pre.hc_base": 0.2788407807286171,
+    "model.layers.0.hc_mlp_layer.hc_pre.hc_scale": 0.7999032487219063,
+    "model.layers.1.hc_attn_layer.hc_pre.hc_base": 0.5081270439263361,
+    "model.layers.1.hc_attn_layer.hc_pre.hc_scale": 0.39408070137900586,
+    "model.layers.1.hc_mlp_layer.hc_pre.hc_base": 0.6324233974062498,
+    "model.layers.1.hc_mlp_layer.hc_pre.hc_scale": 0.13252599137324536,
+    "model.layers.2.hc_attn_layer.hc_pre.hc_base": 0.4121277929308384,
+    "model.layers.2.hc_attn_layer.hc_pre.hc_scale": 0.7068414575551418,
+    "model.layers.2.hc_mlp_layer.hc_pre.hc_base": 0.8203497749066957,
+    "model.layers.2.hc_mlp_layer.hc_pre.hc_scale": 0.07575169896739431,
+    "model.layers.3.hc_attn_layer.hc_pre.hc_base": 0.33931679454740404,
+    "model.layers.3.hc_attn_layer.hc_pre.hc_scale": 2.366464698674939,
+    "model.layers.3.hc_mlp_layer.hc_pre.hc_base": 8.724407214372707,
+    "model.layers.3.hc_mlp_layer.hc_pre.hc_scale": 0.7904568276945299,
+    "model.layers.4.hc_attn_layer.hc_pre.hc_base": 0.8230837708780977,
+    "model.layers.4.hc_attn_layer.hc_pre.hc_scale": 0.824248554853533,
+    "model.layers.4.hc_mlp_layer.hc_pre.hc_base": 1.0132758695354604,
+    "model.layers.4.hc_mlp_layer.hc_pre.hc_scale": 0.01884373183135316,
+    "model.layers.5.hc_attn_layer.hc_pre.hc_base": 0.579718043410883,
+    "model.layers.5.hc_attn_layer.hc_pre.hc_scale": 2.3021843007190728,
+    "model.layers.5.hc_mlp_layer.hc_pre.hc_base": 0.6979114553766145,
+    "model.layers.5.hc_mlp_layer.hc_pre.hc_scale": 0.6193400772480061,
+    "model.layers.6.hc_attn_layer.hc_pre.hc_base": 0.13096598245629362,
+    "model.layers.6.hc_attn_layer.hc_pre.hc_scale": 0.6639140405309543,
+    "model.layers.6.hc_mlp_layer.hc_pre.hc_base": 0.9345025846783378,
+    "model.layers.6.hc_mlp_layer.hc_pre.hc_scale": 1.079039444142905
+   }
+  },
+  "on": {
+   "tpu": "tw-tadiag",
+   "ref": "tw-taref",
+   "n_tensors": 205,
+   "R_median": 0.886441654552032,
+   "R_max": 6.676118062826786,
+   "n_R_gt_1.2": 7,
+   "R_gt_1.2": [
+    [
+     "model.layers.3.hc_mlp_layer.hc_pre.hc_base",
+     6.676118062826786
+    ],
+    [
+     "model.layers.3.hc_attn_layer.hc_pre.hc_scale",
+     5.432854231424893
+    ],
+    [
+     "model.hc_head.hc_head_scale",
+     2.232725924287471
+    ],
+    [
+     "model.layers.1.self_attn.indexer.k_norm.weight",
+     1.59611441839984
+    ],
+    [
+     "model.layers.4.hc_mlp_layer.hc_pre.hc_base",
+     1.3558876343241455
+    ],
+    [
+     "model.layers.4.hc_mlp_layer.hc_pre.hc_fn",
+     1.2824269796460765
+    ],
+    [
+     "model.mtp_layers.0.enorm.weight",
+     1.2391227622758643
+    ]
+   ],
+   "focus_layer3_ffn_hc_base": {
+    "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_base",
+    "tpu_vs_ref": 0.03585406232504905,
+    "gpu_vs_ref": 0.005370495546609283,
+    "R": 6.676118062826786
+   },
+   "hc_gate_params_R": {
+    "model.hc_head.hc_head_base": 0.6586047329084816,
+    "model.hc_head.hc_head_fn": 0.7154906546701562,
+    "model.hc_head.hc_head_scale": 2.232725924287471,
+    "model.layers.0.hc_attn_layer.hc_pre.hc_base": 0.265283647533278,
+    "model.layers.0.hc_attn_layer.hc_pre.hc_scale": 1.0969000632252301,
+    "model.layers.0.hc_mlp_layer.hc_pre.hc_base": 0.2521221029932627,
+    "model.layers.0.hc_mlp_layer.hc_pre.hc_scale": 1.1298692195228441,
+    "model.layers.1.hc_attn_layer.hc_pre.hc_base": 0.4212319756643309,
+    "model.layers.1.hc_attn_layer.hc_pre.hc_scale": 0.6165234297526447,
+    "model.layers.1.hc_mlp_layer.hc_pre.hc_base": 0.636459240957829,
+    "model.layers.1.hc_mlp_layer.hc_pre.hc_scale": 0.10492650790572565,
+    "model.layers.2.hc_attn_layer.hc_pre.hc_base": 0.4151375828173413,
+    "model.layers.2.hc_attn_layer.hc_pre.hc_scale": 0.6265379684079426,
+    "model.layers.2.hc_mlp_layer.hc_pre.hc_base": 0.6136445976567931,
+    "model.layers.2.hc_mlp_layer.hc_pre.hc_scale": 0.1022245437865106,
+    "model.layers.3.hc_attn_layer.hc_pre.hc_base": 0.32864895961371904,
+    "model.layers.3.hc_attn_layer.hc_pre.hc_scale": 5.432854231424893,
+    "model.layers.3.hc_mlp_layer.hc_pre.hc_base": 6.676118062826786,
+    "model.layers.3.hc_mlp_layer.hc_pre.hc_scale": 0.7524248229525656,
+    "model.layers.4.hc_attn_layer.hc_pre.hc_base": 0.9110712148014435,
+    "model.layers.4.hc_attn_layer.hc_pre.hc_scale": 0.864624892802243,
+    "model.layers.4.hc_mlp_layer.hc_pre.hc_base": 1.3558876343241455,
+    "model.layers.4.hc_mlp_layer.hc_pre.hc_scale": 0.10854803972186919,
+    "model.layers.5.hc_attn_layer.hc_pre.hc_base": 0.5420772383623105,
+    "model.layers.5.hc_attn_layer.hc_pre.hc_scale": 1.1427242684333,
+    "model.layers.5.hc_mlp_layer.hc_pre.hc_base": 0.6407970395863524,
+    "model.layers.5.hc_mlp_layer.hc_pre.hc_scale": 0.6807245628229583,
+    "model.layers.6.hc_attn_layer.hc_pre.hc_base": 0.13927140948413305,
+    "model.layers.6.hc_attn_layer.hc_pre.hc_scale": 0.6545036165565775,
+    "model.layers.6.hc_mlp_layer.hc_pre.hc_base": 1.0478096278849043,
+    "model.layers.6.hc_mlp_layer.hc_pre.hc_scale": 1.12301697926388
+   }
+  }
+ },
+ "rule": "KD：TPU 图内对 FP64 的相对差应与 GPU 记下的值同一量级（+1.9e-4）；梯度：R ≤ 1.2（PROTOCOL.md 第 5 节）",
+ "kd_layer0_vs_gpu": {
+  "definition": "第 1 步第 0 层索引器 KD（diag_step1 的 dense 层 indexer_loss_raw ÷ 8）对 GPU g2-a 第 1 步 indexer_loss.0 的相对差",
+  "gpu_g2a": 2.7756086637964472e-06,
+  "off_t1vdiag": -0.00137279,
+  "on_tw_tadiag": -4.0795e-05,
+  "note": "「关」一组用 t1vdiag（与 tw-tadiag 同为 t1v 设置）；本文件 KD 第 0 行对 FP64 的「关」一组用的是 t1diag15（t1s 设置，对 GPU −1.159e-3），两组设置不同"
+ },
+ "correction_2026-11-08": "更正（追加，原数字不动）：这份结果用的 MaxText 是 MaxText b8d4ba8b 之前的提交，开关 transcendental_accuracy_highest 对 sigmoid / silu 实际没起作用：lax.logistic 带 accuracy=HIGHEST 在 TPU v5p 上与默认逐位相同（tpu-elementwise-ulp.json，运行 tw-elem3）。所以这里「开关开」一组只换了 exp / log：KD 与交叉熵的读数有效，iHC 门、hc_head、路由 sigmoid、silu 相关的读数（含第 3 层 FFN hc_base 的 R 8.72 → 6.68）只反映 exp / log 的变化，不能当作开关整体的效果。b8d4ba8b 起 sigmoid / silu 改用 HIGHEST 的 exp 搭（台账 M37）。"
+}

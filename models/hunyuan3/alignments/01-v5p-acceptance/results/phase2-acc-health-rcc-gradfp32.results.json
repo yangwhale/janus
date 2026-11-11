@@ -1,0 +1,135 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "29e3e9af22fd5bb419e2efdc7659ca5e003f2529"
+ },
+ "catalog": {
+  "path": "models/hunyuan3/alignments/01-v5p-acceptance/catalogs/phase2-acc-health-rcc-gradfp32.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "c33a312391ae73b46ba8eef5358e956aefc2e6b46c4e65b45395ad5e5b629b69",
+  "raw_sha256": "0d92fdb8fec721bb0372b55740d6b63750ab9aa4db2308a75538581d7b116fe3"
+ },
+ "runs": {
+  "t-rmap-on-g32-1000": {
+   "path": "/tmp/acc-runs/t-rmap-on-g32-1000",
+   "meta_sha256": "2e0a22d15edea586b6f78f904fc49d93eb853fd4d18dc23d6ff7dd1572edb7c3"
+  },
+  "rcc-a": {
+   "path": "/tmp/acc-runs/rcc-a",
+   "meta_sha256": "dd43ca3861409bd535c92cf3602d50614265bb1979d8513233e5526ad4465c40"
+  },
+  "rcc-b": {
+   "path": "/tmp/acc-runs/rcc-b",
+   "meta_sha256": "32cae0719274899d0d39c6727a993ef8a222054c00eb15dde7aeb3ae4c7c80e6"
+  },
+  "rcc-c": {
+   "path": "/tmp/acc-runs/rcc-c",
+   "meta_sha256": "a1ee07040cae581ca2bc24eeabcae64d518112184225c1837bbb4f4b1436d0dd"
+  },
+  "rcc-d": {
+   "path": "/tmp/acc-runs/rcc-d",
+   "meta_sha256": "f1a4ab56f438ceb813d8e282cb0089657cda0d68794a90fe8aa5bb49de262da3"
+  },
+  "rcc-e": {
+   "path": "/tmp/acc-runs/rcc-e",
+   "meta_sha256": "09ab58baee14b9825540a34adbc6ac22b6ac9e77cee1572179019ddce2b7be1a"
+  },
+  "rcc-f": {
+   "path": "/tmp/acc-runs/rcc-f",
+   "meta_sha256": "90d5af8a6d7c15eea8c11fd3c2203daa6e2f992fd06b6ca7ad2c2747a17e7ced"
+  },
+  "rcc-g": {
+   "path": "/tmp/acc-runs/rcc-g",
+   "meta_sha256": "39033b77f8b77704536dfb3c4e5e49c573a4a7db2821052b61c2ff67659e6892"
+  },
+  "rcc-h": {
+   "path": "/tmp/acc-runs/rcc-h",
+   "meta_sha256": "a68bfdf9a79dddfde061476c97581c3291be97c8afc8e6e56f592040290acfdc"
+  },
+  "rcc-i": {
+   "path": "/tmp/acc-runs/rcc-i",
+   "meta_sha256": "29d9f1d153df171541cae15454209bed54ccde0eaf13eee3c84833308a771357"
+  },
+  "rcc-j": {
+   "path": "/tmp/acc-runs/rcc-j",
+   "meta_sha256": "908e0ff8c6c0dbe709a088c1fa1ad2b6d79257c50a1815a4d2fcbd295bc4e7d7"
+  }
+ },
+ "started_at": "2026-11-06T09:06:57+00:00",
+ "finished_at": "2026-11-06T09:07:12+00:00",
+ "summary": {
+  "pass": 2,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L4.router.bias_std",
+   "type": "router_stats",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 45,
+     "upper": {
+      "signed_mean": 0.001926690468794625,
+      "mare": 0.003528766232271835,
+      "max_step": 0.016036777200111502
+     }
+    }
+   },
+   "metrics": {
+    "signed_mean_max": 0.001641949810695889,
+    "mare_max": 0.00257875995135041,
+    "max_step_max": 0.010683719453211353,
+    "stats": 3
+   },
+   "r1": 0.7307823135935511,
+   "r2": 0.8522125568634409,
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/acc-runs/t-rmap-on-g32-1000",
+     "sha256": "2e0a22d15edea586b6f78f904fc49d93eb853fd4d18dc23d6ff7dd1572edb7c3"
+    },
+    {
+     "path": "/tmp/acc-runs/rcc-a",
+     "sha256": "dd43ca3861409bd535c92cf3602d50614265bb1979d8513233e5526ad4465c40"
+    }
+   ],
+   "message": "在噪声参照内",
+   "details": "details/L4.router.bias_std.jsonl"
+  },
+  {
+   "id": "L4.health",
+   "type": "health_signals",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "spike_ratio": 3.0
+    },
+    "source": "推断：沿用 phase1-full（常数学习率下单步超前 10 步中位数 3 倍即异常）"
+   },
+   "metrics": {
+    "fields": 3,
+    "problems": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/acc-runs/t-rmap-on-g32-1000",
+     "sha256": "2e0a22d15edea586b6f78f904fc49d93eb853fd4d18dc23d6ff7dd1572edb7c3"
+    }
+   ],
+   "message": "健康"
+  }
+ ]
+}

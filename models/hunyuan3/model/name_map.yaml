@@ -1,0 +1,391 @@
+# 混元 3（截 4 层）两侧的名字与布局映射：HF ↔ Megatron ↔ MaxText ↔ 规范名。
+#
+# 谁在用：
+#   - models/hunyuan3/model/convert_hf_to_maxtext.py：按 hf_to_maxtext 把 HF 权重写成 MaxText 检查点
+#   - models/hunyuan3/model/verify_ckpt.py：反向（MaxText → HF）逐张量算 sha256，对 HF 目录的 tensor_sha256.json；
+#     按 hf_to_megatron 拼出 Megatron 布局，对 GPU 运行的 params_sha（核对 Megatron 那一列）
+#   - janus/dump/maxtext.py：TPU 抓数时把 MaxText 状态换成 Megatron 名字与布局再写盘，和 golden 同名可比
+#   - 解释引擎：janus/dump/name_map.py
+#
+# 规范名（canonical）是两侧都认的名字；现阶段运行目录里参数类张量（param / main_param / grad / exp_avg / buffer
+# 等前缀后面那一段）仍写 Megatron 名（docs/reference/dump-format.md「现状」一节），所以 TPU 抓数也写 Megatron 名。
+# 激活类张量两侧都写规范名。
+#
+# 核对状态（status）：
+#   cpu-verified   参数：在 CPU 上逐字节核对过（verify_ckpt.py 的 names / megatron / maxtext，结果在 models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-cpu/）。
+#                  激活：名字与布局在 CPU 诊断前向上对 golden 第 1 步核对过（probe_forward.py，alignments/01-v5p-acceptance/results/phase2-cpu/probe-forward-256.json；
+#                  布局错位是 O(1) 的差，只差舍入时是 BF16 末位量级）。TPU 生产图里加钩子抓到的值只当诊断值（加输出会改 XLA 融合，
+#                  frameworks/maxtext/README.md「上 TPU 才能核对的九项：结果与现状」第 2 条），正式判定用单独编译的回放 layer_replay.py
+#   tpu-pending    读代码得出、CPU 上没法核对，待在 TPU 上核对
+#   not-captured   TPU 侧暂不抓，原因写在 note
+schema_version: 1
+model: hunyuan3-4l
+
+dims: {layers: 4, first_dense: 1, hidden: 4096, heads: 64, kv_heads: 8, head_dim: 128, ffn: 13312,
+       moe_ffn: 1536, experts: 192, topk: 8, vocab: 120832}
+
+hf:
+  source: "tencent/Hy3 截前 4 层、去 MTP（models/hunyuan3/model/truncate_hy3.py）"
+  layout: "nn.Linear 权重 [out, in]；expert_bias 为 FP32，其余 BF16"
+
+megatron:
+  source: "Megatron-Bridge hy_v3 桥 + Megatron-Core（镜像 nvcr.io/nvidia/nemo:26.10）"
+  ep: 8                  # golden 运行 EP8：rank r 持有全局专家 24r … 24r+23，本地名 weight<k>，全局号 e = 24·r + k
+  local_experts: 24
+
+maxtext:
+  code: "maxtext hunyuan 分支（decoder_block: hunyuan3，NNX）"
+  scan_layers: true
+  param_scan_axis: 1
+  stacks:                # 层 i 在哪个栈、栈内下标 j
+    dense_layers: {layers: [0], j: "{i}"}
+    moe_layers: {layers: [1, 2, 3], j: "{i} - 1"}
+  dtype: "检查点存 FP32（weight_dtype=float32）；BF16 → FP32 是精确的，转回 BF16 逐位还原"
+
+# ---------------------------------------------------------------------------------------------------
+# 参数。每项：
+#   canonical / megatron：名字模板，{i} 层号，{e} 全局专家号，{r} EP rank，{k} 本地专家号
+#   layers：all | dense | moe（只对层内参数）
+#   hf：来源 HF 张量（多于一个时按顺序拼接）
+#   to_megatron：identity | concat0（沿第 0 维按 hf 顺序拼）| qkv_by_group（见下）
+#   maxtext：每个 HF 张量落到 MaxText 叶子的哪一片、怎么变形
+#     path：叶子路径（collection/模块路径），{stack} 换成 dense_layers / moe_layers
+#     index：[[轴, 下标], …]，在完整叶子上取这一片；{j} 栈内下标，{e} 专家号
+#     op：依次执行；T = 转置（给出轴序），reshape = 改形状（可写 dims 里的维度名）
+# ---------------------------------------------------------------------------------------------------
+params:
+  - canonical: embed.weight
+    megatron: embedding.word_embeddings.weight
+    hf: [model.embed_tokens.weight]                       # [V, D]
+    to_megatron: identity
+    maxtext:
+      - {hf: model.embed_tokens.weight, path: params/token_embedder/embedding, op: []}   # [V, D]
+    status: cpu-verified
+
+  - canonical: final_norm.weight
+    megatron: decoder.final_layernorm.weight
+    hf: [model.norm.weight]                               # [D]
+    to_megatron: identity
+    maxtext:
+      - {hf: model.norm.weight, path: params/decoder/decoder_norm/scale, op: []}
+    status: cpu-verified
+
+  - canonical: output.weight
+    megatron: output_layer.weight
+    hf: [lm_head.weight]                                  # [V, D]
+    to_megatron: identity
+    maxtext:
+      - {hf: lm_head.weight, path: params/decoder/logits_dense/kernel, op: [{T: [1, 0]}]}   # [D, V]
+    status: cpu-verified
+
+  # ---- 注意力（4 层都有）
+  - canonical: layers.{i}.attn.norm.weight
+    layers: all
+    # Megatron 把输入归一化融进 qkv 线性层（TELayerNormColumnParallelLinear），所以它是 linear_qkv 的一个属性
+    megatron: decoder.layers.{i}.self_attention.linear_qkv.layer_norm_weight
+    hf: ["model.layers.{i}.input_layernorm.weight"]
+    to_megatron: identity
+    maxtext:
+      - {hf: "model.layers.{i}.input_layernorm.weight", path: "params/decoder/{stack}/pre_self_attention_layer_norm/scale",
+         index: [[1, "{j}"]], op: []}                     # 栈 [D, L]
+    status: cpu-verified
+
+  - canonical: layers.{i}.attn.qkv.weight
+    layers: all
+    megatron: decoder.layers.{i}.self_attention.linear_qkv.weight      # [10240, 4096]
+    hf: ["model.layers.{i}.self_attn.q_proj.weight",                     # [64·128, 4096]
+         "model.layers.{i}.self_attn.k_proj.weight",                     # [8·128, 4096]
+         "model.layers.{i}.self_attn.v_proj.weight"]                     # [8·128, 4096]
+    # 按 KV 组交错：8 组，每组依次是该组 8 个 q 头（8·128 行）、1 个 k 头（128 行）、1 个 v 头（128 行），共 1280 行
+    to_megatron: qkv_by_group
+    maxtext:
+      - {hf: "model.layers.{i}.self_attn.q_proj.weight", path: "params/decoder/{stack}/self_attention/query/kernel",
+         index: [[1, "{j}"]], op: [{T: [1, 0]}, {reshape: [hidden, heads, head_dim]}]}   # 栈 [D, L, 64, 128]
+      - {hf: "model.layers.{i}.self_attn.k_proj.weight", path: "params/decoder/{stack}/self_attention/key/kernel",
+         index: [[1, "{j}"]], op: [{T: [1, 0]}, {reshape: [hidden, kv_heads, head_dim]}]}    # 栈 [D, L, 8, 128]
+      - {hf: "model.layers.{i}.self_attn.v_proj.weight", path: "params/decoder/{stack}/self_attention/value/kernel",
+         index: [[1, "{j}"]], op: [{T: [1, 0]}, {reshape: [hidden, kv_heads, head_dim]}]}
+    note: "两侧 RoPE 都是前后两半配对（Megatron rotary_interleaved=False，MaxText 走 qwen3 的 AttentionWithNorm），转换不做 q/k 行重排"
+    status: cpu-verified
+
+  - canonical: layers.{i}.attn.q_norm.weight
+    layers: all
+    megatron: decoder.layers.{i}.self_attention.q_layernorm.weight
+    hf: ["model.layers.{i}.self_attn.q_norm.weight"]       # [128]
+    to_megatron: identity
+    maxtext:
+      - {hf: "model.layers.{i}.self_attn.q_norm.weight", path: "params/decoder/{stack}/self_attention/query_norm/scale",
+         index: [[1, "{j}"]], op: []}                     # 栈 [128, L]
+    status: cpu-verified
+
+  - canonical: layers.{i}.attn.k_norm.weight
+    layers: all
+    megatron: decoder.layers.{i}.self_attention.k_layernorm.weight
+    hf: ["model.layers.{i}.self_attn.k_norm.weight"]
+    to_megatron: identity
+    maxtext:
+      - {hf: "model.layers.{i}.self_attn.k_norm.weight", path: "params/decoder/{stack}/self_attention/key_norm/scale",
+         index: [[1, "{j}"]], op: []}
+    status: cpu-verified
+
+  - canonical: layers.{i}.attn.proj.weight
+    layers: all
+    megatron: decoder.layers.{i}.self_attention.linear_proj.weight     # [4096, 8192]
+    hf: ["model.layers.{i}.self_attn.o_proj.weight"]                     # [4096, 64·128]
+    to_megatron: identity
+    maxtext:
+      - {hf: "model.layers.{i}.self_attn.o_proj.weight", path: "params/decoder/{stack}/self_attention/out/kernel",
+         index: [[1, "{j}"]], op: [{T: [1, 0]}, {reshape: [heads, head_dim, hidden]}]}   # 栈 [64, L, 128, D]
+    status: cpu-verified
+
+  # ---- MLP 前归一化
+  - canonical: layers.{i}.mlp_norm.weight
+    layers: dense
+    # 稠密层的 MLP 前归一化融进 fc1（TELayerNormColumnParallelLinear），pre_mlp_layernorm 是恒等
+    megatron: decoder.layers.{i}.mlp.linear_fc1.layer_norm_weight
+    hf: ["model.layers.{i}.post_attention_layernorm.weight"]
+    to_megatron: identity
+    maxtext:
+      - {hf: "model.layers.{i}.post_attention_layernorm.weight", path: "params/decoder/{stack}/post_self_attention_layer_norm/scale",
+         index: [[1, "{j}"]], op: []}
+    status: cpu-verified
+
+  - canonical: layers.{i}.mlp_norm.weight
+    layers: moe
+    megatron: decoder.layers.{i}.pre_mlp_layernorm.weight
+    hf: ["model.layers.{i}.post_attention_layernorm.weight"]
+    to_megatron: identity
+    maxtext:
+      - {hf: "model.layers.{i}.post_attention_layernorm.weight", path: "params/decoder/{stack}/post_self_attention_layer_norm/scale",
+         index: [[1, "{j}"]], op: []}
+    status: cpu-verified
+
+  # ---- 稠密 MLP（第 0 层）
+  - canonical: layers.{i}.mlp.fc1.weight
+    layers: dense
+    megatron: decoder.layers.{i}.mlp.linear_fc1.weight                 # [2·13312, 4096]
+    hf: ["model.layers.{i}.mlp.gate_proj.weight", "model.layers.{i}.mlp.up_proj.weight"]
+    to_megatron: concat0                                               # 前一半 gate、后一半 up
+    maxtext:
+      - {hf: "model.layers.{i}.mlp.gate_proj.weight", path: "params/decoder/{stack}/mlp/wi_0/kernel",
+         index: [[1, "{j}"]], op: [{T: [1, 0]}]}          # 栈 [D, L, F]
+      - {hf: "model.layers.{i}.mlp.up_proj.weight", path: "params/decoder/{stack}/mlp/wi_1/kernel",
+         index: [[1, "{j}"]], op: [{T: [1, 0]}]}
+    status: cpu-verified
+
+  - canonical: layers.{i}.mlp.fc2.weight
+    layers: dense
+    megatron: decoder.layers.{i}.mlp.linear_fc2.weight                 # [4096, 13312]
+    hf: ["model.layers.{i}.mlp.down_proj.weight"]
+    to_megatron: identity
+    maxtext:
+      - {hf: "model.layers.{i}.mlp.down_proj.weight", path: "params/decoder/{stack}/mlp/wo/kernel",
+         index: [[1, "{j}"]], op: [{T: [1, 0]}]}          # 栈 [F, L, D]
+    status: cpu-verified
+
+  # ---- MoE（第 1–3 层）
+  - canonical: layers.{i}.mlp.router.weight
+    layers: moe
+    megatron: decoder.layers.{i}.mlp.router.weight                     # [192, 4096]
+    hf: ["model.layers.{i}.mlp.router.gate.weight"]
+    to_megatron: identity
+    maxtext:
+      - {hf: "model.layers.{i}.mlp.router.gate.weight", path: "params/decoder/{stack}/Hunyuan3MoeBlock_0/MoeBlock_0/gate/kernel",
+         index: [[1, "{j}"]], op: [{T: [1, 0]}]}          # 栈 [D, L, 192]
+    status: cpu-verified
+
+  - canonical: layers.{i}.mlp.router.expert_bias
+    layers: moe
+    buffer: true          # 不进优化器：Megatron 是 buffer（运行目录里前缀 buffer.），MaxText 是 MoEBiasVar
+    megatron: decoder.layers.{i}.mlp.router.expert_bias                # [192] FP32
+    hf: ["model.layers.{i}.mlp.expert_bias"]                             # [192] FP32
+    to_megatron: identity
+    maxtext:
+      # 注意栈轴是 0 不是 1：MoEBiasVar 没有 param_scan_axis 元数据，scan 堆叠后留在第 0 维（CPU 上从抽象模型读出）
+      - {hf: "model.layers.{i}.mlp.expert_bias", path: "MoEBiasVar/decoder/{stack}/Hunyuan3MoeBlock_0/MoeBlock_0/gate/bias",
+         index: [[0, "{j}"]], op: []}                     # 栈 [L, 192]
+    status: cpu-verified
+
+  - canonical: layers.{i}.mlp.experts.{e}.fc1.weight
+    layers: moe
+    experts: true
+    megatron: decoder.layers.{i}.mlp.experts.linear_fc1.weight{k}      # rank r 上 k = e - 24·r；[2·1536, 4096]
+    hf: ["model.layers.{i}.mlp.experts.{e}.gate_proj.weight", "model.layers.{i}.mlp.experts.{e}.up_proj.weight"]
+    to_megatron: concat0
+    maxtext:
+      - {hf: "model.layers.{i}.mlp.experts.{e}.gate_proj.weight", path: "params/decoder/{stack}/Hunyuan3MoeBlock_0/MoeBlock_0/wi_0",
+         index: [[0, "{e}"], [1, "{j}"]], op: [{T: [1, 0]}]}   # 栈 [E, L, D, 1536]
+      - {hf: "model.layers.{i}.mlp.experts.{e}.up_proj.weight", path: "params/decoder/{stack}/Hunyuan3MoeBlock_0/MoeBlock_0/wi_1",
+         index: [[0, "{e}"], [1, "{j}"]], op: [{T: [1, 0]}]}
+    status: cpu-verified
+
+  - canonical: layers.{i}.mlp.experts.{e}.fc2.weight
+    layers: moe
+    experts: true
+    megatron: decoder.layers.{i}.mlp.experts.linear_fc2.weight{k}      # [4096, 1536]
+    hf: ["model.layers.{i}.mlp.experts.{e}.down_proj.weight"]
+    to_megatron: identity
+    maxtext:
+      - {hf: "model.layers.{i}.mlp.experts.{e}.down_proj.weight", path: "params/decoder/{stack}/Hunyuan3MoeBlock_0/MoeBlock_0/wo",
+         index: [[0, "{e}"], [1, "{j}"]], op: [{T: [1, 0]}]}   # 栈 [E, L, 1536, D]
+    status: cpu-verified
+
+  - canonical: layers.{i}.mlp.shared.fc1.weight
+    layers: moe
+    megatron: decoder.layers.{i}.mlp.shared_experts.linear_fc1.weight  # [2·1536, 4096]
+    hf: ["model.layers.{i}.mlp.shared_mlp.gate_proj.weight", "model.layers.{i}.mlp.shared_mlp.up_proj.weight"]
+    to_megatron: concat0
+    maxtext:
+      - {hf: "model.layers.{i}.mlp.shared_mlp.gate_proj.weight", path: "params/decoder/{stack}/Hunyuan3MoeBlock_0/shared_experts/wi_0/kernel",
+         index: [[1, "{j}"]], op: [{T: [1, 0]}]}          # 栈 [D, L, 1536]
+      - {hf: "model.layers.{i}.mlp.shared_mlp.up_proj.weight", path: "params/decoder/{stack}/Hunyuan3MoeBlock_0/shared_experts/wi_1/kernel",
+         index: [[1, "{j}"]], op: [{T: [1, 0]}]}
+    status: cpu-verified
+
+  - canonical: layers.{i}.mlp.shared.fc2.weight
+    layers: moe
+    megatron: decoder.layers.{i}.mlp.shared_experts.linear_fc2.weight  # [4096, 1536]
+    hf: ["model.layers.{i}.mlp.shared_mlp.down_proj.weight"]
+    to_megatron: identity
+    maxtext:
+      - {hf: "model.layers.{i}.mlp.shared_mlp.down_proj.weight", path: "params/decoder/{stack}/Hunyuan3MoeBlock_0/shared_experts/wo/kernel",
+         index: [[1, "{j}"]], op: [{T: [1, 0]}]}          # 栈 [1536, L, D]
+    status: cpu-verified
+
+# 优化器状态与参数同名同布局：exp_avg.<megatron 名> ↔ optax ScaleByAdamState.mu 的同一片，exp_avg_sq ↔ nu。
+# MaxText 的优化器状态树与参数树同构（opt_state 里 mu / nu 各一棵），所以用上面同一套 maxtext 映射取片。
+optimizer_state:
+  exp_avg: mu
+  exp_avg_sq: nu
+  status: tpu-pending     # 状态树路径在 CPU 上读出过（见 README），数值上的对应要 TPU 第 1 步的抓数核对
+
+# ---------------------------------------------------------------------------------------------------
+# 激活观测点（只抓 rank 0 / 设备 0 的第一个 microbatch，即全局 batch 第 0 行）。
+# 布局：GPU 张量是 [S, B=1, …]（序列在前），TPU 抓到的是 [B, S, …]；TPU 写盘前转成 GPU 的布局。
+# maxtext 一栏写抓数点：模块（按实例路径标记，见 janus/dump/maxtext.py 的 CAPTURE_POINTS）与取哪个输出。
+# ---------------------------------------------------------------------------------------------------
+activations:
+  - canonical: embed.out
+    megatron: "embedding 的输出"
+    maxtext: "token_embedder（Embed）的输出"
+    status: cpu-verified
+  - canonical: layers.{i}.in
+    megatron: "decoder.layers.{i}.input_layernorm 的输出（恒等，归一化融进 qkv），即层输入"
+    maxtext: "Hunyuan3DenseLayer / Hunyuan3MoELayer.__call__ 的输入"
+    status: cpu-verified
+  - canonical: layers.{i}.attn.qkv.out
+    megatron: "linear_qkv 的输出：融合的输入归一化 + qkv 投影，[S, 1, 10240]，按 KV 组交错（同 qkv_by_group）"
+    maxtext: "self_attention.query / key / value 三个投影的输出，主机上按 qkv_by_group 拼成 Megatron 布局"
+    note: "MaxText 的输入归一化是单独的 RMSNorm，输出先舍成 BF16 再做投影；Megatron（TE LayerNormLinear）同样把归一化输出舍一次 BF16 再做 GEMM：golden 的 qkv.out 与这样的主机复现 99.7% 逐位（config-alignment.md「收缩维被 FSDP 切开的投影」行）"
+    status: cpu-verified
+  - canonical: layers.{i}.attn.q_norm.out
+    megatron: "q_layernorm 的输出，[S, 1, 64, 128]（RoPE 之前）"
+    maxtext: "self_attention.query_norm 的输出（RoPE 之前）"
+    status: cpu-verified
+  - canonical: layers.{i}.attn.k_norm.out
+    megatron: "k_layernorm 的输出，[S, 1, 8, 128]"
+    maxtext: "self_attention.key_norm 的输出"
+    status: cpu-verified
+  - canonical: layers.{i}.attn.core.out
+    megatron: "core_attention 的输出，[S, 1, 8192]"
+    maxtext: "self_attention.out（输出投影）的输入，[B, S, 64, 128] 摊平成 8192"
+    status: cpu-verified
+  - canonical: layers.{i}.attn.proj.out
+    megatron: "linear_proj 的输出"
+    maxtext: "self_attention.out 的输出"
+    status: cpu-verified
+  - canonical: layers.{i}.attn.out
+    megatron: "self_attention 模块的输出（无 bias，与 attn.proj.out 同值）"
+    maxtext: "Attention.__call__ 的输出（与 attn.proj.out 同一个张量）"
+    status: cpu-verified
+  - canonical: layers.{i}.mlp_norm.out
+    layers: dense
+    megatron: "pre_mlp_layernorm 的输出；第 0 层这里是恒等（归一化融进 fc1），所以等于注意力残差和 h = 层输入 + attn.out"
+    maxtext: "apply_attention_with_norm 返回的 intermediate_inputs（残差和），不是归一化后的值"
+    status: cpu-verified
+  - canonical: layers.{i}.mlp_norm.out
+    layers: moe
+    megatron: "pre_mlp_layernorm（RMSNorm）的输出"
+    maxtext: "apply_attention_with_norm 返回的 hidden_states（post_self_attention_layer_norm 的输出）"
+    status: cpu-verified
+  - canonical: layers.{i}.mlp.fc1.out
+    layers: dense
+    megatron: "linear_fc1 的输出（融合归一化 + gate|up 投影，激活之前），[S, 1, 26624]"
+    maxtext: "mlp.wi_0 与 mlp.wi_1 的输出，主机上沿最后一维拼成 [gate | up]"
+    status: cpu-verified
+  - canonical: layers.{i}.mlp.fc2.out
+    layers: dense
+    megatron: "linear_fc2 的输出"
+    maxtext: "mlp.wo 的输出"
+    status: cpu-verified
+  - canonical: layers.{i}.mlp.experts.out
+    layers: moe
+    megatron: "experts 的输出：专家并行分发后的缓冲区，行数取决于别的 rank（第一阶段已不逐位比）"
+    maxtext: null
+    note: "TPU 没有对应的缓冲区（FSDP、不开 EP），比较时用 select.exclude 排除"
+    status: not-captured
+  - canonical: layers.{i}.mlp.routed.out
+    layers: moe
+    megatron: null
+    maxtext: "Hunyuan3MoeBlock_0.MoeBlock_0（RoutedMoE）的输出：路由专家加权合并后、加共享专家之前，token 空间"
+    note: "GPU 侧没有对应名字（GPU 只有分发缓冲区 experts.out）；只在 TPU 运行之间比（扰动臂、确定性）。CPU 冒烟里 mlp.out == routed.out + shared.out 逐位"
+    status: cpu-verified
+  - canonical: layers.{i}.mlp.shared.out
+    layers: moe
+    megatron: "shared_experts 的输出"
+    maxtext: "Hunyuan3MoeBlock_0.shared_experts 的输出"
+    status: cpu-verified
+  - canonical: layers.{i}.mlp.out
+    megatron: "mlp 模块的输出（稠密层 = fc2.out；MoE 层 = 路由专家合并 + 共享专家）"
+    maxtext: "稠密层：mlp（MlpBlock）的输出；MoE 层：Hunyuan3MoeBlock_0（RoutedAndSharedMoE）的第一个输出"
+    status: cpu-verified
+  - canonical: layers.{i}.out
+    megatron: "decoder.layers.{i} 的输出"
+    maxtext: "Hunyuan3DenseLayer / Hunyuan3MoELayer.__call__ 的第一个输出"
+    status: cpu-verified
+  - canonical: final_norm.out
+    megatron: "decoder.final_layernorm 的输出"
+    maxtext: "decoder.decoder_norm 的输出"
+    status: cpu-verified
+  - canonical: logits
+    megatron: "output_layer 的输出，BF16 [S, 1, V]"
+    maxtext: "decoder.logits_dense 的输出（BF16，转 FP32 之前）"
+    status: cpu-verified
+  - canonical: loss.per_token
+    megatron: "模型输出的逐 token loss，FP32 [1, S]"
+    maxtext: "loss_fn 里 cross_entropy_with_logits 的逐 token xent（乘 mask 之前），[B, S] 取第 0 行"
+    status: tpu-pending
+  # 路由
+  - canonical: layers.{i}.mlp.router.logits
+    layers: moe
+    megatron: "router.gating 的输出：sigmoid 之前的 FP32 logits，[S, 1, 192]"
+    maxtext: "GateLogit 里矩阵乘的输出（score_func 之前），FP32"
+    status: cpu-verified
+  - canonical: layers.{i}.mlp.router.scores
+    layers: moe
+    megatron: null
+    maxtext: "GateLogit 的第二个输出 pre_bias_logits：sigmoid 之后、加偏置之前，FP32 [B, S, 192]"
+    note: "GPU 没抓这个；GPU 侧等价量是 sigmoid(router.logits)"
+    status: cpu-verified
+  - canonical: layers.{i}.mlp.router.topk_idx
+    layers: moe
+    megatron: "router 输出 routing_map 里选中的 8 个专家，升序，int32 [S, 8]"
+    maxtext: "主机上由图内抓到的 (scores + expert_bias) 取 top-8 再升序；与 RoutedMoE.deepseek_routing 的 jax.lax.top_k 是同一份 FP32 输入"
+    note: "派生量：图里的 top_k 结果在稀疏路径（shard_map 内）抓不出来，主机按同一输入重算。并列时 jax.lax.top_k 取下标小的，主机用稳定排序同样取小下标。CPU 冒烟（稠密路径）里用它重算的路由专家合并输出与图内 mlp.routed.out 吻合在 BF16 末位；稀疏路径待 TPU 核对"
+    status: cpu-verified
+  - canonical: layers.{i}.mlp.router.probs
+    layers: moe
+    megatron: "router 输出的 probs：[S, 192]，选中位置是归一化再乘 2.826 后的权重，其余为 0"
+    maxtext: "主机上由 scores 在 topk_idx 处取值、除以和（+1e-20）、乘 routed_scaling_factor，散回 [S, 192]"
+    note: "派生量，在主机 FP32 里按 deepseek_scale_weights 的顺序算；与图内结果可能差末位"
+    status: cpu-verified
+  - canonical: layers.{i}.mlp.router.counts
+    layers: moe
+    megatron: "rank 0 本步各 microbatch 的 routing_map 按专家求和（rank 0 发出的 token 数），int64 [192]"
+    maxtext: "主机上对设备 0 的两行（全局 batch 第 0、1 行）的 topk_idx 计数"
+    status: tpu-pending
+  - canonical: "<激活名>.grad"
+    megatron: "前向输出上的梯度 hook"
+    maxtext: null
+    note: "TPU 侧暂不抓：激活的余切量不落在任何模块输出上，要往图里插探针输入（x + 0·probe 对 probe 求导），会改图，先不做"
+    status: not-captured

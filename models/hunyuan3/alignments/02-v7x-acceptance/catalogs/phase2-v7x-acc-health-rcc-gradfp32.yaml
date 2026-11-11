@@ -1,0 +1,64 @@
+# 台账 #20 的开关复核：同 phase2-v7x-acc-health-rcc.yaml，只把被测换成当前对齐配置 + 三个梯度 FP32 开关的 1000 步运行 t-v7x-on-g32-1000
+#   （--grad-fp32 norm,head,embed，与 MaxText 正式开关 rmsnorm_scale_grad_fp32 / logits_dense_wgrad_fp32 /
+#   embedding_grad_fp32 全开逐位相同）。开关只改这三类参数的梯度精度，第 1 步 loss 逐位不变、第 2 步起变；这里核对 L4 仍在噪声内。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-v7x-acc-health-rcc-gradfp32
+description: 正式迁移验收补充：路由偏置标准差曲线（对 rcc-a，噪声 rcc-a..j 10 份两两 45 对）与健康信号（t-v7x-on-g32-1000，三个梯度 FP32 开关）
+runs:
+  test: t-v7x-on-g32-1000
+  golden: [rcc-a]
+  noise:
+    - [rcc-a, rcc-b]
+    - [rcc-a, rcc-c]
+    - [rcc-a, rcc-d]
+    - [rcc-a, rcc-e]
+    - [rcc-a, rcc-f]
+    - [rcc-a, rcc-g]
+    - [rcc-a, rcc-h]
+    - [rcc-a, rcc-i]
+    - [rcc-a, rcc-j]
+    - [rcc-b, rcc-c]
+    - [rcc-b, rcc-d]
+    - [rcc-b, rcc-e]
+    - [rcc-b, rcc-f]
+    - [rcc-b, rcc-g]
+    - [rcc-b, rcc-h]
+    - [rcc-b, rcc-i]
+    - [rcc-b, rcc-j]
+    - [rcc-c, rcc-d]
+    - [rcc-c, rcc-e]
+    - [rcc-c, rcc-f]
+    - [rcc-c, rcc-g]
+    - [rcc-c, rcc-h]
+    - [rcc-c, rcc-i]
+    - [rcc-c, rcc-j]
+    - [rcc-d, rcc-e]
+    - [rcc-d, rcc-f]
+    - [rcc-d, rcc-g]
+    - [rcc-d, rcc-h]
+    - [rcc-d, rcc-i]
+    - [rcc-d, rcc-j]
+    - [rcc-e, rcc-f]
+    - [rcc-e, rcc-g]
+    - [rcc-e, rcc-h]
+    - [rcc-e, rcc-i]
+    - [rcc-e, rcc-j]
+    - [rcc-f, rcc-g]
+    - [rcc-f, rcc-h]
+    - [rcc-f, rcc-i]
+    - [rcc-f, rcc-j]
+    - [rcc-g, rcc-h]
+    - [rcc-g, rcc-i]
+    - [rcc-g, rcc-j]
+    - [rcc-h, rcc-i]
+    - [rcc-h, rcc-j]
+    - [rcc-i, rcc-j]
+  root: /data/janus-runs
+checks:
+  - {id: L4.router.bias_std, type: router_stats, level: L4, select: {kind: metrics, prefix: "router.bias_std.", window: "1:1001"}, threshold: calibrated}
+  - id: L4.health
+    type: health_signals
+    level: L4
+    select: {kind: metrics, fields: [lm_loss, grad_norm, param_norm]}
+    params: {window: 10, spike_ratio: 3, source: "推断：沿用 phase1-full（常数学习率下单步超前 10 步中位数 3 倍即异常）"}

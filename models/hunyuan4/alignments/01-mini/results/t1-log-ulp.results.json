@@ -1,0 +1,346 @@
+{
+ "schema_version": 1,
+ "stage": "t1-log-ulp",
+ "model": "hunyuan4-mini",
+ "what": "FP32 log 的 ULP（对 FP64 正确舍入），TPU 与 GPU 同一批确定输入（输入 sha256 两边逐个相同）",
+ "inputs": {
+  "generator": "models/hunyuan4/analysis/log_probe_inputs.py + KD 真实目标分布（elem-inputs.npz 的 kd_target）",
+  "sha256": {
+   "all[0.5,4)": "58b89673fd1a8cfeae810492ec4118aa80bb3bb3b0c2a7604cb48cd71520d5d2",
+   "logu[1e-37,1e37]": "a12b173e7a7fffe9a9499f2c11953be5eecb71933949808671dfb37a79c5b43f",
+   "logu[1,4096)": "91f7a2ba9e84914efca47262eefb879fc50153abc3f3d8c9309592e08cf3b7ef",
+   "real.kd_target": "37f2f21b136c5b9f9ea5381841368c229b621c9dad1800153009d7b52bb70521"
+  },
+  "tpu_run": "mz-log1（frameworks/maxtext/log_ulp_probe.py，TPU v5p，jax 0.11.1）",
+  "gpu": "NVIDIA B200，torch 2.14.0a0+b2c75dd062.nv26.09，CUDA 13.4（analysis/gpu_log_probe.py，单卡）",
+  "tpu_run_m51": "mz-log2（同一探针，MaxText c23ca978 的 accurate_math.log_freebsd）"
+ },
+ "checks": [
+  {
+   "id": "L1.elem.log.gpu_b200",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 1
+    },
+    "source": "CUDA Programming Guide 数学函数附录：logf 最大 1 ULP；本文件 GPU 一侧 B200 实测同一批输入最大 1 ULP"
+   },
+   "metrics": {
+    "ulp_max": 1,
+    "ulp_p999_max": 1.0,
+    "ulp_mean_max": 0.08302470048268636,
+    "cr_match_frac_min": 0.9169752995173136,
+    "cases": 4
+   },
+   "message": "GPU torch.log（FP32）：4 批输入最大 1 ULP（all[0.5,4) 1；logu[1e-37,1e37] 1；logu[1,4096) 1；real.kd_target 1）",
+   "details_inline": {
+    "per_case": {
+     "all[0.5,4)": {
+      "n": 25165824,
+      "ulp_max": 1,
+      "ulp_p999": 1.0,
+      "ulp_mean": 0.08302470048268636,
+      "cr_match_frac": 0.9169752995173136,
+      "n_gt1": 0
+     },
+     "logu[1e-37,1e37]": {
+      "n": 4194304,
+      "ulp_max": 1,
+      "ulp_p999": 1.0,
+      "ulp_mean": 0.033998727798461914,
+      "cr_match_frac": 0.9660012722015381,
+      "n_gt1": 0
+     },
+     "logu[1,4096)": {
+      "n": 4194304,
+      "ulp_max": 1,
+      "ulp_p999": 1.0,
+      "ulp_mean": 0.04802584648132324,
+      "cr_match_frac": 0.9519741535186768,
+      "n_gt1": 0
+     },
+     "real.kd_target": {
+      "n": 6292480,
+      "ulp_max": 1,
+      "ulp_p999": 1.0,
+      "ulp_mean": 0.04494062754271766,
+      "cr_match_frac": 0.9550593724572823,
+      "n_gt1": 0
+     }
+    }
+   }
+  },
+  {
+   "id": "L1.elem.log.tpu_highest",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 1
+    },
+    "source": "CUDA Programming Guide 数学函数附录：logf 最大 1 ULP；本文件 GPU 一侧 B200 实测同一批输入最大 1 ULP"
+   },
+   "metrics": {
+    "ulp_max": 3,
+    "ulp_p999_max": 2.0,
+    "ulp_mean_max": 0.3471826688364524,
+    "cr_match_frac_min": 0.6528173311635476,
+    "cases": 4
+   },
+   "message": "TPU lax.log accuracy=HIGHEST（现行开关写法）：4 批输入最大 3 ULP（all[0.5,4) 3；logu[1e-37,1e37] 3；logu[1,4096) 3；real.kd_target 1）",
+   "details_inline": {
+    "per_case": {
+     "all[0.5,4)": {
+      "n": 25165824,
+      "ulp_max": 3,
+      "ulp_p999": 2.0,
+      "ulp_mean": 0.34502394994099933,
+      "cr_match_frac": 0.6664152145385742,
+      "n_gt1": 286990
+     },
+     "logu[1e-37,1e37]": {
+      "n": 4194304,
+      "ulp_max": 3,
+      "ulp_p999": 1.0,
+      "ulp_mean": 0.2556493282318115,
+      "cr_match_frac": 0.7444963455200195,
+      "n_gt1": 610
+     },
+     "logu[1,4096)": {
+      "n": 4194304,
+      "ulp_max": 3,
+      "ulp_p999": 2.0,
+      "ulp_mean": 0.292508602142334,
+      "cr_match_frac": 0.7090539932250977,
+      "n_gt1": 6530
+     },
+     "real.kd_target": {
+      "n": 6292480,
+      "ulp_max": 1,
+      "ulp_p999": 1.0,
+      "ulp_mean": 0.3471826688364524,
+      "cr_match_frac": 0.6528173311635476,
+      "n_gt1": 0
+     }
+    }
+   }
+  },
+  {
+   "id": "L1.elem.log.tpu_fdlibm",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 1
+    },
+    "source": "CUDA Programming Guide 数学函数附录：logf 最大 1 ULP；本文件 GPU 一侧 B200 实测同一批输入最大 1 ULP"
+   },
+   "metrics": {
+    "ulp_max": 1,
+    "ulp_p999_max": 1.0,
+    "ulp_mean_max": 0.08252644538879395,
+    "cr_match_frac_min": 0.917473554611206,
+    "cases": 4
+   },
+   "message": "TPU 候选写法：e_logf.c 算法的 FP32 移植 + 精确除法（还没进 MaxText）：4 批输入最大 1 ULP（all[0.5,4) 1；logu[1e-37,1e37] 1；logu[1,4096) 1；real.kd_target 1）",
+   "details_inline": {
+    "per_case": {
+     "all[0.5,4)": {
+      "n": 25165824,
+      "ulp_max": 1,
+      "ulp_p999": 1.0,
+      "ulp_mean": 0.08252644538879395,
+      "cr_match_frac": 0.917473554611206,
+      "n_gt1": 0
+     },
+     "logu[1e-37,1e37]": {
+      "n": 4194304,
+      "ulp_max": 1,
+      "ulp_p999": 1.0,
+      "ulp_mean": 0.0065762996673583984,
+      "cr_match_frac": 0.9934237003326416,
+      "n_gt1": 0
+     },
+     "logu[1,4096)": {
+      "n": 4194304,
+      "ulp_max": 1,
+      "ulp_p999": 1.0,
+      "ulp_mean": 0.03839755058288574,
+      "cr_match_frac": 0.9616024494171143,
+      "n_gt1": 0
+     },
+     "real.kd_target": {
+      "n": 6292480,
+      "ulp_max": 1,
+      "ulp_p999": 1.0,
+      "ulp_mean": 0.006145112896663954,
+      "cr_match_frac": 0.993854887103336,
+      "n_gt1": 0
+     }
+    }
+   }
+  },
+  {
+   "id": "L1.elem.log.tpu_maxtext_m51",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 1
+    },
+    "source": "CUDA Programming Guide 数学函数附录：logf 最大 1 ULP；本文件 GPU 一侧 B200 实测同一批输入最大 1 ULP"
+   },
+   "metrics": {
+    "ulp_max": 1,
+    "ulp_p999_max": 1.0,
+    "ulp_mean_max": 0.08252644538879395,
+    "cr_match_frac_min": 0.917473554611206,
+    "cases": 4
+   },
+   "message": "TPU MaxText accurate_math.log_freebsd（开关 transcendental_log_freebsd，M51，MaxText c23ca978；运行 mz-log2）：4 批输入最大 1 ULP（all[0.5,4) 1；logu[1e-37,1e37] 1；logu[1,4096) 1；real.kd_target 1）",
+   "details_inline": {
+    "per_case": {
+     "all[0.5,4)": {
+      "n": 25165824,
+      "ulp_max": 1,
+      "ulp_p999": 1.0,
+      "ulp_mean": 0.08252644538879395,
+      "cr_match_frac": 0.917473554611206,
+      "n_gt1": 0
+     },
+     "logu[1e-37,1e37]": {
+      "n": 4194304,
+      "ulp_max": 1,
+      "ulp_p999": 1.0,
+      "ulp_mean": 0.0065762996673583984,
+      "cr_match_frac": 0.9934237003326416,
+      "n_gt1": 0
+     },
+     "logu[1,4096)": {
+      "n": 4194304,
+      "ulp_max": 1,
+      "ulp_p999": 1.0,
+      "ulp_mean": 0.03839755058288574,
+      "cr_match_frac": 0.9616024494171143,
+      "n_gt1": 0
+     },
+     "real.kd_target": {
+      "n": 6292480,
+      "ulp_max": 1,
+      "ulp_p999": 1.0,
+      "ulp_mean": 0.006145112896663954,
+      "cr_match_frac": 0.993854887103336,
+      "n_gt1": 0
+     }
+    }
+   }
+  },
+  {
+   "id": "L1.elem.log.tpu_default",
+   "type": "op_replay",
+   "level": "L1",
+   "hard": false,
+   "status": "fail",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "ulp_max": 1
+    },
+    "source": "CUDA Programming Guide 数学函数附录：logf 最大 1 ULP；本文件 GPU 一侧 B200 实测同一批输入最大 1 ULP"
+   },
+   "metrics": {
+    "ulp_max": 62,
+    "ulp_p999_max": 42.0,
+    "ulp_mean_max": 4.465547521909078,
+    "cr_match_frac_min": 0.17541682720184326,
+    "cases": 4
+   },
+   "message": "TPU jnp.log（XLA 默认，开关关）：4 批输入最大 62 ULP（all[0.5,4) 62；logu[1e-37,1e37] 54；logu[1,4096) 60；real.kd_target 5）",
+   "details_inline": {
+    "per_case": {
+     "all[0.5,4)": {
+      "n": 25165824,
+      "ulp_max": 62,
+      "ulp_p999": 42.0,
+      "ulp_mean": 4.465547521909078,
+      "cr_match_frac": 0.17541682720184326,
+      "n_gt1": 14624387
+     },
+     "logu[1e-37,1e37]": {
+      "n": 4194304,
+      "ulp_max": 54,
+      "ulp_p999": 13.0,
+      "ulp_mean": 0.5464522838592529,
+      "cr_match_frac": 0.5312936305999756,
+      "n_gt1": 152021
+     },
+     "logu[1,4096)": {
+      "n": 4194304,
+      "ulp_max": 60,
+      "ulp_p999": 29.0,
+      "ulp_mean": 1.1968708038330078,
+      "cr_match_frac": 0.41162705421447754,
+      "n_gt1": 711325
+     },
+     "real.kd_target": {
+      "n": 6292480,
+      "ulp_max": 5,
+      "ulp_p999": 2.0,
+      "ulp_mean": 0.6796596890256306,
+      "cr_match_frac": 0.3792835257323027,
+      "n_gt1": 368557
+     }
+    }
+   }
+  }
+ ],
+ "gpu_exp": {
+  "what": "顺带：GPU torch.exp（FP32）实测，CUDA 文档上限 2 ULP",
+  "per_case": {
+   "unif[-87,88]": {
+    "n": 4194304,
+    "ulp_max": 2,
+    "ulp_p999": 1.0,
+    "ulp_mean": 0.3037261962890625,
+    "cr_match_frac": 0.6969387531280518,
+    "n_gt1": 2789
+   },
+   "unif[-10,10]": {
+    "n": 4194304,
+    "ulp_max": 2,
+    "ulp_p999": 1.0,
+    "ulp_mean": 0.30248451232910156,
+    "cr_match_frac": 0.6981432437896729,
+    "n_gt1": 2633
+   },
+   "all(-1,-0.5]": {
+    "n": 8388608,
+    "ulp_max": 2,
+    "ulp_p999": 1.0,
+    "ulp_mean": 0.3249262571334839,
+    "cr_match_frac": 0.6760644912719727,
+    "n_gt1": 8311
+   }
+  },
+  "ulp_max": 2
+ },
+ "summary": {
+  "pass": 3,
+  "fail": 2,
+  "inconclusive": 0,
+  "error": 0
+ }
+}

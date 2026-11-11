@@ -1,0 +1,475 @@
+{
+ "schema_version": 1,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": null
+ },
+ "catalog": {
+  "path": "models/hunyuan3/analysis/fwd_rratio.py",
+  "sha256": "c02387df92a012b6e0f1c6d2670c16d24c7e493b70a15ab5d776ab22d122fec6"
+ },
+ "runs": {
+  "r-v7x-l2": {
+   "path": "/tmp/jr-fill/r-v7x-l2",
+   "meta_sha256": "56ca5b0654b24a112c3b0ef26d0bac317775d507e5f758dc7e8d0132cf2f8ac1"
+  },
+  "g1k-a": {
+   "path": "/tmp/jr-fill/g1k-a",
+   "meta_sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+  }
+ },
+ "started_at": "2026-11-06T08:14:57+00:00",
+ "finished_at": "2026-11-06T08:28:00+00:00",
+ "environment": {
+  "hf_config_sha256": "ce080ff3da244dc3dc203af51ac614ec0c5c78298d907a4f04af895d79ddbed7",
+  "numpy": "2.4.6",
+  "reference": "models/hunyuan3/analysis/fp64_forward.py（FP64，中间不舍入）",
+  "mode": "isolated"
+ },
+ "summary": {
+  "pass": 6,
+  "fail": 4,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": true
+ },
+ "checks": [
+  {
+   "id": "L2.layer0.fwd",
+   "type": "op_replay",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "r_ratio": 1.2
+    },
+    "source": "推断：同 GPU 侧 phase1-l1 的 L1.rratio 起点。只差舍入顺序时 R≈1；多一次同量级的独立舍入误差方差约翻倍、R≈√2≈1.41，取两者之间"
+   },
+   "metrics": {
+    "rel_l2": 0.004046644509119281,
+    "cr_match_frac": 0.29846686124801636,
+    "ulp_max": 15330,
+    "ulp_p999": 13913.0,
+    "nonfinite_mismatch": 0,
+    "r_ratio": 1.5699798455689424,
+    "vs_ref_rel_l2": 0.004377306889364548,
+    "vs_ref_cosine": 0.9999904278453352,
+    "vs_ref_oot_frac": 0.0003623366355895996,
+    "vs_ref_mean_diff": 0.004489126262907591,
+    "vs_ref_norm_max": 0.00851063829787234,
+    "cases": 11,
+    "vs_ref_cases": 11,
+    "vs_ref_worst": "layers.0.mlp.fc2.out"
+   },
+   "worst": [
+    {
+     "name": "layers.0.attn.qkv.out",
+     "metric": "r_ratio",
+     "value": 1.5699798455689424,
+     "location": null
+    },
+    {
+     "name": "layers.0.mlp.fc1.out",
+     "metric": "r_ratio",
+     "value": 1.3623156854675775,
+     "location": null
+    },
+    {
+     "name": "layers.0.attn.k_norm.out",
+     "metric": "r_ratio",
+     "value": 1.3335663714119284,
+     "location": null
+    },
+    {
+     "name": "layers.0.attn.q_norm.out",
+     "metric": "r_ratio",
+     "value": 1.3114809012079354,
+     "location": null
+    },
+    {
+     "name": "layers.0.mlp.fc2.out",
+     "metric": "r_ratio",
+     "value": 1.057004516928044,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "超线：['r_ratio']",
+   "details": "details/L2.layer0.fwd.jsonl"
+  },
+  {
+   "id": "L2.layer1.fwd",
+   "type": "op_replay",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "r_ratio": 1.2
+    },
+    "source": "推断：同 GPU 侧 phase1-l1 的 L1.rratio 起点。只差舍入顺序时 R≈1；多一次同量级的独立舍入误差方差约翻倍、R≈√2≈1.41，取两者之间"
+   },
+   "metrics": {
+    "rel_l2": 0.01554788734386234,
+    "cr_match_frac": 2.4159749348958332e-05,
+    "ulp_max": 28931666,
+    "ulp_p999": 357979.6490000305,
+    "nonfinite_mismatch": 0,
+    "r_ratio": 1.5349248833167937,
+    "vs_ref_rel_l2": 0.01745894376548706,
+    "vs_ref_cosine": 0.9998476605385898,
+    "vs_ref_oot_frac": 0.03599512577056885,
+    "vs_ref_mean_diff": 0.01070365555210132,
+    "vs_ref_norm_max": 0.033854166666666664,
+    "cases": 11,
+    "vs_ref_cases": 11,
+    "vs_ref_worst": "layers.1.mlp.out"
+   },
+   "worst": [
+    {
+     "name": "layers.1.attn.qkv.out",
+     "metric": "r_ratio",
+     "value": 1.5349248833167937,
+     "location": null
+    },
+    {
+     "name": "layers.1.attn.q_norm.out",
+     "metric": "r_ratio",
+     "value": 1.3268019120137955,
+     "location": null
+    },
+    {
+     "name": "layers.1.attn.k_norm.out",
+     "metric": "r_ratio",
+     "value": 1.2973755904212616,
+     "location": null
+    },
+    {
+     "name": "layers.1.mlp.shared.out",
+     "metric": "r_ratio",
+     "value": 1.0151080902264242,
+     "location": null
+    },
+    {
+     "name": "layers.1.out",
+     "metric": "r_ratio",
+     "value": 0.9943668257676568,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "超线：['r_ratio']",
+   "details": "details/L2.layer1.fwd.jsonl"
+  },
+  {
+   "id": "L2.layer1.router",
+   "type": "discrete_agreement",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "set_frac": 0.9419921875
+    },
+    "source": "实测 GPU（golden）对 FP64 真值的集合一致比例 0.951660，被测的翻转率不超过它的 1.2 倍（推断，同 R-ratio）"
+   },
+   "metrics": {
+    "set_frac_min": 0.95263671875,
+    "order_frac_min": 0.95263671875,
+    "gpu_vs_fp64_set_frac": 0.95166015625
+   },
+   "worst": [
+    {
+     "name": "layers.1.mlp.router.topk_idx",
+     "metric": "set_frac",
+     "value": 0.95263671875,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "set_frac 最低 0.952637",
+   "details": "details/L2.layer1.router.jsonl"
+  },
+  {
+   "id": "L1.router.topk.fp64.layer1",
+   "type": "discrete_agreement",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "set_frac": 0.97
+    },
+    "source": "推断：沿用 phase1-full 的 L1.router.topk.fp64（GPU FP32 路由对 FP64 的选中集合，先给宽松下限）"
+   },
+   "metrics": {
+    "set_frac_min": 1.0,
+    "order_frac_min": 1.0
+   },
+   "worst": [
+    {
+     "name": "layers.1.mlp.router.topk_idx",
+     "metric": "set_frac",
+     "value": 1.0,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "set_frac 最低 1.000000",
+   "details": "details/L1.router.topk.fp64.layer1.jsonl"
+  },
+  {
+   "id": "L2.layer2.fwd",
+   "type": "op_replay",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "r_ratio": 1.2
+    },
+    "source": "推断：同 GPU 侧 phase1-l1 的 L1.rratio 起点。只差舍入顺序时 R≈1；多一次同量级的独立舍入误差方差约翻倍、R≈√2≈1.41，取两者之间"
+   },
+   "metrics": {
+    "rel_l2": 0.0189681395675816,
+    "cr_match_frac": 4.0690104166666664e-05,
+    "ulp_max": 56500809,
+    "ulp_p999": 136729.04600002547,
+    "nonfinite_mismatch": 0,
+    "r_ratio": 1.5585293338895154,
+    "vs_ref_rel_l2": 0.022195599007049694,
+    "vs_ref_cosine": 0.9997536778608097,
+    "vs_ref_oot_frac": 0.029552698135375977,
+    "vs_ref_mean_diff": 0.010213088099051753,
+    "vs_ref_norm_max": 0.030795162671232876,
+    "cases": 11,
+    "vs_ref_cases": 11,
+    "vs_ref_worst": "layers.2.mlp.out"
+   },
+   "worst": [
+    {
+     "name": "layers.2.attn.qkv.out",
+     "metric": "r_ratio",
+     "value": 1.5585293338895154,
+     "location": null
+    },
+    {
+     "name": "layers.2.attn.q_norm.out",
+     "metric": "r_ratio",
+     "value": 1.3474337909961995,
+     "location": null
+    },
+    {
+     "name": "layers.2.attn.k_norm.out",
+     "metric": "r_ratio",
+     "value": 1.3142049168759442,
+     "location": null
+    },
+    {
+     "name": "layers.2.mlp.shared.out",
+     "metric": "r_ratio",
+     "value": 1.0916196204777835,
+     "location": null
+    },
+    {
+     "name": "layers.2.attn.core.out",
+     "metric": "r_ratio",
+     "value": 1.0028368250030804,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "超线：['r_ratio']",
+   "details": "details/L2.layer2.fwd.jsonl"
+  },
+  {
+   "id": "L2.layer2.router",
+   "type": "discrete_agreement",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "set_frac": 0.95869140625
+    },
+    "source": "实测 GPU（golden）对 FP64 真值的集合一致比例 0.965576，被测的翻转率不超过它的 1.2 倍（推断，同 R-ratio）"
+   },
+   "metrics": {
+    "set_frac_min": 0.9697265625,
+    "order_frac_min": 0.9697265625,
+    "gpu_vs_fp64_set_frac": 0.965576171875
+   },
+   "worst": [
+    {
+     "name": "layers.2.mlp.router.topk_idx",
+     "metric": "set_frac",
+     "value": 0.9697265625,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "set_frac 最低 0.969727",
+   "details": "details/L2.layer2.router.jsonl"
+  },
+  {
+   "id": "L1.router.topk.fp64.layer2",
+   "type": "discrete_agreement",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "set_frac": 0.97
+    },
+    "source": "推断：沿用 phase1-full 的 L1.router.topk.fp64（GPU FP32 路由对 FP64 的选中集合，先给宽松下限）"
+   },
+   "metrics": {
+    "set_frac_min": 0.999755859375,
+    "order_frac_min": 0.999755859375
+   },
+   "worst": [
+    {
+     "name": "layers.2.mlp.router.topk_idx",
+     "metric": "set_frac",
+     "value": 0.999755859375,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "set_frac 最低 0.999756",
+   "details": "details/L1.router.topk.fp64.layer2.jsonl"
+  },
+  {
+   "id": "L2.layer3.fwd",
+   "type": "op_replay",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "r_ratio": 1.2
+    },
+    "source": "推断：同 GPU 侧 phase1-l1 的 L1.rratio 起点。只差舍入顺序时 R≈1；多一次同量级的独立舍入误差方差约翻倍、R≈√2≈1.41，取两者之间"
+   },
+   "metrics": {
+    "rel_l2": 0.02481051597602756,
+    "cr_match_frac": 4.57763671875e-05,
+    "ulp_max": 79747753,
+    "ulp_p999": 142385.8900000326,
+    "nonfinite_mismatch": 0,
+    "r_ratio": 1.5472191795021806,
+    "vs_ref_rel_l2": 0.028050513445094183,
+    "vs_ref_cosine": 0.9996065725433368,
+    "vs_ref_oot_frac": 0.03310799598693848,
+    "vs_ref_mean_diff": 0.01209199652015501,
+    "vs_ref_norm_max": 0.01910828025477707,
+    "cases": 11,
+    "vs_ref_cases": 11,
+    "vs_ref_worst": "layers.3.mlp.out"
+   },
+   "worst": [
+    {
+     "name": "layers.3.attn.qkv.out",
+     "metric": "r_ratio",
+     "value": 1.5472191795021806,
+     "location": null
+    },
+    {
+     "name": "layers.3.attn.q_norm.out",
+     "metric": "r_ratio",
+     "value": 1.338963976589755,
+     "location": null
+    },
+    {
+     "name": "layers.3.attn.k_norm.out",
+     "metric": "r_ratio",
+     "value": 1.2937607276447671,
+     "location": null
+    },
+    {
+     "name": "layers.3.mlp.shared.out",
+     "metric": "r_ratio",
+     "value": 1.0750370899212716,
+     "location": null
+    },
+    {
+     "name": "layers.3.mlp.out",
+     "metric": "r_ratio",
+     "value": 1.018031330554181,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "超线：['r_ratio']",
+   "details": "details/L2.layer3.fwd.jsonl"
+  },
+  {
+   "id": "L2.layer3.router",
+   "type": "discrete_agreement",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "set_frac": 0.96484375
+    },
+    "source": "实测 GPU（golden）对 FP64 真值的集合一致比例 0.970703，被测的翻转率不超过它的 1.2 倍（推断，同 R-ratio）"
+   },
+   "metrics": {
+    "set_frac_min": 0.971435546875,
+    "order_frac_min": 0.971435546875,
+    "gpu_vs_fp64_set_frac": 0.970703125
+   },
+   "worst": [
+    {
+     "name": "layers.3.mlp.router.topk_idx",
+     "metric": "set_frac",
+     "value": 0.971435546875,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "set_frac 最低 0.971436",
+   "details": "details/L2.layer3.router.jsonl"
+  },
+  {
+   "id": "L1.router.topk.fp64.layer3",
+   "type": "discrete_agreement",
+   "level": "L1",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "set_frac": 0.97
+    },
+    "source": "推断：沿用 phase1-full 的 L1.router.topk.fp64（GPU FP32 路由对 FP64 的选中集合，先给宽松下限）"
+   },
+   "metrics": {
+    "set_frac_min": 1.0,
+    "order_frac_min": 1.0
+   },
+   "worst": [
+    {
+     "name": "layers.3.mlp.router.topk_idx",
+     "metric": "set_frac",
+     "value": 1.0,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "set_frac 最低 1.000000",
+   "details": "details/L1.router.topk.fp64.layer3.jsonl"
+  }
+ ]
+}

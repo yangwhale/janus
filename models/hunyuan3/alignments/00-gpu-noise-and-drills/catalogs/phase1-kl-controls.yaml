@@ -1,0 +1,18 @@
+# 第一阶段 · logits 指标的正对照：确定性基线 d-a 上埋了错的运行（用 janus run --test 切换 f-weight2 / f-drop / f-router / f-data），
+# 第 1 步 logits 与逐 token loss 对 d-a 的 KL、rel_L2，给出「出了真问题时这些指标有多大」的量级。只报不判（数值门槛只用于出结论）。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase1-kl-controls
+runs:
+  test: f-weight2
+  golden: [d-a]
+  root: /data/janus-runs2
+checks:
+  - id: L3.logits.controls
+    type: tensor_tolerance
+    level: L3
+    hard: false
+    select: {kind: tensor, step: 1, name: "logits"}
+    metrics: [kl, rel_l2, cosine]
+    threshold: {kl: 1.0e-12}
+    source: "只报不判：任何非零 KL 都会超线，用来记录正对照的量级"

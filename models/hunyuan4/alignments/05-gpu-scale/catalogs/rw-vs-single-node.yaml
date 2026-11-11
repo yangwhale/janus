@@ -1,0 +1,34 @@
+# 混元 4 · GPU 扩展：真实宽度截层（hy4-preview 第 0–2 层 + MTP）的多机运行对单机运行的前 30 步曲线。
+# 尺子 = 单机同设置 6 份（rws-a … rws-f）两两 15 对的波动上限。被测用 `janus run … --test <运行名>` 换。
+schema_version: 1
+model: hunyuan4-rw3
+stage: gpu-scale-rw-vs-single-node
+description: 真实宽度第 0–2 层 + MTP，2 台 DP 16 + EP 16 对单机 DP 8 + EP 8 的前 30 步，尺子 rws 两两 15 对
+runs:
+  test: rw-b
+  golden: [rws-a]
+  noise:
+    - [rws-a, rws-b]
+    - [rws-a, rws-c]
+    - [rws-a, rws-d]
+    - [rws-a, rws-e]
+    - [rws-a, rws-f]
+    - [rws-b, rws-c]
+    - [rws-b, rws-d]
+    - [rws-b, rws-e]
+    - [rws-b, rws-f]
+    - [rws-c, rws-d]
+    - [rws-c, rws-e]
+    - [rws-c, rws-f]
+    - [rws-d, rws-e]
+    - [rws-d, rws-f]
+    - [rws-e, rws-f]
+  root: /data/janus-runs
+checks:
+  - {id: C.loss, type: loss_series, level: L4, select: {kind: metrics, field: lm_loss, window: "1:31"}, threshold: calibrated}
+  - {id: C.mtp_loss, type: loss_series, level: L4, select: {kind: metrics, field: mtp_loss_mt, window: "1:31"}, threshold: calibrated}
+  - {id: C.indexer_loss, type: loss_series, level: L4, select: {kind: metrics, field: indexer_loss, window: "1:31"}, threshold: calibrated}
+  - {id: C.grad_norm, type: loss_series, level: L4, select: {kind: metrics, field: grad_norm, window: "1:31"}, threshold: calibrated}
+  - {id: C.param_norm, type: loss_series, level: L4, select: {kind: metrics, field: param_norm_fp64, window: "1:31"}, threshold: calibrated}
+  - {id: C.router.bias_mean, type: router_stats, level: L4, select: {kind: metrics, prefix: "router.bias_mean.", window: "1:31"}, threshold: calibrated}
+  - {id: C.router.bias_std, type: router_stats, level: L4, select: {kind: metrics, prefix: "router.bias_std.", window: "1:31"}, threshold: calibrated}

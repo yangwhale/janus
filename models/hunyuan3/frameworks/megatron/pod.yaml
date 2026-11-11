@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: janus-gpu
+  labels: {app: janus}
+spec:
+  restartPolicy: Never
+  nodeSelector: {cloud.google.com/gke-nodepool: <8×B200 节点池>}   # 换成自己的节点池名
+  tolerations: [{operator: Exists}]
+  containers:
+  - name: main
+    image: nvcr.io/nvidia/nemo:26.10@sha256:fc75bf516de6845fd85fe627c7c18e69e7568428fe56438e31ff3b1917044b6c   # 第一阶段用的就是这个 digest
+    command: ["bash","-c","sleep infinity"]
+    resources:
+      limits: {nvidia.com/gpu: 8}
+    env:
+    - {name: HF_HOME, value: /data/hf}
+    - {name: JANUS_IMAGE, value: "nvcr.io/nvidia/nemo@sha256:fc75bf516de6845fd85fe627c7c18e69e7568428fe56438e31ff3b1917044b6c"}   # train_hy3.py 写进 meta.json 的 image
+    volumeMounts:
+    - {name: data, mountPath: /data}
+    - {name: shm, mountPath: /dev/shm}
+  volumes:
+  - name: data
+    emptyDir: {}
+  - name: shm
+    emptyDir: {medium: Memory, sizeLimit: 256Gi}

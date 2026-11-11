@@ -1,0 +1,19 @@
+# 第一阶段 · 逐层注入演练：第 2 层埋错（linear_proj 权重 ×(1+1e-2)，大于 BF16 一格，所有元素都变），每层输入换成确定性基线 d-a 同一步的层输入。
+# 期望：注入生效（每层输入与 d-a 逐位相同）；只有第 2 层输出不同，第 3 层吃的是好输入，输出又回到逐位相同 —— 误差被隔离到第 2 层。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase1-inject
+runs:
+  test: i-weight
+  golden: [d-a]
+  root: /data/janus-runs2
+checks:
+  - id: L2.seam.inputs
+    type: bitwise_equal
+    level: L2
+    select: {kind: tensor, step: 1, name: "layers.*.in"}
+  - id: L2.inject.layer{i}
+    foreach: {i: [0, 1, 2, 3]}
+    type: bitwise_equal
+    level: L2
+    select: {kind: tensor, step: 1, name: "layers.{i}.*.out"}

@@ -1,0 +1,42 @@
+# 混元 4 · T1 L4：QK-Clip 曲线（每步全局最大注意力 logit；被裁头数见 results/t1mz-health.results.json）。被测 mz-g1q：mz-g1（现行 yml，
+# MaxText fd30fbfb，再开 qk_clip_log_per_head 只记录逐层逐头的最大 logit；1000 步逐位等于 t1zg-b）派生出 max_attention_logit
+# = 各层（含 MTP）各头 qk.max_logit 的最大值，与 GPU 的 max_attention_logit 同义（全局最大缩放 q·k，不含 sink）。
+schema_version: 1
+model: hunyuan4-mini
+stage: t1mz-l4-qkclip
+description: T1 L4 QK-Clip 曲线（每步全局最大 logit），mz-g1q 被测，GPU g3-a 为基线，GPU 噪声 28 对
+runs:
+  test: mz-g1q
+  golden: [g3-a]
+  noise:
+    - [g3-a, g3-b]
+    - [g3-a, g3-c]
+    - [g3-a, g3-d]
+    - [g3-a, g3-e]
+    - [g3-a, g3-f]
+    - [g3-a, g3-g]
+    - [g3-a, g3-h]
+    - [g3-b, g3-c]
+    - [g3-b, g3-d]
+    - [g3-b, g3-e]
+    - [g3-b, g3-f]
+    - [g3-b, g3-g]
+    - [g3-b, g3-h]
+    - [g3-c, g3-d]
+    - [g3-c, g3-e]
+    - [g3-c, g3-f]
+    - [g3-c, g3-g]
+    - [g3-c, g3-h]
+    - [g3-d, g3-e]
+    - [g3-d, g3-f]
+    - [g3-d, g3-g]
+    - [g3-d, g3-h]
+    - [g3-e, g3-f]
+    - [g3-e, g3-g]
+    - [g3-e, g3-h]
+    - [g3-f, g3-g]
+    - [g3-f, g3-h]
+    - [g3-g, g3-h]
+  root: /data/janus-runs
+checks:
+  - {id: L4.qkclip.max_logit, type: loss_series, level: L4, select: {kind: metrics, field: max_attention_logit, window: "1:1001"}, threshold: calibrated}

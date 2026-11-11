@@ -1,0 +1,15 @@
+# 混元 4 · 00 · GPU 一侧确定性自证（计划，待做）：确定性设置下同配置两份必须逐位相同。
+# 现状：默认设置下 hy4-mini 8 卡重跑不逐位（台账 G9：第 1 步 loss 差 4.9e-6、grad_norm 差 2.4e-4），hy4-tiny 2 卡 20 步两份逐位（台账 G7）。
+# 运行名 g1det-a / g1det-b 是计划里的名字，还没有跑。
+schema_version: 1
+model: hunyuan4-mini
+stage: t1-gpu-determinism
+description: GPU 确定性设置下同配置两份 300 步，逐步量与第 1 步全部抓数逐位相同（计划）
+runs:
+  test: g1det-b
+  golden: [g1det-a]
+  root: /data/janus-runs
+checks:
+  - {id: L4.loss.exact, type: loss_series, level: L4, select: {kind: metrics, field: lm_loss, window: "1:301"}, threshold: exact}
+  - {id: L4.grad_norm.exact, type: loss_series, level: L4, select: {kind: metrics, field: grad_norm, window: "1:301"}, threshold: exact}
+  - {id: L3.step1.bitwise, type: bitwise_equal, level: L3, select: {kind: tensor, step: 1, name: "*"}, threshold: exact}

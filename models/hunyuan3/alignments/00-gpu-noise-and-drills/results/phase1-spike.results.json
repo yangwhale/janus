@@ -1,0 +1,93 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.0.1",
+  "commit": null
+ },
+ "catalog": {
+  "path": "catalogs/hunyuan3-4l/phase1-spike.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "afcfcae4dd78a4f8b476f2e36479a183df4cc98ea2455db51ee0001dcf70a739",
+  "raw_sha256": "b7bb8f00ec2ea68ca4f17ebf4be4a85e04cfef76570c6e41389516d98049137a"
+ },
+ "runs": {
+  "f-spike": {
+   "path": "/data/janus-runs2/f-spike",
+   "meta_sha256": "0b2987c4875136b96e006ff59c17e41cde39da3464b763382a0be467f3558fc3"
+  },
+  "d-a": {
+   "path": "/data/janus-runs2/d-a",
+   "meta_sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+  }
+ },
+ "started_at": "2026-11-03T23:45:27+00:00",
+ "finished_at": "2026-11-03T23:45:27+00:00",
+ "summary": {
+  "pass": 0,
+  "fail": 2,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": true
+ },
+ "checks": [
+  {
+   "id": "L4.health",
+   "type": "health_signals",
+   "level": "L4",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "spike_ratio": 3.0
+    },
+    "source": "推断：同 phase1-full"
+   },
+   "metrics": {
+    "fields": 2,
+    "problems": 1
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/f-spike",
+     "sha256": "0b2987c4875136b96e006ff59c17e41cde39da3464b763382a0be467f3558fc3"
+    }
+   ],
+   "message": "grad_norm@16=387（中位数 19.1 的 20.2 倍）"
+  },
+  {
+   "id": "L4.loss.vs_golden",
+   "type": "loss_series",
+   "level": "L4",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "d0": 0.0,
+    "signed_mean": 0.2725064840811505,
+    "mare": 0.27250873819287613,
+    "max_step": 1.0122710039116898,
+    "max_step_at": 16,
+    "window": "1:31",
+    "denominator": "golden",
+    "nonfinite_steps": [],
+    "signed_mean_se": 0.14850315570519657
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/f-spike",
+     "sha256": "0b2987c4875136b96e006ff59c17e41cde39da3464b763382a0be467f3558fc3"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": ""
+  }
+ ]
+}

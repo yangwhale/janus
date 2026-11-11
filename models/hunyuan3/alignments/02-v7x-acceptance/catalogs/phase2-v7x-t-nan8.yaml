@@ -1,0 +1,13 @@
+# 对齐实践 02 · v7x 梯度 NaN 演练。照 01 的 phase2-t-nan8.yaml 复制：t-v7x-nan8 同 t-nan8（第 5 步在第 0 层注意力输出投影梯度里埋 NaN，8 步，
+# 每设备 2 行、不累积，生产 yml），跑在 v7x。总览里这一格是演练（items.yaml 的 v7x_expect: fail）。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-v7x-t-nan8
+description: TPU 梯度 NaN 演练（第 5 步埋 NaN）
+runs:
+  test: t-v7x-nan8
+  golden: [g1k-a]
+  root: /data/janus-runs
+checks:
+  - {id: L4.health.grad_norm, type: health_signals, level: L4, select: {kind: metrics, fields: [grad_norm]}}
+  - {id: L4.health.loss, type: health_signals, level: L4, select: {kind: metrics, fields: [lm_loss]}}

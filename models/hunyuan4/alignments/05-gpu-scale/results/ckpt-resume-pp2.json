@@ -1,0 +1,26 @@
+{
+ "a": "ckp-a",
+ "b": "ckp-d",
+ "steps": [
+  11,
+  20
+ ],
+ "metrics": {
+  "values": 750,
+  "differ": 0,
+  "first_differ": []
+ },
+ "params_sha": {
+  "files": 16,
+  "entries": 1752,
+  "differ": 0,
+  "first_differ": []
+ },
+ "state_sha": {
+  "files": 16,
+  "entries": 8760,
+  "differ": 0,
+  "first_differ": []
+ },
+ "bitwise_identical": true
+}

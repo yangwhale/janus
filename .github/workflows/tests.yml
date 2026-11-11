@@ -1,0 +1,71 @@
+# 每个 PR 和 main 上的提交都跑：lint（ruff）与单元测试（含断链、仓库卫生）。全部只要 CPU。
+# 本地等价命令：make lint && make test。
+name: tests
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[lint]"
+      - name: ruff
+        run: |
+          make lint || {
+            echo "::error::lint 没过。本地跑 'pip install -e \".[lint]\" && make fmt' 自动修，剩下的按提示改（规则见 pyproject.toml 的 [tool.ruff]）"
+            exit 1
+          }
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]   # 支持的最低版本与 CI 默认版本
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e ".[test]"
+      - run: make test
+  package:
+    # 装成普通的包（不是 -e）、在仓库外跑一遍：抓「只有在仓库根目录才跑得通」的导入与漏打包的文件
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: make dist
+      - name: 在仓库外装 wheel 并跑 demo
+        run: |
+          python -m venv /tmp/v && /tmp/v/bin/pip install -q dist/*.whl
+          cd /tmp && /tmp/v/bin/janus --version
+          /tmp/v/bin/janus demo /tmp/demo && /tmp/v/bin/janus run /tmp/demo/catalog.yaml --out /tmp/demo/out
+          /tmp/v/bin/janus validate /tmp/demo/catalog.yaml
+  generated:
+    # 总览与各实践 README 里的逐级大表由 build.py 从结果文件生成：提交了结果却没重画，就会和结果对不上。
+    # 只比 Markdown / HTML（PNG 的字节随机器上的字体变，不比）。
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[report]"
+      - name: 重画后与提交的一致
+        run: |
+          make dashboard-check || {
+            echo "::error::总览或逐级大表和结果文件对不上：本地跑 'make dashboard'，把改动的 CHECKS.md / dashboard.md / dashboard.html / 实践 README.md 一起提交（PNG 不用管）"
+            exit 1
+          }

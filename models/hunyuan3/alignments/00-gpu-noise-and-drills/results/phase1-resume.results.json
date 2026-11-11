@@ -1,0 +1,139 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.0.1",
+  "commit": null
+ },
+ "catalog": {
+  "path": "catalogs/hunyuan3-4l/phase1-resume.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "b12061ba93a9a8fffae8588233495a91a90565c4714a8dd3efc1b1e1bf15239f",
+  "raw_sha256": "6b2775414f609b0d311596dc1b7416b83bbdd79f7b9b59aae4fe6c22a4d1cfe9"
+ },
+ "runs": {
+  "r-resume": {
+   "path": "/data/janus-runs2/r-resume",
+   "meta_sha256": "cc8b3c0126e29fef392d90ff34360e0c9802ad389fc5705ad1cf2abc7fbe19c2"
+  },
+  "r-cont": {
+   "path": "/data/janus-runs2/r-cont",
+   "meta_sha256": "904e63b55e151c8a455140a86968fdd623db7082040e11705416ac151f687ef3"
+  }
+ },
+ "started_at": "2026-11-03T20:51:27+00:00",
+ "finished_at": "2026-11-03T20:51:36+00:00",
+ "summary": {
+  "pass": 4,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L0.resume.data",
+   "type": "data_fingerprint",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "units": 650,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/r-resume",
+     "sha256": "cc8b3c0126e29fef392d90ff34360e0c9802ad389fc5705ad1cf2abc7fbe19c2"
+    },
+    {
+     "path": "/data/janus-runs2/r-cont",
+     "sha256": "904e63b55e151c8a455140a86968fdd623db7082040e11705416ac151f687ef3"
+    }
+   ],
+   "message": "token 与首步 loss 逐位相同",
+   "details": "details/L0.resume.data.jsonl"
+  },
+  {
+   "id": "L4.resume.overlap",
+   "type": "overlap_replay",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "overlap_steps": 10,
+    "first_differ_step": null,
+    "first_differ_fields": []
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/r-resume",
+     "sha256": "cc8b3c0126e29fef392d90ff34360e0c9802ad389fc5705ad1cf2abc7fbe19c2"
+    },
+    {
+     "path": "/data/janus-runs2/r-cont",
+     "sha256": "904e63b55e151c8a455140a86968fdd623db7082040e11705416ac151f687ef3"
+    }
+   ],
+   "message": "重叠步全部逐位相同"
+  },
+  {
+   "id": "L3.resume.step11",
+   "type": "bitwise_equal",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 74,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/r-resume",
+     "sha256": "cc8b3c0126e29fef392d90ff34360e0c9802ad389fc5705ad1cf2abc7fbe19c2"
+    },
+    {
+     "path": "/data/janus-runs2/r-cont",
+     "sha256": "904e63b55e151c8a455140a86968fdd623db7082040e11705416ac151f687ef3"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/L3.resume.step11.jsonl"
+  },
+  {
+   "id": "L3.resume.coverage",
+   "type": "coverage",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {},
+   "worst": [],
+   "coverage": {
+    "expected": 74,
+    "compared": 74,
+    "missing": []
+   },
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/r-resume",
+     "sha256": "cc8b3c0126e29fef392d90ff34360e0c9802ad389fc5705ad1cf2abc7fbe19c2"
+    }
+   ],
+   "message": "全部比到"
+  }
+ ]
+}

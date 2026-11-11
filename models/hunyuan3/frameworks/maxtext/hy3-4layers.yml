@@ -1,0 +1,102 @@
+# 混元 3 截 4 层：MaxText 训练配置，逐项对齐 GPU golden（models/hunyuan3/frameworks/megatron/train_hy3.py 与 golden 的 meta.json）。
+# 逐项对照与证据见 models/hunyuan3/config-alignment.md。要 maxtext hunyuan@4d4ffac 或更新（下面三个精度开关从这个提交起才有）。
+# 用法见 models/hunyuan3/frameworks/maxtext/README.md；train_hy3.py 读这个文件，再在命令行补上必须覆盖模型配置的键
+#（mtp_num_layers=0 等，见 train_hy3.py 的 FORCED）。
+#
+# 每一行右边写 GPU 那一侧对应的值与出处。拿不准的写「待核对」。
+base_config: "base.yml"                 # MaxText 自带的 base.yml（按 MAXTEXT_CONFIGS_DIR 找）
+
+# ---- 模型：结构来自 hunyuan3-smoke.yml（与 hunyuan3-295b.yml 只差层数 80 → 4）
+model_name: "hunyuan3-smoke"
+override_model_config: true
+# 以下几项在模型 yml 里也有，必须在命令行覆盖才生效（MaxText 先合并 base，再合并模型 yml，最后命令行），train_hy3.py 会加上：
+#   mtp_num_layers=0                     GPU: m.mtp_num_layers = None（关 MTP）
+dtype: "bfloat16"                       # GPU: bf16 计算（meta.dtypes.compute）
+weight_dtype: "float32"                 # GPU: BF16 参数 + FP32 主权重；MaxText 只存 FP32 主权重，计算时转 BF16
+grad_dtype: "float32"                   # GPU: grad_reduce fp32（meta.dtypes.grad_reduce）
+matmul_precision: "default"             # 路由矩阵乘：GPU moe_router_dtype=fp32 但权重与输入都是 BF16，BF16 乘 FP32 累加；v5p 实测 DEFAULT 下 FP32 操作数
+                                        # 就是先舍 BF16 单遍乘（config-alignment.md「路由 GEMM」行）
+cast_logits_to_fp32: true               # logits 先在 BF16 出、再转 FP32 算 cross entropy；GPU logits BF16（golden step_1 logits dtype BF16）
+logits_dot_in_fp32: false
+# dropout：模型 yml 里 enable_dropout: False；dropout_rate 默认 0.0。GPU hidden_dropout = attention_dropout = 0.0
+dropout_rate: 0.0
+use_random_routing: false               # GPU 没有随机路由
+load_balance_loss_weight: 0.0           # GPU moe_aux_loss_coeff = 0.0
+z_loss_multiplier: 0.0                  # GPU moe_z_loss_coeff = None（无 z-loss）
+
+# ---- 舍入位置（v5p 上 L1 / L2 回放选定，见 config-alignment.md 对应行与 01 results/phase2-l1-l2-replay.md）
+routed_gate_bf16_rounding: true         # 路由核先 reduce_precision 到 BF16（GPU 是 BF16 参数）、梯度直通；v5p DEFAULT 档下与不开逐位相同，开着不依赖后端
+rmsnorm_single_rounding: true           # RMSNorm 在 FP32 里乘完 scale 只舍一次（GPU TE RMSNorm）；v5p 前向与不开逐位相同（XLA 已省掉中间那次），反向更接近 GPU
+mlp_activation_round_per_op: true       # silu 舍一次、乘积再舍一次（GPU 不融合的 GLU，路由专家已逐位复现）；默认写法在 v5p 上编出来只舍一次
+dense_fp32_accumulation: true           # 注意力 q/k/v/out 与稠密 MLP 投影 FP32 累加、只舍一次（GPU GEMM）；不开时 FSDP 收缩维被编成窗口化 collective matmul，分片部分积在 BF16 里累加（要 hunyuan@0622774 或更新）
+
+# ---- 优化器：GPU optimizer_config + scheduler_config（golden meta.json）
+opt_type: "adamw"                       # GPU: adam（Megatron 的 adam 是解耦权重衰减的 AdamW）
+adam_b1: 0.9                            # GPU adam_beta1 0.9
+adam_b2: 0.95                           # GPU adam_beta2 0.95
+adam_eps: 1.0e-8                        # GPU adam_eps 1e-8（加在 sqrt 外面；golden 第 1 步 FP64 重放核对过，见 README）
+adam_eps_root: 0.0
+adam_weight_decay: 0.033                # GPU 实际生效 0.033（scheduler.start/end_weight_decay 覆盖了 optimizer.weight_decay=0.1）
+# 一维参数（各 RMSNorm 的 scale）不衰减：Megatron 默认对 len(shape)==1 的参数不加权重衰减。
+# golden 第 1 步重放：norm 权重按 wd=0 吻合、二维权重按 wd=0.033 吻合（README「已在 CPU 上核对」）。
+# MaxText 的扫描层把一维 scale 堆成 [D, L] 二维，不能按维数判，只能按名字排除。
+adamw_mask: ["norm/scale"]
+mu_dtype: "float32"                     # GPU exp_avg_dtype fp32
+gradient_clipping_threshold: 1.0        # GPU clip_grad 1.0
+learning_rate: 1.0e-5                   # GPU lr 1e-5，min_lr 1e-5
+lr_schedule_type: "wsd"                 # 常数学习率：WSD 不预热、不衰减时只剩 optax.constant_schedule(lr)
+warmup_steps_fraction: 0.0              # GPU lr_warmup_iters 0
+wsd_decay_steps_fraction: 0.0           # GPU lr_decay_style constant
+learning_rate_final_fraction: 1.0
+# learning_rate_schedule_steps：train_hy3.py 设成 steps，避免尾段落进「学习率为 0」那一段
+skip_step_on_spikes: false              # GPU 不跳步（golden skipped_iter 全 0）
+
+# ---- 批与序列：GPU gbs 16、mbs 1、8 卡 → 每卡 2 个 microbatch；seq 4096
+max_target_length: 4096
+per_device_batch_size: 1                # 与 GPU 同样按 microbatch 分两次前反向再累加：GPU mbs 1、每卡 2 个 microbatch
+gradient_accumulation_steps: 2          # 设备 d 第 m 个累积步拿 GPU rank d 的 micro m（replay.py）；8 × 1 × 2 = 16 = GPU gbs。
+                                        # 加钩子的训练步不支持累积：train_hy3.py 遇到 GA>1 自动按 --no-hooks 跑。
+                                        # 旧排法 per_device_batch_size=2 + GA 1（一次处理两行）见 README「GA」
+# 种子：权重从检查点载入、数据由 replay 原样喂入，下面两个种子都不影响数值（dropout 为 0、无随机路由）；照 GPU 写 1234
+init_weights_seed: 1234
+data_shuffle_seed: 1234
+
+# ---- 并行：TPU 用 FSDP 8（MaxText 混元 3 的常规切法），GPU 是 DP8 + EP8。两边归约顺序本来就不同，config_diff 列为已知差异
+ici_fsdp_parallelism: -1
+ici_data_parallelism: 1
+ici_tensor_parallelism: 1
+ici_expert_parallelism: 1
+dcn_data_parallelism: 1
+
+# ---- MoE 执行
+megablox: true
+sparse_matmul: true
+capacity_factor: -1.0                   # 不丢 token（GPU 同样 dropless）
+use_custom_sort_vjp: true
+
+# ---- 重算：GPU 不开重算（recompute=False）。TPU 用 custom 策略并把路由结果存在 HBM：
+# 整层重算会让反向里重新算出的路由与前向不同（每层 0.3%–3% 的专家换掉；config-alignment.md「激活重算」行）。
+# remat_policy=none 在 NNX 解码器里仍会被 jax.checkpoint(policy=None) 包成整层重算，所以不用它。
+remat_policy: "custom"
+decoder_layer_input: "device"
+moe_routing_maps: "device"
+context: "device"
+query_proj: "device"
+key_proj: "device"
+value_proj: "device"
+out_proj: "device"
+mlpwi_0: "device"
+mlpwi_1: "device"
+mlpwo: "device"
+moe_mlpwi_0: "device"
+moe_mlpwi_1: "device"
+moe_mlpwo: "device"
+
+# ---- 注意力
+attention: "flash"                      # TPU splash attention（softmax 在 FP32）；GPU cuDNN fused attention。末位注定不同（config-alignment.md「注意力 softmax」行）
+
+# ---- 其他
+scan_layers: true
+enable_checkpointing: false
+dataset_type: "synthetic"               # 不用 MaxText 的数据管线：train_hy3.py 按 golden 的 data/batches 原样回放
+log_period: 1

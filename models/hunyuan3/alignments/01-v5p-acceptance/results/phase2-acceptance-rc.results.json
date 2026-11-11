@@ -1,0 +1,548 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "9a3a2dc0c423c36cc71f028e5bd1a6dda1607f05"
+ },
+ "catalog": {
+  "path": "models/hunyuan3/alignments/01-b200x8-to-v5p8-4layers/catalogs/phase2-acceptance-rc.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "7c4810e73b5531f22d75b9b2ef307d403568c012fd284ca8ae0bb66903449936",
+  "raw_sha256": "27f67fda39d2dc0b49e8f7c02061caa745fef83692fb09f7341f6710018392ee"
+ },
+ "runs": {
+  "t-rmap-1000": {
+   "path": "/tmp/accrun/t-rmap-1000",
+   "meta_sha256": "505892749aa19a1af063d21351e3ef8d7d47721e2ff7b383dabeafc6ec244b7c"
+  },
+  "rc-a": {
+   "path": "/tmp/accrun/rc-a",
+   "meta_sha256": "a866e6b2c8131e3e22c327318050b593e96f8395fa6ccf0ecd9fc3346dadb44f"
+  },
+  "rc-b": {
+   "path": "/tmp/accrun/rc-b",
+   "meta_sha256": "bd49b93621c10ffe356187a0070843ab878c040d60e6630cc10548f322e909e2"
+  },
+  "rc-c": {
+   "path": "/tmp/accrun/rc-c",
+   "meta_sha256": "66c164719b97f4d2ab7713ced4e1baefe6a820541307896ceb73eb3a56504e26"
+  },
+  "rc-d": {
+   "path": "/tmp/accrun/rc-d",
+   "meta_sha256": "68445361504c4bb2830d03a0af86b5645227fe138eb08ca4d92d4a9f2180e454"
+  },
+  "rc-e": {
+   "path": "/tmp/accrun/rc-e",
+   "meta_sha256": "c4503e6416d3e12cb046358bd8af2395fcc6664c52e0b043d7ae38aacfea05b3"
+  }
+ },
+ "started_at": "2026-11-06T02:57:10+00:00",
+ "finished_at": "2026-11-06T02:57:23+00:00",
+ "summary": {
+  "pass": 1,
+  "fail": 1,
+  "inconclusive": 3,
+  "error": 0,
+  "hard_fail": true
+ },
+ "checks": [
+  {
+   "id": "L4.loss",
+   "type": "multi_golden",
+   "level": "L4",
+   "hard": true,
+   "status": "inconclusive",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 10,
+     "upper": {
+      "signed_mean": 6.827894453639029e-05,
+      "mare": 0.0001182828870135469,
+      "max_step": 0.0005917212038993916
+     },
+     "floor": {
+      "signed_mean": 2.656185658123886e-05
+     }
+    }
+   },
+   "metrics": {
+    "d0_max": 8.733460281802978e-06,
+    "signed_mean_max": 9.134758621733333e-05,
+    "mare_max": 0.00013913308576581448,
+    "max_step_max": 0.0007035250738184829,
+    "goldens": 5,
+    "in_band_frac": 0.44244244244244246,
+    "window": "1:1001",
+    "denominator": "golden",
+    "baseline": "rc-a",
+    "noise_dropped": [],
+    "noise_loo": [
+     {
+      "pair": "rc-a~rc-b",
+      "signed_mean": 0.27677895096029387,
+      "mare": 0.8560729931066736,
+      "max_step": 0.7717729208204511
+     },
+     {
+      "pair": "rc-a~rc-c",
+      "signed_mean": 0.7233841217237706,
+      "mare": 0.8678206484687109,
+      "max_step": 0.7988677705575821
+     },
+     {
+      "pair": "rc-a~rc-d",
+      "signed_mean": 0.24109892325959412,
+      "mare": 0.8594952951212521,
+      "max_step": 0.8241208827475219
+     },
+     {
+      "pair": "rc-a~rc-e",
+      "signed_mean": 0.02607676860847963,
+      "mare": 0.8143052922790908,
+      "max_step": 0.7085615407440834
+     },
+     {
+      "pair": "rc-b~rc-c",
+      "signed_mean": 1.0366332426661231,
+      "mare": 1.0191487026822577,
+      "max_step": 0.9322590012208878
+     },
+     {
+      "pair": "rc-b~rc-d",
+      "signed_mean": 0.03555458790982144,
+      "mare": 0.8619472584977711,
+      "max_step": 0.7171477903800675
+     },
+     {
+      "pair": "rc-b~rc-e",
+      "signed_mean": 0.2505589588775878,
+      "mare": 0.8829162686578709,
+      "max_step": 1.006244705977758
+     },
+     {
+      "pair": "rc-c~rc-d",
+      "signed_mean": 0.9646613274991009,
+      "mare": 0.9812110807462534,
+      "max_step": 0.9788696745295441
+     },
+     {
+      "pair": "rc-c~rc-e",
+      "signed_mean": 0.749623122773125,
+      "mare": 0.9118821836542832,
+      "max_step": 0.8599752994279364
+     },
+     {
+      "pair": "rc-d~rc-e",
+      "signed_mean": 0.21488575932721826,
+      "mare": 0.8327592430182809,
+      "max_step": 0.9937940483655117
+     }
+    ]
+   },
+   "r1": 1.1762740095266664,
+   "r2": 1.3378587914265174,
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/accrun/t-rmap-1000",
+     "sha256": "505892749aa19a1af063d21351e3ef8d7d47721e2ff7b383dabeafc6ec244b7c"
+    },
+    {
+     "path": "/tmp/accrun/rc-a",
+     "sha256": "a866e6b2c8131e3e22c327318050b593e96f8395fa6ccf0ecd9fc3346dadb44f"
+    },
+    {
+     "path": "/tmp/accrun/rc-b",
+     "sha256": "bd49b93621c10ffe356187a0070843ab878c040d60e6630cc10548f322e909e2"
+    },
+    {
+     "path": "/tmp/accrun/rc-c",
+     "sha256": "66c164719b97f4d2ab7713ced4e1baefe6a820541307896ceb73eb3a56504e26"
+    },
+    {
+     "path": "/tmp/accrun/rc-d",
+     "sha256": "68445361504c4bb2830d03a0af86b5645227fe138eb08ca4d92d4a9f2180e454"
+    },
+    {
+     "path": "/tmp/accrun/rc-e",
+     "sha256": "c4503e6416d3e12cb046358bd8af2395fcc6664c52e0b043d7ae38aacfea05b3"
+    }
+   ],
+   "message": "介于噪声参照一到两倍之间，或参照不足",
+   "details": "details/L4.loss.jsonl"
+  },
+  {
+   "id": "L4.loss.tail",
+   "type": "multi_golden",
+   "level": "L4",
+   "hard": true,
+   "status": "inconclusive",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 10,
+     "upper": {
+      "signed_mean": 6.581539509644553e-05,
+      "mare": 0.00012347415214567533,
+      "max_step": 0.0005917212038993916
+     },
+     "floor": {
+      "signed_mean": 1.8435190747206525e-05
+     }
+    }
+   },
+   "metrics": {
+    "d0_max": 8.733460281802978e-06,
+    "signed_mean_max": 0.00012848338758981808,
+    "mare_max": 0.00015999910823123699,
+    "max_step_max": 0.0007035250738184829,
+    "goldens": 5,
+    "in_band_frac": 0.4042857142857143,
+    "window": "301:1001",
+    "denominator": "golden",
+    "baseline": "rc-a",
+    "noise_dropped": [],
+    "noise_loo": [
+     {
+      "pair": "rc-a~rc-b",
+      "signed_mean": 0.24093895884423924,
+      "mare": 0.9086350316110815,
+      "max_step": 0.7717729208204511
+     },
+     {
+      "pair": "rc-a~rc-c",
+      "signed_mean": 0.7592326192274643,
+      "mare": 0.9167816355792983,
+      "max_step": 0.7525345890127736
+     },
+     {
+      "pair": "rc-a~rc-d",
+      "signed_mean": 0.15681623303075293,
+      "mare": 0.8738001402458949,
+      "max_step": 0.7545957294390407
+     },
+     {
+      "pair": "rc-a~rc-e",
+      "signed_mean": 0.027746443930662088,
+      "mare": 0.8424082710633026,
+      "max_step": 0.6361911622780347
+     },
+     {
+      "pair": "rc-b~rc-c",
+      "signed_mean": 1.09142304655651,
+      "mare": 1.0554102892836075,
+      "max_step": 0.9322590012208878
+     },
+     {
+      "pair": "rc-b~rc-d",
+      "signed_mean": 0.08396455460862291,
+      "mare": 0.90472791796551,
+      "max_step": 0.7171477903800675
+     },
+     {
+      "pair": "rc-b~rc-e",
+      "signed_mean": 0.26851400376528717,
+      "mare": 0.9268334890303523,
+      "max_step": 1.072663282081909
+     },
+     {
+      "pair": "rc-c~rc-d",
+      "signed_mean": 0.9162350045246397,
+      "mare": 0.9474988164828118,
+      "max_step": 0.9090479792220058
+     },
+     {
+      "pair": "rc-c~rc-e",
+      "signed_mean": 0.7316657031301949,
+      "mare": 0.9190722403190286,
+      "max_step": 0.8599752994279364
+     },
+     {
+      "pair": "rc-d~rc-e",
+      "signed_mean": 0.18441332469249996,
+      "mare": 0.8789098121971555,
+      "max_step": 0.8485760167064744
+     }
+    ]
+   },
+   "r1": 1.2958105437522611,
+   "r2": 1.952178322435643,
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/accrun/t-rmap-1000",
+     "sha256": "505892749aa19a1af063d21351e3ef8d7d47721e2ff7b383dabeafc6ec244b7c"
+    },
+    {
+     "path": "/tmp/accrun/rc-a",
+     "sha256": "a866e6b2c8131e3e22c327318050b593e96f8395fa6ccf0ecd9fc3346dadb44f"
+    },
+    {
+     "path": "/tmp/accrun/rc-b",
+     "sha256": "bd49b93621c10ffe356187a0070843ab878c040d60e6630cc10548f322e909e2"
+    },
+    {
+     "path": "/tmp/accrun/rc-c",
+     "sha256": "66c164719b97f4d2ab7713ced4e1baefe6a820541307896ceb73eb3a56504e26"
+    },
+    {
+     "path": "/tmp/accrun/rc-d",
+     "sha256": "68445361504c4bb2830d03a0af86b5645227fe138eb08ca4d92d4a9f2180e454"
+    },
+    {
+     "path": "/tmp/accrun/rc-e",
+     "sha256": "c4503e6416d3e12cb046358bd8af2395fcc6664c52e0b043d7ae38aacfea05b3"
+    }
+   ],
+   "message": "介于噪声参照一到两倍之间，或参照不足",
+   "details": "details/L4.loss.tail.jsonl"
+  },
+  {
+   "id": "L4.grad_norm",
+   "type": "loss_series",
+   "level": "L4",
+   "hard": true,
+   "status": "inconclusive",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 10,
+     "upper": {
+      "signed_mean": 0.0033878228559637525,
+      "mare": 0.03190534237598998,
+      "max_step": 0.33383731911907083
+     }
+    }
+   },
+   "metrics": {
+    "d0": 0.0001360743263858561,
+    "signed_mean": -0.004079412509794753,
+    "mare": 0.023358956935394002,
+    "max_step": 0.250876526975461,
+    "max_step_at": 787,
+    "window": "1:1001",
+    "denominator": "golden",
+    "nonfinite_steps": [],
+    "signed_mean_se": 0.0019627007793387866,
+    "first_differ_step": 1,
+    "noise_dropped": [],
+    "noise_loo": [
+     {
+      "pair": "rc-a~rc-b",
+      "signed_mean": 0.4350215075115811,
+      "mare": 0.7818636318221065,
+      "max_step": 0.46381679210035903
+     },
+     {
+      "pair": "rc-a~rc-c",
+      "signed_mean": 0.13500394737743018,
+      "mare": 0.760389912693477,
+      "max_step": 0.5169018087079036
+     },
+     {
+      "pair": "rc-a~rc-d",
+      "signed_mean": 0.8799805890679833,
+      "mare": 0.8828376015546137,
+      "max_step": 0.8050302658991739
+     },
+     {
+      "pair": "rc-a~rc-e",
+      "signed_mean": 0.5467530437081954,
+      "mare": 0.7382266127910522,
+      "max_step": 0.5837252548902473
+     },
+     {
+      "pair": "rc-b~rc-c",
+      "signed_mean": 0.14586521804392313,
+      "mare": 0.7050300514467696,
+      "max_step": 0.45636481353192454
+     },
+     {
+      "pair": "rc-b~rc-d",
+      "signed_mean": 0.6510008241362698,
+      "mare": 0.9209499106405791,
+      "max_step": 0.7423669249351943
+     },
+     {
+      "pair": "rc-b~rc-e",
+      "signed_mean": 0.34771258107148906,
+      "mare": 0.8451975758455595,
+      "max_step": 0.8078600588177985
+     },
+     {
+      "pair": "rc-c~rc-d",
+      "signed_mean": 1.1363887026861959,
+      "mare": 1.0858353841463937,
+      "max_step": 1.1403567893109645
+     },
+     {
+      "pair": "rc-c~rc-e",
+      "signed_mean": 0.642336055804888,
+      "mare": 0.8156668756750323,
+      "max_step": 0.8634673168484868
+     },
+     {
+      "pair": "rc-d~rc-e",
+      "signed_mean": 0.039774488609883446,
+      "mare": 0.8519767125024832,
+      "max_step": 0.8769185305629021
+     }
+    ]
+   },
+   "r1": 0.7321330910704326,
+   "r2": 1.204139851236189,
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/accrun/t-rmap-1000",
+     "sha256": "505892749aa19a1af063d21351e3ef8d7d47721e2ff7b383dabeafc6ec244b7c"
+    },
+    {
+     "path": "/tmp/accrun/rc-a",
+     "sha256": "a866e6b2c8131e3e22c327318050b593e96f8395fa6ccf0ecd9fc3346dadb44f"
+    }
+   ],
+   "message": "介于噪声参照一到两倍之间，或参照不足"
+  },
+  {
+   "id": "L4.param_norm",
+   "type": "loss_series",
+   "level": "L4",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 10,
+     "upper": {
+      "signed_mean": 1.2278996711621214e-07,
+      "mare": 1.2376326118939158e-07,
+      "max_step": 3.240862698473936e-07
+     }
+    }
+   },
+   "metrics": {
+    "d0": 5.614544037673644e-08,
+    "signed_mean": 2.932826237150613e-06,
+    "mare": 2.935328898191286e-06,
+    "max_step": 7.00845370998091e-06,
+    "max_step_at": 997,
+    "window": "1:1001",
+    "denominator": "golden",
+    "nonfinite_steps": [],
+    "signed_mean_se": 9.397487212260878e-07,
+    "first_differ_step": 1,
+    "noise_dropped": [],
+    "noise_loo": [
+     {
+      "pair": "rc-a~rc-b",
+      "signed_mean": 0.45353939155721784,
+      "mare": 0.577541153763526,
+      "max_step": 0.6666636058262656
+     },
+     {
+      "pair": "rc-a~rc-c",
+      "signed_mean": 0.8828690771765129,
+      "mare": 0.8820425867579527,
+      "max_step": 0.8333256137063306
+     },
+     {
+      "pair": "rc-a~rc-d",
+      "signed_mean": 0.11713105199667145,
+      "mare": 0.38357424769013476,
+      "max_step": 0.6666865084903918
+     },
+     {
+      "pair": "rc-a~rc-e",
+      "signed_mean": 0.6728249146271688,
+      "mare": 0.7365604677310384,
+      "max_step": 0.9999912497448293
+     },
+     {
+      "pair": "rc-b~rc-c",
+      "signed_mean": 0.4293296888067865,
+      "mare": 0.5124539917661646,
+      "max_step": 0.6666875168199079
+     },
+     {
+      "pair": "rc-b~rc-d",
+      "signed_mean": 0.5706703837845285,
+      "mare": 0.6404524194796835,
+      "max_step": 0.8333273690668471
+     },
+     {
+      "pair": "rc-b~rc-e",
+      "signed_mean": 0.21928551534051827,
+      "mare": 0.35299265971545424,
+      "max_step": 0.5000091693787404
+     },
+     {
+      "pair": "rc-c~rc-d",
+      "signed_mean": 1.1326707728829752,
+      "mare": 1.133732106604527,
+      "max_step": 1.0000087503317383
+     },
+     {
+      "pair": "rc-c~rc-e",
+      "signed_mean": 0.21004413367389743,
+      "mare": 0.46264999134482193,
+      "max_step": 0.6666898211954151
+     },
+     {
+      "pair": "rc-d~rc-e",
+      "signed_mean": 0.789955985461544,
+      "mare": 0.8003452973729615,
+      "max_step": 0.8333326356315373
+     }
+    ]
+   },
+   "r1": 23.717287909046217,
+   "r2": 23.88490123443797,
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/accrun/t-rmap-1000",
+     "sha256": "505892749aa19a1af063d21351e3ef8d7d47721e2ff7b383dabeafc6ec244b7c"
+    },
+    {
+     "path": "/tmp/accrun/rc-a",
+     "sha256": "a866e6b2c8131e3e22c327318050b593e96f8395fa6ccf0ecd9fc3346dadb44f"
+    }
+   ],
+   "message": "超过噪声参照两倍"
+  },
+  {
+   "id": "L4.lr",
+   "type": "scalar_series",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "rtol": 0.0,
+     "abs_ulp": 0
+    },
+    "source": "规格默认值"
+   },
+   "metrics": {
+    "steps": 1000,
+    "bad_steps": 0,
+    "first_bad": null
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/accrun/t-rmap-1000",
+     "sha256": "505892749aa19a1af063d21351e3ef8d7d47721e2ff7b383dabeafc6ec244b7c"
+    },
+    {
+     "path": "/tmp/accrun/rc-a",
+     "sha256": "a866e6b2c8131e3e22c327318050b593e96f8395fa6ccf0ecd9fc3346dadb44f"
+    }
+   ],
+   "message": "逐步在容差内"
+  }
+ ]
+}

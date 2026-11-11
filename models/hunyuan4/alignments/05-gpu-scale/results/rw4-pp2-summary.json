@@ -1,0 +1,44 @@
+{
+ "run": "rw4-pp2",
+ "parallelism": {
+  "dp": 16,
+  "ep": 16,
+  "tp": 1,
+  "pp": 2,
+  "pp_stage_layers": [
+   [
+    0,
+    0
+   ],
+   [
+    1,
+    3
+   ]
+  ],
+  "mbs": 1,
+  "ga": 1,
+  "gbs": 16,
+  "nodes": 4
+ },
+ "steps": 50,
+ "step_time_median_from_11": 2.380216226913035,
+ "peak_alloc_gib_max": 93.88838195800781,
+ "at": {
+  "1": {
+   "lm_loss": 12.079752922058105,
+   "mtp_loss_mt": 0.9838358759880066,
+   "indexer_loss": 0.022497129044495523,
+   "grad_norm": 144.29401814307826,
+   "param_norm_fp64": 7296.7997552234065
+  },
+  "50": {
+   "lm_loss": 9.705878257751465,
+   "mtp_loss_mt": 0.895092785358429,
+   "indexer_loss": 0.02030971267959103,
+   "grad_norm": 121.13079675241552,
+   "param_norm_fp64": 7296.775615464311
+  }
+ },
+ "max_attention_logit_max": 72.36184692382812,
+ "qk_clip_steps": 0
+}

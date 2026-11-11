@@ -1,0 +1,176 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.0.1",
+  "commit": null
+ },
+ "catalog": {
+  "path": "catalogs/hunyuan3-4l/phase1-determinism.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "ac6197f6478006c1669d38377d911d99ea03a7d835541cffac552ce4fde70b1d",
+  "raw_sha256": "4c1a87a47afe203efdc28f1e47cb561125eee5290925ce5c9073bf3cb6e1a302"
+ },
+ "runs": {
+  "rd-det-b": {
+   "path": "/data/janus-runs/rd-det-b",
+   "meta_sha256": "a7134f5cc81c777959d977f0bbc800809945e893f8b7df5c7f21147f53b1560c"
+  },
+  "rd-golden-1": {
+   "path": "/data/janus-runs/rd-golden-1",
+   "meta_sha256": "ec1d7873656569e49013b5f34d58f2cc0a3cc3fe2d9c366593c99bd23b27c25b"
+  }
+ },
+ "started_at": "2026-11-03T16:30:54+00:00",
+ "finished_at": "2026-11-03T16:31:02+00:00",
+ "summary": {
+  "pass": 5,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L4.loss.exact",
+   "type": "loss_series",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "d0": 0.0,
+    "signed_mean": 0.0,
+    "mare": 0.0,
+    "max_step": 0.0,
+    "max_step_at": 2,
+    "window": "1:1001",
+    "denominator": "golden",
+    "nonfinite_steps": []
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs/rd-det-b",
+     "sha256": "a7134f5cc81c777959d977f0bbc800809945e893f8b7df5c7f21147f53b1560c"
+    },
+    {
+     "path": "/data/janus-runs/rd-golden-1",
+     "sha256": "ec1d7873656569e49013b5f34d58f2cc0a3cc3fe2d9c366593c99bd23b27c25b"
+    }
+   ],
+   "message": ""
+  },
+  {
+   "id": "L4.lr",
+   "type": "scalar_series",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "rtol": 0.0,
+     "abs_ulp": 0
+    },
+    "source": "规格默认值"
+   },
+   "metrics": {
+    "steps": 1000,
+    "bad_steps": 0,
+    "first_bad": null
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs/rd-det-b",
+     "sha256": "a7134f5cc81c777959d977f0bbc800809945e893f8b7df5c7f21147f53b1560c"
+    },
+    {
+     "path": "/data/janus-runs/rd-golden-1",
+     "sha256": "ec1d7873656569e49013b5f34d58f2cc0a3cc3fe2d9c366593c99bd23b27c25b"
+    }
+   ],
+   "message": "逐步在容差内"
+  },
+  {
+   "id": "L3.step1.bitwise",
+   "type": "bitwise_equal",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 24,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs/rd-det-b",
+     "sha256": "a7134f5cc81c777959d977f0bbc800809945e893f8b7df5c7f21147f53b1560c"
+    },
+    {
+     "path": "/data/janus-runs/rd-golden-1",
+     "sha256": "ec1d7873656569e49013b5f34d58f2cc0a3cc3fe2d9c366593c99bd23b27c25b"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/L3.step1.bitwise.jsonl"
+  },
+  {
+   "id": "L3.step1.coverage",
+   "type": "coverage",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {},
+   "worst": [],
+   "coverage": {
+    "expected": 24,
+    "compared": 24,
+    "missing": []
+   },
+   "evidence": [
+    {
+     "path": "/data/janus-runs/rd-det-b",
+     "sha256": "a7134f5cc81c777959d977f0bbc800809945e893f8b7df5c7f21147f53b1560c"
+    }
+   ],
+   "message": "全部比到"
+  },
+  {
+   "id": "L4.step1000.bitwise",
+   "type": "bitwise_equal",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 24,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs/rd-det-b",
+     "sha256": "a7134f5cc81c777959d977f0bbc800809945e893f8b7df5c7f21147f53b1560c"
+    },
+    {
+     "path": "/data/janus-runs/rd-golden-1",
+     "sha256": "ec1d7873656569e49013b5f34d58f2cc0a3cc3fe2d9c366593c99bd23b27c25b"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/L4.step1000.bitwise.jsonl"
+  }
+ ]
+}

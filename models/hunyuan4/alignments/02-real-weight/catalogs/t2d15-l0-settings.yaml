@@ -1,0 +1,11 @@
+# 混元 4 · T2 D1 1000 步设置核对（TPU td5-a，GPU gd3-a）：两边每一步学习率等于 1e-5。
+schema_version: 1
+model: hunyuan4-trunc
+stage: t2d15-l0-settings
+description: T2 D1 1000 步设置核对（TPU td5-a）
+runs:
+  test: td5-a
+  golden: [gd3-a]
+  root: /data/janus-runs
+checks:
+  - {id: L0.settings.lr, type: scalar_series, level: L0, select: {kind: metrics, field: lr, window: "1:1001"}, params: {equals: 1.0e-5, rtol: 0.0, abs_ulp: 0}}

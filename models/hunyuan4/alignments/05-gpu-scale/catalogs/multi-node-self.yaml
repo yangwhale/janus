@@ -1,0 +1,48 @@
+# 混元 4 · GPU 扩展：多机自己的尺子。2 台 DP 16 + EP 4 同设置 8 份（mn-a … mn-h）两两 28 对的波动上限，
+# 参照取 mn-a；默认被测是单机 golden g3-a（反过来看：单机落不落在多机的尺子里）。前 300 步，检查项同 vs-single-node.yaml。
+schema_version: 1
+model: hunyuan4-mini
+stage: gpu-scale-multi-node-self
+description: 多机自己的尺子（mn 两两 28 对），被测默认是单机 g3-a，参照 mn-a，前 300 步
+runs:
+  test: g3-a
+  golden: [mn-a]
+  noise:
+    - [mn-a, mn-b]
+    - [mn-a, mn-c]
+    - [mn-a, mn-d]
+    - [mn-a, mn-e]
+    - [mn-a, mn-f]
+    - [mn-a, mn-g]
+    - [mn-a, mn-h]
+    - [mn-b, mn-c]
+    - [mn-b, mn-d]
+    - [mn-b, mn-e]
+    - [mn-b, mn-f]
+    - [mn-b, mn-g]
+    - [mn-b, mn-h]
+    - [mn-c, mn-d]
+    - [mn-c, mn-e]
+    - [mn-c, mn-f]
+    - [mn-c, mn-g]
+    - [mn-c, mn-h]
+    - [mn-d, mn-e]
+    - [mn-d, mn-f]
+    - [mn-d, mn-g]
+    - [mn-d, mn-h]
+    - [mn-e, mn-f]
+    - [mn-e, mn-g]
+    - [mn-e, mn-h]
+    - [mn-f, mn-g]
+    - [mn-f, mn-h]
+    - [mn-g, mn-h]
+  root: /data/janus-runs
+checks:
+  - {id: C.loss, type: loss_series, level: L4, select: {kind: metrics, field: lm_loss, window: "1:301"}, threshold: calibrated}
+  - {id: C.loss.tail, type: loss_series, level: L4, select: {kind: metrics, field: lm_loss, window: "101:301"}, threshold: calibrated}
+  - {id: C.mtp_loss, type: loss_series, level: L4, select: {kind: metrics, field: mtp_loss_mt, window: "1:301"}, threshold: calibrated}
+  - {id: C.indexer_loss, type: loss_series, level: L4, select: {kind: metrics, field: indexer_loss, window: "1:301"}, threshold: calibrated}
+  - {id: C.grad_norm, type: loss_series, level: L4, select: {kind: metrics, field: grad_norm, window: "1:301"}, threshold: calibrated}
+  - {id: C.param_norm, type: loss_series, level: L4, select: {kind: metrics, field: param_norm_fp64, window: "1:301"}, threshold: calibrated}
+  - {id: C.router.bias_mean, type: router_stats, level: L4, select: {kind: metrics, prefix: "router.bias_mean.", window: "1:301"}, threshold: calibrated}
+  - {id: C.router.bias_std, type: router_stats, level: L4, select: {kind: metrics, prefix: "router.bias_std.", window: "1:301"}, threshold: calibrated}

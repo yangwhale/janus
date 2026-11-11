@@ -1,0 +1,169 @@
+{
+ "stage": "A",
+ "tokens": 4096,
+ "seconds": 20.22509217262268,
+ "loss_mean": 13.67780849424726,
+ "tagged_modules": 11,
+ "sown": {
+  "decoder/decoder_norm/janus__out": [
+   1,
+   4096,
+   6144
+  ],
+  "decoder/dense_layers/janus__in": [
+   1,
+   1,
+   4096,
+   4,
+   6144
+  ],
+  "decoder/dense_layers/janus__out": [
+   1,
+   1,
+   4096,
+   4,
+   6144
+  ],
+  "decoder/dense_layers/mlp/janus__out": [
+   1,
+   1,
+   4096,
+   6144
+  ],
+  "decoder/dense_layers/post_self_attention_layer_norm/janus__out": [
+   1,
+   1,
+   4096,
+   6144
+  ],
+  "decoder/dense_layers/pre_self_attention_layer_norm/janus__out": [
+   1,
+   1,
+   4096,
+   6144
+  ],
+  "decoder/dense_layers/self_attention/gate_proj/janus__out": [
+   1,
+   1,
+   4096,
+   64,
+   256
+  ],
+  "decoder/dense_layers/self_attention/janus__out": [
+   1,
+   1,
+   4096,
+   6144
+  ],
+  "decoder/dense_layers/self_attention/out/janus__out": [
+   1,
+   1,
+   4096,
+   6144
+  ],
+  "decoder/hc_head/janus__out": [
+   1,
+   4096,
+   6144
+  ],
+  "decoder/logits_dense/janus__out": [
+   1,
+   4096,
+   120832
+  ],
+  "token_embedder/janus__out": [
+   1,
+   4096,
+   6144
+  ]
+ },
+ "loss_first8": [
+  14.343936530800178,
+  14.439685365197814,
+  14.431899727315226,
+  14.312928436481911,
+  14.27646464850884,
+  15.42986148027419,
+  12.96947325723982,
+  13.359502168611773
+ ],
+ "platform": "cpu",
+ "config_dtype": "bfloat16",
+ "ref_tokens_equal": true,
+ "ref_logits": {
+  "name": "hf.lm_head.out",
+  "rel_l2": 0.16717058377084043,
+  "cosine": 0.9860131816486268,
+  "max_abs": 4.287564992904663,
+  "argmax_agree": 0.700927734375
+ },
+ "modules": [
+  {
+   "maxtext": "token_embedder/janus__out",
+   "gpu": "hf.model.embed_tokens.out",
+   "rel_l2": 0.0,
+   "cosine": 1.0000000000000002
+  },
+  {
+   "maxtext": "decoder/dense_layers/pre_self_attention_layer_norm/janus__out",
+   "gpu": "hf.model.layers.0.input_layernorm.out",
+   "rel_l2": 0.0028102584845878585,
+   "cosine": 0.9999960543100369
+  },
+  {
+   "maxtext": "decoder/dense_layers/self_attention/gate_proj/janus__out",
+   "gpu": "hf.model.layers.0.self_attn.gate_proj.out",
+   "rel_l2": 0.0018995010950049853,
+   "cosine": 0.9999981995174667
+  },
+  {
+   "maxtext": "decoder/dense_layers/self_attention/out/janus__out",
+   "gpu": "hf.model.layers.0.self_attn.o_proj.out",
+   "rel_l2": 0.09962317268056887,
+   "cosine": 0.9952005269679076
+  },
+  {
+   "maxtext": "decoder/dense_layers/self_attention/janus__out",
+   "gpu": "hf.model.layers.0.self_attn.out",
+   "rel_l2": 0.09962317268056887,
+   "cosine": 0.9952005269679076
+  },
+  {
+   "maxtext": "decoder/dense_layers/post_self_attention_layer_norm/janus__out",
+   "gpu": "hf.model.layers.0.post_attention_layernorm.out",
+   "rel_l2": 0.08398850071669095,
+   "cosine": 0.9965057090097184
+  },
+  {
+   "maxtext": "decoder/dense_layers/mlp/janus__out",
+   "gpu": "hf.model.layers.0.mlp.out",
+   "rel_l2": 0.0703935067232162,
+   "cosine": 0.9975293110865786
+  },
+  {
+   "maxtext": "decoder/dense_layers/janus__out",
+   "gpu": "hf.model.layers.0.out0",
+   "rel_l2": 0.12586819287966597,
+   "cosine": 0.9920478270528431
+  },
+  {
+   "maxtext": "decoder/hc_head/janus__out",
+   "gpu": "hf.model.hc_head.out",
+   "rel_l2": 0.13397565908111592,
+   "cosine": 0.9909891868963956
+  },
+  {
+   "maxtext": "decoder/decoder_norm/janus__out",
+   "gpu": "hf.model.norm.out",
+   "rel_l2": 0.16762509509482748,
+   "cosine": 0.9859063212853524
+  }
+ ],
+ "ref": {
+  "name": "loss.per_token",
+  "loss_mean": 13.583003023522906,
+  "rel_l2": 0.023609169052099182,
+  "max_abs": 1.6118731700058504,
+  "mean_diff": 0.09480547072435395
+ }
+}

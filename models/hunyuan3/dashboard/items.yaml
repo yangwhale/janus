@@ -1,0 +1,80 @@
+# 对齐总览的条目：每行一个检查项，每列一种对比。src = 结果文件（alignments/*/results/ 下，不带后缀；文件名全仓库唯一）:检查 id；
+# status 直接写死的用于还没有结果文件的项（todo = 未开始，wip = 进行中，na = 不适用）；
+# 「wip: 说明」= 有诊断证据、还没接成正式检查，说明里写证据文件（相对该实践 results/ 或 cases/）。通过 / 不通过只能来自结果文件。
+# 每一列对应一个对齐实践文件夹（alignments 一节）；build.py 同时给每个实践生成逐级大表，写进它的 README.md。
+# <列>_expect: fail = 这一格是故障演练：埋了错，期望选中的检查报警（有一条 fail 才算 ✅），如 drill_expect、v5p_expect。
+columns:
+  gpu: 00 · B200×8 自比（默认设置 s-a（第一阶段 GPU 默认设置的一份 100 步运行）对 golden，噪声参照 8 份运行两两 28 对）
+  drill: 00 · 故障演练（确定性基线上真埋错，期望报警的都报了）
+  v5p: 01 · B200×8 → TPU v5p-8（当前配置 t-rmap-on-1000（v5p 当前对齐配置 1000 步）；L4 对 rcc-a（最终 golden 的第 1 份，验收的比较基线），比法见上面「v5p、v7x 两列的 L4 比的是谁」）
+  v7x: 02 · B200×8 → TPU v7x-4（4 芯片 8 device；当前配置 t-v7x-on-1000（v7x 当前对齐配置 1000 步）；L4 同 01）
+  remat: 03 · B200×8 自比，整层重算 + 路由回放（rc-a（GPU 生产 golden 的第 1 份）对 rc-b..e（同设置另 4 份），噪声参照 rc-b..e 4 份两两 6 对；生产近似 golden）
+alignments:
+  00-gpu-noise-and-drills: {column: gpu, drill: drill}
+  01-v5p-acceptance: {column: v5p}
+  02-v7x-acceptance: {column: v7x}
+  03-gpu-remat-golden: {column: remat}
+groups:
+  - name: L0 地基（数据 / 权重 / 配置，必须逐位）
+    items:
+      - {name: 配置逐项对照, gpu: "phase1-full-noise28:L0.config.diff", drill: "faults:L0.config.diff", v5p: "phase2-t-loss30:L0.config.diff.*", v7x: "phase2-v7x-t-loss30:L0.config.diff.*"}
+      - {name: 每 rank 每步输入指纹（回放数据）, gpu: "phase1-full-noise28:L0.data.fingerprint", drill: "faults:L0.data.fingerprint", v5p: "phase2-t-loss30:L0.data.fingerprint", v7x: "phase2-v7x-t-loss30:L0.data.fingerprint", remat: "remat-noise:L0.data.fingerprint"}
+      - {name: 加载后全部参数逐位, gpu: "phase1-full-noise28:L0.weights.loaded", drill: "faults:L0.weights.loaded", v5p: "phase2-l0-state:L0.weights.*", v7x: "phase2-v7x-l0-state:L0.weights.*"}
+      - {name: FP32 主权重逐位, gpu: "phase1-full-noise28:L0.main_params.loaded", drill: "faults:L0.main_params.loaded", v5p: "phase2-l0-state:L0.main_params.loaded", v7x: "phase2-v7x-l0-state:L0.main_params.loaded"}
+      - {name: 浮点 buffer（expert_bias）逐位, gpu: "phase1-full-noise28:L0.buffers.loaded", v5p: "phase2-l0-state:L0.buffers.loaded", v7x: "phase2-v7x-l0-state:L0.buffers.loaded"}
+      - {name: dtype 清单, gpu: "phase1-full-noise28:L0.dtype.manifest", v5p: "phase2-l0-state:L0.dtype.*", v7x: "phase2-v7x-l0-state:L0.dtype.*"}
+      - {name: 模型结构（实例化结果）, gpu: "phase1-full-noise28:L0.model.structure", v5p: "phase2-l0-state:L0.model.structure", v7x: "phase2-v7x-l0-state:L0.model.structure"}
+      - {name: 权重转换 HF → Megatron → HF 往返逐位, gpu: "phase1-ckpt-roundtrip:L0.ckpt.roundtrip.bitwise"}
+      - {name: 权重转换 → MaxText 逐张量逐位（同一份检查点给 v5p、v7x 用；含 dtype 清单）, gpu: na, v5p: "phase2-ckpt-convert:L0.ckpt.convert.*", v7x: "phase2-ckpt-convert:L0.ckpt.convert.*"}
+      - {name: 续训数据位置逐位, gpu: "phase1-resume:L0.resume.data", v5p: "phase2-resume:L0.resume.data", v7x: "phase2-v7x-resume:L0.resume.data"}
+      - {name: TPU 原生数据加载器与 GPU 逐样本一致, gpu: na, v5p: "phase2-native-loader:L0.native.*", v7x: "phase2-native-loader:L0.native.*"}
+      - {name: 设置核对：学习率逐步（学习率是设置的常数，不是观测量；检查 id 仍是 L4.lr）, gpu: "phase1-full-noise28:L4.lr", drill: "faults:L4.lr", v5p: "phase2-acceptance-rcc-on:L4.lr", v7x: "phase2-v7x-acceptance-rcc:L4.lr"}
+  - name: L1 算子与优化器
+    items:
+      - {name: 优化器单步 FP64 重放, gpu: "phase1-full-noise28:L1.optim.adamw.replay", drill: "faults:L1.optim.adamw.replay", v5p: "phase2-st1-on-state-gpuonly:L1.optim.adamw.replay", v7x: "phase2-v7x-st1-on-state-gpuonly:L1.optim.adamw.replay"}
+      - {name: 优化器连续 8 步重放, gpu: "phase1-opt8:L1.optim.adamw.8steps", v5p: "phase2-st8-opt8:L1.optim.adamw.8steps", v7x: "phase2-v7x-st8-opt8:L1.optim.adamw.8steps"}
+      - {name: 路由选中集合对 FP64, gpu: "phase1-full-noise28:L1.router.topk.fp64", v5p: "phase2-l2-replay-rratio-on:L1.router.topk.fp64.*", v7x: "phase2-v7x-l2-replay-rratio-on:L1.router.topk.fp64.*"}
+      - {name: 单算子回放（路由 / 投影 / qkv / norm）与 CPU 复现舍入, gpu: "phase1-l1:*", v5p: "phase2-l1-ops-own-on:L1.ops.op.*", v7x: "phase2-v7x-l1-ops-own-on:L1.ops.op.*"}
+      - {name: 专家 GEMM / 核心注意力回放、MoE 分阶段, gpu: "phase1-kernels:L1.kernel.*", v5p: "phase2-l1-ops-own-on:L1.ops.kernel.*", v7x: "phase2-v7x-l1-ops-own-on:L1.ops.kernel.*"}
+  - name: L2 逐层（第 1 步，同一份权重）
+    items:
+      - {name: 第 0 层前向, gpu: "phase1-full-noise28:L2.layer0.fwd", drill: "faults:L2.layer0.fwd", v5p: "phase2-l2-replay-rratio-on:L2.layer0.fwd", v7x: "phase2-v7x-l2-replay-rratio-on:L2.layer0.fwd"}
+      - {name: 第 1 层前向, gpu: "phase1-full-noise28:L2.layer1.fwd", drill: "faults:L2.layer1.fwd", v5p: "phase2-l2-replay-rratio-on:L2.layer1.fwd", v7x: "phase2-v7x-l2-replay-rratio-on:L2.layer1.fwd"}
+      - {name: 第 2 层前向, gpu: "phase1-full-noise28:L2.layer2.fwd", drill: "faults:L2.layer2.fwd", v5p: "phase2-l2-replay-rratio-on:L2.layer2.fwd", v7x: "phase2-v7x-l2-replay-rratio-on:L2.layer2.fwd"}
+      - {name: 第 3 层前向, gpu: "phase1-full-noise28:L2.layer3.fwd", drill: "faults:L2.layer3.fwd", v5p: "phase2-l2-replay-rratio-on:L2.layer3.fwd", v7x: "phase2-v7x-l2-replay-rratio-on:L2.layer3.fwd"}
+      - {name: 各层反向（激活梯度）, gpu: "phase1-full-noise28:L2.layer*.bwd", drill: "faults:L2.layer*.bwd", v5p: "phase2-l2-replay-bwd-fp64-on:L2.layer*.bwd", v7x: "phase2-v7x-l2-replay-bwd-fp64-on:L2.layer*.bwd"}
+      - {name: 各层参数梯度, gpu: "phase1-full-noise28:L2.layer*.grads", drill: "faults:L2.layer*.grads", v5p: "phase2-st1-on-state-gpuonly:L2.layer*.grads", v7x: "phase2-v7x-st1-on-state-gpuonly:L2.layer*.grads"}
+      - {name: 各层路由选中集合, gpu: "phase1-full-noise28:L2.layer*.router", drill: "faults:L2.layer*.router", v5p: "phase2-l2-replay-rratio-on:L2.layer*.router", v7x: "phase2-v7x-l2-replay-rratio-on:L2.layer*.router"}
+      - {name: 逐层注入（误差隔离到单层）, gpu: na, drill: "phase1-inject:L2.inject.layer2", drill_expect: fail, v5p: "phase2-l2-replay-rratio-on:L2.layer*.fwd", v7x: "phase2-v7x-l2-replay-rratio-on:L2.layer*.fwd"}
+      - {name: DP 副本一致, gpu: "phase1-full-noise28:L2.dp.replica"}
+      - {name: 截断模型前缀逐位, gpu: "phase1-truncate:*"}
+      - {name: 并行等价 EP8 ↔ EP4（前向）, gpu: "phase1-parallel:L2.parallel.fwd.bitwise"}
+      - {name: 并行等价 EP8 ↔ EP4（反向、更新后参数）, gpu: "phase1-parallel-ext:L2.parallel.grads.tol"}
+      - {name: 张量 / 上下文并行等价（整网标量）, gpu: "phase1-tp-cp.tp2:*"}
+      - {name: 梯度累积等价, gpu: "phase1-ga:L3.ga.grads"}
+      - {name: 激活重算首次前向 = 重算, gpu: "phase1-remat:DET.remat.vs_first", remat: "remat-noise:DET.replay.vs_first"}
+  - name: L3 第 1 步整网
+    items:
+      - {name: 全部激活逐位, gpu: "phase1-full-noise28:L3.step1.act.bitwise", v5p: "phase2-l2-replay-bitwise:L3.step1.act.bitwise", v7x: "phase2-v7x-l2-replay-bitwise:L3.step1.act.bitwise", remat: "remat-noise:L3.step1.act.bitwise"}
+      - {name: 逐 token loss, gpu: "phase1-full-noise28:L3.step1.loss.per_token", drill: "faults:L3.step1.loss.per_token", v5p: "phase2-ff-chain:L3.step1.loss.per_token", v7x: "phase2-v7x-ff-chain:L3.step1.loss.per_token"}
+      - {name: logits（含 KL）, gpu: "phase1-full-noise28:L3.step1.logits", drill: "faults:L3.step1.logits", v5p: "phase2-ff-chain:L3.step1.logits", v7x: "phase2-v7x-ff-chain:L3.step1.logits"}
+      - {name: 全部参数梯度, gpu: "phase1-full-noise28:L3.step1.grads.all", drill: "faults:L3.step1.grads.scale", v5p: "phase2-st1-on-state-gpuonly:L3.step1.grads.all", v7x: "phase2-v7x-st1-on-state-gpuonly:L3.step1.grads.all"}
+      - {name: 梯度分布（std 比、零比例、逐元素 p99）, gpu: "phase1-full-noise28:L3.step1.grads.dist", v5p: "phase2-st1-on-state-gpuonly:L3.step1.grads.dist", v7x: "phase2-v7x-st1-on-state-gpuonly:L3.step1.grads.dist"}
+      - {name: 更新后主权重, gpu: "phase1-full-noise28:L3.step1.updated", drill: "faults:L3.step1.updated", v5p: "phase2-st1-on-state-gpuonly:L3.step1.updated", v7x: "phase2-v7x-st1-on-state-gpuonly:L3.step1.updated"}
+      - {name: 优化器状态（两个动量）, gpu: "phase1-full-noise28:L3.step1.optim_state", v5p: "phase2-st1-on-state-gpuonly:L3.step1.optim_state", v7x: "phase2-v7x-st1-on-state-gpuonly:L3.step1.optim_state"}
+      - {name: 更新后 expert_bias, gpu: "phase1-full-noise28:L3.step1.bias_after", drill: "faults:L3.step1.bias_after", v5p: "phase2-st1-on-state-gpuonly:L3.step1.bias_after", v7x: "phase2-v7x-st1-on-state-gpuonly:L3.step1.bias_after"}
+      - {name: 第 1 步全部参数梯度对 FP64（R-ratio，定责用：TPU 不比 GPU 离精确算术远）, gpu: na, v5p: "phase2-st1-fp64-on:L3.step1.grads.all", v7x: "phase2-v7x-st1-fp64-on:L3.step1.grads.all"}
+      - {name: 可选：三个梯度 FP32 开关打开后，第 1 步全部参数梯度对 FP64（R-ratio，定责用）, gpu: na, v5p: "phase2-st1-fp64-gradfp32:L3.step1.grads.all"}
+      - {name: 比全了没有（覆盖率）, gpu: "phase1-full-noise28:L3.step1.coverage", v5p: "phase2-t-a-coverage:L3.step1.coverage", v7x: "phase2-v7x-coverage:L3.step1.coverage"}
+  - name: L4 多步
+    items:
+      - {name: loss（首步、带符号均值、MARE、最大单步）, gpu: "phase1-full-noise28:L4.loss", drill: "faults:L4.loss", v5p: "phase2-acceptance-rcc-on:L4.loss*", v7x: "phase2-v7x-acceptance-rcc:L4.loss*", remat: "remat-noise:L4.loss"}
+      - {name: grad_norm, gpu: "phase1-full-noise28:L4.grad_norm", drill: "faults:L4.grad_norm", v5p: "phase2-acceptance-rcc-on:L4.grad_norm", v7x: "phase2-v7x-acceptance-rcc:L4.grad_norm", remat: "remat-noise:L4.grad_norm"}
+      - {name: param_norm, gpu: "phase1-full-noise28:L4.param_norm", v5p: "phase2-acceptance-rcc-on:L4.param_norm", v7x: "phase2-v7x-acceptance-rcc:L4.param_norm", remat: "remat-noise:L4.param_norm"}
+      - {name: 路由偏置 / 负载曲线, gpu: "phase1-full-noise28:L4.router.*", drill: "faults:L4.router.bias_std", v5p: "phase2-acc-health-rcc:L4.router.bias_std", v7x: "phase2-v7x-acc-health-rcc:L4.router.bias_std", remat: "remat-noise:L4.router.bias_std"}
+      - {name: 健康信号（NaN、突跳）, gpu: "phase1-full-noise28:L4.health", drill: "phase1-spike:L4.health", drill_expect: fail, v5p: "phase2-acc-health-rcc:L4.health", v7x: "phase2-v7x-acc-health-rcc:L4.health"}
+      - {name: "可选：三个梯度 FP32 开关打开后的 L4 第一层（loss、grad_norm、param_norm、学习率；台账 #20，不是正式配置）", gpu: na, v5p: "phase2-acceptance-rcc-gradfp32:L4.*", v7x: "phase2-v7x-acceptance-rcc-gradfp32:L4.*"}
+      - {name: 可选：三个梯度 FP32 开关打开后的路由偏置曲线与健康信号, gpu: na, v5p: "phase2-acc-health-rcc-gradfp32:L4.*", v7x: "phase2-v7x-acc-health-rcc-gradfp32:L4.*"}
+      - {name: 梯度 NaN 先于 loss 报警, gpu: na, drill: "phase1-nan:L4.health.grad_norm", drill_expect: fail, v5p: "phase2-t-nan8:L4.health.grad_norm", v5p_expect: fail, v7x: "phase2-v7x-t-nan8:L4.health.grad_norm", v7x_expect: fail}
+      - {name: 观测不改数值（开 / 不开抓数）, gpu: "phase1-hooks:DET.hooks.noop", v5p: "phase2-obs-gate:DET.hooks.noop", v7x: "phase2-v7x-obs-gate:DET.hooks.noop"}
+      - {name: 存档续训重叠步逐位, gpu: "phase1-resume:L4.resume.overlap", v5p: "phase2-resume:L[34].resume.*", v7x: "phase2-v7x-resume:L[34].resume.*"}

@@ -1,0 +1,86 @@
+{
+ "what": "第 1 步同一份初始权重、同一 batch：TPU 精确梯度（t-v7x-xs-1b 探针 gp_f32）对 GPU 精确梯度（g-bw-d1 grad.*），整个 global batch 的参数梯度；路由偏置更新后（buffer_after）三层 192 个值两侧逐位相同",
+ "expert_bias_after_step1_bitwise_equal": true,
+ "rows": [
+  {
+   "name": "decoder.final_layernorm.weight",
+   "tpu_exact_vs_gpu_exact": 1.9499823710536704e-05,
+   "scale_fit_tpu_exact": 0.9999998343842574
+  },
+  {
+   "name": "decoder.layers.0.mlp.linear_fc1.layer_norm_weight",
+   "tpu_exact_vs_gpu_exact": 1.3567150457601026e-05,
+   "scale_fit_tpu_exact": 1.000010898453726
+  },
+  {
+   "name": "decoder.layers.0.mlp.linear_fc1.weight",
+   "tpu_exact_vs_gpu_exact": 1.3053025963346507e-05,
+   "scale_fit_tpu_exact": 1.0000001190002539
+  },
+  {
+   "name": "decoder.layers.0.mlp.linear_fc2.weight",
+   "tpu_exact_vs_gpu_exact": 1.162449180046121e-05,
+   "scale_fit_tpu_exact": 1.0000003392544397
+  },
+  {
+   "name": "decoder.layers.0.self_attention.k_layernorm.weight",
+   "tpu_exact_vs_gpu_exact": 3.0537246788999077e-05,
+   "scale_fit_tpu_exact": 0.999972577354242
+  },
+  {
+   "name": "decoder.layers.0.self_attention.linear_proj.weight",
+   "tpu_exact_vs_gpu_exact": 8.489742271933883e-06,
+   "scale_fit_tpu_exact": 1.000000069952615
+  },
+  {
+   "name": "decoder.layers.0.self_attention.linear_qkv.layer_norm_weight",
+   "tpu_exact_vs_gpu_exact": 1.395899675292693e-05,
+   "scale_fit_tpu_exact": 0.9999978977723207
+  },
+  {
+   "name": "decoder.layers.0.self_attention.linear_qkv.weight",
+   "tpu_exact_vs_gpu_exact": 1.0327845753840884e-05,
+   "scale_fit_tpu_exact": 0.999999913228448
+  },
+  {
+   "name": "decoder.layers.0.self_attention.q_layernorm.weight",
+   "tpu_exact_vs_gpu_exact": 3.0701863988195755e-05,
+   "scale_fit_tpu_exact": 0.9999726374552006
+  },
+  {
+   "name": "decoder.layers.1.mlp.router.weight",
+   "tpu_exact_vs_gpu_exact": 0.0010660285937238773,
+   "scale_fit_tpu_exact": 0.9999924801298183
+  },
+  {
+   "name": "decoder.layers.1.self_attention.linear_proj.weight",
+   "tpu_exact_vs_gpu_exact": 1.2298668918358809e-05,
+   "scale_fit_tpu_exact": 0.9999999278314491
+  },
+  {
+   "name": "decoder.layers.2.mlp.router.weight",
+   "tpu_exact_vs_gpu_exact": 0.0011531353198688814,
+   "scale_fit_tpu_exact": 0.9999749117506738
+  },
+  {
+   "name": "decoder.layers.2.self_attention.linear_proj.weight",
+   "tpu_exact_vs_gpu_exact": 1.5448394663427487e-05,
+   "scale_fit_tpu_exact": 0.9999993931832553
+  },
+  {
+   "name": "decoder.layers.3.mlp.router.weight",
+   "tpu_exact_vs_gpu_exact": 0.0012025013686103978,
+   "scale_fit_tpu_exact": 0.9999224846646563
+  },
+  {
+   "name": "decoder.layers.3.self_attention.linear_proj.weight",
+   "tpu_exact_vs_gpu_exact": 1.814606417427996e-05,
+   "scale_fit_tpu_exact": 0.9999999610112711
+  },
+  {
+   "name": "output_layer.weight",
+   "tpu_exact_vs_gpu_exact": 3.587003696382774e-05,
+   "scale_fit_tpu_exact": 0.9999941047121403
+  }
+ ]
+}

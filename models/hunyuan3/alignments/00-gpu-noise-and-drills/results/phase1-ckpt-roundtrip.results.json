@@ -1,0 +1,71 @@
+{
+ "schema_version": 1,
+ "stage": "phase1-ckpt-roundtrip",
+ "source": "/data/hy3-4l",
+ "roundtrip": "/data/hy3-4l-rt",
+ "summary": {
+  "pass": 3,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0
+ },
+ "checks": [
+  {
+   "id": "L0.ckpt.roundtrip.bitwise",
+   "type": "checkpoint_equal",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "params": 1781,
+    "differ": 0,
+    "only_one_side": 0
+   },
+   "worst": [],
+   "evidence": [],
+   "message": "全部参数逐位相同"
+  },
+  {
+   "id": "L0.ckpt.roundtrip.coverage",
+   "type": "coverage",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {},
+   "worst": [],
+   "coverage": {
+    "expected": 1781,
+    "compared": 1781,
+    "missing": []
+   },
+   "evidence": [],
+   "message": "全部比到"
+  },
+  {
+   "id": "L0.ckpt.dtype_manifest",
+   "type": "artifact_check",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "metrics": {
+    "tensors": 1781,
+    "dtype_changed": 0,
+    "fp32_in_source": 3
+   },
+   "message": "dtype 与原件一致",
+   "details_inline": {
+    "fp32_tensors": [
+     "model.layers.1.mlp.expert_bias",
+     "model.layers.2.mlp.expert_bias",
+     "model.layers.3.mlp.expert_bias"
+    ]
+   }
+  }
+ ]
+}

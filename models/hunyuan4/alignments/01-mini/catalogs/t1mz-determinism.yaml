@@ -1,0 +1,16 @@
+# 混元 4 · T1 现行配置同设置重跑逐位 + 「记录不改数值」：mz-g1（MaxText fd30fbfb，对齐 yml 里写着 M42b、M43、M50，
+# 另开 qk_clip_log_per_head 只多记逐层逐头最大 logit）对 t1zg-b（同一 MaxText 提交，同一组开关从命令行覆盖传入，不记逐头 logit），
+# 1000 步两边都记的全部逐步量逐位相同（步时除外）。两次运行分别在两个切片上、janus 代码包不同。
+schema_version: 1
+model: hunyuan4-mini
+stage: t1mz-determinism
+description: T1 现行配置重跑逐位（mz-g1 对 t1zg-b，1000 步全部共有逐步量）
+runs:
+  test: mz-g1
+  golden: [t1zg-b]
+  root: /data/janus-runs
+checks:
+  - id: DET.tpu.rerun.current
+    type: determinism
+    level: L4
+    select: {kind: metrics, fields: [grad_norm, grad_norm_clipped, group_sq.attn, group_sq.attn_gate, group_sq.dense_mlp, group_sq.embedding, group_sq.experts, group_sq.final_norm, group_sq.hc_head, group_sq.ihc, group_sq.indexer, group_sq.mtp_norms, group_sq.mtp_proj, group_sq.norms, group_sq.output, group_sq.router, group_sq.shared, group_sq.sinks, indexer_loss, lm_loss, loss, lr, moe_lb_loss, mtp_loss, mtp_loss_mt, param_norm, param_norm_exact, param_norm_fp64, param_norm_grouped, raw_grad_norm, router.bias_mean.1, router.bias_mean.2, router.bias_mean.3, router.bias_mean.4, router.bias_mean.5, router.bias_mean.6, router.bias_mean.mtp0, router.bias_std.1, router.bias_std.2, router.bias_std.3, router.bias_std.4, router.bias_std.5, router.bias_std.6, router.bias_std.mtp0, skipped_iter, total_weights, wd]}

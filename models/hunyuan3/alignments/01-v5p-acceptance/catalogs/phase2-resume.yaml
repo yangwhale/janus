@@ -1,0 +1,40 @@
+# 第二阶段 · 存档 / 续训（TPU，生产配置）：连续训练 20 步（第 10 步存档）对 从第 10 步存档续训到 20 步
+#
+# 照 GPU 侧 phase1-resume：续训后每步的数据、loss 与各标量、第 11 步状态类张量都应与连续训练逐位相同；不同就说明存档或恢复丢了状态
+# （主权重、两个动量、路由偏置、步数计数器、随机数键、数据位置）。
+# golden r-cont20：train_hy3.py --save-state-at 10 --state-dir <桶>/…/tpu/ckpt/r-cont20-step10，20 步，第 11 步全量状态读。
+# 被测 r-res20：--resume-state 同一个存档 --first-step 11，跑到 20 步，第 11 步全量状态读。存档用 orbax，写在 POC 桶，
+#   TPU 与桶不在同一区域（跨区域读写）。两边都是生产配置（GA 2、三个精度开关、重算同 t-rmap-1000），--no-hooks。
+# 另比存档时与恢复后的 FP32 状态清单（state_sha/step10.json：两边各写一份）。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-resume
+description: TPU 存档续训（第 10 步存档，续训 11–20）对连续训练逐位
+runs:
+  test: r-res20
+  golden: [r-cont20]
+  root: /data/janus-runs
+checks:
+  - id: L0.resume.data
+    type: data_fingerprint
+    level: L0
+    select: {kind: tokens, steps: "11:21"}
+    params: {first_loss: false}
+  # 逐步标量里 step_time 是墙钟时间，不比；其余训练标量全比
+  - id: L4.resume.overlap
+    type: overlap_replay
+    level: L4
+    select: {kind: metrics, fields: [lm_loss, loss, grad_norm, raw_grad_norm, grad_norm_clipped, param_norm, lr, wd, total_weights,
+                                     router.bias_mean.1, router.bias_mean.2, router.bias_mean.3, router.bias_std.1, router.bias_std.2, router.bias_std.3]}
+  - id: L3.resume.state
+    type: checkpoint_equal
+    level: L3
+    select: {kind: checkpoint, which: step10, source: state}
+  - id: L3.resume.step11
+    type: bitwise_equal
+    level: L3
+    select: {kind: tensor, step: 11, name: "*"}
+  - id: L3.resume.coverage
+    type: coverage
+    level: L3
+    select: {kind: tensor, step: 11, name: "*"}

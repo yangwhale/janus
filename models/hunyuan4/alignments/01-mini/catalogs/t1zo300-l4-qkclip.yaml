@@ -1,0 +1,40 @@
+# 混元 4 · T1 L4：QK-Clip 曲线前 300 步，现行比较（2026-11-11 起，base2 关）。被测 tz-off-qkq（同上，前 300 步），GPU g2-a 为基线，噪声 g2 两两 28 对。
+schema_version: 1
+model: hunyuan4-mini
+stage: t1zo300-l4-qkclip
+description: T1 L4 QK-Clip 曲线前 300 步，现行配置（base2 关）被测，GPU g2-a 为基线，GPU 噪声 28 对
+runs:
+  test: tz-off-qkq
+  golden: [g2-a]
+  noise:
+    - [g2-a, g2-b]
+    - [g2-a, g2-c]
+    - [g2-a, g2-d]
+    - [g2-a, g2-e]
+    - [g2-a, g2-f]
+    - [g2-a, g2-g]
+    - [g2-a, g2-h]
+    - [g2-b, g2-c]
+    - [g2-b, g2-d]
+    - [g2-b, g2-e]
+    - [g2-b, g2-f]
+    - [g2-b, g2-g]
+    - [g2-b, g2-h]
+    - [g2-c, g2-d]
+    - [g2-c, g2-e]
+    - [g2-c, g2-f]
+    - [g2-c, g2-g]
+    - [g2-c, g2-h]
+    - [g2-d, g2-e]
+    - [g2-d, g2-f]
+    - [g2-d, g2-g]
+    - [g2-d, g2-h]
+    - [g2-e, g2-f]
+    - [g2-e, g2-g]
+    - [g2-e, g2-h]
+    - [g2-f, g2-g]
+    - [g2-f, g2-h]
+    - [g2-g, g2-h]
+  root: /data/janus-runs
+checks:
+  - {id: L4.qkclip.max_logit, type: loss_series, level: L4, select: {kind: metrics, field: max_attention_logit, window: "1:301"}, threshold: calibrated}

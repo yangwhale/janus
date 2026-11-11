@@ -1,0 +1,1349 @@
+{
+ "what": "各运行上卡时存下的训练步优化后 HLO（运行目录 hlo/train_step.after_optimizations.txt）里的集合通信，按（类型, 形状）合并；字节按形状算，每步每设备",
+ "command": "python models/hunyuan4/analysis/hlo_comm_bytes.py ddp8=<ts-dp8>/hlo/train_step.after_optimizations.txt ddp8-fp32=<ts-fx-dp8-embf32>/… ddp8-local-fp32=<ts-ebc-dp8>/… ddp8-shard=<ts-esd-dp8>/… fsdp8=<ts-fx-g>/… --out <本文件>",
+ "source_runs": {
+  "ddp8": "ts-dp8",
+  "ddp8-fp32": "ts-fx-dp8-embf32",
+  "ddp8-local-fp32": "ts-ebc-dp8",
+  "ddp8-shard": "ts-esd-dp8",
+  "fsdp8": "ts-fx-g"
+ },
+ "embedding_rows_identified": {
+  "ddp8": [
+   "all-reduce bf16[120832,1024]"
+  ],
+  "ddp8-fp32": [
+   "all-reduce f32[120832,1024]",
+   "collective-permute bf16[1,4096,1024]",
+   "collective-permute s32[1,4096,1]"
+  ],
+  "ddp8-local-fp32": [
+   "all-reduce bf16[120832,1024]"
+  ],
+  "ddp8-shard": [
+   "all-gather s32[8,4096,1]",
+   "all-to-all bf16[8,1,4096,128]",
+   "all-to-all bf16[1,4096,8,128]"
+  ],
+  "fsdp8": [
+   "all-gather s32[8,4096,1]",
+   "all-to-all bf16[8,1,4096,128]",
+   "all-to-all bf16[1,4096,8,128]"
+  ]
+ },
+ "embedding_rows_how": "按形状与 op_name 认，并顺着数据流核对：ddp8-fp32 的两种 collective-permute 沿使用者 6–7 步进入词嵌入那次 scatter_fusion；id 的 all-gather 一半喂前向 gather 前的裁剪，一半喂 sort 再进带 indices_are_sorted 的 scatter",
+ "runs": {
+  "ddp8": {
+   "bytes_per_step_total": 2698887888,
+   "instructions": 32,
+   "rows": [
+    {
+     "op": "all-reduce",
+     "shape": "f32[1024,120832]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 989855744,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "bf16[120832,1024]",
+     "instructions": 2,
+     "times_per_step": 4,
+     "bytes_per_step": 989855744,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/scatter-add"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "bf16[16,1024,256] bf16[16,1024,256] bf16[16,256,1024]",
+     "instructions": 6,
+     "times_per_step": 12,
+     "bytes_per_step": 301989888,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/shard_map/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[1024,16] bf16[1024,256] bf16[1024,256] bf16[256,1024] f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[1024] f32[1024] bf16[1024,8,256] f32[512] bf16[8,256,1024] f32[512] bf16[1024,576] bf16[512,8,448] bf16[1024,512] bf16[512,8,256]",
+     "instructions": 4,
+     "times_per_step": 8,
+     "bytes_per_step": 146375296,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[4096,1,4] f32[1,1] f32[4,1] f32[4096,1,4] f32[1,1] f32[4,1] f32[4096,1,4] f32[1,1] f32[4,1] f32[4096,1,4] f32[1,1] f32[4,1] f32[1024,1,3072] f32[1024,1,3072] f32[3072,1,1024] f32[1024,1,8,256] f32[128,1] f32[128,1] f32[1024,1,32] f32[8,1,256,1024] f32[1024,1,576] f32[512,1,8,448] f32[1024,1,512] f32[512,1,8,256] f32[4] f32[4096,4] f32[1] f32[2048,1024] f32[1024,16] f32[16,1024,256] f32[16,1024,256] f32[1024,256] f32[1024,256] f32[256,1024] f32[1024,8,256] f32[128] f32[128] f32[1024,32] f32[1024,128]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 125175908,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/bsm,mn->bsn/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[1024,16] bf16[1024,256] bf16[1024,256] bf16[256,1024] f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[1024] f32[1024] bf16[1024,8,256] f32[128] f32[128] f32[1024,32] f32[512] bf16[8,256,1024] f32[512] bf16[1024,576] bf16[512,8,448] bf16[1024,512] bf16[512,8,256]",
+     "instructions": 2,
+     "times_per_step": 4,
+     "bytes_per_step": 73716032,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[16,256,1024] f32[512,32,128] f32[8,256,1024] f32[1024,576] f32[512,8,448] f32[1024,512] f32[512,8,256]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 49545216,
+     "op_name_sample": "jit(train_step)/while"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "bf16[1024,128] bf16[512,32,128] bf16[1024,128] bf16[512,32,128]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 17825792,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "bf16[1024,1,128] bf16[512,1,32,128]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 4456448,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[1024] f32[1024] f32[1024] f32[1024] f32[512] f32[512] f32[1024] f32[1024] f32[1024] f32[1024] f32[1024] f32[512] f32[512] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 90200,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(...k,k->...k))/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "s32[16] s32[16] s32[16] s32[16]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 512,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/shard_map/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[8]",
+     "instructions": 6,
+     "times_per_step": 12,
+     "bytes_per_step": 384,
+     "op_name_sample": "splash_mha_dkv_segmented_no_residuals/splash_mha_dkv_segmented_no_residuals/pallas_call/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "s32[2,16] s32[2,16] s32[2,16]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 384,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/shard_map/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[8] f32[8] f32[8] f32[8] f32[8] f32[8] f32[8] f32[8] f32[]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 260,
+     "op_name_sample": "jit(train_step)/reduce_max"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[8,1] f32[8]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 64,
+     "op_name_sample": "splash_mha_dkv_segmented_no_residuals/splash_mha_dkv_segmented_no_residuals/pallas_call/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 8,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/reduce_sum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "s32[]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 8,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/reduce_sum"
+    }
+   ],
+   "warnings": [],
+   "bytes_per_step_embedding": 989855744
+  },
+  "ddp8-fp32": {
+   "bytes_per_step_total": 2771241844,
+   "instructions": 36,
+   "rows": [
+    {
+     "op": "all-reduce",
+     "shape": "f32[120832,1024]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 989855744,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/add_any"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[1024,120832]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 989855744,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "bf16[16,1024,256] bf16[16,1024,256] bf16[16,256,1024]",
+     "instructions": 5,
+     "times_per_step": 10,
+     "bytes_per_step": 251658240,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/shard_map/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[1024,16] bf16[1024,256] bf16[1024,256] bf16[256,1024] f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[1024] f32[1024] bf16[1024,8,256] f32[512] bf16[8,256,1024] f32[512] bf16[1024,576] bf16[512,8,448] bf16[1024,512] bf16[512,8,256]",
+     "instructions": 4,
+     "times_per_step": 8,
+     "bytes_per_step": 146375296,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[1024] f32[1024] f32[4096,8] f32[1,1] f32[1,4] f32[1,1] f32[1,4] f32[4096,8] f32[1,1] f32[1,4] f32[1,1] f32[1,4] bf16[1024,3072] bf16[1024,3072] bf16[3072,1024] f32[1024] f32[1024] bf16[1024,8,256] f32[1,128] f32[1,128] f32[1,1024,32] f32[512] bf16[8,256,1024] f32[512] bf16[1024,576] bf16[512,8,448] bf16[1024,512] bf16[512,8,256] f32[4] f32[4096,4] f32[1] f32[1024] f32[1024] f32[1024] bf16[2048,1024] f32[1024,16] bf16[1024,256] bf16[1024,256] bf16[256,1024] f32[1024] f32[1024] bf16[1024,8,256] f32[128] f32[128] f32[1024,32] f32[512] bf16[8,256,1024] f32[512] bf16[1024,576] bf16[512,8,448] bf16[1024,512] bf16[512,8,256] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 116224288,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(...k,k->...k))/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "bf16[16,1024,256] bf16[16,1024,256] bf16[16,256,1024] bf16[16,1024,256] bf16[16,1024,256] bf16[16,256,1024]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 100663296,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/shard_map/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[1024,16] bf16[1024,256] bf16[1024,256] bf16[256,1024] f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[1024] f32[1024] bf16[1024,8,256] f32[128] f32[128] f32[1024,32] f32[512] bf16[8,256,1024] f32[512] bf16[1024,576] bf16[512,8,448] bf16[1024,512] bf16[512,8,256]",
+     "instructions": 2,
+     "times_per_step": 4,
+     "bytes_per_step": 73716032,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "bf16[1,4096,1024]",
+     "instructions": 4,
+     "times_per_step": 8,
+     "bytes_per_step": 67108864,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/reduce_sum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "bf16[1024,128] bf16[512,32,128] bf16[1024,128] bf16[512,32,128] bf16[1,1024,128] bf16[1,512,32,128] bf16[1024,128] bf16[512,32,128]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 35651584,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "s32[1,4096,1]",
+     "instructions": 4,
+     "times_per_step": 8,
+     "bytes_per_step": 131072,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/select_n"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "s32[16] s32[16] s32[16] s32[16]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 512,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/shard_map/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[8]",
+     "instructions": 6,
+     "times_per_step": 12,
+     "bytes_per_step": 384,
+     "op_name_sample": "splash_mha_dkv_segmented_no_residuals/splash_mha_dkv_segmented_no_residuals/pallas_call/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "s32[2,16] s32[2,16] s32[2,16]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 384,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/shard_map/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[8] f32[8] f32[8] f32[8] f32[8] f32[8] f32[8] f32[8] f32[]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 260,
+     "op_name_sample": "jit(train_step)/reduce_max"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[8] f32[8]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 128,
+     "op_name_sample": "splash_mha_dkv_segmented_no_residuals/splash_mha_dkv_segmented_no_residuals/pallas_call/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "s32[]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 8,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/reduce_sum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 8,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/reduce_sum"
+    }
+   ],
+   "warnings": [],
+   "bytes_per_step_embedding": 1057095680
+  },
+  "ddp8-local-fp32": {
+   "bytes_per_step_total": 2704001908,
+   "instructions": 30,
+   "rows": [
+    {
+     "op": "all-reduce",
+     "shape": "bf16[120832,1024]",
+     "instructions": 2,
+     "times_per_step": 4,
+     "bytes_per_step": 989855744,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/shard_map/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[1024,120832]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 989855744,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "bf16[16,1024,256] bf16[16,1024,256] bf16[16,256,1024]",
+     "instructions": 7,
+     "times_per_step": 14,
+     "bytes_per_step": 352321536,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/shard_map/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[1024,16] bf16[1024,256] bf16[1024,256] bf16[256,1024] f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[1024] f32[1024] bf16[1024,8,256] f32[512] bf16[8,256,1024] f32[512] bf16[1024,576] bf16[512,8,448] bf16[1024,512] bf16[512,8,256]",
+     "instructions": 4,
+     "times_per_step": 8,
+     "bytes_per_step": 146375296,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[1024] f32[1024] f32[4096,8] f32[1,1] f32[1,4] f32[1,1] f32[1,4] f32[4096,8] f32[1,1] f32[1,4] f32[1,1] f32[1,4] bf16[1024,3072] bf16[1024,3072] bf16[3072,1024] f32[1024] f32[1024] bf16[1024,8,256] f32[1,128] f32[1,128] f32[1,1024,32] f32[512] bf16[8,256,1024] f32[512] bf16[1024,576] bf16[512,8,448] bf16[1024,512] bf16[512,8,256] f32[4] f32[4096,4] f32[1] f32[1024] f32[1024] f32[1024] bf16[2048,1024] f32[1024,16] bf16[1024,256] bf16[1024,256] bf16[256,1024] f32[1024] f32[1024] bf16[1024,8,256] f32[128] f32[128] f32[1024,32] f32[512] bf16[8,256,1024] f32[512] bf16[1024,576] bf16[512,8,448] bf16[1024,512] bf16[512,8,256] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 116224288,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(...k,k->...k))/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[1024,16] bf16[1024,256] bf16[1024,256] bf16[256,1024] f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[1024] f32[1024] bf16[1024,8,256] f32[128] f32[128] f32[1024,32] f32[512] bf16[8,256,1024] f32[512] bf16[1024,576] bf16[512,8,448] bf16[1024,512] bf16[512,8,256]",
+     "instructions": 2,
+     "times_per_step": 4,
+     "bytes_per_step": 73716032,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "bf16[1024,128] bf16[512,32,128] bf16[1024,128] bf16[512,32,128] bf16[1,1024,128] bf16[1,512,32,128] bf16[1024,128] bf16[512,32,128]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 35651584,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "s32[16] s32[16] s32[16] s32[16]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 512,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/shard_map/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[8]",
+     "instructions": 6,
+     "times_per_step": 12,
+     "bytes_per_step": 384,
+     "op_name_sample": "splash_mha_dkv_segmented_no_residuals/splash_mha_dkv_segmented_no_residuals/pallas_call/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "s32[2,16] s32[2,16] s32[2,16]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 384,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/shard_map/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[8] f32[8] f32[8] f32[8] f32[8] f32[8] f32[8] f32[8] f32[]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 260,
+     "op_name_sample": "jit(train_step)/reduce_max"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[8] f32[8]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 128,
+     "op_name_sample": "splash_mha_dkv_segmented_no_residuals/splash_mha_dkv_segmented_no_residuals/pallas_call/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "s32[]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 8,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/reduce_sum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 8,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/reduce_sum"
+    }
+   ],
+   "warnings": [],
+   "bytes_per_step_embedding": 989855744
+  },
+  "ddp8-shard": {
+   "bytes_per_step_total": 1777189596,
+   "instructions": 39,
+   "rows": [
+    {
+     "op": "all-reduce",
+     "shape": "f32[1024,120832]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 989855744,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "bf16[16,1024,256] bf16[16,1024,256] bf16[16,256,1024]",
+     "instructions": 6,
+     "times_per_step": 12,
+     "bytes_per_step": 301989888,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/shard_map/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[1024,16] bf16[1024,256] bf16[1024,256] bf16[256,1024] f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[1024] f32[1024] bf16[1024,8,256] f32[512] bf16[8,256,1024] f32[512] bf16[1024,576] bf16[512,8,448] bf16[1024,512] bf16[512,8,256]",
+     "instructions": 4,
+     "times_per_step": 8,
+     "bytes_per_step": 146375296,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[4096,1,4] f32[1,1] f32[4,1] f32[4096,1,4] f32[1,1] f32[4,1] f32[4096,1,4] f32[1,1] f32[4,1] f32[4096,1,4] f32[1,1] f32[4,1] f32[1024,1,3072] f32[1024,1,3072] f32[3072,1,1024] f32[1024,1,8,256] f32[128,1] f32[128,1] f32[1024,1,32] f32[8,1,256,1024] f32[1024,1,576] f32[512,1,8,448] f32[1024,1,512] f32[512,1,8,256] f32[4] f32[4096,4] f32[1] f32[2048,1024] f32[1024,16] f32[16,1024,256] f32[16,1024,256] f32[1024,256] f32[1024,256] f32[256,1024] f32[1024,8,256] f32[128] f32[128] f32[1024,32] f32[1024,128] f32[]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 125175912,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/bsm,mn->bsn/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[1024,16] bf16[1024,256] bf16[1024,256] bf16[256,1024] f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[1024] f32[1024] bf16[1024,8,256] f32[128] f32[128] f32[1024,32] f32[512] bf16[8,256,1024] f32[512] bf16[1024,576] bf16[512,8,448] bf16[1024,512] bf16[512,8,256]",
+     "instructions": 2,
+     "times_per_step": 4,
+     "bytes_per_step": 73716032,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[16,256,1024] f32[512,32,128] f32[8,256,1024] f32[1024,576] f32[512,8,448] f32[1024,512] f32[512,8,256]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 49545216,
+     "op_name_sample": "jit(train_step)/while"
+    },
+    {
+     "op": "all-to-all",
+     "shape": "bf16[8,1,4096,128]",
+     "instructions": 2,
+     "times_per_step": 4,
+     "bytes_per_step": 33554432,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/reshape"
+    },
+    {
+     "op": "all-to-all",
+     "shape": "bf16[1,4096,8,128]",
+     "instructions": 2,
+     "times_per_step": 4,
+     "bytes_per_step": 33554432,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/scatter-add"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "bf16[1024,128] bf16[512,32,128] bf16[1024,128] bf16[512,32,128]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 17825792,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "bf16[1024,1,128] bf16[512,1,32,128]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 4456448,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "s32[8,4096,1]",
+     "instructions": 4,
+     "times_per_step": 8,
+     "bytes_per_step": 1048576,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/select_n"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[1024] f32[1024] f32[1024] f32[1024] f32[512] f32[512] f32[1024] f32[1024] f32[1024] f32[1024] f32[1024] f32[512] f32[512] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 90200,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(...k,k->...k))/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "s32[16] s32[16] s32[16] s32[16]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 512,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/shard_map/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[8]",
+     "instructions": 6,
+     "times_per_step": 12,
+     "bytes_per_step": 384,
+     "op_name_sample": "splash_mha_dkv_segmented_no_residuals/splash_mha_dkv_segmented_no_residuals/pallas_call/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "s32[2,16] s32[2,16] s32[2,16]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 384,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/shard_map/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[8] f32[8] f32[8] f32[8] f32[8] f32[8] f32[8] f32[8] f32[]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 260,
+     "op_name_sample": "jit(train_step)/reduce_max"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[8,1] f32[8]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 64,
+     "op_name_sample": "splash_mha_dkv_segmented_no_residuals/splash_mha_dkv_segmented_no_residuals/pallas_call/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 8,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/reduce_sum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "s32[]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 8,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/reduce_sum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[] f32[]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 8,
+     "op_name_sample": "jit(train_step)/reduce_sum"
+    }
+   ],
+   "warnings": [],
+   "bytes_per_step_embedding": 68157440
+  },
+  "fsdp8": {
+   "bytes_per_step_total": 13217028580,
+   "instructions": 1564,
+   "rows": [
+    {
+     "op": "collective-permute",
+     "shape": "f32[128,120832]",
+     "instructions": 10,
+     "times_per_step": 68,
+     "bytes_per_step": 4206886912,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "f32[1024,120832]",
+     "instructions": 3,
+     "times_per_step": 6,
+     "bytes_per_step": 2969567232,
+     "op_name_sample": ""
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[8,256,256] f32[32,32] f32[128,128] f32[576,576] f32[512,512] f32[16,16] f32[16,512,512] f32[16,256,256] f32[512,512] f32[256,256] f32[8,256,256] f32[32,32] f32[128,128] f32[576,576] f32[512,512] f32[16,16] f32[16,512,512] f32[16,256,256] f32[512,512] f32[256,256] f32[8,256,256] f32[576,576] f32[512,512] f32[16,16] f32[16,512,512] f32[16,256,256] f32[512,512] f32[256,256] f32[8,256,256] f32[576,576] f32[512,512] f32[16,16] f32[16,512,512] f32[16,256,256] f32[512,512] f32[256,256] f32[8,256,256] f32[576,576] f32[512,512] f32[16,16] f32[16,256,256] f32[512,512] f32[256,256] f32[8,256,256] f32[32,32] f32[128,128] f32[576,576] f32[512,512] f32[16,16] f32[512,512] f32[256,256] f32[576,576] f32[16,16] f32[256,256] f32[32,32] f32[128,128]",
+     "instructions": 4,
+     "times_per_step": 4,
+     "bytes_per_step": 498626560,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[16,1024,256]",
+     "instructions": 22,
+     "times_per_step": 42,
+     "bytes_per_step": 352321536,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/optimization_barrier"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[16,512,512] f32[16,512,512] f32[16,256,256] f32[8,256,256] f32[512,512] f32[1024,1024] f32[16,512,512] f32[16,256,256] f32[512,512] f32[8,256,256] f32[576,576] f32[512,512]",
+     "instructions": 4,
+     "times_per_step": 4,
+     "bytes_per_step": 286326784,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/dot_general"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "f32[128,8,256]",
+     "instructions": 40,
+     "times_per_step": 272,
+     "bytes_per_step": 285212672,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "f32[8,256,128]",
+     "instructions": 40,
+     "times_per_step": 272,
+     "bytes_per_step": 285212672,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "bf16[16,1024,256] bf16[16,1024,256] bf16[16,256,1024]",
+     "instructions": 5,
+     "times_per_step": 10,
+     "bytes_per_step": 251658240,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/shard_map/psum"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "f32[64,8,448]",
+     "instructions": 40,
+     "times_per_step": 272,
+     "bytes_per_step": 249561088,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[16,256,1024]",
+     "instructions": 11,
+     "times_per_step": 21,
+     "bytes_per_step": 176160768,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/optimization_barrier"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1,1024,2048]",
+     "instructions": 40,
+     "times_per_step": 40,
+     "bytes_per_step": 167772160,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/reshape.2383"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1,3584,512]",
+     "instructions": 40,
+     "times_per_step": 40,
+     "bytes_per_step": 146800640,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/reshape.2402"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "f32[64,8,256]",
+     "instructions": 40,
+     "times_per_step": 272,
+     "bytes_per_step": 142606336,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[8,256,1024]",
+     "instructions": 16,
+     "times_per_step": 32,
+     "bytes_per_step": 134217728,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/convert_element_type"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1,2048,1024]",
+     "instructions": 32,
+     "times_per_step": 32,
+     "bytes_per_step": 134217728,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/reshape.2384"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[] f32[] f32[8,256,256] f32[32,32] f32[128,128] f32[] f32[] f32[576,576] f32[] f32[512,512] f32[] f32[16,16] f32[16,512,512] f32[16,256,256] f32[512,512] f32[256,256] f32[8,256,256] f32[32,32] f32[128,128] f32[] f32[] f32[576,576] f32[] f32[512,512] f32[] f32[16,16] f32[16,512,512] f32[16,256,256] f32[512,512] f32[256,256] f32[8,256,256] f32[] f32[576,576] f32[] f32[512,512] f32[] f32[16,16] f32[16,512,512] f32[16,256,256] f32[512,512] f32[256,256] f32[8,256,256] f32[] f32[576,576] f32[] f32[512,512] f32[] f32[16,16] f32[16,512,512] f32[16,256,256] f32[512,512] f32[256,256] f32[8,256,256] f32[] f32[576,576] f32[] f32[512,512] f32[] f32[16,16] f32[16,256,256] f32[512,512] f32[256,256] f32[8,256,256] f32[32,32] f32[128,128] f32[] f32[] f32[576,576] f32[] f32[512,512] f32[] f32[16,16] f32[512,512] f32[256,256] f32[] f32[576,576] f32[] f32[] f32[16,16] f32[256,256] f32[32,32]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 124591208,
+     "op_name_sample": "jit(train_step)/vmap(jit(norm))/reduce_sum"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1024,8,256]",
+     "instructions": 14,
+     "times_per_step": 28,
+     "bytes_per_step": 117440512,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/convert_element_type"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1,512,3584]",
+     "instructions": 32,
+     "times_per_step": 32,
+     "bytes_per_step": 117440512,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/reshape.2401"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "f32[128,3072]",
+     "instructions": 10,
+     "times_per_step": 68,
+     "bytes_per_step": 106954752,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1024,1024]",
+     "instructions": 50,
+     "times_per_step": 50,
+     "bytes_per_step": 104857600,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/dot_general"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "bf16[1,64,32,128]",
+     "instructions": 29,
+     "times_per_step": 199,
+     "bytes_per_step": 104333312,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[512,8,448]",
+     "instructions": 14,
+     "times_per_step": 28,
+     "bytes_per_step": 102760448,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/convert_element_type"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "bf16[1,128,3072]",
+     "instructions": 18,
+     "times_per_step": 130,
+     "bytes_per_step": 102236160,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "bf16[16,1024,256] bf16[16,1024,256] bf16[16,256,1024] bf16[16,1024,256] bf16[16,1024,256] bf16[16,256,1024]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 100663296,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/shard_map/psum"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "bf16[1,128,8,256]",
+     "instructions": 25,
+     "times_per_step": 169,
+     "bytes_per_step": 88604672,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/dot_general"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "bf16[8,256,1,128]",
+     "instructions": 25,
+     "times_per_step": 169,
+     "bytes_per_step": 88604672,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1,2048,512]",
+     "instructions": 40,
+     "times_per_step": 40,
+     "bytes_per_step": 83886080,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/reshape.2420"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1,4096,512]",
+     "instructions": 20,
+     "times_per_step": 20,
+     "bytes_per_step": 83886080,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/reshape.2375"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "f32[128,576]",
+     "instructions": 40,
+     "times_per_step": 272,
+     "bytes_per_step": 80216064,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "bf16[1,64,8,448]",
+     "instructions": 25,
+     "times_per_step": 169,
+     "bytes_per_step": 77529088,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[16,512,512] f32[16,512,512] f32[16,256,256] f32[8,256,256] f32[512,512] f32[1024,1024] f32[16,512,512] f32[16,256,256] f32[512,512] f32[8,256,256] f32[128,128] f32[] f32[] f32[576,576] f32[] f32[512,512] f32[]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 71647248,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/dot_general"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "f32[128,512]",
+     "instructions": 40,
+     "times_per_step": 272,
+     "bytes_per_step": 71303168,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "bf16[64,32,128]",
+     "instructions": 20,
+     "times_per_step": 136,
+     "bytes_per_step": 71303168,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1,512,2048]",
+     "instructions": 32,
+     "times_per_step": 32,
+     "bytes_per_step": 67108864,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/reshape.2419"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1,512,4096]",
+     "instructions": 16,
+     "times_per_step": 16,
+     "bytes_per_step": 67108864,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/reshape.2374"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1,6144,1024]",
+     "instructions": 5,
+     "times_per_step": 5,
+     "bytes_per_step": 62914560,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/reshape.1625"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "f32[128,256]",
+     "instructions": 70,
+     "times_per_step": 476,
+     "bytes_per_step": 62390272,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[512,8,256]",
+     "instructions": 14,
+     "times_per_step": 28,
+     "bytes_per_step": 58720256,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/convert_element_type"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "f32[3072,128]",
+     "instructions": 5,
+     "times_per_step": 34,
+     "bytes_per_step": 53477376,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/dot_general"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "bf16[1,128,512]",
+     "instructions": 60,
+     "times_per_step": 402,
+     "bytes_per_step": 52690944,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[512,512]",
+     "instructions": 100,
+     "times_per_step": 100,
+     "bytes_per_step": 52428800,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/dot_general"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "bf16[1,128,6144]",
+     "instructions": 5,
+     "times_per_step": 33,
+     "bytes_per_step": 51904512,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/...m,em->...e/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[2048,1024]",
+     "instructions": 10,
+     "times_per_step": 12,
+     "bytes_per_step": 50331648,
+     "op_name_sample": ""
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1,1024,6144]",
+     "instructions": 4,
+     "times_per_step": 4,
+     "bytes_per_step": 50331648,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/reshape.1624"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "bf16[1,64,8,256]",
+     "instructions": 25,
+     "times_per_step": 169,
+     "bytes_per_step": 44302336,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/dot_general"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "bf16[1,128,256]",
+     "instructions": 90,
+     "times_per_step": 602,
+     "bytes_per_step": 39452672,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/dot_general"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "f32[256,1024]",
+     "instructions": 5,
+     "times_per_step": 34,
+     "bytes_per_step": 35651584,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/dot_general"
+    },
+    {
+     "op": "all-to-all",
+     "shape": "bf16[8,1,4096,128]",
+     "instructions": 2,
+     "times_per_step": 4,
+     "bytes_per_step": 33554432,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/reshape"
+    },
+    {
+     "op": "all-to-all",
+     "shape": "bf16[1,4096,8,128]",
+     "instructions": 2,
+     "times_per_step": 4,
+     "bytes_per_step": 33554432,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/scatter-add"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1024,576]",
+     "instructions": 14,
+     "times_per_step": 28,
+     "bytes_per_step": 33030144,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/convert_element_type"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1,1024,3072]",
+     "instructions": 5,
+     "times_per_step": 5,
+     "bytes_per_step": 31457280,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/reshape.1633"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "f32[256,128]",
+     "instructions": 35,
+     "times_per_step": 238,
+     "bytes_per_step": 31195136,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1024,512]",
+     "instructions": 14,
+     "times_per_step": 28,
+     "bytes_per_step": 29360128,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/convert_element_type"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[512,3584]",
+     "instructions": 8,
+     "times_per_step": 8,
+     "bytes_per_step": 29360128,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/reshape.2401"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "bf16[3072,1,128]",
+     "instructions": 5,
+     "times_per_step": 33,
+     "bytes_per_step": 25952256,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1,3072,1024]",
+     "instructions": 4,
+     "times_per_step": 4,
+     "bytes_per_step": 25165824,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/reshape.1634"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "bf16[1,128,576]",
+     "instructions": 25,
+     "times_per_step": 169,
+     "bytes_per_step": 24920064,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[3072,1,1024]",
+     "instructions": 2,
+     "times_per_step": 3,
+     "bytes_per_step": 18874368,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/convert_element_type"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[8,1,256,1024]",
+     "instructions": 2,
+     "times_per_step": 4,
+     "bytes_per_step": 16777216,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/convert_element_type"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1024,1,8,256]",
+     "instructions": 2,
+     "times_per_step": 4,
+     "bytes_per_step": 16777216,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/convert_element_type"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[512,2048]",
+     "instructions": 8,
+     "times_per_step": 8,
+     "bytes_per_step": 16777216,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/reshape.2419"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[512,4096]",
+     "instructions": 4,
+     "times_per_step": 4,
+     "bytes_per_step": 16777216,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/reshape.2374"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[512,1,8,448]",
+     "instructions": 2,
+     "times_per_step": 4,
+     "bytes_per_step": 14680064,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/convert_element_type"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1024,1,6144]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 12582912,
+     "op_name_sample": "jit(train_step)/vmap()/eval_jaxpr/reshape.1624"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[256,1024]",
+     "instructions": 11,
+     "times_per_step": 22,
+     "bytes_per_step": 11534336,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/convert_element_type"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "bf16[256,1,128]",
+     "instructions": 20,
+     "times_per_step": 136,
+     "bytes_per_step": 8912896,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[512,1,8,256]",
+     "instructions": 2,
+     "times_per_step": 4,
+     "bytes_per_step": 8388608,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/convert_element_type"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1024,256]",
+     "instructions": 8,
+     "times_per_step": 16,
+     "bytes_per_step": 8388608,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/convert_element_type"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "bf16[1,128,128]",
+     "instructions": 29,
+     "times_per_step": 199,
+     "bytes_per_step": 6520832,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1024,1,576]",
+     "instructions": 2,
+     "times_per_step": 4,
+     "bytes_per_step": 4718592,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/convert_element_type"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "bf16[128,128]",
+     "instructions": 20,
+     "times_per_step": 136,
+     "bytes_per_step": 4456448,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "bf16[1024,1,512]",
+     "instructions": 2,
+     "times_per_step": 4,
+     "bytes_per_step": 4194304,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/convert_element_type"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "f32[1,128,32]",
+     "instructions": 29,
+     "times_per_step": 199,
+     "bytes_per_step": 3260416,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/dot_general"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "f32[128,32]",
+     "instructions": 20,
+     "times_per_step": 136,
+     "bytes_per_step": 2228224,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[1024] f32[1024] f32[512] f32[512]",
+     "instructions": 4,
+     "times_per_step": 8,
+     "bytes_per_step": 2196096,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/bsm,mn->bsn/dot_general"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "f32[128,16]",
+     "instructions": 35,
+     "times_per_step": 238,
+     "bytes_per_step": 1949696,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "f32[1024,16]",
+     "instructions": 12,
+     "times_per_step": 24,
+     "bytes_per_step": 1572864,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/reduce_precision"
+    },
+    {
+     "op": "collective-permute",
+     "shape": "f32[1,128,16]",
+     "instructions": 20,
+     "times_per_step": 136,
+     "bytes_per_step": 1114112,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[4096,8] f32[1] f32[4] f32[1] f32[4] f32[1024] f32[1024] f32[128] f32[128] f32[512] f32[512]",
+     "instructions": 2,
+     "times_per_step": 4,
+     "bytes_per_step": 1102144,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(jvp()))/checkpoint/bsm,mn->bsn/dot_general"
+    },
+    {
+     "op": "all-gather",
+     "shape": "s32[8,4096,1]",
+     "instructions": 4,
+     "times_per_step": 8,
+     "bytes_per_step": 1048576,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/select_n"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[4096,1,4] f32[1,1] f32[4,1] f32[4096,1,4] f32[1,1] f32[4,1] f32[4096,1,4] f32[1,1] f32[4,1] f32[4096,1,4] f32[1,1] f32[4,1] f32[] f32[] f32[] f32[] f32[128,1] f32[128,1] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[4] f32[4096,4] f32[1] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[128] f32[128] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 330288,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/bsm,mn->bsn/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[1024] f32[1024] f32[1024] f32[1024] f32[512] f32[512] f32[1024] f32[1024] f32[1024] f32[1024] f32[1024] f32[512] f32[512] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 90200,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/transpose(jvp(...k,k->...k))/dot_general"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[8] f32[] f32[] f32[] f32[] f32[] f32[16] f32[16] f32[] f32[] f32[8] f32[] f32[] f32[] f32[] f32[] f32[16] f32[16] f32[] f32[] f32[8] f32[] f32[] f32[] f32[16] f32[16] f32[] f32[] f32[8] f32[] f32[] f32[] f32[16] f32[16] f32[] f32[] f32[8] f32[] f32[] f32[] f32[16] f32[16] f32[] f32[] f32[8] f32[] f32[] f32[] f32[] f32[] f32[16] f32[16] f32[] f32[] f32[8] f32[] f32[] f32[] f32[] f32[16] f32[16] f32[] f32[] f32[8] f32[] f32[] f32[] f32[]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 1336,
+     "op_name_sample": "jit(train_step)/vmap(jit(norm))/reduce_sum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[] f32[]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 920,
+     "op_name_sample": "jit(train_step)/reduce_sum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "s32[16] s32[16] s32[16] s32[16]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 512,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/shard_map/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[8]",
+     "instructions": 6,
+     "times_per_step": 12,
+     "bytes_per_step": 384,
+     "op_name_sample": "splash_mha_dkv_segmented_no_residuals/splash_mha_dkv_segmented_no_residuals/pallas_call/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "s32[2,16] s32[2,16] s32[2,16]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 384,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/shard_map/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[8] f32[8] f32[8] f32[8] f32[8] f32[8] f32[8] f32[8] f32[]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 260,
+     "op_name_sample": "jit(train_step)/reduce_max"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[8,1] f32[8]",
+     "instructions": 1,
+     "times_per_step": 1,
+     "bytes_per_step": 64,
+     "op_name_sample": "splash_mha_dkv_segmented_no_residuals/splash_mha_dkv_segmented_no_residuals/pallas_call/psum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "f32[]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 8,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/reduce_sum"
+    },
+    {
+     "op": "all-reduce",
+     "shape": "s32[]",
+     "instructions": 1,
+     "times_per_step": 2,
+     "bytes_per_step": 8,
+     "op_name_sample": "jit(train_step)/while/body/eval_jaxpr/jvp()/reduce_sum"
+    }
+   ],
+   "warnings": [],
+   "bytes_per_step_embedding": 68157440
+  }
+ }
+}

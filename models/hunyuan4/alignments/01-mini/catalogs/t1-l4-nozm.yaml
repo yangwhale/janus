@@ -1,0 +1,56 @@
+# 混元 4 · T1（hy4-mini）L4 验收：GPU 被测 g1-a 对 TPU 基线 t1n-a（PROTOCOL.md 第 2–4 节，冻结于 2026-11-07）
+# 2026-11-07 结果之后的协议变更：TPU 关掉路由偏置零均值更新后重跑（t1n-a、t1np-1..4），其余同 t1-l4.yaml。
+#
+# 反向方案：TPU（MaxText）定义语义，是参照一侧；GPU（Megatron）是被测。
+# 噪声只用 GPU：g1-a..h 两两 28 对，每个判定量取各对的最大值（同混元 3）。GPU 是参照答案，TPU 的波动不进尺子
+# （项目负责人 2026-11-07 19:59 定，撤回原来「GPU 28 对加 TPU 扰动 10 对」的规则；TPU 只改执行参数的扰动运行只作诊断）。
+# 口径：grad_norm 以参照作分母（2026-11-10 起，原为两边均值）；param_norm 两边都读第 s 步更新之后的 FP32 全局范数 param_norm（见 PROTOCOL 变更记录 2026-11-07「param_norm」一行）；MTP loss 两边都读 MaxText 口径的
+# mtp_loss_mt；索引器 KD loss 两边同口径（各产出层平均 × 0.1）。不加标准误下限。
+# 学习率不在这里比：它是我们登记的常数，不是观测量，改到设置核对 t1-l0-settings.yaml（不计入过 / 不过 / 待定，2026-11-07 报告口径变更）。
+schema_version: 1
+model: hunyuan4-mini
+stage: t1-l4-nozm
+description: T1 L4（GPU g1-a 对 TPU t1n-a，GPU 噪声 28 对）
+runs:
+  test: g1-a
+  golden: [t1n-a]
+  noise:
+    - [g1-a, g1-b]
+    - [g1-a, g1-c]
+    - [g1-a, g1-d]
+    - [g1-a, g1-e]
+    - [g1-a, g1-f]
+    - [g1-a, g1-g]
+    - [g1-a, g1-h]
+    - [g1-b, g1-c]
+    - [g1-b, g1-d]
+    - [g1-b, g1-e]
+    - [g1-b, g1-f]
+    - [g1-b, g1-g]
+    - [g1-b, g1-h]
+    - [g1-c, g1-d]
+    - [g1-c, g1-e]
+    - [g1-c, g1-f]
+    - [g1-c, g1-g]
+    - [g1-c, g1-h]
+    - [g1-d, g1-e]
+    - [g1-d, g1-f]
+    - [g1-d, g1-g]
+    - [g1-d, g1-h]
+    - [g1-e, g1-f]
+    - [g1-e, g1-g]
+    - [g1-e, g1-h]
+    - [g1-f, g1-g]
+    - [g1-f, g1-h]
+    - [g1-g, g1-h]
+  root: /data/janus-runs
+checks:
+  - {id: L4.loss, type: multi_golden, level: L4, select: {kind: metrics, field: lm_loss, window: "1:301"}, params: {baseline: t1n-a}, threshold: calibrated}
+  - {id: L4.loss.tail, type: multi_golden, level: L4, select: {kind: metrics, field: lm_loss, window: "101:301"}, params: {baseline: t1n-a}, threshold: calibrated}
+  - {id: L4.mtp_loss, type: loss_series, level: L4, select: {kind: metrics, field: mtp_loss_mt, window: "1:301"}, threshold: calibrated}
+  - {id: L4.mtp_loss.tail, type: loss_series, level: L4, select: {kind: metrics, field: mtp_loss_mt, window: "101:301"}, threshold: calibrated}
+  - {id: L4.indexer_loss, type: loss_series, level: L4, select: {kind: metrics, field: indexer_loss, window: "1:301"}, threshold: calibrated}
+  - {id: L4.grad_norm, type: loss_series, level: L4, select: {kind: metrics, field: grad_norm, window: "1:301"}, threshold: calibrated}
+  - {id: L4.param_norm, type: loss_series, level: L4, select: {kind: metrics, field: param_norm, window: "1:301"}, threshold: calibrated}
+  - {id: L4.router.bias_mean, type: router_stats, level: L4, select: {kind: metrics, prefix: "router.bias_mean.", window: "1:301"}, threshold: calibrated}
+  - {id: L4.router.bias_std, type: router_stats, level: L4, select: {kind: metrics, prefix: "router.bias_std.", window: "1:301"}, threshold: calibrated}

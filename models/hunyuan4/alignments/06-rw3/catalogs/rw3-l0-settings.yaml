@@ -1,0 +1,11 @@
+# 混元 4 · 06 真实宽度三层 1000 步设置核对（TPU 被测，GPU rw1k-a）：两边每一步学习率等于 1e-5。
+schema_version: 1
+model: hunyuan4-rw3
+stage: rw3-l0-settings
+description: 真实宽度三层 1000 步设置核对
+runs:
+  test: rfx-on
+  golden: [rw1k-a]
+  root: /data/janus-runs
+checks:
+  - {id: L0.settings.lr, type: scalar_series, level: L0, select: {kind: metrics, field: lr, window: "1:1001"}, params: {equals: 1.0e-5, rtol: 0.0, abs_ulp: 0}}

@@ -1,0 +1,25 @@
+# 混元 4 阶段 A · L0 跨侧：TPU 的初始权重（转换后的 MaxText 检查点）对 GPU golden 的初始参数清单逐位
+#
+#   hy4-a-maxtext-gpunames：读转换后的 MaxText 检查点，反向还原成 HF 张量，换成 GPU golden 的参数名（hy4_map.gpu_name）、
+#                           FP32，按 GPU 的 FSDP2 分片分 rank（hy4_map.gpu_rank_pieces：每个 rank 记本地分片的 sha256），
+#                           写 params_sha/rank0..7.init.json
+#     JAX_PLATFORMS=cpu python verify_ckpt.py gpu-manifest --ckpt <转换输出>/0/items --hf <HF 目录> --stage A --janus-run <运行根>/hy4-a-maxtext-gpunames
+#   ga-b / ga1-a：GPU golden 运行目录（只用 params_sha/rank*.init.json：GPU 加载同一个 HF 目录后、训练之前的 FP32 主权重）
+# 逐 rank 逐项比 sha256（8 个 rank × 31 个张量），不抽样。过 = 两边从逐位相同的权重出发（含 RoPE 列去交错之后再还原）。
+schema_version: 1
+model: hunyuan4-trunc
+stage: hy4-a-l0-init-vs-gpu
+description: 阶段 A 的 TPU 初始权重（MaxText 检查点还原）对 GPU golden 初始参数清单逐位
+runs:
+  test: hy4-a-maxtext-gpunames
+  golden: [ga-b, ga1-a]
+  root: /data/janus-runs
+checks:
+  - id: L0.init.tpu_vs_gpu.ga-b
+    type: checkpoint_equal
+    level: L0
+    select: {kind: checkpoint, which: init, manifest: true, ref_run: ga-b}
+  - id: L0.init.tpu_vs_gpu.ga1-a
+    type: checkpoint_equal
+    level: L0
+    select: {kind: checkpoint, which: init, manifest: true, ref_run: ga1-a}

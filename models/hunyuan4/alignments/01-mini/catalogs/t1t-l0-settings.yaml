@@ -1,0 +1,14 @@
+# 混元 4 · T1（hy4-mini）设置核对：两边每一步记下的学习率都等于登记的常数（PROTOCOL.md 第 1.2 节：常数 1e-5）。
+# 学习率是我们设的，不是观测量：这里只核对「设置真的生效了」，属于 L0 地基（配置），不进 L4 的比较，
+# 也不计入 L4 的过 / 不过 / 待定（2026-11-07 报告口径变更，见 PROTOCOL 变更记录）。
+# 被测 t1t-a（TPU，现行 T1 设置），参照 g2-a（GPU，`hy4_attn_scores_fp32` 打开后的重跑）。
+schema_version: 1
+model: hunyuan4-mini
+stage: t1t-l0-settings
+description: T1 设置核对（逐步学习率等于登记的常数 1e-5，两边都要）
+runs:
+  test: t1t-a
+  golden: [g2-a]
+  root: /data/janus-runs
+checks:
+  - {id: L0.settings.lr, type: scalar_series, level: L0, select: {kind: metrics, field: lr, window: "1:301"}, params: {equals: 1.0e-5, rtol: 0.0, abs_ulp: 0}}

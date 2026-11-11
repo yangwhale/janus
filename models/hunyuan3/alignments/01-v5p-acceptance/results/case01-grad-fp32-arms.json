@@ -1,0 +1,325 @@
+{
+ "what": "第 1 步梯度对 FP64 整步参照（fp64_step.py，golden 第 1 步全局 batch）的 R = rel_L2(TPU, FP64) / rel_L2(GPU g1k-a, FP64)；TPU 为 v5p 当前对齐配置，基线与 --grad-fp32 诊断臂（grad_fp32.py：norm = RMSNorm scale 舍入改直通，head = 输出层 kernel 以 FP32 进乘法，embed = embedding 从 FP32 表取行），梯度由动量反推（-gm）。组内按能量合起来；v7x_base / v7x_all 是 v7x 当前对齐配置的基线与三开关全开（对同一个 FP64 参照、同一份 GPU g1k-a）",
+ "gpu_rel_vs_fp64": {
+  "norm": 0.0008564560951684387,
+  "head": 0.0009476794091830307,
+  "embed": 0.0014170826591628281,
+  "matmul": 0.0006288929182548692,
+  "routed": 0.005027428730566462
+ },
+ "arms": {
+  "base": {
+   "run": "t-st1n-base",
+   "grad_fp32": null,
+   "lm_loss_step1": 11.465883255004883,
+   "step_time_step2_s": 1.609250783920288,
+   "r_by_group": {
+    "norm": 1.3512005721452611,
+    "head": 1.6030058319190512,
+    "embed": 1.207189925255995,
+    "matmul": 0.7778869496323441,
+    "routed": 1.0251316210743802
+   },
+   "r_pooled_all": 1.2042382279373085,
+   "r_per_tensor": {
+    "decoder.final_layernorm.weight": 1.57473729810541,
+    "decoder.layers.0.mlp.linear_fc1.layer_norm_weight": 2.181627490927808,
+    "decoder.layers.0.self_attention.k_layernorm.weight": 0.7071525147571189,
+    "decoder.layers.0.self_attention.linear_qkv.layer_norm_weight": 1.4804300105125052,
+    "decoder.layers.0.self_attention.q_layernorm.weight": 0.6995731431678327,
+    "decoder.layers.1.pre_mlp_layernorm.weight": 0.9213576876614837,
+    "decoder.layers.1.self_attention.k_layernorm.weight": 0.7106635128526996,
+    "decoder.layers.1.self_attention.linear_qkv.layer_norm_weight": 1.5921588932883148,
+    "decoder.layers.1.self_attention.q_layernorm.weight": 0.6903594565173743,
+    "decoder.layers.2.pre_mlp_layernorm.weight": 1.4331686525925447,
+    "decoder.layers.2.self_attention.k_layernorm.weight": 1.2310670439608558,
+    "decoder.layers.2.self_attention.linear_qkv.layer_norm_weight": 1.164506377249675,
+    "decoder.layers.2.self_attention.q_layernorm.weight": 1.3596396327933127,
+    "decoder.layers.3.pre_mlp_layernorm.weight": 0.5830171667530583,
+    "decoder.layers.3.self_attention.k_layernorm.weight": 1.2777734396729714,
+    "decoder.layers.3.self_attention.linear_qkv.layer_norm_weight": 1.385889081134948,
+    "decoder.layers.3.self_attention.q_layernorm.weight": 2.2000768608470054,
+    "embedding.word_embeddings.weight": 1.207189925255995,
+    "output_layer.weight": 1.6030058319190512
+   }
+  },
+  "norm": {
+   "run": "t-g32-norm",
+   "grad_fp32": {
+    "norm": "RMSNorm 的 scale 舍入改直通：前向不变，scale 梯度不再舍成 BF16"
+   },
+   "lm_loss_step1": 11.465883255004883,
+   "step_time_step2_s": 1.6074178218841553,
+   "r_by_group": {
+    "norm": 0.5815211200647721,
+    "head": 1.6030080869219483,
+    "embed": 1.2071819281599903,
+    "matmul": 0.7778699276770208,
+    "routed": 1.0251322423078553
+   },
+   "r_pooled_all": 0.716867404974245,
+   "r_per_tensor": {
+    "decoder.final_layernorm.weight": 0.553315339491263,
+    "decoder.layers.0.mlp.linear_fc1.layer_norm_weight": 0.4535934332564688,
+    "decoder.layers.0.self_attention.k_layernorm.weight": 0.52225126655889,
+    "decoder.layers.0.self_attention.linear_qkv.layer_norm_weight": 0.6583597856394806,
+    "decoder.layers.0.self_attention.q_layernorm.weight": 0.5332464390667765,
+    "decoder.layers.1.pre_mlp_layernorm.weight": 0.9187428488979059,
+    "decoder.layers.1.self_attention.k_layernorm.weight": 0.49446781935205397,
+    "decoder.layers.1.self_attention.linear_qkv.layer_norm_weight": 0.7430329192337246,
+    "decoder.layers.1.self_attention.q_layernorm.weight": 0.5283886499063615,
+    "decoder.layers.2.pre_mlp_layernorm.weight": 1.7854221845810732,
+    "decoder.layers.2.self_attention.k_layernorm.weight": 0.8936789566366736,
+    "decoder.layers.2.self_attention.linear_qkv.layer_norm_weight": 0.4911013854031539,
+    "decoder.layers.2.self_attention.q_layernorm.weight": 0.9511582069544333,
+    "decoder.layers.3.pre_mlp_layernorm.weight": 0.47349338584623135,
+    "decoder.layers.3.self_attention.k_layernorm.weight": 0.6864574949379876,
+    "decoder.layers.3.self_attention.linear_qkv.layer_norm_weight": 0.5652138121554046,
+    "decoder.layers.3.self_attention.q_layernorm.weight": 0.6443684856992192,
+    "embedding.word_embeddings.weight": 1.2071819281599903,
+    "output_layer.weight": 1.6030080869219483
+   }
+  },
+  "head": {
+   "run": "t-g32-head",
+   "grad_fp32": {
+    "head": "输出层 kernel 以 FP32 进乘法（DEFAULT 精度单遍 BF16 乘、FP32 累加），wgrad 以 FP32 落地"
+   },
+   "lm_loss_step1": 11.465883255004883,
+   "step_time_step2_s": 1.617522954940796,
+   "r_by_group": {
+    "norm": 1.3512088644832942,
+    "head": 0.9097738094169269,
+    "embed": 1.207179884362372,
+    "matmul": 0.7778651743661578,
+    "routed": 1.025132402960152
+   },
+   "r_pooled_all": 1.1834474961524009,
+   "r_per_tensor": {
+    "decoder.final_layernorm.weight": 1.574713275872903,
+    "decoder.layers.0.mlp.linear_fc1.layer_norm_weight": 2.1818976314338485,
+    "decoder.layers.0.self_attention.k_layernorm.weight": 0.7071523945611098,
+    "decoder.layers.0.self_attention.linear_qkv.layer_norm_weight": 1.4804357627112055,
+    "decoder.layers.0.self_attention.q_layernorm.weight": 0.6995573482849671,
+    "decoder.layers.1.pre_mlp_layernorm.weight": 0.9213455576811741,
+    "decoder.layers.1.self_attention.k_layernorm.weight": 0.7106764022968476,
+    "decoder.layers.1.self_attention.linear_qkv.layer_norm_weight": 1.5921538071567256,
+    "decoder.layers.1.self_attention.q_layernorm.weight": 0.6903527619101215,
+    "decoder.layers.2.pre_mlp_layernorm.weight": 1.4331674857472012,
+    "decoder.layers.2.self_attention.k_layernorm.weight": 1.2310848111921255,
+    "decoder.layers.2.self_attention.linear_qkv.layer_norm_weight": 1.1645223669360252,
+    "decoder.layers.2.self_attention.q_layernorm.weight": 1.359644447441222,
+    "decoder.layers.3.pre_mlp_layernorm.weight": 0.583014666860707,
+    "decoder.layers.3.self_attention.k_layernorm.weight": 1.2777427997826576,
+    "decoder.layers.3.self_attention.linear_qkv.layer_norm_weight": 1.3858739773359743,
+    "decoder.layers.3.self_attention.q_layernorm.weight": 2.2000256574589243,
+    "embedding.word_embeddings.weight": 1.207179884362372,
+    "output_layer.weight": 0.9097738094169269
+   }
+  },
+  "embed": {
+   "run": "t-g32-embed",
+   "grad_fp32": {
+    "embed": "embedding 从 FP32 表取行再转 BF16，反向 scatter-add 在 FP32"
+   },
+   "lm_loss_step1": 11.465883255004883,
+   "step_time_step2_s": 1.6080684661865234,
+   "r_by_group": {
+    "norm": 1.351224166721263,
+    "head": 1.6030111888727376,
+    "embed": 0.8697275485555712,
+    "matmul": 0.7778726074198186,
+    "routed": 1.0251320901533387
+   },
+   "r_pooled_all": 1.1971610027762627,
+   "r_per_tensor": {
+    "decoder.final_layernorm.weight": 1.5747040008941222,
+    "decoder.layers.0.mlp.linear_fc1.layer_norm_weight": 2.181763457257186,
+    "decoder.layers.0.self_attention.k_layernorm.weight": 0.7071422051281813,
+    "decoder.layers.0.self_attention.linear_qkv.layer_norm_weight": 1.48043161106629,
+    "decoder.layers.0.self_attention.q_layernorm.weight": 0.6995714338289878,
+    "decoder.layers.1.pre_mlp_layernorm.weight": 0.9213597647163227,
+    "decoder.layers.1.self_attention.k_layernorm.weight": 0.7106719914949434,
+    "decoder.layers.1.self_attention.linear_qkv.layer_norm_weight": 1.5921619338718236,
+    "decoder.layers.1.self_attention.q_layernorm.weight": 0.6903440902953176,
+    "decoder.layers.2.pre_mlp_layernorm.weight": 1.433154173482314,
+    "decoder.layers.2.self_attention.k_layernorm.weight": 1.2310981904254892,
+    "decoder.layers.2.self_attention.linear_qkv.layer_norm_weight": 1.164523600216697,
+    "decoder.layers.2.self_attention.q_layernorm.weight": 1.3596311038552928,
+    "decoder.layers.3.pre_mlp_layernorm.weight": 0.5830146769933682,
+    "decoder.layers.3.self_attention.k_layernorm.weight": 1.2777294699116006,
+    "decoder.layers.3.self_attention.linear_qkv.layer_norm_weight": 1.385921476822066,
+    "decoder.layers.3.self_attention.q_layernorm.weight": 2.2000303461854083,
+    "embedding.word_embeddings.weight": 0.8697275485555712,
+    "output_layer.weight": 1.6030111888727376
+   }
+  },
+  "all": {
+   "run": "t-g32-all",
+   "grad_fp32": {
+    "norm": "RMSNorm 的 scale 舍入改直通：前向不变，scale 梯度不再舍成 BF16",
+    "head": "输出层 kernel 以 FP32 进乘法（DEFAULT 精度单遍 BF16 乘、FP32 累加），wgrad 以 FP32 落地",
+    "embed": "embedding 从 FP32 表取行再转 BF16，反向 scatter-add 在 FP32"
+   },
+   "lm_loss_step1": 11.465883255004883,
+   "step_time_step2_s": 1.617567777633667,
+   "r_by_group": {
+    "norm": 0.5815286244503182,
+    "head": 0.9097742933510503,
+    "embed": 0.8697249994388078,
+    "matmul": 0.7778691449825075,
+    "routed": 1.0251322696439575
+   },
+   "r_pooled_all": 0.6687532365824246,
+   "r_per_tensor": {
+    "decoder.final_layernorm.weight": 0.5533133330763639,
+    "decoder.layers.0.mlp.linear_fc1.layer_norm_weight": 0.4535978962566137,
+    "decoder.layers.0.self_attention.k_layernorm.weight": 0.5222544603179211,
+    "decoder.layers.0.self_attention.linear_qkv.layer_norm_weight": 0.6583696421786607,
+    "decoder.layers.0.self_attention.q_layernorm.weight": 0.5332440086726037,
+    "decoder.layers.1.pre_mlp_layernorm.weight": 0.918747283250476,
+    "decoder.layers.1.self_attention.k_layernorm.weight": 0.4944806916245757,
+    "decoder.layers.1.self_attention.linear_qkv.layer_norm_weight": 0.7430301263349247,
+    "decoder.layers.1.self_attention.q_layernorm.weight": 0.5283898850227763,
+    "decoder.layers.2.pre_mlp_layernorm.weight": 1.7854415415511389,
+    "decoder.layers.2.self_attention.k_layernorm.weight": 0.8936926828528534,
+    "decoder.layers.2.self_attention.linear_qkv.layer_norm_weight": 0.4910945582078546,
+    "decoder.layers.2.self_attention.q_layernorm.weight": 0.9511563714992711,
+    "decoder.layers.3.pre_mlp_layernorm.weight": 0.47349583095883957,
+    "decoder.layers.3.self_attention.k_layernorm.weight": 0.6864435361306014,
+    "decoder.layers.3.self_attention.linear_qkv.layer_norm_weight": 0.5652375433166262,
+    "decoder.layers.3.self_attention.q_layernorm.weight": 0.6443827944529164,
+    "embedding.word_embeddings.weight": 0.8697249994388078,
+    "output_layer.weight": 0.9097742933510503
+   }
+  },
+  "v7x_base": {
+   "run": "t-v7x-st1n-base",
+   "grad_fp32": null,
+   "lm_loss_step1": 11.465965270996094,
+   "step_time_step2_s": 0.9803416728973389,
+   "r_by_group": {
+    "norm": 1.3433892339574043,
+    "head": 1.6119907686025694,
+    "embed": 1.3961377937328643,
+    "matmul": 0.7873482701415766,
+    "routed": 1.0732535752835157
+   },
+   "r_pooled_all": 1.2060040426016532,
+   "r_per_tensor": {
+    "decoder.final_layernorm.weight": 1.5566368948933813,
+    "decoder.layers.0.mlp.linear_fc1.layer_norm_weight": 2.1678151132324572,
+    "decoder.layers.0.self_attention.k_layernorm.weight": 0.6394377647497654,
+    "decoder.layers.0.self_attention.linear_qkv.layer_norm_weight": 1.4543838413766705,
+    "decoder.layers.0.self_attention.q_layernorm.weight": 0.9184644925865917,
+    "decoder.layers.1.pre_mlp_layernorm.weight": 2.695531375752418,
+    "decoder.layers.1.self_attention.k_layernorm.weight": 0.6604921342121725,
+    "decoder.layers.1.self_attention.linear_qkv.layer_norm_weight": 1.4327095708785573,
+    "decoder.layers.1.self_attention.q_layernorm.weight": 0.9556788521772533,
+    "decoder.layers.2.pre_mlp_layernorm.weight": 1.0202887086254644,
+    "decoder.layers.2.self_attention.k_layernorm.weight": 1.2689957667990868,
+    "decoder.layers.2.self_attention.linear_qkv.layer_norm_weight": 1.1602764776573902,
+    "decoder.layers.2.self_attention.q_layernorm.weight": 1.249101229407103,
+    "decoder.layers.3.pre_mlp_layernorm.weight": 0.8330579855907511,
+    "decoder.layers.3.self_attention.k_layernorm.weight": 1.5631540070619556,
+    "decoder.layers.3.self_attention.linear_qkv.layer_norm_weight": 1.3912867120988974,
+    "decoder.layers.3.self_attention.q_layernorm.weight": 2.108658071594669,
+    "embedding.word_embeddings.weight": 1.3961377937328643,
+    "output_layer.weight": 1.6119907686025694
+   }
+  },
+  "v7x_all": {
+   "run": "t-v7x-g32-all",
+   "grad_fp32": {
+    "norm": "RMSNorm 的 scale 舍入改直通：前向不变，scale 梯度不再舍成 BF16",
+    "head": "输出层 kernel 以 FP32 进乘法（DEFAULT 精度单遍 BF16 乘、FP32 累加），wgrad 以 FP32 落地",
+    "embed": "embedding 从 FP32 表取行再转 BF16，反向 scatter-add 在 FP32"
+   },
+   "lm_loss_step1": 11.465965270996094,
+   "step_time_step2_s": 0.9953055381774902,
+   "r_by_group": {
+    "norm": 0.6600122243358976,
+    "head": 0.9151281960304992,
+    "embed": 0.8769823182259442,
+    "matmul": 0.7873375005945082,
+    "routed": 1.07325345656348
+   },
+   "r_pooled_all": 0.7168538605587578,
+   "r_per_tensor": {
+    "decoder.final_layernorm.weight": 0.553609562874643,
+    "decoder.layers.0.mlp.linear_fc1.layer_norm_weight": 1.1536490977798732,
+    "decoder.layers.0.self_attention.k_layernorm.weight": 0.4892333033843276,
+    "decoder.layers.0.self_attention.linear_qkv.layer_norm_weight": 0.6405693701019691,
+    "decoder.layers.0.self_attention.q_layernorm.weight": 0.4733461643211253,
+    "decoder.layers.1.pre_mlp_layernorm.weight": 1.171834607711559,
+    "decoder.layers.1.self_attention.k_layernorm.weight": 0.5424731459448855,
+    "decoder.layers.1.self_attention.linear_qkv.layer_norm_weight": 0.7543343981026192,
+    "decoder.layers.1.self_attention.q_layernorm.weight": 0.5669014558995936,
+    "decoder.layers.2.pre_mlp_layernorm.weight": 1.1496051254780242,
+    "decoder.layers.2.self_attention.k_layernorm.weight": 0.929555623427862,
+    "decoder.layers.2.self_attention.linear_qkv.layer_norm_weight": 0.5174620147657519,
+    "decoder.layers.2.self_attention.q_layernorm.weight": 1.0349416081416438,
+    "decoder.layers.3.pre_mlp_layernorm.weight": 0.8476289607706586,
+    "decoder.layers.3.self_attention.k_layernorm.weight": 0.8415025751479952,
+    "decoder.layers.3.self_attention.linear_qkv.layer_norm_weight": 0.6810892216013855,
+    "decoder.layers.3.self_attention.q_layernorm.weight": 1.0097381241021113,
+    "embedding.word_embeddings.weight": 0.8769823182259442,
+    "output_layer.weight": 0.9151281960304992
+   }
+  }
+ },
+ "perf": {
+  "what": "步时：100 步、无抓数，第 10–100 步的中位数（秒）；同一种切片上的基线与三开关全开（--grad-fp32 norm,head,embed）各一份",
+  "runs": {
+   "v5p-8": {
+    "base": {
+     "run": "t-perf-base",
+     "median_s": 1.6111328601837158,
+     "p10_s": 1.61039400100708,
+     "p90_s": 1.6118879318237305,
+     "steps": 91,
+     "lm_loss_step1": 11.465883255004883,
+     "topology": "2x2x2"
+    },
+    "all": {
+     "run": "t-perf-g32all",
+     "median_s": 1.6238517761230469,
+     "p10_s": 1.6229989528656006,
+     "p90_s": 1.624586582183838,
+     "steps": 91,
+     "lm_loss_step1": 11.465883255004883,
+     "topology": "2x2x2"
+    },
+    "relative": 0.007894392978789355
+   },
+   "v7x-4": {
+    "base": {
+     "run": "t-v7x-perf-base",
+     "median_s": 0.9796497821807861,
+     "p10_s": 0.9791915416717529,
+     "p90_s": 0.9801468849182129,
+     "steps": 91,
+     "lm_loss_step1": 11.465965270996094,
+     "topology": "2x2x1"
+    },
+    "all": {
+     "run": "t-v7x-perf-g32all",
+     "median_s": 0.9952490329742432,
+     "p10_s": 0.9949686527252197,
+     "p90_s": 0.9956822395324707,
+     "steps": 91,
+     "lm_loss_step1": 11.465965270996094,
+     "topology": "2x2x1"
+    },
+    "relative": 0.015923293280106332
+   }
+  }
+ },
+ "fork_switches": {
+  "pr": "MaxText 修改（未公开）",
+  "commit": "0d306c0e",
+  "run": "t-mts-all",
+  "bitwise_equal_to": "t-g32-all（50 个梯度张量）",
+  "overrides": "rmsnorm_scale_grad_fp32=true logits_dense_wgrad_fp32=true embedding_grad_fp32=true"
+ }
+}

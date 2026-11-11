@@ -1,0 +1,16 @@
+# 混元 4 · T1 抓数不改数值（TPU 一侧）：mz-dump30（现行 yml，MaxText fd30fbfb，30 步，第 1、30 步全量抓数：更新前后 FP32 主权重、
+# 两个 Adam / Muon 动量、BF16 参数、路由偏置）对 t1zg-b（同一 MaxText 提交，不抓），前 30 步两边都记的全部逐步量逐位相同（步时除外）。
+# 梯度累积 2 时 MaxText 的加钩子训练步不支持，全量抓数是训练步之外从训练状态取（train_hy4.py），这里核它确实不改数值。
+schema_version: 1
+model: hunyuan4-mini
+stage: t1mz-dump-determinism
+description: T1 抓数不改数值（mz-dump30 第 1、30 步全量抓数，对不抓的 t1zg-b 前 30 步逐位）
+runs:
+  test: mz-dump30
+  golden: [t1zg-b]
+  root: /data/janus-runs
+checks:
+  - id: DET.tpu.dump_no_effect
+    type: determinism
+    level: L4
+    select: {kind: metrics, fields: [grad_norm, grad_norm_clipped, group_sq.attn, group_sq.attn_gate, group_sq.dense_mlp, group_sq.embedding, group_sq.experts, group_sq.final_norm, group_sq.hc_head, group_sq.ihc, group_sq.indexer, group_sq.mtp_norms, group_sq.mtp_proj, group_sq.norms, group_sq.output, group_sq.router, group_sq.shared, group_sq.sinks, indexer_loss, lm_loss, loss, lr, moe_lb_loss, mtp_loss, mtp_loss_mt, param_norm, param_norm_exact, param_norm_fp64, param_norm_grouped, raw_grad_norm, router.bias_mean.1, router.bias_mean.2, router.bias_mean.3, router.bias_mean.4, router.bias_mean.5, router.bias_mean.6, router.bias_mean.mtp0, router.bias_std.1, router.bias_std.2, router.bias_std.3, router.bias_std.4, router.bias_std.5, router.bias_std.6, router.bias_std.mtp0, skipped_iter, total_weights, wd], window: "1:31"}

@@ -1,0 +1,307 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.0.1",
+  "commit": null
+ },
+ "catalog": {
+  "path": "catalogs/hunyuan3-4l/phase1-parallel.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "52a4c004ade399f3999bb84dbcc409ba6b9309229dbd9c3cc14d7cd1ef2eb00e",
+  "raw_sha256": "9558dabf040570ef98750c777c6679643d5a003d327c66b37d306fab8a5cc1e5"
+ },
+ "runs": {
+  "p-ep4": {
+   "path": "/data/janus-runs2/p-ep4",
+   "meta_sha256": "d8f7cde89deeea1825411fbb683b19e11c7d386711d7752ef6136c9c0ba8fccf"
+  },
+  "d-a": {
+   "path": "/data/janus-runs2/d-a",
+   "meta_sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+  }
+ },
+ "started_at": "2026-11-03T21:58:33+00:00",
+ "finished_at": "2026-11-03T22:00:15+00:00",
+ "summary": {
+  "pass": 6,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L0.data.fingerprint",
+   "type": "data_fingerprint",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "first_loss": {
+     "test": 11.4657564163208,
+     "ref": 11.4657564163208
+    },
+    "units": 195,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/p-ep4",
+     "sha256": "d8f7cde89deeea1825411fbb683b19e11c7d386711d7752ef6136c9c0ba8fccf"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "token 与首步 loss 逐位相同",
+   "details": "details/L0.data.fingerprint.jsonl"
+  },
+  {
+   "id": "L2.parallel.fwd.bitwise",
+   "type": "bitwise_equal",
+   "level": "L2",
+   "hard": false,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 43,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/p-ep4",
+     "sha256": "d8f7cde89deeea1825411fbb683b19e11c7d386711d7752ef6136c9c0ba8fccf"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/L2.parallel.fwd.bitwise.jsonl"
+  },
+  {
+   "id": "L2.parallel.fwd.ulp",
+   "type": "ulp_distribution",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "none"
+   },
+   "metrics": {
+    "zero_frac_min": 1.0,
+    "p999_max": 0.0,
+    "max_max": 0,
+    "cross_zero": 0,
+    "nonfinite_mismatch": 0
+   },
+   "worst": [
+    {
+     "name": "layers.0.attn.core.out",
+     "metric": "zero_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.0.attn.k_norm.out",
+     "metric": "zero_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.0.attn.out",
+     "metric": "zero_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.0.attn.proj.out",
+     "metric": "zero_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.0.attn.q_norm.out",
+     "metric": "zero_frac",
+     "value": 1.0,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/p-ep4",
+     "sha256": "d8f7cde89deeea1825411fbb683b19e11c7d386711d7752ef6136c9c0ba8fccf"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "诊断：只报分布，不判",
+   "details": "details/L2.parallel.fwd.ulp.jsonl"
+  },
+  {
+   "id": "L2.parallel.fwd.tol",
+   "type": "tensor_tolerance",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "rel_l2": 0.01,
+     "cosine": 0.9999
+    },
+    "source": "推断：只换并行方式时的宽松起点，BF16 一次舍入相对误差 2^-8≈3.9e-3 的量级；看实测再收紧"
+   },
+   "metrics": {
+    "rel_l2_max": 0.0,
+    "cosine_min": 0.9999999999999998,
+    "max_abs_max": 0.0,
+    "tensors": 43
+   },
+   "worst": [
+    {
+     "name": "embed.out",
+     "metric": "rel_l2",
+     "value": 0.0,
+     "location": null
+    },
+    {
+     "name": "final_norm.out",
+     "metric": "rel_l2",
+     "value": 0.0,
+     "location": null
+    },
+    {
+     "name": "layers.0.attn.core.out",
+     "metric": "rel_l2",
+     "value": 0.0,
+     "location": null
+    },
+    {
+     "name": "layers.0.attn.k_norm.out",
+     "metric": "rel_l2",
+     "value": 0.0,
+     "location": null
+    },
+    {
+     "name": "layers.0.attn.out",
+     "metric": "rel_l2",
+     "value": 0.0,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/p-ep4",
+     "sha256": "d8f7cde89deeea1825411fbb683b19e11c7d386711d7752ef6136c9c0ba8fccf"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "全部在门槛内",
+   "details": "details/L2.parallel.fwd.tol.jsonl"
+  },
+  {
+   "id": "L2.parallel.router",
+   "type": "discrete_agreement",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "set_frac": 0.999
+    },
+    "source": "推断：路由输入不逐位时允许极少数打平的 token 翻转"
+   },
+   "metrics": {
+    "set_frac_min": 1.0,
+    "order_frac_min": 1.0
+   },
+   "worst": [
+    {
+     "name": "layers.1.mlp.router.topk_idx",
+     "metric": "set_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.2.mlp.router.topk_idx",
+     "metric": "set_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.3.mlp.router.topk_idx",
+     "metric": "set_frac",
+     "value": 1.0,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/p-ep4",
+     "sha256": "d8f7cde89deeea1825411fbb683b19e11c7d386711d7752ef6136c9c0ba8fccf"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "set_frac 最低 1.000000",
+   "details": "details/L2.parallel.router.jsonl"
+  },
+  {
+   "id": "L3.parallel.loss",
+   "type": "tensor_tolerance",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "rel_l2": 0.001
+    },
+    "source": "推断：同上"
+   },
+   "metrics": {
+    "rel_l2_max": 0.0,
+    "max_abs_max": 0.0,
+    "tensors": 1
+   },
+   "worst": [
+    {
+     "name": "loss.per_token",
+     "metric": "rel_l2",
+     "value": 0.0,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/p-ep4",
+     "sha256": "d8f7cde89deeea1825411fbb683b19e11c7d386711d7752ef6136c9c0ba8fccf"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "全部在门槛内",
+   "details": "details/L3.parallel.loss.jsonl"
+  }
+ ]
+}

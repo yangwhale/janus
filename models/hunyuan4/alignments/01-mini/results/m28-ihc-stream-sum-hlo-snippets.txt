@@ -1,0 +1,133 @@
+# M28 · iHC 四路流加权和（hc_pre：pre 权重 × 四路流 → 一路）在三层 IR 里的样子
+# hy4-mini T1（hy4-mini-t1.yml，阶段 mini 7 层 + 1 层 MTP），MaxText 3741e818，jax/jaxlib 0.11.1，libtpu 0.0.46；
+# CPU 上 AOT 编译 v5p 2x2x2（compile_topology=v5p-16，8 个设备）的训练步 jit_train_step，只改 ihc_stream_sum_unrolled。
+# 片段取同一处（scan 层内某一层的前向加权和）；形状：优化前是全局形状 [8,4096,...]，优化后是每设备分片 [1,4096,...]。
+# 去掉了 frontend_attributes / backend_config / 源文件位置；op_name 保留在行尾 # 后。
+
+########## 关（ihc_stream_sum_unrolled=false，默认：jnp.einsum('bsk,bskd->bsd', pre, xf, precision=HIGHEST)）
+
+## (1) StableHLO（JAX_DUMP_IR_TO，等同 lowered.as_text()）
+    %451 = stablehlo.dot_general %423, %450, batching_dims = [0, 1] x [0, 1], contracting_dims = [2] x [2], precision = [HIGHEST, HIGHEST] : (tensor<8x4096x4xf32>, tensor<8x4096x4x1024xf32>) -> tensor<8x4096x1024xf32>
+
+## (2) 优化前 HLO（before_optimizations）
+  %convert_element_type.104 = f32[8,4096,4,1024]{3,2,1,0} convert(%reduce_precision.11)  # convert_element_type
+  %dot_general.25 = f32[8,4096,1024]{2,1,0} dot(%add.85, %convert_element_type.104), lhs_batch_dims={0,1}, lhs_contracting_dims={2}, rhs_batch_dims={0,1}, rhs_contracting_dims={2}, operand_precision={highest,highest}  # bsk,bskd->bsd/dot_general
+  %reduce_precision.14 = f32[512]{0} reduce-precision(%Arg_63.2), exponent_bits=8, mantissa_bits=7  # reduce_precision
+
+## (2b) 进 algsimp 之前（第 0000 个 pass dump：simplification-1 / before_algsimp）：convert 已被折进 dot，dot 直接吃 BF16 流
+  %dot_general.25 = f32[8,4096,1024]{2,1,0} dot(%add.2071, %reduce_precision.11), lhs_batch_dims={0,1}, lhs_contracting_dims={2}, rhs_batch_dims={0,1}, rhs_contracting_dims={2}, operand_precision={highest,highest}  # jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/bsk,bskd->bsd/dot_general
+
+## (2c) simplification-1 的第一个 algsimp 之后（第 0001 个 pass dump）：dot 被改写成 broadcast × convert → multiply → 沿 k reduce（FP32）
+  %broadcast.2693 = f32[8,4096,1024,4]{2,3,1,0} broadcast(%add.2071), dimensions={0,1,3}  # jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/bsk,bskd->bsd/dot_general
+  %convert.180 = f32[8,4096,1024,4]{2,3,1,0} convert(%transpose.1995)
+  %multiply.1361 = f32[8,4096,1024,4]{2,3,1,0} multiply(%broadcast.2693, %convert.180)
+  %reduce.2383 = f32[8,4096,1024]{2,1,0} reduce(%multiply.1361, %constant.4523), dimensions={3}, to_apply=%scalar_add_computation  # jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/bsk,bskd->bsd/dot_general
+  %reduce_precision.14 = f32[8,4096,1024]{2,1,0} reduce-precision(%reduce.2383), exponent_bits=8, mantissa_bits=7  # jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/reduce_precision
+
+## (3) 优化后 HLO（after_optimizations）：kLoop 融合，FP32 乘、FP32 reduce（k 与 batch 维），无 dot / convolution
+  %fusion.19242 = f32[4096,1024]{0,1:T(8,128)} fusion(%fusion.19241#1, %fusion.19238), kind=kLoop, calls=%fused_computation.5265.clone.1  # jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/bsk,bskd->bsd/dot_general, 
+%fused_computation.5265.clone.1 (param_0.80853: f32[4096,4], param_1.81264: bf16[1,4096,4,1024]) -> f32[4096,1024] {
+  %param_0.80853 = f32[4096,4]{0,1:T(4,128)S(1)} parameter(0)
+  %dot_general.7322 = f32[1,4096,4,1024]{1,3,2,0:T(8,128)} broadcast(%param_0.80853), dimensions={1,2}  # jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/bsk,bskd->bsd/dot_general
+  %param_1.81264 = bf16[1,4096,4,1024]{1,3,2,0:T(8,128)(2,1)S(1)} parameter(1)
+  %reduce_precision.21464 = bf16[1,4096,4,1024]{1,3,2,0:T(8,128)(2,1)} reduce-precision(%param_1.81264), exponent_bits=8, mantissa_bits=7  # jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/reduce_precision
+  %convert_element_type.41288 = f32[1,4096,4,1024]{1,3,2,0:T(8,128)} convert(%reduce_precision.21464)  # jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/convert_element_type
+  %multiply.8371 = f32[1,4096,4,1024]{1,3,2,0:T(8,128)} multiply(%dot_general.7322, %convert_element_type.41288)  # multiply.4489
+  %constant.7656.clone.1972 = f32[]{:T(128)} constant(0)
+  ROOT %reduce.9781 = f32[4096,1024]{0,1:T(8,128)} reduce(%multiply.8371, %constant.7656.clone.1972), dimensions={0,2}, to_apply=%region_42.55  # jit(train_step)/while/body/eval_jaxpr/jvp()/while/body/eval_jaxpr/bsk,bskd->bsd/dot_general
+}
+
+## (对照) 关掉 algsimp（与 tpu_fusion、fusion）后同一处的优化后 HLO：einsum 留成 convolution，precision HIGHEST（MXU 多遍 BF16）
+  %convolution-base-dilated.1137 = f32[1,4096,1,1024]{3,2,1,0:T(1,128)} convolution(%copy.40569, %bitcast.72004), window={size=1x4096 stride=1x4095 lhs_dilate=1x4096}, dim_labels=01fb_01io->01bf, operand_precision={highest,highest}  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/bsk,bskd->bsd/dot_general}
+
+########## 开（ihc_stream_sum_unrolled=true：pre[...,0:1]*xf[:,:,0] + ... 逐路 FP32 乘加）
+
+## (1) StableHLO
+%1001 = stablehlo.slice %973 [0:8, 0:4096, 0:1] : (tensor<8x4096x4xf32>) -> tensor<8x4096x1xf32>
+%1002 = stablehlo.slice %1000 [0:8, 0:4096, 0:1, 0:1024] : (tensor<8x4096x4x1024xf32>) -> tensor<8x4096x1x1024xf32>
+%1003 = stablehlo.reshape %1002 : (tensor<8x4096x1x1024xf32>) -> tensor<8x4096x1024xf32>
+%1004 = stablehlo.broadcast_in_dim %1001, dims = [0, 1, 2] : (tensor<8x4096x1xf32>) -> tensor<8x4096x1024xf32>
+%1005 = stablehlo.multiply %1004, %1003 : tensor<8x4096x1024xf32>
+%1006 = stablehlo.slice %973 [0:8, 0:4096, 1:2] : (tensor<8x4096x4xf32>) -> tensor<8x4096x1xf32>
+%1007 = stablehlo.slice %1000 [0:8, 0:4096, 1:2, 0:1024] : (tensor<8x4096x4x1024xf32>) -> tensor<8x4096x1x1024xf32>
+%1008 = stablehlo.reshape %1007 : (tensor<8x4096x1x1024xf32>) -> tensor<8x4096x1024xf32>
+%1009 = stablehlo.broadcast_in_dim %1006, dims = [0, 1, 2] : (tensor<8x4096x1xf32>) -> tensor<8x4096x1024xf32>
+%1010 = stablehlo.multiply %1009, %1008 : tensor<8x4096x1024xf32>
+%1011 = stablehlo.add %1005, %1010 : tensor<8x4096x1024xf32>
+%1012 = stablehlo.slice %973 [0:8, 0:4096, 2:3] : (tensor<8x4096x4xf32>) -> tensor<8x4096x1xf32>
+%1013 = stablehlo.slice %1000 [0:8, 0:4096, 2:3, 0:1024] : (tensor<8x4096x4x1024xf32>) -> tensor<8x4096x1x1024xf32>
+%1014 = stablehlo.reshape %1013 : (tensor<8x4096x1x1024xf32>) -> tensor<8x4096x1024xf32>
+%1015 = stablehlo.broadcast_in_dim %1012, dims = [0, 1, 2] : (tensor<8x4096x1xf32>) -> tensor<8x4096x1024xf32>
+%1016 = stablehlo.multiply %1015, %1014 : tensor<8x4096x1024xf32>
+%1017 = stablehlo.add %1011, %1016 : tensor<8x4096x1024xf32>
+%1018 = stablehlo.slice %973 [0:8, 0:4096, 3:4] : (tensor<8x4096x4xf32>) -> tensor<8x4096x1xf32>
+%1019 = stablehlo.slice %1000 [0:8, 0:4096, 3:4, 0:1024] : (tensor<8x4096x4x1024xf32>) -> tensor<8x4096x1x1024xf32>
+%1020 = stablehlo.reshape %1019 : (tensor<8x4096x1x1024xf32>) -> tensor<8x4096x1024xf32>
+
+## (2) 优化前 HLO：slice / broadcast / multiply / add，全部 f32[8,4096,1024]
+  %slice.36 = f32[8,4096,1]{2,1,0} slice(%add.91), slice={[0:8], [0:4096], [0:1]}  # slice
+  %mul.221 = f32[8,4096,1]{2,1,0} broadcast(%slice.36), dimensions={0,1,2}  # mul
+  %mul.222 = f32[8,4096]{1,0} reshape(%mul.221)  # mul
+  %mul.223 = f32[8,4096,1024]{2,1,0} broadcast(%mul.222), dimensions={0,1}  # mul
+  %slice.37 = f32[8,4096,1,1024]{3,2,1,0} slice(%convert_element_type.104), slice={[0:8], [0:4096], [0:1], [0:1024]}  # slice
+  %squeeze.96 = f32[8,4096,1024]{2,1,0} reshape(%slice.37)  # squeeze
+  %mul.224 = f32[8,4096,1024]{2,1,0} multiply(%mul.223, %squeeze.96)  # mul
+  %slice.38 = f32[8,4096,1]{2,1,0} slice(%add.91), slice={[0:8], [0:4096], [1:2]}  # slice
+  %mul.225 = f32[8,4096,1]{2,1,0} broadcast(%slice.38), dimensions={0,1,2}  # mul
+  %mul.226 = f32[8,4096]{1,0} reshape(%mul.225)  # mul
+  %mul.227 = f32[8,4096,1024]{2,1,0} broadcast(%mul.226), dimensions={0,1}  # mul
+  %slice.39 = f32[8,4096,1,1024]{3,2,1,0} slice(%convert_element_type.104), slice={[0:8], [0:4096], [1:2], [0:1024]}  # slice
+  %squeeze.97 = f32[8,4096,1024]{2,1,0} reshape(%slice.39)  # squeeze
+  %mul.228 = f32[8,4096,1024]{2,1,0} multiply(%mul.227, %squeeze.97)  # mul
+  %add.98 = f32[8,4096,1024]{2,1,0} add(%mul.224, %mul.228)  # add
+  %slice.40 = f32[8,4096,1]{2,1,0} slice(%add.91), slice={[0:8], [0:4096], [2:3]}  # slice
+  %mul.229 = f32[8,4096,1]{2,1,0} broadcast(%slice.40), dimensions={0,1,2}  # mul
+  %mul.230 = f32[8,4096]{1,0} reshape(%mul.229)  # mul
+  %mul.231 = f32[8,4096,1024]{2,1,0} broadcast(%mul.230), dimensions={0,1}  # mul
+  %slice.41 = f32[8,4096,1,1024]{3,2,1,0} slice(%convert_element_type.104), slice={[0:8], [0:4096], [2:3], [0:1024]}  # slice
+  %squeeze.98 = f32[8,4096,1024]{2,1,0} reshape(%slice.41)  # squeeze
+  %mul.232 = f32[8,4096,1024]{2,1,0} multiply(%mul.231, %squeeze.98)  # mul
+  %add.99 = f32[8,4096,1024]{2,1,0} add(%add.98, %mul.232)  # add
+  %slice.42 = f32[8,4096,1]{2,1,0} slice(%add.91), slice={[0:8], [0:4096], [3:4]}  # slice
+  %mul.233 = f32[8,4096,1]{2,1,0} broadcast(%slice.42), dimensions={0,1,2}  # mul
+  %mul.234 = f32[8,4096]{1,0} reshape(%mul.233)  # mul
+  %mul.235 = f32[8,4096,1024]{2,1,0} broadcast(%mul.234), dimensions={0,1}  # mul
+  %slice.43 = f32[8,4096,1,1024]{3,2,1,0} slice(%convert_element_type.104), slice={[0:8], [0:4096], [3:4], [0:1024]}  # slice
+  %squeeze.99 = f32[8,4096,1024]{2,1,0} reshape(%slice.43)  # squeeze
+
+## (3) 优化后 HLO：kLoop 融合，逐路 FP32 multiply、按 ((p0·x0 + p1·x1) + p2·x2) + p3·x3 的顺序 add（下例是反向里重算的前向，
+##     与 M36 的 reduce-precision、RMSNorm 的平方和融在一起）
+  %fusion.19199 = (f32[4096]{0:T(1024)S(1)}, bf16[1,4096,1024]{1,2,0:T(8,128)(2,1)S(1)}) fusion(%broadcast_multiply_fusion.96#1, %bitcast.33272, %bitcast.33424, %bitcast.33426, %bitcast.33422), kind=kLoop, calls=%fused_computation.6590.clone.1  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/reduce_sum, 
+%fused_computation.6590.clone.1 (param_0.81372: f32[1,4096,4,1024], param_1.81721: f32[4096], param_2.65224: f32[4096], param_3.44962: f32[4096], param_4.31440: f32[4096]) -> (f32[4096], bf16[1,4096,1024]) {
+  %param_4.31440 = f32[4096]{0:T(1024)S(1)} parameter(4)
+  %mul.80095.clone.3 = f32[1,4096,1024]{1,2,0:T(8,128)} broadcast(%param_4.31440), dimensions={1}  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/mul
+  %param_0.81372 = f32[1,4096,4,1024]{1,3,2,0:T(8,128)} parameter(0)
+  %slice.18386.clone.3 = f32[1,4096,1,1024]{1,3,2,0:T(8,128)} slice(%param_0.81372), slice={[0:1], [0:4096], [0:1], [0:1024]}  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/slice
+  %bitcast.22782.clone.3 = f32[1,4096,1024]{1,2,0:T(8,128)} bitcast(%slice.18386.clone.3)  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/squeeze
+  %mul.80092.clone.3 = f32[1,4096,1024]{1,2,0:T(8,128)} multiply(%mul.80095.clone.3, %bitcast.22782.clone.3)  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/mul
+  %param_3.44962 = f32[4096]{0:T(1024)S(1)} parameter(3)
+  %mul.80094.clone.3 = f32[1,4096,1024]{1,2,0:T(8,128)} broadcast(%param_3.44962), dimensions={1}  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/mul
+  %slice.18387.clone.3 = f32[1,4096,1,1024]{1,3,2,0:T(8,128)} slice(%param_0.81372), slice={[0:1], [0:4096], [1:2], [0:1024]}  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/slice
+  %bitcast.22783.clone.3 = f32[1,4096,1024]{1,2,0:T(8,128)} bitcast(%slice.18387.clone.3)  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/squeeze
+  %mul.80091.clone.3 = f32[1,4096,1024]{1,2,0:T(8,128)} multiply(%mul.80094.clone.3, %bitcast.22783.clone.3)  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/mul
+  %add.49389.clone.3 = f32[1,4096,1024]{1,2,0:T(8,128)} add(%mul.80092.clone.3, %mul.80091.clone.3)  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/add
+  %param_2.65224 = f32[4096]{0:T(1024)S(1)} parameter(2)
+  %mul.80093.clone.3 = f32[1,4096,1024]{1,2,0:T(8,128)} broadcast(%param_2.65224), dimensions={1}  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/mul
+  %slice.18388.clone.3 = f32[1,4096,1,1024]{1,3,2,0:T(8,128)} slice(%param_0.81372), slice={[0:1], [0:4096], [2:3], [0:1024]}  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/slice
+  %bitcast.22784.clone.3 = f32[1,4096,1024]{1,2,0:T(8,128)} bitcast(%slice.18388.clone.3)  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/squeeze
+  %mul.80090.clone.3 = f32[1,4096,1024]{1,2,0:T(8,128)} multiply(%mul.80093.clone.3, %bitcast.22784.clone.3)  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/mul
+  %add.49388.clone.3 = f32[1,4096,1024]{1,2,0:T(8,128)} add(%add.49389.clone.3, %mul.80090.clone.3)  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/add
+  %param_1.81721 = f32[4096]{0:T(1024)S(1)} parameter(1)
+  %mul.80096.clone.3 = f32[1,4096,1024]{1,2,0:T(8,128)} broadcast(%param_1.81721), dimensions={1}  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/mul
+  %slice.18389.clone.3 = f32[1,4096,1,1024]{1,3,2,0:T(8,128)} slice(%param_0.81372), slice={[0:1], [0:4096], [3:4], [0:1024]}  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/slice
+  %bitcast.22785.clone.3 = f32[1,4096,1024]{1,2,0:T(8,128)} bitcast(%slice.18389.clone.3)  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/squeeze
+  %mul.80089.clone.3 = f32[1,4096,1024]{1,2,0:T(8,128)} multiply(%mul.80096.clone.3, %bitcast.22785.clone.3)  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/mul
+  %add.49387.clone.3 = f32[1,4096,1024]{1,2,0:T(8,128)} add(%add.49388.clone.3, %mul.80089.clone.3)  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/add
+  %reduce_precision.20405.clone.3 = f32[1,4096,1024]{1,2,0:T(8,128)} reduce-precision(%add.49387.clone.3), exponent_bits=8, mantissa_bits=7  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/reduce_precision
+  %convert_element_type.39093.clone.3 = bf16[1,4096,1024]{1,2,0:T(8,128)(2,1)S(1)} convert(%reduce_precision.20405.clone.3)  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/convert_element_type
+  %convert_element_type.41365 = f32[1,4096,1024]{1,2,0:T(8,128)} convert(%convert_element_type.39093.clone.3)  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/convert_element_type
+  %square.4358 = f32[1,4096,1024]{1,2,0:T(8,128)} multiply(%convert_element_type.41365, %convert_element_type.41365)  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/square
+  %constant.7546.clone.2043 = f32[]{:T(128)} constant(0)
+  %reduce.9841 = f32[4096]{0:T(1024)S(1)} reduce(%square.4358, %constant.7546.clone.2043), dimensions={0,2}, to_apply=%region_838.936  # jit(train_step)/while/body/eval_jaxpr/transpose(jvp())/while/body/eval_jaxpr/checkpoint/rematted_computation/reduce_sum
+  ROOT %tuple.11247 = (f32[4096]{0:T(1024)S(1)}, bf16[1,4096,1024]{1,2,0:T(8,128)(2,1)S(1)}) tuple(%reduce.9841, %convert_element_type.39093.clone.3)
+}

@@ -1,0 +1,16 @@
+# 第一阶段 · 优化器连续 8 步重放：第 1–8 步每步抓第 0、1 层稠密参数的 FP32 主权重、梯度、两个动量，FP64 连续重放（第 k 步用第 k−1 步更新后的动量）。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase1-opt8
+runs:
+  test: m-opt8
+  golden: [d-a]
+  root: /data/janus-runs2
+checks:
+  - id: L1.optim.adamw.8steps
+    type: optimizer_step
+    level: L1
+    select: {kind: tensor, steps: "1:9", name: "*"}
+    metrics: [rel_l2, max_abs]
+    threshold: {rel_l2: 5.0e-3}
+    source: "同 phase1-full 的 L1.optim.adamw.replay：FP32 存储舍入地板实测最大 1.79e-3，取约 3 倍"

@@ -1,0 +1,168 @@
+{
+ "what": "第 1 步，几个 R > 1.2 的小张量在 TPU 几种写法下对 FP32 参照（t1diag18b）的距离与 R（GPU g2s 三份对参照的中位数作分母）",
+ "bf16_eps": 0.003906,
+ "tensors": {
+  "model.layers.1.self_attn.indexer.k_norm.weight": {
+   "gpu_to_ref": 0.0007073864315806277,
+   "gpu_noise_max": 0.0,
+   "grad_norm": 3.7066277811311196e-07,
+   "variants": {
+    "switches off": {
+     "tpu_to_ref": 0.00043903076315903616,
+     "R": 0.6206378063798013
+    },
+    "t1s/t1t": {
+     "tpu_to_ref": 0.0005353610108376925,
+     "R": 0.7568154928296391
+    },
+    "t1t+no-excess-precision": {
+     "tpu_to_ref": 0.0006668764330740247,
+     "R": 0.942732859017263
+    },
+    "t1t+unrolled (t1v)": {
+     "tpu_to_ref": 0.001126356931524424,
+     "R": 1.5922795253615805
+    }
+   }
+  },
+  "model.mtp_layers.0.enorm.weight": {
+   "gpu_to_ref": 0.0016530045126678466,
+   "gpu_noise_max": 0.0012596918029968089,
+   "grad_norm": 0.00016842128288317238,
+   "variants": {
+    "switches off": {
+     "tpu_to_ref": 0.0017992978751944556,
+     "R": 1.0885014901081551
+    },
+    "t1s/t1t": {
+     "tpu_to_ref": 0.001974279071206309,
+     "R": 1.1943579440203373
+    },
+    "t1t+no-excess-precision": {
+     "tpu_to_ref": 0.0019654516131442984,
+     "R": 1.1890176935888588
+    },
+    "t1t+unrolled (t1v)": {
+     "tpu_to_ref": 0.002034861076972337,
+     "R": 1.2310075752232508
+    }
+   }
+  },
+  "model.layers.3.hc_attn_layer.hc_pre.hc_scale": {
+   "gpu_to_ref": 0.0012381566093985863,
+   "gpu_noise_max": 0.0032060573719355505,
+   "grad_norm": 0.0001699527162757532,
+   "variants": {
+    "switches off": {
+     "tpu_to_ref": 0.007293811050865708,
+     "R": 5.890863074590018
+    },
+    "t1s/t1t": {
+     "tpu_to_ref": 0.005615310172956928,
+     "R": 4.535218025193494
+    },
+    "t1t+no-excess-precision": {
+     "tpu_to_ref": 0.0005617891084774486,
+     "R": 0.45373025044895426
+    },
+    "t1t+unrolled (t1v)": {
+     "tpu_to_ref": 0.0029300539075728096,
+     "R": 2.366464698674939
+    }
+   }
+  },
+  "model.layers.5.hc_attn_layer.hc_pre.hc_scale": {
+   "gpu_to_ref": 0.001130188098935998,
+   "gpu_noise_max": 0.00247820496806674,
+   "grad_norm": 0.00023167560338162356,
+   "variants": {
+    "switches off": {
+     "tpu_to_ref": 0.010655485658321445,
+     "R": 9.428063937633855
+    },
+    "t1s/t1t": {
+     "tpu_to_ref": 0.004949239691521739,
+     "R": 4.379129187593766
+    },
+    "t1t+no-excess-precision": {
+     "tpu_to_ref": 0.002625532449949735,
+     "R": 2.3230933438615318
+    },
+    "t1t+unrolled (t1v)": {
+     "tpu_to_ref": 0.0026019012982299887,
+     "R": 2.3021843007190728
+    }
+   }
+  },
+  "model.layers.0.hc_attn_layer.hc_pre.hc_scale": {
+   "gpu_to_ref": 0.006307196660295032,
+   "gpu_noise_max": 0.01915309878527802,
+   "grad_norm": 4.335658082968262e-05,
+   "variants": {
+    "switches off": {
+     "tpu_to_ref": 0.010790548697288887,
+     "R": 1.7108311788052184
+    },
+    "t1s/t1t": {
+     "tpu_to_ref": 0.009918073215159872,
+     "R": 1.5725010253122396
+    },
+    "t1t+no-excess-precision": {
+     "tpu_to_ref": 0.04371326297777901,
+     "R": 6.930696049635185
+    },
+    "t1t+unrolled (t1v)": {
+     "tpu_to_ref": 0.027461842565602704,
+     "R": 4.354048881729037
+    }
+   }
+  },
+  "model.hc_head.hc_head_scale": {
+   "gpu_to_ref": 0.015255596722404478,
+   "gpu_noise_max": 0.05261156706677789,
+   "grad_norm": 4.6202371777326334e-06,
+   "variants": {
+    "switches off": {
+     "tpu_to_ref": 0.002820863642935749,
+     "R": 0.18490680464783188
+    },
+    "t1s/t1t": {
+     "tpu_to_ref": 0.006512198955729271,
+     "R": 0.4268727781828035
+    },
+    "t1t+no-excess-precision": {
+     "tpu_to_ref": 0.020507757424230628,
+     "R": 1.3442776311799582
+    },
+    "t1t+unrolled (t1v)": {
+     "tpu_to_ref": 0.02576178820314037,
+     "R": 1.6886778453776523
+    }
+   }
+  },
+  "model.layers.3.hc_mlp_layer.hc_pre.hc_base": {
+   "gpu_to_ref": 0.0040244390235169665,
+   "gpu_noise_max": 0.011235450234091183,
+   "grad_norm": 4.9597376703767904e-05,
+   "variants": {
+    "switches off": {
+     "tpu_to_ref": 0.017900317200572714,
+     "R": 4.447903694396041
+    },
+    "t1s/t1t": {
+     "tpu_to_ref": 0.032901927739338935,
+     "R": 8.175531433592418
+    },
+    "t1t+no-excess-precision": {
+     "tpu_to_ref": 0.02008752682366124,
+     "R": 4.99138555865277
+    },
+    "t1t+unrolled (t1v)": {
+     "tpu_to_ref": 0.035110844850574474,
+     "R": 8.724407214372707
+    }
+   }
+  }
+ },
+ "correction_2026_11_07": "键 bf16_eps = 3.906e-3 是 2^-8，即 BF16 的单位舍入 u（相邻两个 BF16 数间距的一半，相对）；BF16 的机器 epsilon 是 2^-7 = 7.8e-3。文中「一格」按 u 理解"
+}

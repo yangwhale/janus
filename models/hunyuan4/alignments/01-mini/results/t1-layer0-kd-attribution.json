@@ -1,0 +1,85 @@
+{
+ "what": "T1 第 1 步，第 0 层索引器 KD 定责：同一行（GPU rank 0 micro 0 = TPU 第 0 行）的 KD 输入与 KD 计算逐项对比",
+ "kd_inputs_vs_fp32_reference": {
+  "reference": "TPU 同一图 dtype=float32、matmul_precision=highest（t1diag16，MoE 走稠密实现），代替 FP64：其误差约 1e-7 量级，远小于被比较的 1e-3",
+  "bf16_one_rounding_floor": {
+   "teacher_q": 0.001666,
+   "teacher_k": 0.001657,
+   "indexer_score": 0.001657
+  },
+  "gpu_g1": {
+   "teacher_q": 0.00355,
+   "teacher_k": 0.003333,
+   "indexer_score": 0.005274
+  },
+  "tpu_switches_off (t1diag11)": {
+   "teacher_q": 0.004163,
+   "teacher_k": 0.003754,
+   "indexer_score": 0.005636,
+   "R_vs_gpu": [
+    1.17,
+    1.13,
+    1.07
+   ]
+  },
+  "tpu_switches_on (t1diag15, 现行 T1)": {
+   "teacher_q": 0.003437,
+   "teacher_k": 0.003143,
+   "indexer_score": 0.005221,
+   "R_vs_gpu": [
+    0.97,
+    0.94,
+    0.99
+   ]
+  },
+  "metric": "rel_L2 对参照；R = TPU ÷ GPU；指数分数只比因果部分"
+ },
+ "kd_value_row0_layer0": {
+  "fp64_on_tpu_inputs": 0.0001098170386,
+  "tpu_in_graph": 0.0001096902212,
+  "tpu_in_graph_rel": -0.001155,
+  "cpu_jax_f32_on_tpu_inputs_rel": 0.00029,
+  "cpu_torch_f32_on_tpu_inputs_rel": 8e-06,
+  "gpu_logged": 0.000109809489,
+  "fp64_on_gpu_inputs": 0.0001097893224,
+  "gpu_logged_rel": 0.00019,
+  "fp64_tpu_inputs_vs_fp64_gpu_inputs_rel": 0.000114,
+  "tpu_target_p_rel_err": 1.73e-07,
+  "tpu_log_indexer_rel_err": 7.6e-08,
+  "tpu_logsumexp_minus_fp64_in_f32_ulp": {
+   "mean": -0.953,
+   "median": -0.936,
+   "frac_rows_positive": 0.086,
+   "lse_mean": 7.13,
+   "ulp": 4.73e-07
+  },
+  "one_ulp_of_lse_as_fraction_of_kl": 0.00431,
+  "cpu_torch_f32_logsumexp_bias_ulp": -0.004
+ },
+ "step1_kd_all_runs": {
+  "tpu_t1n_t1np_range": [
+   8.471947e-06,
+   8.472167e-06
+  ],
+  "gpu_g1_range": [
+   8.47976e-06,
+   8.480105e-06
+  ],
+  "gap_rel": -0.00092
+ },
+ "conclusion": [
+  "KD 的输入：现行 T1（四个舍入开关 + indexer_fp32_scores）下 TPU 离参照与 GPU 一样近或更近（R 0.94–0.99）；开关关时 R 1.07–1.17，是舍入位置不同，已由开关对上",
+  "KD 的值：KL 每行约 1.1e-4 nat，而 log-sum-exp 约 7.1：f32 里 lse 的 1 格（4.7e-7）就是 KL 的 4.3e-3。TPU 的 f32 log_softmax 平均比 FP64 低 0.95 格（91% 的行偏同一个方向），CPU 的 f32 不偏（-0.004 格）。于是 TPU 记下的 KD 偏低约 1.2e-3，而且每份 TPU 运行都一样（确定性），超出两边执行噪声",
+  "梯度不受影响：KD 对索引器分数的梯度是 q − p，lse 偏 1 格只让 q 整体差 4.7e-7（相对），远在 BF16 以下（推断；未单独实测）",
+  "所以 L4.indexer_loss 的不过来自这个标量本身在 f32 里病态（KL ≪ 熵），不是两边训练语义不同"
+ ],
+ "runs": {
+  "t1diag11": "开关关 + debug_sow_indexer（MaxText 657cae95）",
+  "t1diag15": "现行 T1 + debug_sow_indexer（MaxText d723fa2d）",
+  "t1diag16": "FP32 参照（d723fa2d）",
+  "gpu": "g1p-kdd 的 kd_layer0_step1_rank0_micro0.pt"
+ },
+ "status": "已定责（项目负责人 2026-11-07 接受方案 a）：L4.indexer_loss 的不过来自 f32 数值病态（KL ≪ log-sum-exp），不是两边语义不同",
+ "gradient_check": "t1-step1-indexer-grad.json：现行 T1 下索引器梯度对 FP32 参照 R 0.78–1.03",
+ "correction_2026_11_07": "gpu_logged_rel 写的 1.9e-4 是四舍五入过头：按本文件字段 (1.09809489e-4 − 1.097893224e-4) / 1.097893224e-4 = +1.84e-4（对 MaxText 写法的 FP64 值）。台账 G16 与案例 02 的 +1.51e-4 出自 GPU 一侧另一次 FP64 重算（Megatron-Core 写法：L1 归一化夹 1e-10、精确 log_softmax），两个数对应两种公式，都成立。kd_inputs_vs_fp32_reference.reference 里「约 1e-7 量级」的参照误差没有实测，是按 FP32 + HIGHEST 的舍入估的"
+}

@@ -1,0 +1,1215 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "157bc51af9d981713e524ccab5edb187d07820af"
+ },
+ "catalog": {
+  "path": "models/hunyuan4/alignments/02-real-weight/catalogs/t2b4-l4.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "13428c2921ecb501ce8ddd189d572d8a5a3dba916135c54b0a57a04083c351c2",
+  "raw_sha256": "bbdfaeee7b093845121b433a7d111b1313641ee18b5c8acbce7e96d17cc3a046"
+ },
+ "runs": {
+  "tb4-a": {
+   "path": "/tmp/t2w/runs/tb4-a",
+   "meta_sha256": "da2d8e3837c5ace0b2d5cb17bcdf7f65787401bbd5f10c5f80340b0f7c6fbba6"
+  },
+  "gb2-a": {
+   "path": "/tmp/t2w/runs/gb2-a",
+   "meta_sha256": "ae1e1696a2f9a2ecd8eb661497991f46dab45f275eb1ba99ac53b2c2078ab3ff"
+  },
+  "gb2-b": {
+   "path": "/tmp/t2w/runs/gb2-b",
+   "meta_sha256": "94af9efc02f536e8e7fc2cefd6464d773d18ba34fd519a75ee3317ba2c08a579"
+  },
+  "gb2-c": {
+   "path": "/tmp/t2w/runs/gb2-c",
+   "meta_sha256": "a2848ddd6f0de2a7a9f7923b03a007e4c199d1a21bb853ca546f728888f73229"
+  },
+  "gb2-d": {
+   "path": "/tmp/t2w/runs/gb2-d",
+   "meta_sha256": "548bf0810bd888b7d1faf6c9d998b6b910968e22baaea38093578e027bf2eef9"
+  },
+  "gb2-e": {
+   "path": "/tmp/t2w/runs/gb2-e",
+   "meta_sha256": "9544b2579f610a986970bb4cffd9e7dec256be83f3bcff86e1bb442526eb91fd"
+  },
+  "gb2-f": {
+   "path": "/tmp/t2w/runs/gb2-f",
+   "meta_sha256": "b0d3a6d9b8be0eb6812bca2ec6602003fcb24fb025d95552c70c12b176b409b0"
+  },
+  "gb2-g": {
+   "path": "/tmp/t2w/runs/gb2-g",
+   "meta_sha256": "c006144af223f9254a373b9000b8b25f14e1483c05e1c4c9f9c2556331336738"
+  },
+  "gb2-h": {
+   "path": "/tmp/t2w/runs/gb2-h",
+   "meta_sha256": "a14bff123771f555e6a9bc70f598dc84e0ddf289586f85e462254b989a1a7c3a"
+  }
+ },
+ "started_at": "2026-11-10T00:58:23+00:00",
+ "finished_at": "2026-11-10T00:58:36+00:00",
+ "summary": {
+  "pass": 3,
+  "fail": 1,
+  "inconclusive": 3,
+  "error": 0,
+  "hard_fail": true
+ },
+ "checks": [
+  {
+   "id": "L4.loss",
+   "type": "multi_golden",
+   "level": "L4",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 28,
+     "upper": {
+      "signed_mean": 1.419872511355895e-05,
+      "mare": 1.852384173954609e-05,
+      "max_step": 6.516465075146759e-05
+     }
+    }
+   },
+   "metrics": {
+    "d0_max": 0.00014790605366031627,
+    "signed_mean_max": 3.255019836354719e-05,
+    "mare_max": 3.61370037622686e-05,
+    "max_step_max": 0.00014588745486375444,
+    "goldens": 1,
+    "in_band_frac": 0.0,
+    "window": "1:301",
+    "denominator": "golden",
+    "baseline": "gb2-a",
+    "noise_dropped": [],
+    "noise_loo": [
+     {
+      "pair": "gb2-a~gb2-b",
+      "signed_mean": 0.3611527061114695,
+      "mare": 0.6713919972242436,
+      "max_step": 0.6372826662281141
+     },
+     {
+      "pair": "gb2-a~gb2-c",
+      "signed_mean": 0.3112266296363007,
+      "mare": 0.6022288139267963,
+      "max_step": 0.6796092230352779
+     },
+     {
+      "pair": "gb2-a~gb2-d",
+      "signed_mean": 0.5011736733897272,
+      "mare": 0.6721745488561872,
+      "max_step": 0.7809334096867753
+     },
+     {
+      "pair": "gb2-a~gb2-e",
+      "signed_mean": 0.13924205228009479,
+      "mare": 0.5872572370775956,
+      "max_step": 0.7413467944420695
+     },
+     {
+      "pair": "gb2-a~gb2-f",
+      "signed_mean": 1.1590015419817818,
+      "mare": 1.0602038329572971,
+      "max_step": 1.0131292976673785
+     },
+     {
+      "pair": "gb2-a~gb2-g",
+      "signed_mean": 0.17183664298788587,
+      "mare": 0.5195588240908968,
+      "max_step": 0.6513666597017063
+     },
+     {
+      "pair": "gb2-a~gb2-h",
+      "signed_mean": 0.13715640378315666,
+      "mare": 0.5137549556967571,
+      "max_step": 0.5385047738416125
+     },
+     {
+      "pair": "gb2-b~gb2-c",
+      "signed_mean": 0.04991843576421961,
+      "mare": 0.5941456113457217,
+      "max_step": 0.6104800055220889
+     },
+     {
+      "pair": "gb2-b~gb2-d",
+      "signed_mean": 0.140026270347896,
+      "mare": 0.5602434281423802,
+      "max_step": 0.547858428694803
+     },
+     {
+      "pair": "gb2-b~gb2-e",
+      "signed_mean": 0.22190247755666562,
+      "mare": 0.5908228605416601,
+      "max_step": 0.7255698977835321
+     },
+     {
+      "pair": "gb2-b~gb2-f",
+      "signed_mean": 0.6388463034543266,
+      "mare": 0.7387142222340842,
+      "max_step": 0.6801676910794289
+     },
+     {
+      "pair": "gb2-b~gb2-g",
+      "signed_mean": 0.18930608270783983,
+      "mare": 0.5931204213700465,
+      "max_step": 0.5568925716830377
+     },
+     {
+      "pair": "gb2-b~gb2-h",
+      "signed_mean": 0.22398488469727232,
+      "mare": 0.6742680880767044,
+      "max_step": 0.6697116985697004
+     },
+     {
+      "pair": "gb2-c~gb2-d",
+      "signed_mean": 0.18995116593202827,
+      "mare": 0.551017362110756,
+      "max_step": 0.6384064739183114
+     },
+     {
+      "pair": "gb2-c~gb2-e",
+      "signed_mean": 0.17197876653671837,
+      "mare": 0.5426744820033981,
+      "max_step": 0.6045159553380693
+     },
+     {
+      "pair": "gb2-c~gb2-f",
+      "signed_mean": 0.6887716924146408,
+      "mare": 0.7467351988343188,
+      "max_step": 0.6799020400702872
+     },
+     {
+      "pair": "gb2-c~gb2-g",
+      "signed_mean": 0.1393822305512673,
+      "mare": 0.5474985475003096,
+      "max_step": 0.5916950849084932
+     },
+     {
+      "pair": "gb2-c~gb2-h",
+      "signed_mean": 0.1740617936716917,
+      "mare": 0.5872406759241103,
+      "max_step": 0.6642148842967835
+     },
+     {
+      "pair": "gb2-d~gb2-e",
+      "signed_mean": 0.3619227868696821,
+      "mare": 0.5782559643869719,
+      "max_step": 0.7128024448745854
+     },
+     {
+      "pair": "gb2-d~gb2-f",
+      "signed_mean": 0.4988239364358464,
+      "mare": 0.6355924066723065,
+      "max_step": 0.748180546030342
+     },
+     {
+      "pair": "gb2-d~gb2-g",
+      "signed_mean": 0.3293261691809111,
+      "mare": 0.5835070028653851,
+      "max_step": 0.7547019077649828
+     },
+     {
+      "pair": "gb2-d~gb2-h",
+      "signed_mean": 0.36400458137200503,
+      "mare": 0.6673171422190557,
+      "max_step": 0.7385997374511161
+     },
+     {
+      "pair": "gb2-e~gb2-f",
+      "signed_mean": 0.8607595235192539,
+      "mare": 0.8662214517465776,
+      "max_step": 0.9717244003840114
+     },
+     {
+      "pair": "gb2-e~gb2-g",
+      "signed_mean": 0.03260227755837065,
+      "mare": 0.5489004710499545,
+      "max_step": 0.6962120955405844
+     },
+     {
+      "pair": "gb2-e~gb2-h",
+      "signed_mean": 0.002077603087850373,
+      "mare": 0.5748271707248853,
+      "max_step": 0.7210856057795275
+     },
+     {
+      "pair": "gb2-f~gb2-g",
+      "signed_mean": 0.828134210257574,
+      "mare": 0.8710390481510851,
+      "max_step": 0.9741468325573491
+     },
+     {
+      "pair": "gb2-f~gb2-h",
+      "signed_mean": 0.8628116217085403,
+      "mare": 0.9432148506864321,
+      "max_step": 0.9870408469110435
+     },
+     {
+      "pair": "gb2-g~gb2-h",
+      "signed_mean": 0.034675762380018266,
+      "mare": 0.48975378857899265,
+      "max_step": 0.4571352709716275
+     }
+    ]
+   },
+   "r1": 1.950837427266538,
+   "r2": 2.2924733103300707,
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/t2w/runs/tb4-a",
+     "sha256": "da2d8e3837c5ace0b2d5cb17bcdf7f65787401bbd5f10c5f80340b0f7c6fbba6"
+    },
+    {
+     "path": "/tmp/t2w/runs/gb2-a",
+     "sha256": "ae1e1696a2f9a2ecd8eb661497991f46dab45f275eb1ba99ac53b2c2078ab3ff"
+    }
+   ],
+   "message": "超过噪声参照两倍",
+   "details": "details/L4.loss.jsonl"
+  },
+  {
+   "id": "L4.loss.tail",
+   "type": "multi_golden",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 28,
+     "upper": {
+      "signed_mean": 2.068067256114936e-05,
+      "mare": 2.3535625377455514e-05,
+      "max_step": 6.516465075146759e-05
+     }
+    }
+   },
+   "metrics": {
+    "d0_max": 0.00014790605366031627,
+    "signed_mean_max": 1.0843451529485145e-05,
+    "mare_max": 1.620572560057365e-05,
+    "max_step_max": 5.4405524547856775e-05,
+    "goldens": 1,
+    "in_band_frac": 0.0,
+    "window": "101:301",
+    "denominator": "golden",
+    "baseline": "gb2-a",
+    "noise_dropped": [],
+    "noise_loo": [
+     {
+      "pair": "gb2-a~gb2-b",
+      "signed_mean": 0.3863627606421399,
+      "mare": 0.5843353737760928,
+      "max_step": 0.6372826662281141
+     },
+     {
+      "pair": "gb2-a~gb2-c",
+      "signed_mean": 0.3779780861067274,
+      "mare": 0.5484739773283819,
+      "max_step": 0.6796092230352779
+     },
+     {
+      "pair": "gb2-a~gb2-d",
+      "signed_mean": 0.5287811714538668,
+      "mare": 0.6335837244796425,
+      "max_step": 0.7809334096867753
+     },
+     {
+      "pair": "gb2-a~gb2-e",
+      "signed_mean": 0.14911848244664347,
+      "mare": 0.528908031984512,
+      "max_step": 0.7413467944420695
+     },
+     {
+      "pair": "gb2-a~gb2-f",
+      "signed_mean": 1.1185844881596916,
+      "mare": 1.0859321259321117,
+      "max_step": 1.0131292976673785
+     },
+     {
+      "pair": "gb2-a~gb2-g",
+      "signed_mean": 0.16194241565768275,
+      "mare": 0.45328624868959455,
+      "max_step": 0.6513666597017063
+     },
+     {
+      "pair": "gb2-a~gb2-h",
+      "signed_mean": 0.10598191582707091,
+      "mare": 0.44805252345403745,
+      "max_step": 0.5385047738416125
+     },
+     {
+      "pair": "gb2-b~gb2-c",
+      "signed_mean": 0.00837935025344861,
+      "mare": 0.48730284241898353,
+      "max_step": 0.6104800055220889
+     },
+     {
+      "pair": "gb2-b~gb2-d",
+      "signed_mean": 0.14242153329341464,
+      "mare": 0.4632643016831926,
+      "max_step": 0.547858428694803
+     },
+     {
+      "pair": "gb2-b~gb2-e",
+      "signed_mean": 0.23723832088790692,
+      "mare": 0.488540805518884,
+      "max_step": 0.7255698977835321
+     },
+     {
+      "pair": "gb2-b~gb2-f",
+      "signed_mean": 0.6136341703677841,
+      "mare": 0.6708888165036981,
+      "max_step": 0.6801676910794289
+     },
+     {
+      "pair": "gb2-b~gb2-g",
+      "signed_mean": 0.22441270298048746,
+      "mare": 0.49017835563698264,
+      "max_step": 0.5568925716830377
+     },
+     {
+      "pair": "gb2-b~gb2-h",
+      "signed_mean": 0.2803714920066089,
+      "mare": 0.5802211134482929,
+      "max_step": 0.6697116985697004
+     },
+     {
+      "pair": "gb2-c~gb2-d",
+      "signed_mean": 0.15080576100272758,
+      "mare": 0.47883681895162394,
+      "max_step": 0.6384064739183114
+     },
+     {
+      "pair": "gb2-c~gb2-e",
+      "signed_mean": 0.22885497517880493,
+      "mare": 0.4614756653618319,
+      "max_step": 0.6045159553380693
+     },
+     {
+      "pair": "gb2-c~gb2-f",
+      "signed_mean": 0.6220186260389571,
+      "mare": 0.685379589115464,
+      "max_step": 0.6799020400702872
+     },
+     {
+      "pair": "gb2-c~gb2-g",
+      "signed_mean": 0.21602887144799107,
+      "mare": 0.4893502883991793,
+      "max_step": 0.5916950849084932
+     },
+     {
+      "pair": "gb2-c~gb2-h",
+      "signed_mean": 0.2719886096083853,
+      "mare": 0.52986210501621,
+      "max_step": 0.6642148842967835
+     },
+     {
+      "pair": "gb2-d~gb2-e",
+      "signed_mean": 0.3796544902251865,
+      "mare": 0.5261734041265472,
+      "max_step": 0.7128024448745854
+     },
+     {
+      "pair": "gb2-d~gb2-f",
+      "signed_mean": 0.471215166060074,
+      "mare": 0.5569851513536586,
+      "max_step": 0.748180546030342
+     },
+     {
+      "pair": "gb2-d~gb2-g",
+      "signed_mean": 0.3668286288057331,
+      "mare": 0.5272645696672923,
+      "max_step": 0.7547019077649828
+     },
+     {
+      "pair": "gb2-d~gb2-h",
+      "signed_mean": 0.42278732262984525,
+      "mare": 0.6233875896580199,
+      "max_step": 0.7385997374511161
+     },
+     {
+      "pair": "gb2-e~gb2-f",
+      "signed_mean": 0.8508819607723497,
+      "mare": 0.8339296195373714,
+      "max_step": 0.9717244003840114
+     },
+     {
+      "pair": "gb2-e~gb2-g",
+      "signed_mean": 0.012830606160137065,
+      "mare": 0.47354601014627234,
+      "max_step": 0.6962120955405844
+     },
+     {
+      "pair": "gb2-e~gb2-h",
+      "signed_mean": 0.04312938799236353,
+      "mare": 0.5161608775171522,
+      "max_step": 0.7210856057795275
+     },
+     {
+      "pair": "gb2-f~gb2-g",
+      "signed_mean": 0.8380292831826182,
+      "mare": 0.8501025028985569,
+      "max_step": 0.9741468325573491
+     },
+     {
+      "pair": "gb2-f~gb2-h",
+      "signed_mean": 0.8939870082100028,
+      "mare": 0.9208678665267852,
+      "max_step": 0.9870408469110435
+     },
+     {
+      "pair": "gb2-g~gb2-h",
+      "signed_mean": 0.05595699302109952,
+      "mare": 0.41053175290099075,
+      "max_step": 0.4571352709716275
+     }
+    ]
+   },
+   "r1": 0.6885615037065008,
+   "r2": 0.5243277991768805,
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/t2w/runs/tb4-a",
+     "sha256": "da2d8e3837c5ace0b2d5cb17bcdf7f65787401bbd5f10c5f80340b0f7c6fbba6"
+    },
+    {
+     "path": "/tmp/t2w/runs/gb2-a",
+     "sha256": "ae1e1696a2f9a2ecd8eb661497991f46dab45f275eb1ba99ac53b2c2078ab3ff"
+    }
+   ],
+   "message": "在噪声参照内",
+   "details": "details/L4.loss.tail.jsonl"
+  },
+  {
+   "id": "L4.indexer_loss",
+   "type": "loss_series",
+   "level": "L4",
+   "hard": true,
+   "status": "inconclusive",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 28,
+     "upper": {
+      "signed_mean": 0.0001836954169776531,
+      "mare": 0.00045400096986613844,
+      "max_step": 0.0041854575500851875
+     }
+    }
+   },
+   "metrics": {
+    "d0": -0.0012222132902341403,
+    "signed_mean": 0.00021746821976823035,
+    "mare": 0.0007302700354220787,
+    "max_step": 0.0038628551417048437,
+    "max_step_at": 210,
+    "window": "1:301",
+    "denominator": "golden",
+    "nonfinite_steps": [],
+    "signed_mean_se": 0.00017078008319303985,
+    "first_differ_step": 1,
+    "noise_dropped": [],
+    "noise_loo": [
+     {
+      "pair": "gb2-a~gb2-b",
+      "signed_mean": 0.928072991087162,
+      "mare": 0.9063930559029647,
+      "max_step": 0.5405961578178264
+     },
+     {
+      "pair": "gb2-a~gb2-c",
+      "signed_mean": 0.06824207603738626,
+      "mare": 0.706526608028032,
+      "max_step": 0.4794785313132528
+     },
+     {
+      "pair": "gb2-a~gb2-d",
+      "signed_mean": 0.616104492646926,
+      "mare": 0.7967862137643797,
+      "max_step": 0.6592908211389547
+     },
+     {
+      "pair": "gb2-a~gb2-e",
+      "signed_mean": 0.9116269120335703,
+      "mare": 0.9005307173201558,
+      "max_step": 1.0517768441940916
+     },
+     {
+      "pair": "gb2-a~gb2-f",
+      "signed_mean": 0.07036579069940628,
+      "mare": 0.679253344700838,
+      "max_step": 0.5042174781154434
+     },
+     {
+      "pair": "gb2-a~gb2-g",
+      "signed_mean": 0.5924444405990688,
+      "mare": 0.799642551741722,
+      "max_step": 0.5507457163759313
+     },
+     {
+      "pair": "gb2-a~gb2-h",
+      "signed_mean": 0.139869189553094,
+      "mare": 0.6487223435731501,
+      "max_step": 0.4505562954332233
+     },
+     {
+      "pair": "gb2-b~gb2-c",
+      "signed_mean": 0.861473896424969,
+      "mare": 0.958440253381199,
+      "max_step": 0.651465350691479
+     },
+     {
+      "pair": "gb2-b~gb2-d",
+      "signed_mean": 0.3130116161189266,
+      "mare": 0.8254148907785499,
+      "max_step": 0.6390229835914382
+     },
+     {
+      "pair": "gb2-b~gb2-e",
+      "signed_mean": 0.01711184159887028,
+      "mare": 0.7889219595111124,
+      "max_step": 0.6899877205067538
+     },
+     {
+      "pair": "gb2-b~gb2-f",
+      "signed_mean": 1.0163135322711643,
+      "mare": 0.8927930672564462,
+      "max_step": 0.5186822870130731
+     },
+     {
+      "pair": "gb2-b~gb2-g",
+      "signed_mean": 0.3364448785527814,
+      "mare": 0.7109804376674718,
+      "max_step": 0.4705108172137931
+     },
+     {
+      "pair": "gb2-b~gb2-h",
+      "signed_mean": 0.7897985599035442,
+      "mare": 0.8891239928621976,
+      "max_step": 0.5503663621757662
+     },
+     {
+      "pair": "gb2-c~gb2-d",
+      "signed_mean": 0.5470943836478053,
+      "mare": 0.8671516008694528,
+      "max_step": 0.5284201594654447
+     },
+     {
+      "pair": "gb2-c~gb2-e",
+      "signed_mean": 0.8425275638087636,
+      "mare": 1.0433618542962757,
+      "max_step": 0.7035217642573842
+     },
+     {
+      "pair": "gb2-c~gb2-f",
+      "signed_mean": 0.13928873168145306,
+      "mare": 0.6699922766799081,
+      "max_step": 0.4813533962369214
+     },
+     {
+      "pair": "gb2-c~gb2-g",
+      "signed_mean": 0.5234010241792596,
+      "mare": 0.8412737588359396,
+      "max_step": 0.57056363014799
+     },
+     {
+      "pair": "gb2-c~gb2-h",
+      "signed_mean": 0.0708223936912875,
+      "mare": 0.7125382708050674,
+      "max_step": 0.4896642183025149
+     },
+     {
+      "pair": "gb2-d~gb2-e",
+      "signed_mean": 0.2948454413088609,
+      "mare": 0.8813574496342739,
+      "max_step": 0.6340458200856555
+     },
+     {
+      "pair": "gb2-d~gb2-f",
+      "signed_mean": 0.6878423672080026,
+      "mare": 0.8776808831854885,
+      "max_step": 0.549715267675435
+     },
+     {
+      "pair": "gb2-d~gb2-g",
+      "signed_mean": 0.024466016393782795,
+      "mare": 0.8020180302159345,
+      "max_step": 0.47818861034336146
+     },
+     {
+      "pair": "gb2-d~gb2-h",
+      "signed_mean": 0.4774212266313471,
+      "mare": 0.8078830670574623,
+      "max_step": 0.5233013228821911
+     },
+     {
+      "pair": "gb2-e~gb2-f",
+      "signed_mean": 0.983948327210887,
+      "mare": 0.9053737934363509,
+      "max_step": 0.7126336084822593
+     },
+     {
+      "pair": "gb2-e~gb2-g",
+      "signed_mean": 0.32050648606400095,
+      "mare": 0.792311382922474,
+      "max_step": 0.6077789137503902
+     },
+     {
+      "pair": "gb2-e~gb2-h",
+      "signed_mean": 0.7737598102454263,
+      "mare": 0.8951477114320713,
+      "max_step": 0.9507720249975984
+     },
+     {
+      "pair": "gb2-f~gb2-g",
+      "signed_mean": 0.6620925105576964,
+      "mare": 0.844414485347513,
+      "max_step": 0.5909106436373542
+     },
+     {
+      "pair": "gb2-f~gb2-h",
+      "signed_mean": 0.20948401919249957,
+      "mare": 0.7204498343989518,
+      "max_step": 0.43772504086743574
+     },
+     {
+      "pair": "gb2-g~gb2-h",
+      "signed_mean": 0.4537925597015403,
+      "mare": 0.7924464633752349,
+      "max_step": 0.6673847375192532
+     }
+    ]
+   },
+   "r1": 1.6085208708637733,
+   "r2": 1.183852179582062,
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/t2w/runs/tb4-a",
+     "sha256": "da2d8e3837c5ace0b2d5cb17bcdf7f65787401bbd5f10c5f80340b0f7c6fbba6"
+    },
+    {
+     "path": "/tmp/t2w/runs/gb2-a",
+     "sha256": "ae1e1696a2f9a2ecd8eb661497991f46dab45f275eb1ba99ac53b2c2078ab3ff"
+    }
+   ],
+   "message": "介于噪声参照一到两倍之间，或参照不足"
+  },
+  {
+   "id": "L4.grad_norm",
+   "type": "loss_series",
+   "level": "L4",
+   "hard": true,
+   "status": "inconclusive",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 28,
+     "upper": {
+      "signed_mean": 0.0007645011410006703,
+      "mare": 0.005257264566935113,
+      "max_step": 0.10224025167054343
+     }
+    }
+   },
+   "metrics": {
+    "d0": 0.003057811412261378,
+    "signed_mean": 0.0012284690635994697,
+    "mare": 0.0054645456100849655,
+    "max_step": 0.03681018199523599,
+    "max_step_at": 233,
+    "window": "1:301",
+    "denominator": "golden",
+    "nonfinite_steps": [],
+    "signed_mean_se": 0.0007633336129678084,
+    "first_differ_step": 1,
+    "noise_dropped": [],
+    "noise_loo": [
+     {
+      "pair": "gb2-a~gb2-b",
+      "signed_mean": 0.1474912624205287,
+      "mare": 0.7689187351790576,
+      "max_step": 0.3483830588553755
+     },
+     {
+      "pair": "gb2-a~gb2-c",
+      "signed_mean": 0.7418417207607411,
+      "mare": 0.7292953830156811,
+      "max_step": 0.2560778475229799
+     },
+     {
+      "pair": "gb2-a~gb2-d",
+      "signed_mean": 0.011109012386813517,
+      "mare": 0.6669093650588008,
+      "max_step": 0.41667700213888326
+     },
+     {
+      "pair": "gb2-a~gb2-e",
+      "signed_mean": 0.4409623355615349,
+      "mare": 0.8499017733823575,
+      "max_step": 0.3441038436099038
+     },
+     {
+      "pair": "gb2-a~gb2-f",
+      "signed_mean": 0.2743046756619591,
+      "mare": 0.8516920558585037,
+      "max_step": 0.3786559993294297
+     },
+     {
+      "pair": "gb2-a~gb2-g",
+      "signed_mean": 0.10785691585744682,
+      "mare": 0.7548776714762757,
+      "max_step": 0.6159981695294973
+     },
+     {
+      "pair": "gb2-a~gb2-h",
+      "signed_mean": 0.11755952368309786,
+      "mare": 0.7347074109249971,
+      "max_step": 0.5088588642552446
+     },
+     {
+      "pair": "gb2-b~gb2-c",
+      "signed_mean": 0.9242999716548106,
+      "mare": 0.8042984179840459,
+      "max_step": 0.413672177611843
+     },
+     {
+      "pair": "gb2-b~gb2-d",
+      "signed_mean": 0.19556931455652385,
+      "mare": 0.8154574724143443,
+      "max_step": 0.41555033357817
+     },
+     {
+      "pair": "gb2-b~gb2-e",
+      "signed_mean": 0.6337351979986241,
+      "mare": 0.9309928693535419,
+      "max_step": 0.4634096685672468
+     },
+     {
+      "pair": "gb2-b~gb2-f",
+      "signed_mean": 0.1084240155571905,
+      "mare": 0.6986266516539221,
+      "max_step": 0.3130288549936399
+     },
+     {
+      "pair": "gb2-b~gb2-g",
+      "signed_mean": 0.3153298132751315,
+      "mare": 1.050095576420172,
+      "max_step": 1.124981411181435
+     },
+     {
+      "pair": "gb2-b~gb2-h",
+      "signed_mean": 0.08342038805913761,
+      "mare": 0.9522942696407213,
+      "max_step": 0.8889035765931619
+     },
+     {
+      "pair": "gb2-c~gb2-d",
+      "signed_mean": 0.704690809277614,
+      "mare": 0.6964451833946486,
+      "max_step": 0.2848679668225711
+     },
+     {
+      "pair": "gb2-c~gb2-e",
+      "signed_mean": 0.27987089265682036,
+      "mare": 0.7885724277371973,
+      "max_step": 0.4581896887924596
+     },
+     {
+      "pair": "gb2-c~gb2-f",
+      "signed_mean": 1.081899849255281,
+      "mare": 0.7543219520924073,
+      "max_step": 0.21084747096413686
+     },
+     {
+      "pair": "gb2-c~gb2-g",
+      "signed_mean": 0.6029889903089758,
+      "mare": 0.836233178331872,
+      "max_step": 0.5625359561642073
+     },
+     {
+      "pair": "gb2-c~gb2-h",
+      "signed_mean": 0.8292260875957598,
+      "mare": 0.8838344949328584,
+      "max_step": 0.45594757611251613
+     },
+     {
+      "pair": "gb2-d~gb2-e",
+      "signed_mean": 0.4551819786151543,
+      "mare": 0.8316920790709911,
+      "max_step": 0.4523909965907518
+     },
+     {
+      "pair": "gb2-d~gb2-f",
+      "signed_mean": 0.2668731795018444,
+      "mare": 0.7814454199140826,
+      "max_step": 0.26946501665044675
+     },
+     {
+      "pair": "gb2-d~gb2-g",
+      "signed_mean": 0.14227197655223522,
+      "mare": 0.900604982811332,
+      "max_step": 0.724231541337857
+     },
+     {
+      "pair": "gb2-d~gb2-h",
+      "signed_mean": 0.09624591339471472,
+      "mare": 0.8417707316903127,
+      "max_step": 0.6159768970101188
+     },
+     {
+      "pair": "gb2-e~gb2-f",
+      "signed_mean": 0.6696614372500729,
+      "mare": 0.875165739675417,
+      "max_step": 0.6004469818769042
+     },
+     {
+      "pair": "gb2-e~gb2-g",
+      "signed_mean": 0.27958513256464923,
+      "mare": 0.9473891903843756,
+      "max_step": 0.517622776736981
+     },
+     {
+      "pair": "gb2-e~gb2-h",
+      "signed_mean": 0.5106410172145197,
+      "mare": 0.9396524763414997,
+      "max_step": 0.43353303295469986
+     },
+     {
+      "pair": "gb2-f~gb2-g",
+      "signed_mean": 0.44304353643688243,
+      "mare": 0.9409254236653247,
+      "max_step": 0.7367872655506104
+     },
+     {
+      "pair": "gb2-f~gb2-h",
+      "signed_mean": 0.1951150567629914,
+      "mare": 0.8144491832521742,
+      "max_step": 0.6284032351626828
+     },
+     {
+      "pair": "gb2-g~gb2-h",
+      "signed_mean": 0.1881205527094273,
+      "mare": 0.793335844543464,
+      "max_step": 0.545563458204212
+     }
+    ]
+   },
+   "r1": 1.0394275464950955,
+   "r2": 1.606889771271633,
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/t2w/runs/tb4-a",
+     "sha256": "da2d8e3837c5ace0b2d5cb17bcdf7f65787401bbd5f10c5f80340b0f7c6fbba6"
+    },
+    {
+     "path": "/tmp/t2w/runs/gb2-a",
+     "sha256": "ae1e1696a2f9a2ecd8eb661497991f46dab45f275eb1ba99ac53b2c2078ab3ff"
+    }
+   ],
+   "message": "介于噪声参照一到两倍之间，或参照不足"
+  },
+  {
+   "id": "L4.param_norm",
+   "type": "loss_series",
+   "level": "L4",
+   "hard": true,
+   "status": "inconclusive",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 28,
+     "upper": {
+      "signed_mean": 8.921398145872397e-09,
+      "mare": 8.933727182735584e-09,
+      "max_step": 3.9730287420786e-08
+     }
+    }
+   },
+   "metrics": {
+    "d0": -1.9229161421270114e-09,
+    "signed_mean": -1.4258760347579805e-08,
+    "mare": 1.4258760347579805e-08,
+    "max_step": 2.6263875126831553e-08,
+    "max_step_at": 263,
+    "window": "1:301",
+    "denominator": "golden",
+    "nonfinite_steps": [],
+    "signed_mean_se": 5.189139204868697e-09,
+    "first_differ_step": 1,
+    "noise_dropped": [],
+    "noise_loo": [
+     {
+      "pair": "gb2-a~gb2-b",
+      "signed_mean": 0.3341337371115238,
+      "mare": 0.35529651698887926,
+      "max_step": 0.3316476536811902
+     },
+     {
+      "pair": "gb2-a~gb2-c",
+      "signed_mean": 0.4015031796922607,
+      "mare": 0.4236006379626908,
+      "max_step": 0.3988040509212894
+     },
+     {
+      "pair": "gb2-a~gb2-d",
+      "signed_mean": 0.4004893242321489,
+      "mare": 0.4492280067977351,
+      "max_step": 0.585691061021042
+     },
+     {
+      "pair": "gb2-a~gb2-e",
+      "signed_mean": 0.09767621380195668,
+      "mare": 0.21086764206752656,
+      "max_step": 0.3792697067815289
+     },
+     {
+      "pair": "gb2-a~gb2-f",
+      "signed_mean": 0.9095973171024008,
+      "mare": 0.9196847095738963,
+      "max_step": 0.8404564881278145
+     },
+     {
+      "pair": "gb2-a~gb2-g",
+      "signed_mean": 0.09040266058707438,
+      "mare": 0.14341519946767575,
+      "max_step": 0.20072608803778672
+     },
+     {
+      "pair": "gb2-a~gb2-h",
+      "signed_mean": 0.019356816148275516,
+      "mare": 0.16232061322440292,
+      "max_step": 0.29355551495908483
+     },
+     {
+      "pair": "gb2-b~gb2-c",
+      "signed_mean": 0.06736944271348862,
+      "mare": 0.1579982326204007,
+      "max_step": 0.1668875295515117
+     },
+     {
+      "pair": "gb2-b~gb2-d",
+      "signed_mean": 0.0663555878732049,
+      "mare": 0.22736334009697398,
+      "max_step": 0.27574797942751367
+     },
+     {
+      "pair": "gb2-b~gb2-e",
+      "signed_mean": 0.2364575251454812,
+      "mare": 0.2725099770763525,
+      "max_step": 0.30638848711598216
+     },
+     {
+      "pair": "gb2-b~gb2-f",
+      "signed_mean": 0.5754635847801338,
+      "mare": 0.5758941629031629,
+      "max_step": 0.6373109613381713
+     },
+     {
+      "pair": "gb2-b~gb2-g",
+      "signed_mean": 0.4245364016779633,
+      "mare": 0.4343933200001932,
+      "max_step": 0.5173003865589071
+     },
+     {
+      "pair": "gb2-b~gb2-h",
+      "signed_mean": 0.3534905571580618,
+      "mare": 0.4121188908361734,
+      "max_step": 0.45841025865260027
+     },
+     {
+      "pair": "gb2-c~gb2-d",
+      "signed_mean": 0.0010138553690140187,
+      "mare": 0.26224953633302095,
+      "max_step": 0.3419951625446002
+     },
+     {
+      "pair": "gb2-c~gb2-e",
+      "signed_mean": 0.3038269683302653,
+      "mare": 0.3281642401720323,
+      "max_step": 0.2629095002197366
+     },
+     {
+      "pair": "gb2-c~gb2-f",
+      "signed_mean": 0.5080941423363441,
+      "mare": 0.5244026336447646,
+      "max_step": 0.5176991437737963
+     },
+     {
+      "pair": "gb2-c~gb2-g",
+      "signed_mean": 0.491905844975253,
+      "mare": 0.49131328075414143,
+      "max_step": 0.48424064226223285
+     },
+     {
+      "pair": "gb2-c~gb2-h",
+      "signed_mean": 0.4208600002521422,
+      "mare": 0.43730695255379126,
+      "max_step": 0.48014389994414247
+     },
+     {
+      "pair": "gb2-d~gb2-e",
+      "signed_mean": 0.3028131144289089,
+      "mare": 0.32353439577033866,
+      "max_step": 0.4645513243050339
+     },
+     {
+      "pair": "gb2-d~gb2-f",
+      "signed_mean": 0.5091079971522281,
+      "mare": 0.5089027468673503,
+      "max_step": 0.4538009747033291
+     },
+     {
+      "pair": "gb2-d~gb2-g",
+      "signed_mean": 0.4908919917398807,
+      "mare": 0.5009385181907176,
+      "max_step": 0.7820702796965667
+     },
+     {
+      "pair": "gb2-d~gb2-h",
+      "signed_mean": 0.4198461467575794,
+      "mare": 0.4642817568481564,
+      "max_step": 0.596831033627583
+     },
+     {
+      "pair": "gb2-e~gb2-f",
+      "signed_mean": 0.8119211058625273,
+      "mare": 0.8108108930562982,
+      "max_step": 0.6447123729585327
+     },
+     {
+      "pair": "gb2-e~gb2-g",
+      "signed_mean": 0.18807887620452055,
+      "mare": 0.28193472166269173,
+      "max_step": 0.5145256412733317
+     },
+     {
+      "pair": "gb2-e~gb2-h",
+      "signed_mean": 0.11703303125544094,
+      "mare": 0.28939845765420763,
+      "max_step": 0.2618512809819318
+     },
+     {
+      "pair": "gb2-f~gb2-g",
+      "signed_mean": 1.0764793880643144,
+      "mare": 1.060279404965142,
+      "max_step": 1.189829591568246
+     },
+     {
+      "pair": "gb2-f~gb2-h",
+      "signed_mean": 0.9289541547081205,
+      "mare": 0.9431476225201944,
+      "max_step": 0.7842477221952355
+     },
+     {
+      "pair": "gb2-g~gb2-h",
+      "signed_mean": 0.07104584405870512,
+      "mare": 0.19264351910556732,
+      "max_step": 0.27545027228045404
+     }
+    ]
+   },
+   "r1": 1.5960595231892507,
+   "r2": 1.5982652174510124,
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/t2w/runs/tb4-a",
+     "sha256": "da2d8e3837c5ace0b2d5cb17bcdf7f65787401bbd5f10c5f80340b0f7c6fbba6"
+    },
+    {
+     "path": "/tmp/t2w/runs/gb2-a",
+     "sha256": "ae1e1696a2f9a2ecd8eb661497991f46dab45f275eb1ba99ac53b2c2078ab3ff"
+    }
+   ],
+   "message": "介于噪声参照一到两倍之间，或参照不足"
+  },
+  {
+   "id": "L4.router.bias_mean",
+   "type": "router_stats",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 28,
+     "upper": {
+      "signed_mean": 0.11965253591721067,
+      "mare": 0.12148424822409658,
+      "max_step": 0.4387426662455943
+     }
+    }
+   },
+   "metrics": {
+    "signed_mean_max": 0.021716713737665476,
+    "mare_max": 0.024467815737265076,
+    "max_step_max": 0.2524014752259738,
+    "stats": 1
+   },
+   "r1": 0.20140731078263238,
+   "r2": 0.181498148544813,
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/t2w/runs/tb4-a",
+     "sha256": "da2d8e3837c5ace0b2d5cb17bcdf7f65787401bbd5f10c5f80340b0f7c6fbba6"
+    },
+    {
+     "path": "/tmp/t2w/runs/gb2-a",
+     "sha256": "ae1e1696a2f9a2ecd8eb661497991f46dab45f275eb1ba99ac53b2c2078ab3ff"
+    }
+   ],
+   "message": "在噪声参照内",
+   "details": "details/L4.router.bias_mean.jsonl"
+  },
+  {
+   "id": "L4.router.bias_std",
+   "type": "router_stats",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 28,
+     "upper": {
+      "signed_mean": 0.002597080229106964,
+      "mare": 0.0028240729055921104,
+      "max_step": 0.010730115963716804
+     }
+    }
+   },
+   "metrics": {
+    "signed_mean_max": 0.00031422833241228954,
+    "mare_max": 0.0015777122711411972,
+    "max_step_max": 0.0053464860858289985,
+    "stats": 1
+   },
+   "r1": 0.5586655599496307,
+   "r2": 0.1209929246276464,
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/t2w/runs/tb4-a",
+     "sha256": "da2d8e3837c5ace0b2d5cb17bcdf7f65787401bbd5f10c5f80340b0f7c6fbba6"
+    },
+    {
+     "path": "/tmp/t2w/runs/gb2-a",
+     "sha256": "ae1e1696a2f9a2ecd8eb661497991f46dab45f275eb1ba99ac53b2c2078ab3ff"
+    }
+   ],
+   "message": "在噪声参照内",
+   "details": "details/L4.router.bias_std.jsonl"
+  }
+ ]
+}

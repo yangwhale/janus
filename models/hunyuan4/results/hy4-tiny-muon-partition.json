@@ -1,0 +1,4603 @@
+{
+ "summary": {
+  "model": "hy4-tiny",
+  "overrides": [],
+  "scan_layers": true,
+  "muon_params": 4851712,
+  "adam_params": 530609,
+  "n_muon": 142,
+  "n_adam": 112
+ },
+ "rows": [
+  {
+   "path": "decoder/decoder_norm/scale",
+   "shape": [
+    256
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/dense_layers/mhc_attention/post_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/dense_layers/mhc_attention/post_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/dense_layers/mhc_attention/post_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/dense_layers/mhc_attention/pre_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/dense_layers/mhc_attention/pre_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/dense_layers/mhc_attention/pre_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/dense_layers/mhc_mlp/post_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/dense_layers/mhc_mlp/post_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/dense_layers/mhc_mlp/post_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/dense_layers/mhc_mlp/pre_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/dense_layers/mhc_mlp/pre_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/dense_layers/mhc_mlp/pre_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/dense_layers/mlp/wi_0/kernel",
+   "shape": [
+    256,
+    1,
+    512
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    512
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/dense_layers/mlp/wi_1/kernel",
+   "shape": [
+    256,
+    1,
+    512
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    512
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/dense_layers/mlp/wo/kernel",
+   "shape": [
+    512,
+    1,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    512,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/dense_layers/post_self_attention_layer_norm/scale",
+   "shape": [
+    256,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/dense_layers/pre_self_attention_layer_norm/scale",
+   "shape": [
+    256,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/dense_layers/self_attention/gate_proj/kernel",
+   "shape": [
+    256,
+    1,
+    4,
+    32
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    32
+   ],
+   "n_matrices": 4,
+   "batch_axes": [
+    1,
+    2
+   ]
+  },
+  {
+   "path": "decoder/dense_layers/self_attention/indexer/k_norm/bias",
+   "shape": [
+    32,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 32,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/dense_layers/self_attention/indexer/k_norm/scale",
+   "shape": [
+    32,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 32,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/dense_layers/self_attention/indexer/weights_proj/kernel",
+   "shape": [
+    256,
+    1,
+    16
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    16
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/dense_layers/self_attention/indexer/wk/kernel",
+   "shape": [
+    256,
+    1,
+    32
+   ],
+   "dtype": "float32",
+   "numel": 8192,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    32
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/dense_layers/self_attention/indexer/wq_b/kernel",
+   "shape": [
+    64,
+    1,
+    16,
+    32
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    512
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/dense_layers/self_attention/kv_norm/scale",
+   "shape": [
+    32,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 32,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/dense_layers/self_attention/out/kernel",
+   "shape": [
+    4,
+    1,
+    32,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0,
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    128,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/dense_layers/self_attention/q_norm/scale",
+   "shape": [
+    64,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 64,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/dense_layers/self_attention/sinks",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/dense_layers/self_attention/wkv_a/kernel",
+   "shape": [
+    256,
+    1,
+    48
+   ],
+   "dtype": "float32",
+   "numel": 12288,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    48
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/dense_layers/self_attention/wkv_b/kernel",
+   "shape": [
+    32,
+    1,
+    4,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 8192,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    32,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/dense_layers/self_attention/wq_a/kernel",
+   "shape": [
+    256,
+    1,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/dense_layers/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    1,
+    4,
+    48
+   ],
+   "dtype": "float32",
+   "numel": 12288,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    192
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/hc_head/hc_base",
+   "shape": [
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/hc_head/hc_fn",
+   "shape": [
+    1024,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/hc_head/hc_scale",
+   "shape": [
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/logits_dense/kernel",
+   "shape": [
+    256,
+    1024
+   ],
+   "dtype": "float32",
+   "numel": 262144,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/gate/kernel",
+   "shape": [
+    256,
+    1,
+    8
+   ],
+   "dtype": "float32",
+   "numel": 2048,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    8
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+   "shape": [
+    8,
+    1,
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0,
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_1",
+   "shape": [
+    8,
+    1,
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0,
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wo",
+   "shape": [
+    8,
+    1,
+    64,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    256
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0,
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/shared_experts/wi_0/kernel",
+   "shape": [
+    256,
+    1,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/shared_experts/wi_1/kernel",
+   "shape": [
+    256,
+    1,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/shared_experts/wo/kernel",
+   "shape": [
+    64,
+    1,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/mhc_attention/post_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/mhc_attention/post_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/mhc_attention/post_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/mhc_attention/pre_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/mhc_attention/pre_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/mhc_attention/pre_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/mhc_mlp/post_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/mhc_mlp/post_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/mhc_mlp/post_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/mhc_mlp/pre_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/mhc_mlp/pre_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/mhc_mlp/pre_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/post_self_attention_layer_norm/scale",
+   "shape": [
+    256,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/pre_self_attention_layer_norm/scale",
+   "shape": [
+    256,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/self_attention/gate_proj/kernel",
+   "shape": [
+    256,
+    1,
+    4,
+    32
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    32
+   ],
+   "n_matrices": 4,
+   "batch_axes": [
+    1,
+    2
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/self_attention/indexer/k_norm/bias",
+   "shape": [
+    32,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 32,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/self_attention/indexer/k_norm/scale",
+   "shape": [
+    32,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 32,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/self_attention/indexer/weights_proj/kernel",
+   "shape": [
+    256,
+    1,
+    16
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    16
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/self_attention/indexer/wk/kernel",
+   "shape": [
+    256,
+    1,
+    32
+   ],
+   "dtype": "float32",
+   "numel": 8192,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    32
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/self_attention/indexer/wq_b/kernel",
+   "shape": [
+    64,
+    1,
+    16,
+    32
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    512
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/self_attention/kv_norm/scale",
+   "shape": [
+    32,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 32,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/self_attention/out/kernel",
+   "shape": [
+    4,
+    1,
+    32,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0,
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    128,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/self_attention/q_norm/scale",
+   "shape": [
+    64,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 64,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/self_attention/sinks",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/self_attention/wkv_a/kernel",
+   "shape": [
+    256,
+    1,
+    48
+   ],
+   "dtype": "float32",
+   "numel": 12288,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    48
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/self_attention/wkv_b/kernel",
+   "shape": [
+    32,
+    1,
+    4,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 8192,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    32,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/self_attention/wq_a/kernel",
+   "shape": [
+    256,
+    1,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    1,
+    4,
+    48
+   ],
+   "dtype": "float32",
+   "numel": 12288,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    192
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/gate/kernel",
+   "shape": [
+    256,
+    1,
+    8
+   ],
+   "dtype": "float32",
+   "numel": 2048,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    8
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+   "shape": [
+    8,
+    1,
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0,
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_1",
+   "shape": [
+    8,
+    1,
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0,
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wo",
+   "shape": [
+    8,
+    1,
+    64,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    256
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0,
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/shared_experts/wi_0/kernel",
+   "shape": [
+    256,
+    1,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/shared_experts/wi_1/kernel",
+   "shape": [
+    256,
+    1,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/shared_experts/wo/kernel",
+   "shape": [
+    64,
+    1,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/mhc_attention/post_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/mhc_attention/post_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/mhc_attention/post_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/mhc_attention/pre_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/mhc_attention/pre_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/mhc_attention/pre_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/mhc_mlp/post_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/mhc_mlp/post_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/mhc_mlp/post_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/mhc_mlp/pre_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/mhc_mlp/pre_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/mhc_mlp/pre_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/post_self_attention_layer_norm/scale",
+   "shape": [
+    256,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/pre_self_attention_layer_norm/scale",
+   "shape": [
+    256,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/self_attention/gate_proj/kernel",
+   "shape": [
+    256,
+    1,
+    4,
+    32
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    32
+   ],
+   "n_matrices": 4,
+   "batch_axes": [
+    1,
+    2
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/self_attention/kv_norm/scale",
+   "shape": [
+    32,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 32,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/self_attention/out/kernel",
+   "shape": [
+    4,
+    1,
+    32,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0,
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    128,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/self_attention/q_norm/scale",
+   "shape": [
+    64,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 64,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/self_attention/sinks",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/self_attention/wkv_a/kernel",
+   "shape": [
+    256,
+    1,
+    48
+   ],
+   "dtype": "float32",
+   "numel": 12288,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    48
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/self_attention/wkv_b/kernel",
+   "shape": [
+    32,
+    1,
+    4,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 8192,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    32,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/self_attention/wq_a/kernel",
+   "shape": [
+    256,
+    1,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    1,
+    4,
+    48
+   ],
+   "dtype": "float32",
+   "numel": 12288,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    192
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/MoeBlock_0/gate/kernel",
+   "shape": [
+    256,
+    1,
+    8
+   ],
+   "dtype": "float32",
+   "numel": 2048,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    8
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+   "shape": [
+    8,
+    1,
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0,
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/MoeBlock_0/wi_1",
+   "shape": [
+    8,
+    1,
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0,
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/MoeBlock_0/wo",
+   "shape": [
+    8,
+    1,
+    64,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    256
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0,
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/shared_experts/wi_0/kernel",
+   "shape": [
+    256,
+    1,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/shared_experts/wi_1/kernel",
+   "shape": [
+    256,
+    1,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/shared_experts/wo/kernel",
+   "shape": [
+    64,
+    1,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/mhc_attention/post_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/mhc_attention/post_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/mhc_attention/post_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/mhc_attention/pre_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/mhc_attention/pre_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/mhc_attention/pre_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/mhc_mlp/post_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/mhc_mlp/post_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/mhc_mlp/post_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/mhc_mlp/pre_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/mhc_mlp/pre_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/mhc_mlp/pre_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/post_self_attention_layer_norm/scale",
+   "shape": [
+    256,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/pre_self_attention_layer_norm/scale",
+   "shape": [
+    256,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/self_attention/gate_proj/kernel",
+   "shape": [
+    256,
+    1,
+    4,
+    32
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    32
+   ],
+   "n_matrices": 4,
+   "batch_axes": [
+    1,
+    2
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/self_attention/kv_norm/scale",
+   "shape": [
+    32,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 32,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/self_attention/out/kernel",
+   "shape": [
+    4,
+    1,
+    32,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0,
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    128,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/self_attention/q_norm/scale",
+   "shape": [
+    64,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 64,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/self_attention/sinks",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/self_attention/wkv_a/kernel",
+   "shape": [
+    256,
+    1,
+    48
+   ],
+   "dtype": "float32",
+   "numel": 12288,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    48
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/self_attention/wkv_b/kernel",
+   "shape": [
+    32,
+    1,
+    4,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 8192,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    32,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/self_attention/wq_a/kernel",
+   "shape": [
+    256,
+    1,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    1,
+    4,
+    48
+   ],
+   "dtype": "float32",
+   "numel": 12288,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    192
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/MoeBlock_0/gate/kernel",
+   "shape": [
+    256,
+    1,
+    8
+   ],
+   "dtype": "float32",
+   "numel": 2048,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    8
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+   "shape": [
+    8,
+    1,
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0,
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/MoeBlock_0/wi_1",
+   "shape": [
+    8,
+    1,
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0,
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/MoeBlock_0/wo",
+   "shape": [
+    8,
+    1,
+    64,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    256
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0,
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/shared_experts/wi_0/kernel",
+   "shape": [
+    256,
+    1,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/shared_experts/wi_1/kernel",
+   "shape": [
+    256,
+    1,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/shared_experts/wo/kernel",
+   "shape": [
+    64,
+    1,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/mhc_attention/post_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/mhc_attention/post_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/mhc_attention/post_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/mhc_attention/pre_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/mhc_attention/pre_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/mhc_attention/pre_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/mhc_mlp/post_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/mhc_mlp/post_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/mhc_mlp/post_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/mhc_mlp/pre_alpha",
+   "shape": [
+    1024,
+    1,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/mhc_mlp/pre_alpha_scale",
+   "shape": [
+    1,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/mhc_mlp/pre_beta",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/post_self_attention_layer_norm/scale",
+   "shape": [
+    256,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/pre_self_attention_layer_norm/scale",
+   "shape": [
+    256,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/self_attention/gate_proj/kernel",
+   "shape": [
+    256,
+    1,
+    4,
+    32
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    32
+   ],
+   "n_matrices": 4,
+   "batch_axes": [
+    1,
+    2
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/self_attention/kv_norm/scale",
+   "shape": [
+    32,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 32,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/self_attention/out/kernel",
+   "shape": [
+    4,
+    1,
+    32,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0,
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    128,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/self_attention/q_norm/scale",
+   "shape": [
+    64,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 64,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/self_attention/sinks",
+   "shape": [
+    4,
+    1
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/self_attention/wkv_a/kernel",
+   "shape": [
+    256,
+    1,
+    48
+   ],
+   "dtype": "float32",
+   "numel": 12288,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    48
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/self_attention/wkv_b/kernel",
+   "shape": [
+    32,
+    1,
+    4,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 8192,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    32,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/self_attention/wq_a/kernel",
+   "shape": [
+    256,
+    1,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    1,
+    4,
+    48
+   ],
+   "dtype": "float32",
+   "numel": 12288,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    192
+   ],
+   "n_matrices": 1,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/gate/kernel",
+   "shape": [
+    256,
+    8
+   ],
+   "dtype": "float32",
+   "numel": 2048,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    8
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+   "shape": [
+    8,
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0
+   ]
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_1",
+   "shape": [
+    8,
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0
+   ]
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wo",
+   "shape": [
+    8,
+    64,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    256
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0
+   ]
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/shared_experts/wi_0/kernel",
+   "shape": [
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/shared_experts/wi_1/kernel",
+   "shape": [
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/shared_experts/wo/kernel",
+   "shape": [
+    64,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/mhc_attention/post_alpha",
+   "shape": [
+    1024,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/mhc_attention/post_alpha_scale",
+   "shape": [
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/mhc_attention/post_beta",
+   "shape": [
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/mhc_attention/pre_alpha",
+   "shape": [
+    1024,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/mhc_attention/pre_alpha_scale",
+   "shape": [
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/mhc_attention/pre_beta",
+   "shape": [
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/mhc_mlp/post_alpha",
+   "shape": [
+    1024,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/mhc_mlp/post_alpha_scale",
+   "shape": [
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/mhc_mlp/post_beta",
+   "shape": [
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/mhc_mlp/pre_alpha",
+   "shape": [
+    1024,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/mhc_mlp/pre_alpha_scale",
+   "shape": [
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/mhc_mlp/pre_beta",
+   "shape": [
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/post_self_attention_layer_norm/scale",
+   "shape": [
+    256
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/pre_self_attention_layer_norm/scale",
+   "shape": [
+    256
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/self_attention/gate_proj/kernel",
+   "shape": [
+    256,
+    4,
+    32
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    32
+   ],
+   "n_matrices": 4,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/self_attention/indexer/k_norm/bias",
+   "shape": [
+    32
+   ],
+   "dtype": "float32",
+   "numel": 32,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/self_attention/indexer/k_norm/scale",
+   "shape": [
+    32
+   ],
+   "dtype": "float32",
+   "numel": 32,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/self_attention/indexer/weights_proj/kernel",
+   "shape": [
+    256,
+    16
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    16
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/self_attention/indexer/wk/kernel",
+   "shape": [
+    256,
+    32
+   ],
+   "dtype": "float32",
+   "numel": 8192,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    32
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/self_attention/indexer/wq_b/kernel",
+   "shape": [
+    64,
+    16,
+    32
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    512
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/self_attention/kv_norm/scale",
+   "shape": [
+    32
+   ],
+   "dtype": "float32",
+   "numel": 32,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/self_attention/out/kernel",
+   "shape": [
+    4,
+    32,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0,
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    128,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/self_attention/q_norm/scale",
+   "shape": [
+    64
+   ],
+   "dtype": "float32",
+   "numel": 64,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/self_attention/sinks",
+   "shape": [
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/self_attention/wkv_a/kernel",
+   "shape": [
+    256,
+    48
+   ],
+   "dtype": "float32",
+   "numel": 12288,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    48
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/self_attention/wkv_b/kernel",
+   "shape": [
+    32,
+    4,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 8192,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    32,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/self_attention/wq_a/kernel",
+   "shape": [
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    4,
+    48
+   ],
+   "dtype": "float32",
+   "numel": 12288,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    192
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/gate/kernel",
+   "shape": [
+    256,
+    8
+   ],
+   "dtype": "float32",
+   "numel": 2048,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    8
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+   "shape": [
+    8,
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0
+   ]
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_1",
+   "shape": [
+    8,
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0
+   ]
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wo",
+   "shape": [
+    8,
+    64,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    256
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0
+   ]
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/shared_experts/wi_0/kernel",
+   "shape": [
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/shared_experts/wi_1/kernel",
+   "shape": [
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/shared_experts/wo/kernel",
+   "shape": [
+    64,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/mhc_attention/post_alpha",
+   "shape": [
+    1024,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/mhc_attention/post_alpha_scale",
+   "shape": [
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/mhc_attention/post_beta",
+   "shape": [
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/mhc_attention/pre_alpha",
+   "shape": [
+    1024,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/mhc_attention/pre_alpha_scale",
+   "shape": [
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/mhc_attention/pre_beta",
+   "shape": [
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/mhc_mlp/post_alpha",
+   "shape": [
+    1024,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/mhc_mlp/post_alpha_scale",
+   "shape": [
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/mhc_mlp/post_beta",
+   "shape": [
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/mhc_mlp/pre_alpha",
+   "shape": [
+    1024,
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    1024,
+    4
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/mhc_mlp/pre_alpha_scale",
+   "shape": [
+    1
+   ],
+   "dtype": "float32",
+   "numel": 1,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/mhc_mlp/pre_beta",
+   "shape": [
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/post_self_attention_layer_norm/scale",
+   "shape": [
+    256
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/pre_self_attention_layer_norm/scale",
+   "shape": [
+    256
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/self_attention/gate_proj/kernel",
+   "shape": [
+    256,
+    4,
+    32
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    32
+   ],
+   "n_matrices": 4,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/self_attention/kv_norm/scale",
+   "shape": [
+    32
+   ],
+   "dtype": "float32",
+   "numel": 32,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/self_attention/out/kernel",
+   "shape": [
+    4,
+    32,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0,
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    128,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/self_attention/q_norm/scale",
+   "shape": [
+    64
+   ],
+   "dtype": "float32",
+   "numel": 64,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/self_attention/sinks",
+   "shape": [
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/self_attention/wkv_a/kernel",
+   "shape": [
+    256,
+    48
+   ],
+   "dtype": "float32",
+   "numel": 12288,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    48
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/self_attention/wkv_b/kernel",
+   "shape": [
+    32,
+    4,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 8192,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    32,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/self_attention/wq_a/kernel",
+   "shape": [
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    4,
+    48
+   ],
+   "dtype": "float32",
+   "numel": 12288,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    192
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_embedding_norm/scale",
+   "shape": [
+    256
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_final_norm/scale",
+   "shape": [
+    256
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_hidden_state_norm/scale",
+   "shape": [
+    256
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_projection/kernel",
+   "shape": [
+    512,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    512,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/MoeBlock_0/gate/kernel",
+   "shape": [
+    256,
+    8
+   ],
+   "dtype": "float32",
+   "numel": 2048,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    8
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+   "shape": [
+    8,
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0
+   ]
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/MoeBlock_0/wi_1",
+   "shape": [
+    8,
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0
+   ]
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/MoeBlock_0/wo",
+   "shape": [
+    8,
+    64,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 131072,
+   "opt": "muon",
+   "reduction_axis": [
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    256
+   ],
+   "n_matrices": 8,
+   "batch_axes": [
+    0
+   ]
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/shared_experts/wi_0/kernel",
+   "shape": [
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/shared_experts/wi_1/kernel",
+   "shape": [
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/shared_experts/wo/kernel",
+   "shape": [
+    64,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/post_self_attention_layer_norm/scale",
+   "shape": [
+    256
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/pre_self_attention_layer_norm/scale",
+   "shape": [
+    256
+   ],
+   "dtype": "float32",
+   "numel": 256,
+   "opt": "adam"
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/gate_proj/kernel",
+   "shape": [
+    256,
+    4,
+    32
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    32
+   ],
+   "n_matrices": 4,
+   "batch_axes": [
+    1
+   ]
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/indexer/k_norm/bias",
+   "shape": [
+    32
+   ],
+   "dtype": "float32",
+   "numel": 32,
+   "opt": "adam"
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/indexer/k_norm/scale",
+   "shape": [
+    32
+   ],
+   "dtype": "float32",
+   "numel": 32,
+   "opt": "adam"
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/indexer/weights_proj/kernel",
+   "shape": [
+    256,
+    16
+   ],
+   "dtype": "float32",
+   "numel": 4096,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    16
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/indexer/wk/kernel",
+   "shape": [
+    256,
+    32
+   ],
+   "dtype": "float32",
+   "numel": 8192,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    32
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/indexer/wq_b/kernel",
+   "shape": [
+    64,
+    16,
+    32
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    512
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/kv_norm/scale",
+   "shape": [
+    32
+   ],
+   "dtype": "float32",
+   "numel": 32,
+   "opt": "adam"
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/out/kernel",
+   "shape": [
+    4,
+    32,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 32768,
+   "opt": "muon",
+   "reduction_axis": [
+    0,
+    -2
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    128,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/q_norm/scale",
+   "shape": [
+    64
+   ],
+   "dtype": "float32",
+   "numel": 64,
+   "opt": "adam"
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/sinks",
+   "shape": [
+    4
+   ],
+   "dtype": "float32",
+   "numel": 4,
+   "opt": "adam"
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/wkv_a/kernel",
+   "shape": [
+    256,
+    48
+   ],
+   "dtype": "float32",
+   "numel": 12288,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    48
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/wkv_b/kernel",
+   "shape": [
+    32,
+    4,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 8192,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    32,
+    256
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/wq_a/kernel",
+   "shape": [
+    256,
+    64
+   ],
+   "dtype": "float32",
+   "numel": 16384,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -1
+   ],
+   "ns_matrix": [
+    256,
+    64
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    4,
+    48
+   ],
+   "dtype": "float32",
+   "numel": 12288,
+   "opt": "muon",
+   "reduction_axis": [
+    0
+   ],
+   "output_axis": [
+    -2,
+    -1
+   ],
+   "ns_matrix": [
+    64,
+    192
+   ],
+   "n_matrices": 1,
+   "batch_axes": []
+  },
+  {
+   "path": "token_embedder/embedding",
+   "shape": [
+    1024,
+    256
+   ],
+   "dtype": "float32",
+   "numel": 262144,
+   "opt": "adam"
+  }
+ ]
+}

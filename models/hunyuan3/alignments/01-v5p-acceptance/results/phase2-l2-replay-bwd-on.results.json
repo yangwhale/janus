@@ -1,0 +1,234 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "b147bfbd4a3cbad03353833cbc3844b22a376084"
+ },
+ "catalog": {
+  "path": "models/hunyuan3/alignments/01-b200x8-to-v5p8-4layers/catalogs/phase2-l2-replay-bwd-on.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "f72e1bcfa96861d239f8baea222493bb9fa803eef34fa95128deb628607eaeae",
+  "raw_sha256": "abb6bc85096c110ab6fddb02f033e4b212ac5245cb730eddde18c15b79895818"
+ },
+ "runs": {
+  "r-l2-on": {
+   "path": "/tmp/fill-runs/r-l2-on",
+   "meta_sha256": "d050a4164df52211a7ce9e3c59240454a88cd7e554a6ae2b1d5893aaae59124e"
+  },
+  "g1k-a": {
+   "path": "/tmp/fill-runs/g1k-a",
+   "meta_sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+  },
+  "g1k-b": {
+   "path": "/tmp/fill-runs/g1k-b",
+   "meta_sha256": "20ba1aa99be3b12587f2de807208a5906be631a7ce882cad95ee969c237f5bd2"
+  },
+  "g1k-c": {
+   "path": "/tmp/fill-runs/g1k-c",
+   "meta_sha256": "dd91c737df4f227d97184e55846444cbdfdd8f1b9f0570c5b5d9f04095b3a88f"
+  }
+ },
+ "started_at": "2026-11-05T09:35:01+00:00",
+ "finished_at": "2026-11-05T09:35:18+00:00",
+ "summary": {
+  "pass": 1,
+  "fail": 3,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": true
+ },
+ "checks": [
+  {
+   "id": "L2.layer0.bwd",
+   "type": "tensor_tolerance",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 0.0021984993366821765,
+      "cosine": 2.416626895707097e-06,
+      "norm_ratio": 9.887164487798472e-06
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.0021156753216360477,
+    "cosine_min": 0.9999977619718895,
+    "norm_ratio_dev_max": 3.316620921456348e-06,
+    "tensors": 1,
+    "oot_frac_max": 0.00010848045349121094,
+    "mean_diff_max": 0.0008229172374594551,
+    "norm_max_max": 0.010638297872340425
+   },
+   "r1": 0.962327022954157,
+   "worst": [
+    {
+     "name": "layers.0.in.grad",
+     "metric": "rel_l2",
+     "value": 0.0021156753216360477,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/r-l2-on",
+     "sha256": "d050a4164df52211a7ce9e3c59240454a88cd7e554a6ae2b1d5893aaae59124e"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "在噪声参照内",
+   "details": "details/L2.layer0.bwd.jsonl"
+  },
+  {
+   "id": "L2.layer1.bwd",
+   "type": "tensor_tolerance",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 0.0017971605850369817,
+      "cosine": 1.6148660204606813e-06,
+      "norm_ratio": 5.917377623010367e-06
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.0057321924988343485,
+    "cosine_min": 0.9999835712042324,
+    "norm_ratio_dev_max": 4.305985999319972e-05,
+    "tensors": 1,
+    "oot_frac_max": 0.0024039745330810547,
+    "mean_diff_max": 0.0016806014761474727,
+    "norm_max_max": 0.034
+   },
+   "r1": 10.173472944144923,
+   "worst": [
+    {
+     "name": "layers.1.in.grad",
+     "metric": "rel_l2",
+     "value": 0.0057321924988343485,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/r-l2-on",
+     "sha256": "d050a4164df52211a7ce9e3c59240454a88cd7e554a6ae2b1d5893aaae59124e"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "超过噪声参照两倍",
+   "details": "details/L2.layer1.bwd.jsonl"
+  },
+  {
+   "id": "L2.layer2.bwd",
+   "type": "tensor_tolerance",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 0.0005584151147108617,
+      "cosine": 1.5591012714200048e-07,
+      "norm_ratio": 2.5294718850599196e-06
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.005413957788300632,
+    "cosine_min": 0.9999853444231682,
+    "norm_ratio_dev_max": 1.4891521676552166e-05,
+    "tensors": 1,
+    "oot_frac_max": 0.004372119903564453,
+    "mean_diff_max": 0.002228977733667608,
+    "norm_max_max": 0.011847882231404958
+   },
+   "r1": 94.00015958187903,
+   "worst": [
+    {
+     "name": "layers.2.in.grad",
+     "metric": "rel_l2",
+     "value": 0.005413957788300632,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/r-l2-on",
+     "sha256": "d050a4164df52211a7ce9e3c59240454a88cd7e554a6ae2b1d5893aaae59124e"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "超过噪声参照两倍",
+   "details": "details/L2.layer2.bwd.jsonl"
+  },
+  {
+   "id": "L2.layer3.bwd",
+   "type": "tensor_tolerance",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 1.323502014346475e-05,
+      "cosine": 8.758271885511704e-11,
+      "norm_ratio": 1.1181871761856144e-08
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.006540338535205988,
+    "cosine_min": 0.9999786123277488,
+    "norm_ratio_dev_max": 1.2392289914231469e-05,
+    "tensors": 1,
+    "oot_frac_max": 0.009417235851287842,
+    "mean_diff_max": 0.002955717270262332,
+    "norm_max_max": 0.009953703703703704
+   },
+   "r1": 244199.6838054191,
+   "worst": [
+    {
+     "name": "layers.3.in.grad",
+     "metric": "rel_l2",
+     "value": 0.006540338535205988,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/r-l2-on",
+     "sha256": "d050a4164df52211a7ce9e3c59240454a88cd7e554a6ae2b1d5893aaae59124e"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "超过噪声参照两倍",
+   "details": "details/L2.layer3.bwd.jsonl"
+  }
+ ]
+}

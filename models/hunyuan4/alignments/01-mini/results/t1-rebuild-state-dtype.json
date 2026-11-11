@@ -1,0 +1,69 @@
+{
+ "what": "GPU g2w-b 第 k 步状态重建成 HF 目录后前向与原运行不一致的原因与修法（路由一致率第 8 / 30 / 100 步与同状态单步共用）",
+ "symptom": {
+  "step": 8,
+  "lm_loss_orig": 11.65206527709961,
+  "lm_loss_rebuilt_gpu": 11.653450012207031,
+  "lm_loss_rebuilt_cpu_fp64": 11.65343155555663,
+  "route_flip_layer1_rebuilt_vs_orig": 0.0046,
+  "dsa_layer0_nonoverlap_rebuilt_vs_orig": 0.000149,
+  "layer1_router_probs_bitwise_equal_positions": "第 0 行位置 < 2048 全部逐位相同，第一处不同在第 2116 个位置；第 0 层 DSA 不同的 685 行都在第 2048 行之后（稀疏选择从这里起作用）"
+ },
+ "cause": "旧的重建目录按 HF 基准目录（hy4-mini-seed0）的 dtype 舍入：基准里是 BF16、但 GPU 模型里留 FP32 的 11 个张量被舍成了 BF16。GPU 载入检查（参数 == 张量转参数 dtype、且张量能无损转成参数 dtype）对 FP32 参数收 BF16 值照样通过，所以没拦住。索引器 k_norm 舍入后第 0 层 DSA top-k 在稀疏位置变了，再经路由放大；lm_head 舍入让 loss 偏高。",
+ "tensors_wrongly_rounded": [
+  "lm_head.weight",
+  "model.layers.{0,1,5}.self_attn.indexer.k_norm.{weight,bias}",
+  "model.mtp_layers.0.self_attn.indexer.k_norm.{weight,bias}",
+  "model.mtp_layers.0.self_attn.learnable_sink_param",
+  "model.mtp_layers.0.mlp.gate.e_score_correction_bias"
+ ],
+ "gpu_fp32_modules": "GPU 运行 meta.json 的 dtypes.fp32_modules：lm_head、iHC、hc_head、sinks、indexer k_norm；另加路由偏置 buffer（hy4_mcore.apply_mlp_semantics）",
+ "fix": "按 GPU 参数的实际 dtype 重建：上面 11 个与 iHC / hc_head / 主干 sink / 路由偏置存 FP32 主权重原值（69 个），其余 143 个存 bf16(主权重)（analysis/build_hf_gpu_dtype.py）",
+ "verify": {
+  "how": "修好的目录在 GPU 上同设置单步两次（a、b），对原运行该步",
+  "8": {
+   "lm_loss_orig": 11.65206527709961,
+   "lm_loss_rebuilt": [
+    11.652073860168457,
+    11.652070045471191
+   ],
+   "rel": [
+    7.4e-07,
+    4.1e-07
+   ],
+   "grad_norm_orig": 6.44252543908079,
+   "grad_norm_rebuilt": [
+    6.4428904658492865,
+    6.442906451950392
+   ],
+   "route_layer1_flip_vs_orig": 0.0,
+   "dsa_layer0_1_nonoverlap_vs_orig": 0.0,
+   "route_layers2_6_mtp_flip_vs_orig": [
+    0.0049,
+    0.0105,
+    0.0122,
+    0.0105,
+    0.0044,
+    0.0149
+   ],
+   "cpu_fp64_row0_mean_loss": 11.643849,
+   "gpu_orig_row0_mean_loss": 11.643876
+  },
+  "30": {
+   "lm_loss_orig": 11.41517448425293,
+   "lm_loss_rebuilt": [
+    11.415167808532715,
+    11.415160179138184
+   ]
+  },
+  "100": {
+   "lm_loss_orig": 10.642142295837402,
+   "lm_loss_rebuilt": [
+    10.642143249511719,
+    10.642148971557617
+   ]
+  },
+  "reading": "修后第 1 层路由与 DSA 第 0、1 层与原运行逐位相同；第 2 层起的翻转与 GPU 自己同设置重跑的尺子同一量级（GPU 不逐位确定：a、b 两次 lm_loss 也差 3e-7）"
+ },
+ "impact": "路由一致率第 8 / 30 / 100 步的 GPU 尺子与 CPU FP64 参照若用旧目录算，状态与原运行不同，需在修好的目录上重做；TPU 一侧读 FP32 主权重（--param-override），不受影响"
+}

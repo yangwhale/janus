@@ -1,0 +1,49 @@
+# 签字项 2b · 逐层回放的反向：噪声参照取 GPU 第 1 步重跑 3 对 ∪ TPU 第 1 步执行扰动 21 对
+#
+# 为什么：第 1 步 GPU 重跑路由从不翻转，GPU 3 对的上限对「路由近似平局在两种硬件上各落一边」的宽度是 0。整步状态读上，
+#   TPU 只改不影响数学的执行参数（splash 块 256 / 1024、scoped vmem 40 / 48 / 56 MiB 及其组合）就会翻同类的路由，并集能看见它
+#   （phase2-st1-on-state-xnoise.yaml）。本目录检验逐层隔离回放上是否也如此：每层输入固定是 golden 的，两侧只改执行方式时路由都不翻，
+#   并集里没有路由翻转这一份，所以逐层反向的正式判法是对 FP64 的 R（phase2-l2-replay-bwd-fp64-on，fwd_rratio.py --mode bwd），
+#   本目录的结果只报（docs/reference/judging.md「第 1 步张量：两侧执行噪声的并集」）。只用 GPU 3 对的同名目录是 phase2-l2-replay-bwd-on.yaml。
+# TPU 七份：r-l2n-base, r-l2n-sa256, r-l2n-sa1k, r-l2n-combo, r-l2n-vmem40, r-l2n-vmem56, r-l2n-sa256v48（当前对齐配置 yml a238883b，maxtext 0622774）。每份都是 layer_replay.py --grad（同 r-l2-on）；r-l2n-base 与 r-l2-on 同程序，逐位相同的对会自动剔除。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-l2-replay-bwd-on-xnoise
+description: L2 逐层隔离回放的反向（r-l2-on 对 g1k-a），噪声 GPU 3 对 ∪ TPU 执行扰动 21 对
+runs:
+  test: r-l2-on
+  golden: [g1k-a, g1k-b, g1k-c]
+  noise:
+    - [g1k-a, g1k-b]
+    - [g1k-a, g1k-c]
+    - [g1k-b, g1k-c]
+    - [r-l2n-base, r-l2n-sa256]
+    - [r-l2n-base, r-l2n-sa1k]
+    - [r-l2n-base, r-l2n-combo]
+    - [r-l2n-base, r-l2n-vmem40]
+    - [r-l2n-base, r-l2n-vmem56]
+    - [r-l2n-base, r-l2n-sa256v48]
+    - [r-l2n-sa256, r-l2n-sa1k]
+    - [r-l2n-sa256, r-l2n-combo]
+    - [r-l2n-sa256, r-l2n-vmem40]
+    - [r-l2n-sa256, r-l2n-vmem56]
+    - [r-l2n-sa256, r-l2n-sa256v48]
+    - [r-l2n-sa1k, r-l2n-combo]
+    - [r-l2n-sa1k, r-l2n-vmem40]
+    - [r-l2n-sa1k, r-l2n-vmem56]
+    - [r-l2n-sa1k, r-l2n-sa256v48]
+    - [r-l2n-combo, r-l2n-vmem40]
+    - [r-l2n-combo, r-l2n-vmem56]
+    - [r-l2n-combo, r-l2n-sa256v48]
+    - [r-l2n-vmem40, r-l2n-vmem56]
+    - [r-l2n-vmem40, r-l2n-sa256v48]
+    - [r-l2n-vmem56, r-l2n-sa256v48]
+  root: /data/janus-runs
+checks:
+  - id: L2.layer{i}.bwd
+    foreach: {i: [0, 1, 2, 3]}
+    type: tensor_tolerance
+    level: L2
+    select: {kind: tensor, step: 1, name: "layers.{i}.in.grad"}
+    metrics: [rel_l2, cosine, norm_ratio]
+    threshold: calibrated

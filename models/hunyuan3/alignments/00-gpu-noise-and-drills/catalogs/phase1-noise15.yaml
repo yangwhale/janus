@@ -1,0 +1,121 @@
+# 第一阶段 · 噪声参照条数的影响：phase1-full 里 inconclusive 的检查，噪声参照从 3 对（s-b/c/d 两两）扩到 15 对（s-b..s-g 两两）重判。
+# 3 对时上限 = 3 个样本的最大值，纯噪声的被测超过它的概率约 1/4；15 对时上限更稳。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase1-noise15
+description: 只把 phase1-full 里落在 1–2 倍的检查拿出来，噪声参照从 3 对扩到 15 对（s-b..s-g 两两）重判
+runs:
+  test: s-a
+  golden:
+  - s-b
+  - s-c
+  - s-d
+  noise:
+  - - s-b
+    - s-c
+  - - s-b
+    - s-d
+  - - s-b
+    - s-e
+  - - s-b
+    - s-f
+  - - s-b
+    - s-g
+  - - s-c
+    - s-d
+  - - s-c
+    - s-e
+  - - s-c
+    - s-f
+  - - s-c
+    - s-g
+  - - s-d
+    - s-e
+  - - s-d
+    - s-f
+  - - s-d
+    - s-g
+  - - s-e
+    - s-f
+  - - s-e
+    - s-g
+  - - s-f
+    - s-g
+  root: /data/janus-runs2
+checks:
+- id: L2.layer{i}.bwd
+  foreach:
+    i:
+    - 0
+    - 3
+  type: tensor_tolerance
+  level: L2
+  select:
+    kind: tensor
+    step: 1
+    name: layers.{i}.*.grad
+  metrics:
+  - rel_l2
+  - cosine
+  - norm_ratio
+  threshold: calibrated
+- id: L2.layer{i}.grads
+  foreach:
+    i:
+    - 0
+    - 3
+  type: tensor_tolerance
+  level: L2
+  select:
+    kind: tensor
+    step: 1
+    name: grad.decoder.layers.{i}.*
+  metrics:
+  - rel_l2
+  - cosine
+  - norm_ratio
+  threshold: calibrated
+- id: L4.loss
+  type: multi_golden
+  level: L4
+  select:
+    kind: metrics
+    field: lm_loss
+    window: 1:101
+  params:
+    signed_mean_se_k: 2
+    first_step_tol: 0.0
+    first_step_source: GPU 自比：首步前向确定，首步差必须为 0（第一阶段实测）
+  threshold: calibrated
+- id: L4.grad_norm
+  type: loss_series
+  level: L4
+  select:
+    kind: metrics
+    field: grad_norm
+    window: 1:101
+  threshold: calibrated
+- id: L4.param_norm
+  type: loss_series
+  level: L4
+  select:
+    kind: metrics
+    field: param_norm
+    window: 1:101
+  threshold: calibrated
+- id: L4.router.bias_std
+  type: router_stats
+  level: L4
+  select:
+    kind: metrics
+    prefix: router.bias_std.
+    window: 1:101
+  threshold: calibrated
+- id: L4.router.load_cv
+  type: router_stats
+  level: L4
+  select:
+    kind: metrics
+    prefix: router.load_cv.
+    window: 1:101
+  threshold: calibrated

@@ -1,0 +1,29 @@
+{
+ "what": "整步 AOT（CPU 上用 libtpu 0.0.46 对 v5p-16 编 hy4-mini 训练步，MaxText train_compile + hy4-mini-t1.yml，7 层 + 1 层 MTP）后，末层 RMSNorm / 输出头反向一带各 kernel 的 final_bundles 静态指令条数。程序：golden = MaxText 56492817；d3final = 433df3b1（只改末层 RMSNorm 为广播乘）；d3noexc = d3final 关 excess precision；nonfinal = 237ee28d。fp 是 kernel 文本指纹的后 6 位。要点：d3final 的 fusion.19776（输出头 dgrad 卷积 + RMSNorm 反向行和 S）vpack.i.bf16 为 0，S 用 kernel 内没舍的 dy；关 excess precision 后为 256",
+ "lines": [
+  "# golden",
+  "fusion.19784                 fp=664107 bundles=3241 {'vunpack.c.l.bf16': 191, 'vunpack.c.h.bf16': 189, 'vpack.c.bf16': 64} vadd.f32=3605 vmul.f32=1152",
+  "fusion.19789                 fp=147884 bundles=169 {'vunpack.c.h.bf16': 512, 'vunpack.c.l.bf16': 2048} vadd.f32=2863 vmul.f32=6656",
+  "multiply_multiply_fusion.148 fp=667474 bundles=0 {} vadd.f32=16 vmul.f32=160",
+  "multiply_multiply_fusion.149 fp=620480 bundles=0 {} vadd.f32=0 vmul.f32=32",
+  "fusion.19790                 fp=201454 bundles=0 {'vunpack.c.l.bf16': 1040, 'vunpack.c.h.bf16': 1024} vadd.f32=2752 vmul.f32=7568",
+  "fusion.19793                 fp=329523 bundles=0 {'vpack.c.bf16': 320} vadd.f32=640 vmul.f32=1280",
+  "multiply_reduce_fusion.1045  fp=677857 bundles=0 {'vunpack.c.l.bf16': 1024, 'vpack.i.bf16': 1024} vadd.f32=2104 vmul.f32=2048",
+  "multiply_reduce_fusion.1046  fp=008472 bundles=0 {'vunpack.c.l.bf16': 1024, 'vpack.i.bf16': 1024} vadd.f32=2104 vmul.f32=2048",
+  "multiply_reduce_fusion.1047  fp=181820 bundles=0 {'vunpack.c.l.bf16': 128, 'vpack.i.bf16': 128, 'vpack.c.bf16': 16} vadd.f32=256 vmul.f32=256",
+  "# d3final",
+  "fusion.19776                 fp=716239 bundles=6687 {'vunpack.c.l.bf16': 268, 'vunpack.c.h.bf16': 244, 'vpack.c.bf16': 192} vadd.f32=5422 vmul.f32=1664",
+  "multiply_multiply_fusion.149 fp=840607 bundles=0 {} vadd.f32=16 vmul.f32=160",
+  "multiply_multiply_fusion.150 fp=120294 bundles=0 {} vadd.f32=0 vmul.f32=32",
+  "fusion.19781                 fp=875214 bundles=0 {'vunpack.c.l.bf16': 2065} vadd.f32=2064 vmul.f32=4128",
+  "fusion.19784                 fp=666056 bundles=0 {'vpack.c.bf16': 320} vadd.f32=640 vmul.f32=1280",
+  "multiply_reduce_fusion.1045  fp=004557 bundles=0 {'vunpack.c.l.bf16': 1024, 'vpack.i.bf16': 1024} vadd.f32=2104 vmul.f32=2048",
+  "multiply_reduce_fusion.1046  fp=332024 bundles=0 {'vunpack.c.l.bf16': 1024, 'vpack.i.bf16': 1024} vadd.f32=2104 vmul.f32=2048",
+  "multiply_reduce_fusion.1047  fp=454982 bundles=0 {'vunpack.c.l.bf16': 128, 'vpack.i.bf16': 128, 'vpack.c.bf16': 16} vadd.f32=256 vmul.f32=256",
+  "# d3noexc",
+  "fusion.19776                 fp=119041 bundles=6737 {'vunpack.c.l.bf16': 256, 'vunpack.c.h.bf16': 256, 'vpack.i.bf16': 256, 'vpack.c.bf16': 192} vadd.f32=5422 vmul.f32=1664",
+  "fusion.19781                 fp=763181 bundles=0 {'vunpack.c.l.bf16': 2064, 'vpack.i.bf16': 2064} vadd.f32=2064 vmul.f32=4128",
+  "# nonfinal",
+  "fusion.19730                 fp=924882 bundles=6391 {'vunpack.c.l.bf16': 293, 'vunpack.c.h.bf16': 294, 'vpack.c.bf16': 192} vadd.f32=5152 vmul.f32=1280"
+ ]
+}

@@ -1,0 +1,50 @@
+# 06 · 真实宽度三层（hy4-preview 第 0–2 层 + MTP）· 运行清单。数据位置写成占位，不写桶名。
+schema: 1
+alignment: 06-rw3
+golden:   # GPU：2 台 B200 × 8，DP 16 + EP 16
+  - {name: rw1k-a, stage: rw3, steps: 1000, role: "基线，带 --save-batches（TPU 回放它的 batch）；05-gpu-scale 的多机 golden", results: [rw3-l4, rw3-l0-settings], location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/rw1k-a/"}
+  - {name: rw1k-b..rw1k-h, stage: rw3, steps: 1000, role: "同设置重跑：与 rw1k-a 一起 8 份，两两 28 对是 L4 的噪声尺子", location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/rw1k-*/"}
+  - {name: r3s1-a..r3s1-c, stage: rw3, steps: 1, role: "第 1 步逐张量抓数参照：单机 DP 8 + EP 8 同设置 3 份（--dump-steps 1 --full --full-kinds grad+param --no-dump-acts --recompute）；TPU 第 1 步的 R 用", results: [step1-tpu-gpu-vs-fp64], location: "gs://<POC 桶>/janus/hunyuan4/megatron/<作业>/runs/r3s1-*/"}
+  - {name: s150-a / s150-b, stage: rw3, steps: 2, role: "同状态诊断：2 台载入 TPU b2s-off150 的 BF16 快照（输出头、k_norm 也舍成 BF16），tokens 从第 2400 行起，第 1 步 = 第 151 步的批", results: [rw3-step151-same-state]}
+  - {name: s150v2-a / s150v2-b, stage: rw3, steps: 2, role: "同上，输出头与索引器 k_norm 换成 FP32 主权重原值（= GPU 训练时真用的权重）", results: [rw3-step151-same-state]}
+  - {name: r150-a / r150-b, stage: rw3, steps: 1, role: "同上（v2 快照），单机 DP 8 + EP 8，--dump-steps 1 --full：第 151 步同状态的逐张量梯度"}
+  - {name: irf-a / irf-b, stage: rw3, steps: 250, role: "诊断：GPU 索引器 RoPE 改到 FP32 里算（环境变量 HY4_INDEXER_ROPE_FP32=1，其余同 rw1k-*），看 KD 与主 loss 后段", golden: rw1k-a, results: [rw3-l4-b2r250-irf-a, rw3-l4-b2r250-irf-b]}
+  - {name: s900v2-a / s900v2-b, stage: rw3, steps: 2, role: "GPU 2 台载入 TPU base2 关第 900 步之后的 HF 快照（v2：输出头与索引器 k_norm 为 FP32 原值），算第 901 步一批（只用第 1 步）", results: [rw3-mtp-same-state]}
+  - {name: f900-a / f900-b、f932-a / f932-b, stage: rw3, steps: 8, role: "同一份快照，--lr=0 --bias-rate=0 连算第 901–908 步 8 批 / 第 901–932 步 32 批（param_norm 不变），与 TPU mtp9-frz / mtp9-frz32 逐批比", results: [rw3-mtp-same-state]}
+test:     # TPU：v5p 2x2x4（16 个设备），FSDP 16
+  - {name: trw-a, stage: rw3, steps: 1000, role: "第一次提交，按步时推算跑到第 400 步前后时 spot 节点被整片抢走，运行目录随 Pod 丢失；第 1 步 lm_loss 取自 Pod 日志（L3 只前向的对比用），不进 L4", results: [step1-loss-vs-fp64]}
+  - {name: trw-b, stage: rw3, steps: 1000, role: "同命令重提，还没开始记步又被整片抢走"}
+  - {name: trw-c, stage: rw3, steps: 1000, role: "同命令，每 100 步把整个训练状态存到 GCS；第 100 步存档时 Orbax 拒存大小为 0 的数组，退出"}
+  - {name: trw-e, stage: rw3, steps: 1000, role: "被测（自建 spot 池）：同 trw-c，存档跳过大小为 0 的叶子；第一段跑到第 164 步（第 100 步存档成功），逐步记录从 Pod 镜像出来", golden: rw1k-a, results: [rw3-l4-first164], location: "gs://<POC 桶>/janus/hunyuan4/tpu/trw-e-s*/"}
+  - {name: trw-d, stage: rw3, steps: 1000, role: "被测（另一个按预留供给的 v5p 集群，16 片）：同命令，每个作业一段（≤ 1 小时），段尾存档、下一段接着跑", golden: rw1k-a, location: "gs://<POC 桶>/janus/hunyuan4/tpu/trw-d-s*/"}
+  - {name: b2s1-bt, stage: rw3, steps: 2, role: "第 1 步 base2 验证：只改 sa_use_base2_exp=false（其余同 trw-e，同一代码包），训练 2 步，--dump-steps 1 --full（全量只抓 norm、sink、iHC 参数）；第 1 步 lm_loss / mtp_loss_mt 对 CPU FP64", golden: rw1k-a, results: [step1-base2-off], location: "gs://<POC 桶>/janus/hunyuan4/tpu/b2s1-bt/"}
+  - {name: b2s1-at, stage: rw3, steps: 2, role: "同 b2s1-bt 但 base2 开（对照）：第 1 步 lm_loss 与 trw-e 逐位相同（Pod 日志）；第 2 步之后 spot 节点被收走，运行目录没取回"}
+  - {name: b2s1-bd, stage: rw3, steps: 1, role: "--diag-step1、base2 关：装载梯度程序时显存差 1.3 GB（要 74.22G，可用 72.93G）退出；改用 --diag-free-opt 重跑为 b2s1-bd2"}
+  - {name: b2s1-bd2, stage: rw3, steps: 1, role: "--diag-step1 --diag-free-opt、base2 关：第 1 步逐张量梯度（路由专家之外 102 个张量，HF 名字，FP32）", golden: rw1k-a, results: [step1-base2-off], location: "gs://<POC 桶>/janus/hunyuan4/tpu/b2s1-bd2/"}
+  - {name: b2s1-ad2, stage: rw3, steps: 1, role: "同 b2s1-bd2 但 base2 开（对照）", golden: rw1k-a, results: [step1-base2-off], location: "gs://<POC 桶>/janus/hunyuan4/tpu/b2s1-ad2/"}
+  - {name: b2r-off, stage: rw3, steps: 250, role: "base2 开 / 关短回放：只改 sa_use_base2_exp=false（其余同 trw-e，同一代码包），250 步一次跑完、不存档", golden: rw1k-a, results: [rw3-l4-b2r250-off, rw3-base2-replay], location: "gs://<POC 桶>/janus/hunyuan4/tpu/b2r-off/"}
+  - {name: b2r-on, stage: rw3, steps: 250, role: "同 b2r-off 但 base2 开（现行配置，trw-e 的同一命令）；前 164 步与 trw-e 逐位相同", golden: rw1k-a, results: [rw3-l4-b2r250-on, rw3-base2-replay], location: "gs://<POC 桶>/janus/hunyuan4/tpu/b2r-on/"}
+  - {name: rfx-v, stage: rw3, steps: 250, role: "续跑核对：修好读档显存后，从 trw-e 的第 100 步存档续跑到第 250 步（同 b2r-on 的配置，不存档）；第 101–250 步与 b2r-on 逐位相同", golden: rw1k-a, results: [resume-check], location: "gs://<POC 桶>/janus/hunyuan4/tpu/rfx-v-s1/"}
+  - {name: b2s-off150, stage: rw3, steps: 151, role: "同 b2r-off 跑到第 151 步，第 151 步训练之前导出 HF 快照（--hf-snapshot-at 151；第 1 步 --hf-snapshot-verify 111 个张量与 HF 原件逐位相同）；第 1–151 步与 b2r-off 逐位相同", results: [rw3-step151-same-state]}
+  - {name: b2s2-off151, stage: rw3, steps: 151, role: "同上，只导出输出头与索引器 k_norm 的 FP32 主权重原值（--hf-snapshot-only gpu-fp32）", results: [rw3-step151-same-state]}
+  - {name: b2e-off151 / b2e-on151, stage: rw3, steps: 151, role: "base2 关 / 开，第 151 步之前停下，对同一份权重逐组舍 BF16 只做前向（--eval-variants-at 151 --eval-variants=@weight-side）", results: [b2e-off151-eval-variants-step151, b2e-on151-eval-variants-step151]}
+  - {name: b2d-off151, stage: rw3, steps: 1, role: "从 v2 快照换上第 150 步之后的权重与路由偏置，--diag-step1 --first-step 151；Pod 盘被 67 GB 快照下载副本占满，写梯度时退出，改跑 b2d2-off151"}
+  - {name: b2d2-off151, stage: rw3, steps: 1, role: "同上（--param-override 读完删副本、--bias-override hf:param-override）：第 151 步同状态的逐张量梯度", results: [rw3-step151-same-state-grads]}
+  - {name: b2d3-noexc151, stage: rw3, steps: 1, role: "同 b2d2-off151，再关编译器省舍入（XLA_FLAGS=--xla_allow_excess_precision=false）", results: [rw3-step151-same-state-grads-noexc]}
+  - {name: b2r-noexc, stage: rw3, steps: 250, role: "base2 关、关编译器省舍入的 250 步回放：看 iHC 那几次舍入是不是后段轨迹差的原因（不是：主 loss r 7.32 → 29.6）", golden: rw1k-a, results: [rw3-l4-b2r250-noexc, rw3-b2r-noexc-vs-off]}
+  - {name: rfx-on, stage: rw3, steps: 1000, role: "被测（现行配置，base2 开）：修好续跑以后的代码包，每 100 步存档；第 62、119 步两次被收，第三段从第 100 步存档续跑到第 1000 步，各段重叠的 81 步逐位相同；前 250 步与 b2r-on 逐位相同", golden: rw1k-a, results: [rw3-l4, rw3-l0-settings, rw3-1k-replay], location: "gs://<POC 桶>/janus/hunyuan4/tpu/rfx-on-s*/"}
+  - {name: rfx-off, stage: rw3, steps: 1000, role: "同 rfx-on 但只改 sa_use_base2_exp=false；一段跑完；前 250 步与 b2r-off 逐位相同", golden: rw1k-a, results: [rw3-l4-b2off, rw3-1k-replay], location: "gs://<POC 桶>/janus/hunyuan4/tpu/rfx-off-s2/"}
+  - {name: mtp9-snap / mtp9-fp32, stage: rw3, steps: 1, role: "从 rfx-off 第 900 步存档续跑一步，导出 HF 快照（BF16 / 输出头与索引器 k_norm 的 FP32 原值），给 GPU 同状态对照；第 901 步与 rfx-off 逐位相同", results: [rw3-mtp-same-state], location: "gs://<POC 桶>/janus/hunyuan4/tpu/mtp9-*-s1/"}
+  - {name: mtp9-frz / mtp9-frz32, stage: rw3, steps: 8, role: "同一份权重（rfx-off 第 900 步之后）连算第 901–908 步 8 批 / 第 901–932 步 32 批：learning_rate=0、routed_bias_update_rate=0（param_norm 不变）；32 批的前 8 批与 8 批那次逐位相同", results: [rw3-mtp-same-state], location: "gs://<POC 桶>/janus/hunyuan4/tpu/mtp9-frz-s1/"}
+l0:
+  - {name: hy4-d3-maxtext-ckpt / hy4-d3-hf, role: "检查点转换：反向取回的逐张量清单 / HF 原件的逐张量清单（model/verify_ckpt.py）", results: [hy4-d3-l0-ckpt-convert]}
+cpu:      # CPU FP64 前向（frameworks/megatron/step1_ref.py --forward-only --expert-store ram，40 核），第 1 步全局批 16 行；逐行记录在 results/step1-base2-emulation.micro.jsonl
+  - {name: d3-fp64-fwd, stage: rw3, role: "D3 原样 FP64 参照（只前向）", results: [step1-loss-vs-fp64, step1-base2-emulation]}
+  - {name: d3-kappa-all, stage: rw3, role: "D3，4 个注意力层的 logits（不含 sink）乘 κ = 1.4453125 ÷ log2 e（--emulate-base2 kappa）", results: [step1-base2-emulation]}
+  - {name: d3-kappa-L0 / L1 / L2 / mtp0, stage: rw3, role: "D3，只在一层乘 κ（逐层拆分）", results: [step1-base2-emulation]}
+  - {name: d3-full-all / d3-q16-all, stage: rw3, role: "D3，q 舍 BF16 后乘 BF16 的 log2 e 再舍 BF16（完整 base2）/ 只把 q 舍 BF16（对照）", results: [step1-base2-emulation]}
+  - {name: b-base / b-kappa-all / b-full-all / b-q16-all, stage: B, role: "T2 截层 B 的同一组（标定：对 TPU 只关 base2 的 tnorm-sg → tqa-nb2）", results: [step1-base2-emulation]}
+  - {name: d3-fp64-grad, stage: rw3, role: "D3 原样 FP64 整网反向（--expert-store ram --keep-experts 0 --expert-grads-kept-only --recompute --audit）：路由专家只算第 0 号的权重梯度，其余参数全算；16 行逐行前向 loss 与只前向的参照逐位或差 1e-15 量级；用的是提交 0e1dd89 的 step1_ref.py", results: [step1-base2-off]}
+  - {name: d3-fp64-full-grad, stage: rw3, role: "同上，另加 --emulate-base2 full --emulate-layers all。和 --audit 一起用时 q 的 BF16 舍入被改回 FP64，实际只加了放大 κ（主 loss 与 d3-kappa-all 逐位相同）；作「FP64 + κ」参照，看 TPU base2 开那份有多少能由 κ 解释。step1_ref.py 之后拒绝这种组合", results: [step1-base2-off]}
+  - {name: s151-fp64 / s151-v2, stage: rw3, role: "TPU b2s-off150 快照上第 151 步全局批的 FP64 前向：BF16 快照 / 输出头与 k_norm 换 FP32（v2）", results: [rw3-step151-same-state]}
+  - {name: s151-fp64-grad, stage: rw3, role: "v2 快照上第 151 步的 FP64 整网反向（同 d3-fp64-grad 的开关）"}

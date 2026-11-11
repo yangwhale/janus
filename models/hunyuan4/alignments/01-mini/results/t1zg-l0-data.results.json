@@ -1,0 +1,67 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "060ffedf21aee32a12cc8f12575499fc68fc9c73"
+ },
+ "catalog": {
+  "path": "models/hunyuan4/alignments/01-mini/catalogs/t1zg-l0-data.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "6cce6eb46be1dbd3791c8c69c71633bcaa4002bb7deb61320ee1ce80dd4c565e",
+  "raw_sha256": "6aaf154dd270c474ee8fa8999f2ed64076b5154c375bac2626c3bb3686262d9e"
+ },
+ "runs": {
+  "t1zg-a": {
+   "path": "/tmp/hy4m/root/t1zg-a",
+   "meta_sha256": "b5ff61e76796bb6213e98fa6d63e32f05c91e8c5117a2dcaaf01b7502f6e273a"
+  },
+  "g3-a": {
+   "path": "/tmp/hy4m/root/g3-a",
+   "meta_sha256": "60a90786d1676694c15dafd2eb18c5f2ee74bdaf034c8ff5f24e7c64de559a84"
+  }
+ },
+ "started_at": "2026-11-09T03:51:38+00:00",
+ "finished_at": "2026-11-09T03:51:38+00:00",
+ "summary": {
+  "pass": 1,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L0.data.fingerprint",
+   "type": "data_fingerprint",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "units_per_field": {
+     "tokens": 16000,
+     "labels": 16000,
+     "loss_mask": 16000,
+     "position_ids": 16000
+    },
+    "units": 65000,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/hy4m/root/t1zg-a",
+     "sha256": "b5ff61e76796bb6213e98fa6d63e32f05c91e8c5117a2dcaaf01b7502f6e273a"
+    },
+    {
+     "path": "/tmp/hy4m/root/g3-a",
+     "sha256": "60a90786d1676694c15dafd2eb18c5f2ee74bdaf034c8ff5f24e7c64de559a84"
+    }
+   ],
+   "message": "token 与首步 loss 逐位相同",
+   "details": "details/L0.data.fingerprint.jsonl"
+  }
+ ]
+}

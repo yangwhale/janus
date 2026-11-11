@@ -1,0 +1,31 @@
+# 两机 NCCL 冒烟（2026-11-09，2 台 B200 × 8，每台 8 张 RDMA 网卡走 DRA，NeMo 26.10 镜像）。日志摘录，原样。
+# 程序：torchrun 16 进程，BF16 张量 all_reduce 与 all_to_all_single，各热身 3 次、计时 10 次；
+#   busbw = 2(w−1)/w × 字节数 ÷ 时间；A2A algbw = 字节数 × (w−1)/w ÷ 时间（w = 16）。
+# 三种环境：
+#   gib-official：另装 gIB 初始化容器（nccl-plugin-gib v1.1.2），source 它的 set_nccl_env.sh，库路径前置 /usr/local/gib/lib64
+#   B：同上，但库路径把镜像自带的 /usr/lib/x86_64-linux-gnu 放最前（用镜像的 NCCL）
+#   C：不装 gIB，不关镜像里的 GCP 插件（pod_run.sh 多机时就是这样）
+
+==== gib-official
+ImportError: /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cuda.so: undefined symbol: ncclGetPeerDeviceLeInfo
+# /usr/local/gib/lib64 里是 libnccl.so.2.30.4；镜像里 torch 用的是 NCCL (2, 31, 2)
+
+==== B
+NCCL INFO NCCL version 2.31.2+cuda13.4
+NCCL INFO Successfully loaded external env plugin /usr/local/gib/lib64/libnccl-env-gcp.so
+NCCL INFO Successfully loaded external network plugin /opt/gcp/nccl-plugins/lib64/libnccl-net-gcp.so
+NCCL INFO NET/Plugin: Loaded net plugin gIB (v11)
+NCCL INFO Using network gIB
+AR bytes=2097152 busbw=22.9GB/s  A2A algbw=15.7GB/s
+AR bytes=134217728 busbw=352.6GB/s  A2A algbw=82.8GB/s
+AR bytes=536870912 busbw=567.5GB/s  A2A algbw=86.3GB/s
+
+==== C
+NCCL INFO NCCL version 2.31.2+cuda13.4
+NCCL INFO Successfully loaded external env plugin /opt/gcp/nccl-plugins/lib64/libnccl-env-gcp.so
+NCCL INFO Successfully loaded external network plugin /opt/gcp/nccl-plugins/lib64/libnccl-net-gcp.so
+NCCL INFO NET/Plugin: Loaded net plugin gIB (v11)
+NCCL INFO Using network gIB
+AR bytes=2097152 busbw=21.7GB/s  A2A algbw=17.2GB/s
+AR bytes=134217728 busbw=332.3GB/s  A2A algbw=81.8GB/s
+AR bytes=536870912 busbw=578.6GB/s  A2A algbw=86.1GB/s

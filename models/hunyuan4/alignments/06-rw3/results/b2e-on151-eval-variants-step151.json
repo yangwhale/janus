@@ -1,0 +1,146 @@
+{
+ "step": 151,
+ "note": "第 step 步训练之前的权重；选中的参数舍成 BF16 后只做前向（不更新）",
+ "variants": {
+  "none": {
+   "pattern": "",
+   "n_hf_tensors": 0,
+   "n_leaves": 0,
+   "lm_loss": 6.594507211171204,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7320951223373413,
+   "indexer_loss": 0.019890107214450836,
+   "loss": 7.346517562866211
+  },
+  "all": {
+   "pattern": ".",
+   "n_hf_tensors": 84,
+   "n_leaves": 87,
+   "lm_loss": 6.595614859290494,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7320685386657715,
+   "indexer_loss": 0.01999790407717228,
+   "loss": 7.347706317901611
+  },
+  "head": {
+   "pattern": "^lm_head\\.",
+   "n_hf_tensors": 1,
+   "n_leaves": 1,
+   "lm_loss": 6.5956664222201855,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7320762276649475,
+   "indexer_loss": 0.019890107214450836,
+   "loss": 7.347657680511475
+  },
+  "embed": {
+   "pattern": "embed_tokens",
+   "n_hf_tensors": 1,
+   "n_leaves": 1,
+   "lm_loss": 6.594507211171204,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7320951223373413,
+   "indexer_loss": 0.019890107214450836,
+   "loss": 7.346517562866211
+  },
+  "norm": {
+   "pattern": "norm\\.weight$|norm\\.bias$",
+   "n_hf_tensors": 26,
+   "n_leaves": 26,
+   "lm_loss": 6.594455648241513,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7320653200149536,
+   "indexer_loss": 0.01999790407717228,
+   "loss": 7.346543788909912
+  },
+  "attn": {
+   "pattern": "self_attn\\.(q_a_proj|q_b_proj|kv_a_proj_with_mqa|kv_b_proj|o_proj|linear_gate)\\.",
+   "n_hf_tensors": 24,
+   "n_leaves": 24,
+   "lm_loss": 6.594507211171204,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7320951223373413,
+   "indexer_loss": 0.019890107214450836,
+   "loss": 7.346517562866211
+  },
+  "indexer": {
+   "pattern": "self_attn\\.indexer\\.",
+   "n_hf_tensors": 15,
+   "n_leaves": 15,
+   "lm_loss": 6.594455648241513,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7320653200149536,
+   "indexer_loss": 0.01999790407717228,
+   "loss": 7.346543788909912
+  },
+  "dense": {
+   "pattern": "mlp\\.(gate_proj|up_proj|down_proj)\\.",
+   "n_hf_tensors": 3,
+   "n_leaves": 3,
+   "lm_loss": 6.594507211171204,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7320951223373413,
+   "indexer_loss": 0.019890107214450836,
+   "loss": 7.346517562866211
+  },
+  "shared": {
+   "pattern": "mlp\\.shared_experts\\.",
+   "n_hf_tensors": 9,
+   "n_leaves": 9,
+   "lm_loss": 6.594507211171204,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7320951223373413,
+   "indexer_loss": 0.019890107214450836,
+   "loss": 7.346517562866211
+  },
+  "experts": {
+   "pattern": "mlp\\.experts\\.",
+   "n_hf_tensors": 6,
+   "n_leaves": 9,
+   "lm_loss": 6.594507211171204,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7320951223373413,
+   "indexer_loss": 0.019890107214450836,
+   "loss": 7.346517562866211
+  },
+  "router": {
+   "pattern": "mlp\\.gate\\.weight$",
+   "n_hf_tensors": 3,
+   "n_leaves": 3,
+   "lm_loss": 6.594507211171204,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7320951223373413,
+   "indexer_loss": 0.019890107214450836,
+   "loss": 7.346517562866211
+  },
+  "mtp": {
+   "pattern": "^model\\.mtp_layers\\.",
+   "n_hf_tensors": 26,
+   "n_leaves": 27,
+   "lm_loss": 6.594507211171204,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7320999503135681,
+   "indexer_loss": 0.019913475960493088,
+   "loss": 7.346545696258545
+  },
+  "mtp_proj": {
+   "pattern": "eh_proj",
+   "n_hf_tensors": 1,
+   "n_leaves": 1,
+   "lm_loss": 6.594507211171204,
+   "total_weights": 65454.0,
+   "mtp_loss": 0.7320951223373413,
+   "indexer_loss": 0.019890107214450836,
+   "loss": 7.346517562866211
+  }
+ },
+ "code": [
+  {
+   "repo": "maxtext",
+   "commit": "b87a55aad08b9f223cb4e248f2877fde9c51ac33"
+  },
+  {
+   "repo": "janus",
+   "commit": "b0a9e1bee4fc5a1f85436b3e996a1528a32a7b7a"
+  }
+ ]
+}

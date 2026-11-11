@@ -1,0 +1,67 @@
+# 对齐实践 02 · 正式验收补充：路由偏置曲线与健康信号（v7x 当前配置对 rcc-a）
+#
+# 正式迁移验收第一层的补充，尺子同 phase2-v7x-acceptance-rcc.yaml：对最终 golden rcc-a（GPU 生产 + 分段 FP32 输出头 dgrad），噪声 rcc-a..j 两两 45 对。
+# - L4.router.bias_std：每层 expert_bias 的标准差（router.bias_std.1..3），按 router_stats 的三个量对 rcc-a 判。
+# - L4.health：非有限值与突跳，参数同 phase1-full（window 10、spike_ratio 3），只看被测。
+# 对 rc 的旧目录 phase2-v7x-acc-health.yaml 留作第二层（已解释差异）的证据。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-v7x-acc-health-rcc
+description: 正式迁移验收补充：路由偏置标准差曲线（对 rcc-a，噪声 rcc-a..j 10 份两两 45 对）与健康信号（t-v7x-on-1000）
+runs:
+  test: t-v7x-on-1000
+  golden: [rcc-a]
+  noise:
+    - [rcc-a, rcc-b]
+    - [rcc-a, rcc-c]
+    - [rcc-a, rcc-d]
+    - [rcc-a, rcc-e]
+    - [rcc-a, rcc-f]
+    - [rcc-a, rcc-g]
+    - [rcc-a, rcc-h]
+    - [rcc-a, rcc-i]
+    - [rcc-a, rcc-j]
+    - [rcc-b, rcc-c]
+    - [rcc-b, rcc-d]
+    - [rcc-b, rcc-e]
+    - [rcc-b, rcc-f]
+    - [rcc-b, rcc-g]
+    - [rcc-b, rcc-h]
+    - [rcc-b, rcc-i]
+    - [rcc-b, rcc-j]
+    - [rcc-c, rcc-d]
+    - [rcc-c, rcc-e]
+    - [rcc-c, rcc-f]
+    - [rcc-c, rcc-g]
+    - [rcc-c, rcc-h]
+    - [rcc-c, rcc-i]
+    - [rcc-c, rcc-j]
+    - [rcc-d, rcc-e]
+    - [rcc-d, rcc-f]
+    - [rcc-d, rcc-g]
+    - [rcc-d, rcc-h]
+    - [rcc-d, rcc-i]
+    - [rcc-d, rcc-j]
+    - [rcc-e, rcc-f]
+    - [rcc-e, rcc-g]
+    - [rcc-e, rcc-h]
+    - [rcc-e, rcc-i]
+    - [rcc-e, rcc-j]
+    - [rcc-f, rcc-g]
+    - [rcc-f, rcc-h]
+    - [rcc-f, rcc-i]
+    - [rcc-f, rcc-j]
+    - [rcc-g, rcc-h]
+    - [rcc-g, rcc-i]
+    - [rcc-g, rcc-j]
+    - [rcc-h, rcc-i]
+    - [rcc-h, rcc-j]
+    - [rcc-i, rcc-j]
+  root: /data/janus-runs
+checks:
+  - {id: L4.router.bias_std, type: router_stats, level: L4, select: {kind: metrics, prefix: "router.bias_std.", window: "1:1001"}, threshold: calibrated}
+  - id: L4.health
+    type: health_signals
+    level: L4
+    select: {kind: metrics, fields: [lm_loss, grad_norm, param_norm]}
+    params: {window: 10, spike_ratio: 3, source: "推断：沿用 phase1-full（常数学习率下单步超前 10 步中位数 3 倍即异常）"}

@@ -1,0 +1,2287 @@
+{
+ "schema_version": 1,
+ "stage": "t1-l0-muon-partition",
+ "model": "hunyuan4-mini",
+ "inputs": {
+  "tpu_partition": "hy4-mini-muon-partition.json",
+  "tpu_partition_overrides": [
+   "muon_exclude_ihc=true"
+  ],
+  "gpu_partition": "g3-a/optimizer_partition.json",
+  "ep": 4,
+  "tpu_partition_note": "表是 models/hunyuan4/results/hy4-mini-muon-partition.json（只覆盖 muon_exclude_ihc=true）；按 T1 yml 的 Muon 键（muon_include_routers=true、muon_exclude_ihc=true、muon_attention_gate_whole_matrix=false）在 MaxText fd30fbfb 上重出一份，254 行逐行相同"
+ },
+ "checks": [
+  {
+   "id": "L0.optim.partition",
+   "type": "config_diff",
+   "level": "L0",
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "gpu_params": 239,
+    "compared": 239,
+    "differ": 0,
+    "missing": 0,
+    "gpu_muon": 140,
+    "gpu_adam": 99,
+    "numel": {
+     "gpu": {
+      "muon": 179814400,
+      "adam": 247968977
+     },
+     "tpu": {
+      "muon": 179814400,
+      "adam": 247968977
+     }
+    },
+    "tpu_leaves_not_in_gpu_list": 0
+   },
+   "message": "GPU optimizer_partition.json 的 239 个参数逐个找到 TPU 上装它的叶子：优化器不同 0、对不上 0；元素总数 Muon GPU 179,814,400 / TPU 179,814,400，Adam GPU 247,968,977 / TPU 247,968,977",
+   "details_inline": {
+    "differ": [],
+    "missing": [],
+    "tpu_leaves_not_in_gpu_list": [],
+    "rows": [
+     {
+      "gpu": "decoder.final_layernorm.hc_base",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/hc_head/hc_base"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.final_layernorm.hc_fn",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/hc_head/hc_fn"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.final_layernorm.hc_scale",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/hc_head/hc_scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.final_layernorm.norm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/decoder_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.attn_hc.base",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/dense_layers/mhc_attention/post_beta",
+       "decoder/dense_layers/mhc_attention/pre_beta"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.attn_hc.fn",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/dense_layers/mhc_attention/post_alpha",
+       "decoder/dense_layers/mhc_attention/pre_alpha"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.attn_hc.scale",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/dense_layers/mhc_attention/post_alpha_scale",
+       "decoder/dense_layers/mhc_attention/pre_alpha_scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.ffn_hc.base",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/dense_layers/mhc_mlp/post_beta",
+       "decoder/dense_layers/mhc_mlp/pre_beta"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.ffn_hc.fn",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/dense_layers/mhc_mlp/post_alpha",
+       "decoder/dense_layers/mhc_mlp/pre_alpha"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.ffn_hc.scale",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/dense_layers/mhc_mlp/post_alpha_scale",
+       "decoder/dense_layers/mhc_mlp/pre_alpha_scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.input_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/dense_layers/pre_self_attention_layer_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.mlp.linear_fc1.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/dense_layers/mlp/wi_0/kernel",
+       "decoder/dense_layers/mlp/wi_1/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.mlp.linear_fc2.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/dense_layers/mlp/wo/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.pre_mlp_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/dense_layers/post_self_attention_layer_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.self_attention.core_attention.indexer.k_norm.bias",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/dense_layers/self_attention/indexer/k_norm/bias"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.self_attention.core_attention.indexer.k_norm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/dense_layers/self_attention/indexer/k_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.self_attention.core_attention.indexer.linear_weights_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/dense_layers/self_attention/indexer/weights_proj/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.self_attention.core_attention.indexer.linear_wk.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/dense_layers/self_attention/indexer/wk/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.self_attention.core_attention.indexer.linear_wq_b.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/dense_layers/self_attention/indexer/wq_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.self_attention.core_attention.sinks",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/dense_layers/self_attention/sinks"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.self_attention.kv_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/dense_layers/self_attention/kv_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.self_attention.linear_gate.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/dense_layers/self_attention/gate_proj/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.self_attention.linear_kv_down_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/dense_layers/self_attention/wkv_a/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.self_attention.linear_kv_up_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/dense_layers/self_attention/wkv_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.self_attention.linear_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/dense_layers/self_attention/out/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.self_attention.linear_q_down_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/dense_layers/self_attention/wq_a/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.self_attention.linear_q_up_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/dense_layers/self_attention/wq_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.0.self_attention.q_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/dense_layers/self_attention/q_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.attn_hc.base",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/mhc_attention/post_beta",
+       "decoder/moe_layers/layers_0/mhc_attention/pre_beta"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.attn_hc.fn",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/mhc_attention/post_alpha",
+       "decoder/moe_layers/layers_0/mhc_attention/pre_alpha"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.attn_hc.scale",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/mhc_attention/post_alpha_scale",
+       "decoder/moe_layers/layers_0/mhc_attention/pre_alpha_scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.ffn_hc.base",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/mhc_mlp/post_beta",
+       "decoder/moe_layers/layers_0/mhc_mlp/pre_beta"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.ffn_hc.fn",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/mhc_mlp/post_alpha",
+       "decoder/moe_layers/layers_0/mhc_mlp/pre_alpha"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.ffn_hc.scale",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/mhc_mlp/post_alpha_scale",
+       "decoder/moe_layers/layers_0/mhc_mlp/pre_alpha_scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.input_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/pre_self_attention_layer_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.mlp.experts.linear_fc1.weight0",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.mlp.experts.linear_fc1.weight1",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.mlp.experts.linear_fc1.weight2",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.mlp.experts.linear_fc1.weight3",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.mlp.experts.linear_fc2.weight0",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.mlp.experts.linear_fc2.weight1",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.mlp.experts.linear_fc2.weight2",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.mlp.experts.linear_fc2.weight3",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.mlp.router.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/gate/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.mlp.shared_experts.linear_fc1.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/shared_experts/wi_0/kernel",
+       "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/shared_experts/wi_1/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.mlp.shared_experts.linear_fc2.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/shared_experts/wo/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.pre_mlp_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/post_self_attention_layer_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.self_attention.core_attention.indexer.k_norm.bias",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/self_attention/indexer/k_norm/bias"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.self_attention.core_attention.indexer.k_norm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/self_attention/indexer/k_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.self_attention.core_attention.indexer.linear_weights_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/self_attention/indexer/weights_proj/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.self_attention.core_attention.indexer.linear_wk.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/self_attention/indexer/wk/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.self_attention.core_attention.indexer.linear_wq_b.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/self_attention/indexer/wq_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.self_attention.core_attention.sinks",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/self_attention/sinks"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.self_attention.kv_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/self_attention/kv_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.self_attention.linear_gate.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/self_attention/gate_proj/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.self_attention.linear_kv_down_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/self_attention/wkv_a/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.self_attention.linear_kv_up_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/self_attention/wkv_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.self_attention.linear_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/self_attention/out/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.self_attention.linear_q_down_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/self_attention/wq_a/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.self_attention.linear_q_up_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/self_attention/wq_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.1.self_attention.q_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_0/self_attention/q_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.attn_hc.base",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/mhc_attention/post_beta",
+       "decoder/moe_layers/layers_1/mhc_attention/pre_beta"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.attn_hc.fn",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/mhc_attention/post_alpha",
+       "decoder/moe_layers/layers_1/mhc_attention/pre_alpha"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.attn_hc.scale",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/mhc_attention/post_alpha_scale",
+       "decoder/moe_layers/layers_1/mhc_attention/pre_alpha_scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.ffn_hc.base",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/mhc_mlp/post_beta",
+       "decoder/moe_layers/layers_1/mhc_mlp/pre_beta"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.ffn_hc.fn",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/mhc_mlp/post_alpha",
+       "decoder/moe_layers/layers_1/mhc_mlp/pre_alpha"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.ffn_hc.scale",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/mhc_mlp/post_alpha_scale",
+       "decoder/moe_layers/layers_1/mhc_mlp/pre_alpha_scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.input_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/pre_self_attention_layer_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.mlp.experts.linear_fc1.weight0",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.mlp.experts.linear_fc1.weight1",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.mlp.experts.linear_fc1.weight2",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.mlp.experts.linear_fc1.weight3",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.mlp.experts.linear_fc2.weight0",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.mlp.experts.linear_fc2.weight1",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.mlp.experts.linear_fc2.weight2",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.mlp.experts.linear_fc2.weight3",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.mlp.router.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/gate/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.mlp.shared_experts.linear_fc1.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/shared_experts/wi_0/kernel",
+       "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/shared_experts/wi_1/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.mlp.shared_experts.linear_fc2.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/shared_experts/wo/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.pre_mlp_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/post_self_attention_layer_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.self_attention.core_attention.sinks",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/self_attention/sinks"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.self_attention.kv_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/self_attention/kv_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.self_attention.linear_gate.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/self_attention/gate_proj/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.self_attention.linear_kv_down_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/self_attention/wkv_a/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.self_attention.linear_kv_up_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/self_attention/wkv_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.self_attention.linear_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/self_attention/out/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.self_attention.linear_q_down_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/self_attention/wq_a/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.self_attention.linear_q_up_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/self_attention/wq_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.2.self_attention.q_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_1/self_attention/q_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.attn_hc.base",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/mhc_attention/post_beta",
+       "decoder/moe_layers/layers_2/mhc_attention/pre_beta"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.attn_hc.fn",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/mhc_attention/post_alpha",
+       "decoder/moe_layers/layers_2/mhc_attention/pre_alpha"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.attn_hc.scale",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/mhc_attention/post_alpha_scale",
+       "decoder/moe_layers/layers_2/mhc_attention/pre_alpha_scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.ffn_hc.base",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/mhc_mlp/post_beta",
+       "decoder/moe_layers/layers_2/mhc_mlp/pre_beta"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.ffn_hc.fn",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/mhc_mlp/post_alpha",
+       "decoder/moe_layers/layers_2/mhc_mlp/pre_alpha"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.ffn_hc.scale",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/mhc_mlp/post_alpha_scale",
+       "decoder/moe_layers/layers_2/mhc_mlp/pre_alpha_scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.input_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/pre_self_attention_layer_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.mlp.experts.linear_fc1.weight0",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.mlp.experts.linear_fc1.weight1",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.mlp.experts.linear_fc1.weight2",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.mlp.experts.linear_fc1.weight3",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.mlp.experts.linear_fc2.weight0",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.mlp.experts.linear_fc2.weight1",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.mlp.experts.linear_fc2.weight2",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.mlp.experts.linear_fc2.weight3",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.mlp.router.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/MoeBlock_0/gate/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.mlp.shared_experts.linear_fc1.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/shared_experts/wi_0/kernel",
+       "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/shared_experts/wi_1/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.mlp.shared_experts.linear_fc2.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/shared_experts/wo/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.pre_mlp_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/post_self_attention_layer_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.self_attention.core_attention.sinks",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/self_attention/sinks"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.self_attention.kv_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/self_attention/kv_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.self_attention.linear_gate.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/self_attention/gate_proj/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.self_attention.linear_kv_down_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/self_attention/wkv_a/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.self_attention.linear_kv_up_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/self_attention/wkv_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.self_attention.linear_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/self_attention/out/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.self_attention.linear_q_down_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/self_attention/wq_a/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.self_attention.linear_q_up_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/self_attention/wq_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.3.self_attention.q_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_2/self_attention/q_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.attn_hc.base",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/mhc_attention/post_beta",
+       "decoder/moe_layers/layers_3/mhc_attention/pre_beta"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.attn_hc.fn",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/mhc_attention/post_alpha",
+       "decoder/moe_layers/layers_3/mhc_attention/pre_alpha"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.attn_hc.scale",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/mhc_attention/post_alpha_scale",
+       "decoder/moe_layers/layers_3/mhc_attention/pre_alpha_scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.ffn_hc.base",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/mhc_mlp/post_beta",
+       "decoder/moe_layers/layers_3/mhc_mlp/pre_beta"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.ffn_hc.fn",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/mhc_mlp/post_alpha",
+       "decoder/moe_layers/layers_3/mhc_mlp/pre_alpha"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.ffn_hc.scale",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/mhc_mlp/post_alpha_scale",
+       "decoder/moe_layers/layers_3/mhc_mlp/pre_alpha_scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.input_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/pre_self_attention_layer_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.mlp.experts.linear_fc1.weight0",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.mlp.experts.linear_fc1.weight1",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.mlp.experts.linear_fc1.weight2",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.mlp.experts.linear_fc1.weight3",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.mlp.experts.linear_fc2.weight0",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.mlp.experts.linear_fc2.weight1",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.mlp.experts.linear_fc2.weight2",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.mlp.experts.linear_fc2.weight3",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.mlp.router.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/MoeBlock_0/gate/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.mlp.shared_experts.linear_fc1.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/shared_experts/wi_0/kernel",
+       "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/shared_experts/wi_1/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.mlp.shared_experts.linear_fc2.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/shared_experts/wo/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.pre_mlp_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/post_self_attention_layer_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.self_attention.core_attention.sinks",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/self_attention/sinks"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.self_attention.kv_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/self_attention/kv_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.self_attention.linear_gate.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/self_attention/gate_proj/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.self_attention.linear_kv_down_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/self_attention/wkv_a/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.self_attention.linear_kv_up_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/self_attention/wkv_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.self_attention.linear_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/self_attention/out/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.self_attention.linear_q_down_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/self_attention/wq_a/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.self_attention.linear_q_up_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/self_attention/wq_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.4.self_attention.q_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers/layers_3/self_attention/q_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.attn_hc.base",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/mhc_attention/post_beta",
+       "decoder/moe_layers_remainder/layers_0/mhc_attention/pre_beta"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.attn_hc.fn",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/mhc_attention/post_alpha",
+       "decoder/moe_layers_remainder/layers_0/mhc_attention/pre_alpha"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.attn_hc.scale",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/mhc_attention/post_alpha_scale",
+       "decoder/moe_layers_remainder/layers_0/mhc_attention/pre_alpha_scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.ffn_hc.base",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/mhc_mlp/post_beta",
+       "decoder/moe_layers_remainder/layers_0/mhc_mlp/pre_beta"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.ffn_hc.fn",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/mhc_mlp/post_alpha",
+       "decoder/moe_layers_remainder/layers_0/mhc_mlp/pre_alpha"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.ffn_hc.scale",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/mhc_mlp/post_alpha_scale",
+       "decoder/moe_layers_remainder/layers_0/mhc_mlp/pre_alpha_scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.input_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/pre_self_attention_layer_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.mlp.experts.linear_fc1.weight0",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.mlp.experts.linear_fc1.weight1",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.mlp.experts.linear_fc1.weight2",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.mlp.experts.linear_fc1.weight3",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.mlp.experts.linear_fc2.weight0",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.mlp.experts.linear_fc2.weight1",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.mlp.experts.linear_fc2.weight2",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.mlp.experts.linear_fc2.weight3",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.mlp.router.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/gate/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.mlp.shared_experts.linear_fc1.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/shared_experts/wi_0/kernel",
+       "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/shared_experts/wi_1/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.mlp.shared_experts.linear_fc2.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/shared_experts/wo/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.pre_mlp_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/post_self_attention_layer_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.self_attention.core_attention.indexer.k_norm.bias",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/self_attention/indexer/k_norm/bias"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.self_attention.core_attention.indexer.k_norm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/self_attention/indexer/k_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.self_attention.core_attention.indexer.linear_weights_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/self_attention/indexer/weights_proj/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.self_attention.core_attention.indexer.linear_wk.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/self_attention/indexer/wk/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.self_attention.core_attention.indexer.linear_wq_b.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/self_attention/indexer/wq_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.self_attention.core_attention.sinks",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/self_attention/sinks"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.self_attention.kv_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/self_attention/kv_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.self_attention.linear_gate.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/self_attention/gate_proj/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.self_attention.linear_kv_down_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/self_attention/wkv_a/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.self_attention.linear_kv_up_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/self_attention/wkv_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.self_attention.linear_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/self_attention/out/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.self_attention.linear_q_down_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/self_attention/wq_a/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.self_attention.linear_q_up_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/self_attention/wq_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.5.self_attention.q_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_0/self_attention/q_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.attn_hc.base",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/mhc_attention/post_beta",
+       "decoder/moe_layers_remainder/layers_1/mhc_attention/pre_beta"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.attn_hc.fn",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/mhc_attention/post_alpha",
+       "decoder/moe_layers_remainder/layers_1/mhc_attention/pre_alpha"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.attn_hc.scale",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/mhc_attention/post_alpha_scale",
+       "decoder/moe_layers_remainder/layers_1/mhc_attention/pre_alpha_scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.ffn_hc.base",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/mhc_mlp/post_beta",
+       "decoder/moe_layers_remainder/layers_1/mhc_mlp/pre_beta"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.ffn_hc.fn",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/mhc_mlp/post_alpha",
+       "decoder/moe_layers_remainder/layers_1/mhc_mlp/pre_alpha"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.ffn_hc.scale",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/mhc_mlp/post_alpha_scale",
+       "decoder/moe_layers_remainder/layers_1/mhc_mlp/pre_alpha_scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.input_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/pre_self_attention_layer_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.mlp.experts.linear_fc1.weight0",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.mlp.experts.linear_fc1.weight1",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.mlp.experts.linear_fc1.weight2",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.mlp.experts.linear_fc1.weight3",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.mlp.experts.linear_fc2.weight0",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.mlp.experts.linear_fc2.weight1",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.mlp.experts.linear_fc2.weight2",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.mlp.experts.linear_fc2.weight3",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.mlp.router.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/gate/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.mlp.shared_experts.linear_fc1.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/shared_experts/wi_0/kernel",
+       "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/shared_experts/wi_1/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.mlp.shared_experts.linear_fc2.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/shared_experts/wo/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.pre_mlp_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/post_self_attention_layer_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.self_attention.core_attention.sinks",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/self_attention/sinks"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.self_attention.kv_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/self_attention/kv_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.self_attention.linear_gate.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/self_attention/gate_proj/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.self_attention.linear_kv_down_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/self_attention/wkv_a/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.self_attention.linear_kv_up_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/self_attention/wkv_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.self_attention.linear_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/self_attention/out/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.self_attention.linear_q_down_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/self_attention/wq_a/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.self_attention.linear_q_up_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/self_attention/wq_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "decoder.layers.6.self_attention.q_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/moe_layers_remainder/layers_1/self_attention/q_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "embedding.word_embeddings.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "token_embedder/embedding"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.eh_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_projection/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.enorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_embedding_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.final_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_final_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.hnorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_hidden_state_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.input_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/pre_self_attention_layer_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.mlp.experts.linear_fc1.weight0",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.mlp.experts.linear_fc1.weight1",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.mlp.experts.linear_fc1.weight2",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.mlp.experts.linear_fc1.weight3",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/MoeBlock_0/wi_0",
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/MoeBlock_0/wi_1"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.mlp.experts.linear_fc2.weight0",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.mlp.experts.linear_fc2.weight1",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.mlp.experts.linear_fc2.weight2",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.mlp.experts.linear_fc2.weight3",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/MoeBlock_0/wo"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.mlp.router.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/MoeBlock_0/gate/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.mlp.shared_experts.linear_fc1.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/shared_experts/wi_0/kernel",
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/shared_experts/wi_1/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.mlp.shared_experts.linear_fc2.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/shared_experts/wo/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.pre_mlp_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/post_self_attention_layer_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.self_attention.core_attention.indexer.k_norm.bias",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/indexer/k_norm/bias"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.self_attention.core_attention.indexer.k_norm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/indexer/k_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.self_attention.core_attention.indexer.linear_weights_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/indexer/weights_proj/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.self_attention.core_attention.indexer.linear_wk.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/indexer/wk/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.self_attention.core_attention.indexer.linear_wq_b.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/indexer/wq_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.self_attention.core_attention.sinks",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/sinks"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.self_attention.kv_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/kv_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.self_attention.linear_gate.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/gate_proj/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.self_attention.linear_kv_down_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/wkv_a/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.self_attention.linear_kv_up_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/wkv_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.self_attention.linear_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/out/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.self_attention.linear_q_down_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/wq_a/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.self_attention.linear_q_up_proj.weight",
+      "gpu_opt": "muon",
+      "tpu_opt": "muon",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/wq_b/kernel"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "mtp.layers.0.mtp_model_layer.self_attention.q_layernorm.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/q_norm/scale"
+      ],
+      "equal": true
+     },
+     {
+      "gpu": "output_layer.weight",
+      "gpu_opt": "adam",
+      "tpu_opt": "adam",
+      "tpu_leaves": [
+       "decoder/logits_dense/kernel"
+      ],
+      "equal": true
+     }
+    ]
+   }
+  }
+ ],
+ "summary": {
+  "pass": 1,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0
+ }
+}

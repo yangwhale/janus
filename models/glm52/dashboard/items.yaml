@@ -1,0 +1,40 @@
+# GLM-5.2 对齐总览的条目（格式同 models/hunyuan3/dashboard/items.yaml）：每行一个检查项，每列一个对齐实践。
+# 还没有结果文件，全部写 status: todo；有结果后改成 src: "<结果文件名>:<检查 id>"。
+columns:
+  gpu: 00 · B200×8 自比（GPU 噪声参照与故障演练）
+  v5p: 01 · B200×8 → TPU v5p 8 片（阶段 1：第 0 层 + 第 6 层）
+alignments:
+  00-gpu-noise-and-drills: {column: gpu}
+  01-v5p-acceptance: {column: v5p}
+groups:
+  - name: L0 地基（数据 / 权重 / 配置，必须逐位）
+    items:
+      - {name: 截层权重逐张量 sha256, gpu: todo, v5p: todo}
+      - {name: 权重转换往返逐位, gpu: todo, v5p: todo}
+      - {name: 配置逐项对照（含 Muon、QK-Clip）, gpu: todo, v5p: todo}
+      - {name: 数据逐样本回放, gpu: todo, v5p: todo}
+  - name: L1 单算子（对 FP64 的 R 比）
+    items:
+      - {name: MLA 各投影与 latent norm, gpu: todo, v5p: todo}
+      - {name: DSA 索引器分数与 top-k 翻转, gpu: todo, v5p: todo}
+      - {name: 注意力核, gpu: todo, v5p: todo}
+      - {name: 稠密 FFN, gpu: todo, v5p: todo}
+      - {name: 路由与 MoE（含共享专家）, gpu: todo, v5p: todo}
+      - {name: 输出头, gpu: todo, v5p: todo}
+  - name: L2 逐层隔离回放
+    items:
+      - {name: 第 0 层前向 / 反向, gpu: todo, v5p: todo}
+      - {name: 第 6 层前向 / 反向, gpu: todo, v5p: todo}
+  - name: L3 第 1 步整步
+    items:
+      - {name: 梯度, gpu: todo, v5p: todo}
+      - {name: Muon / Adam 优化器状态与更新后参数, gpu: todo, v5p: todo}
+      - {name: QK-Clip 被裁的头与缩放, gpu: todo, v5p: todo}
+  - name: L4 多步（300 步）
+    items:
+      - {name: loss, gpu: todo, v5p: todo}
+      - {name: grad_norm, gpu: todo, v5p: todo}
+      - {name: param_norm, gpu: todo, v5p: todo}
+      - {name: 学习率, gpu: todo, v5p: todo}
+      - {name: 路由偏置曲线, gpu: todo, v5p: todo}
+      - {name: QK-Clip 触发, gpu: todo, v5p: todo}

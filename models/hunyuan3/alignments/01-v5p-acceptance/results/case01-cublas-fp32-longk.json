@@ -1,0 +1,60 @@
+{
+ "what": "同一份 dlogits（FP32）与输出层权重（BF16 值）：dh = dlogits @ W 的各种算法对 FP64；u_signed = Σ_t err_t·û / Σ_t |ref_t·û|，û = 输出层行均值方向。dlogits 取 GPU 精确（--fp32 --bf16-weights、关 TF32）训练里实际的值：θ_299 状态第 300 步 batch（g-lv-f300）与第 1 步（g-bw-d1），rank 0 第一个 microbatch，4096 个 token；收缩长度 = 词表 120832。B200、CUDA 13.4、cuBLAS 13.8、torch 2.14（NeMo 26.09 容器）",
+ "theta299": {
+  "training_dump_dh": {
+   "rel_l2": 4.17e-05,
+   "u_signed": -0.0002579
+  },
+  "b200_fp32_matmul_tf32_off": {
+   "rel_l2": 4.17e-05,
+   "u_signed": -0.0002579,
+   "note": "与训练里的 dh 相同；fp32_precision=ieee、去掉 TORCH_ALLOW_TF32_CUBLAS_OVERRIDE、NVIDIA_TF32_OVERRIDE=0、CUBLAS_EMULATION_STRATEGY=eager/performant、cublasLt 与 cublas 两个后端、转置写法，结果都相同"
+  },
+  "b200_fp32_matmul_tf32_on": {
+   "rel_l2": 0.0004348,
+   "u_signed": -0.000457
+  },
+  "b200_bf16_matmul": {
+   "rel_l2": 0.001994,
+   "u_signed": -0.000459
+  },
+  "b200_fp32_chunked_k1024": {
+   "rel_l2": 5.88e-07,
+   "u_signed": 1.067e-07
+  },
+  "b200_fp32_chunked_k128": {
+   "rel_l2": 7.663e-07,
+   "u_signed": -1.122e-07
+  },
+  "cpu_fp32_matmul": {
+   "rel_l2": 3.221e-07,
+   "u_signed": -3.431e-08
+  },
+  "b200_fp64_matmul": {
+   "rel_l2": 7.356e-15,
+   "u_signed": -5.682e-18
+  }
+ },
+ "step1": {
+  "training_dump_dh": {
+   "rel_l2": 2.182e-05,
+   "u_signed": -1.791e-06
+  },
+  "b200_fp32_matmul_tf32_off": {
+   "rel_l2": 2.182e-05,
+   "u_signed": -1.791e-06
+  },
+  "b200_fp32_matmul_tf32_on": {
+   "rel_l2": 0.0004692,
+   "u_signed": -0.0008284
+  },
+  "b200_bf16_matmul": {
+   "rel_l2": 0.001681,
+   "u_signed": -0.0006496
+  },
+  "cpu_fp32_matmul": {
+   "rel_l2": 3.727e-07,
+   "u_signed": 3.347e-09
+  }
+ }
+}

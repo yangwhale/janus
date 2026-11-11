@@ -1,0 +1,172 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "9a3a2dc0c423c36cc71f028e5bd1a6dda1607f05"
+ },
+ "catalog": {
+  "path": "models/hunyuan3/alignments/02-b200x8-to-v7x4-4layers/catalogs/phase2-v7x-resume.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "20195ef2b873297a1f2bbe6479e6511b1ead690ef4d26ad7ea5fe5a29bffa3c0",
+  "raw_sha256": "6441ed6f85c0520b36e5f0b433971ced4ed3f0e72fa13ff2ca198348dac27076"
+ },
+ "runs": {
+  "r-v7x-res20": {
+   "path": "/tmp/jr-fill/r-v7x-res20",
+   "meta_sha256": "f6615495fba46ab3eb5af0726b9aeacce61b87ff957c2b54301024213882f622"
+  },
+  "r-v7x-cont20": {
+   "path": "/tmp/jr-fill/r-v7x-cont20",
+   "meta_sha256": "08e036d1fb979d3099b124c5105bf4f72cf87bc50bc34c5f29af040dfc18f869"
+  }
+ },
+ "started_at": "2026-11-06T02:58:25+00:00",
+ "finished_at": "2026-11-06T03:09:38+00:00",
+ "summary": {
+  "pass": 5,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L0.resume.data",
+   "type": "data_fingerprint",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "units_per_field": {
+     "tokens": 160,
+     "labels": 160,
+     "loss_mask": 160,
+     "position_ids": 160
+    },
+    "units": 650,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/jr-fill/r-v7x-res20",
+     "sha256": "f6615495fba46ab3eb5af0726b9aeacce61b87ff957c2b54301024213882f622"
+    },
+    {
+     "path": "/tmp/jr-fill/r-v7x-cont20",
+     "sha256": "08e036d1fb979d3099b124c5105bf4f72cf87bc50bc34c5f29af040dfc18f869"
+    }
+   ],
+   "message": "token 与首步 loss 逐位相同",
+   "details": "details/L0.resume.data.jsonl"
+  },
+  {
+   "id": "L4.resume.overlap",
+   "type": "overlap_replay",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "overlap_steps": 10,
+    "first_differ_step": null,
+    "first_differ_fields": []
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/jr-fill/r-v7x-res20",
+     "sha256": "f6615495fba46ab3eb5af0726b9aeacce61b87ff957c2b54301024213882f622"
+    },
+    {
+     "path": "/tmp/jr-fill/r-v7x-cont20",
+     "sha256": "08e036d1fb979d3099b124c5105bf4f72cf87bc50bc34c5f29af040dfc18f869"
+    }
+   ],
+   "message": "重叠步全部逐位相同"
+  },
+  {
+   "id": "L3.resume.state",
+   "type": "checkpoint_equal",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "params": 91,
+    "differ": 0,
+    "only_one_side": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/jr-fill/r-v7x-res20",
+     "sha256": "f6615495fba46ab3eb5af0726b9aeacce61b87ff957c2b54301024213882f622"
+    },
+    {
+     "path": "/tmp/jr-fill/r-v7x-cont20",
+     "sha256": "08e036d1fb979d3099b124c5105bf4f72cf87bc50bc34c5f29af040dfc18f869"
+    }
+   ],
+   "message": "全部参数逐位相同"
+  },
+  {
+   "id": "L3.resume.step11",
+   "type": "bitwise_equal",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 256,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/jr-fill/r-v7x-res20",
+     "sha256": "f6615495fba46ab3eb5af0726b9aeacce61b87ff957c2b54301024213882f622"
+    },
+    {
+     "path": "/tmp/jr-fill/r-v7x-cont20",
+     "sha256": "08e036d1fb979d3099b124c5105bf4f72cf87bc50bc34c5f29af040dfc18f869"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/L3.resume.step11.jsonl"
+  },
+  {
+   "id": "L3.resume.coverage",
+   "type": "coverage",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {},
+   "worst": [],
+   "coverage": {
+    "expected": 256,
+    "compared": 256,
+    "missing": []
+   },
+   "evidence": [
+    {
+     "path": "/tmp/jr-fill/r-v7x-res20",
+     "sha256": "f6615495fba46ab3eb5af0726b9aeacce61b87ff957c2b54301024213882f622"
+    }
+   ],
+   "message": "全部比到"
+  }
+ ]
+}

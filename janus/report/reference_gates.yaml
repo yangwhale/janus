@@ -1,0 +1,88 @@
+# 参考档：同类 GPU→TPU 迁移项目的实践门槛（Megatron → MaxText，大规模生产迁移）。
+# 来源是外部实践，janus 没有独立验证过；判定（验收）只看严格档（噪声参照 / 逐位 / FP64 R 比），参考档只并列报告。
+# 例外：param_norm 一条外部实践没有、公开资料里也没找到，是项目负责人设定的（见该条的 source）。
+# 说明见 docs/reference/judging.md「两档门槛」。由 janus/report/tables.py 读：
+#   applies：检查 id 通配，命中才有参考档；都没命中 =「无对应门槛」（grad_norm、路由统计、优化器状态等）。
+#   exclude / exclude_reason：命中 applies 但这条线在那里没有依据的检查，参考档写「不适用」并给原因，不判。
+#   basis：哪些检查类型的普通指标就是参考档口径（tensor_tolerance 的 rel_L2 等是被测对 GPU 参照）；
+#          其他类型（op_replay：rel_L2 是对 FP64 真值）只认另记的 vs_ref_<键>（被测对参照的同名输出），
+#          一个也没有时报「参考档所需指标未记录」并写 basis_note，不拿口径不同的数去判。
+#   统计的定义（janus/metrics.py 的 reference_stats，FP64）：
+#     oot_frac  超差元素比例：|aᵢ − bᵢ| > atol + rtol·|bᵢ| 的元素占比，rtol = 2⁻⁶，atol = 2⁻⁶ × rms(b)。
+#               推断：外部实践没写容差；BF16 在 1 附近的间距是 2⁻⁷，取两格作相对容差，绝对容差按参照的均方根缩放，防近零元素一律算超差。
+#     mean_diff 均值差：mean|a − b| / mean|b|。推断：外部实践只写「mean diff < 0.01」，没说绝对还是相对；激活与梯度量级差几个数量级，取相对。
+#     norm_max  归一化最大误差：max|a − b| / max|b|。推断：外部实践的 kernel 级写法。
+#   criteria：metric 是 results.json 里 metrics 的键（按 <键>_max / <键>_min / <键> 的顺序找）；
+#             op 为 < / <= / >= / ==；show 是门槛的显示写法（不给就按数字格式化），short 是总览门槛栏里的短名；optional: true 的只报不判（只有个别例子用过）；
+#             结果里没有这个键 → 这一项「未记录」，不判。
+gates:
+  module:
+    title: 逐模块 / 逐层 dump 对比
+    scope: 层前向输出、反向输入梯度，对 GPU 参照
+    applies: ["L2.layer*.fwd", "L2.layer*.bwd"]
+    # 只用在不受路由影响的层。混元 3 的第 1–3 层是 MoE 层：层内路由之后的观测点（mlp.out、层输出）与层输入梯度都随
+    # 近似平局的路由翻转变，这条线在那里没有依据。结果文件只记了每层最差观测点的统计，按观测点剔除做不到，所以整层不适用。
+    exclude: ["L2.layer[123].fwd", "L2.layer[123].bwd"]
+    exclude_reason: 参考档不适用：这一层是 MoE 层，路由之后的观测点受近似平局翻转影响，按严格档 R 比判
+    source: >-
+      同类 GPU→TPU 迁移项目逐层前向检查的线。那边用在注意力（MLA）层的输出上，层内没有路由，实测 rel_L2 3e-3 – 5.4e-3，
+      线取 1%。所以这里只用在没有路由的层（混元 3 的第 0 层稠密层）。
+    basis: [tensor_tolerance]
+    basis_note: 结果里没有被测对 GPU 的统计（op_replay 的 rel_L2 是对 FP64 真值）
+    criteria:
+      - {metric: rel_l2, op: "<", value: 0.01, label: rel_L2}
+      - {metric: oot_frac, op: "<", value: 0.01, label: 超差元素比例, short: 超差, show: "1%"}
+      - {metric: mean_diff, op: "<", value: 0.01, label: 均值差}
+      - {metric: cosine, op: ">=", value: 0.99995, label: cos, show: "0.99995", optional: true}
+  kernel:
+    title: kernel 级（融合 kernel 对参照 kernel）
+    scope: 单个融合 kernel 的输出对参照 kernel 的输出
+    applies: ["L1.ops.kernel.*", "L1.ops.op.*"]
+    basis: [tensor_tolerance]
+    basis_note: 结果里没有同输入的被测对参照统计（rel_L2 是对 FP64 真值；两侧算子输入不同时不比）
+    criteria:
+      - {metric: rel_l2, op: "<=", value: 0.0009765625, label: rel_L2, show: "2^-10"}
+      - {metric: norm_max, op: "<=", value: 0.0078125, label: 归一化最大误差, short: 归一化最大差, show: "2^-7"}
+  optimizer:
+    title: 优化器更新等价
+    scope: 第 1 步 FP64 重放的更新量、更新后主权重，对参照
+    applies: ["L1.optim.adamw.replay", "L3.step1.updated"]
+    basis: [optimizer_step, tensor_tolerance]
+    basis_note: ""
+    criteria:
+      - {metric: rel_l2, op: "<=", value: 0.02, label: rel_L2（Frobenius）, short: rel_L2, show: "0.02"}
+      - {metric: cosine, op: ">=", value: 0.9999, label: cos, show: "0.9999"}
+  loss:
+    title: 多步 loss 对 GPU 参照（主门槛）
+    scope: 首步相对差、窗口内带符号平均相对差（「万分之二」）；NaN / Inf 一律不过
+    applies: ["L4.loss", "L4.loss.*"]
+    basis: [loss_series, multi_golden]
+    basis_note: ""
+    criteria:
+      - {metric: d0, op: "<=", value: 0.0002, label: 首步差, show: "2e-4"}
+      - {metric: signed_mean, op: "<=", value: 0.0002, label: 带符号均值, show: "2e-4"}
+      - {metric: nonfinite_steps, op: "==", value: 0, label: NaN / Inf 步数, short: NaN / Inf}
+  param_norm:
+    title: 多步 param_norm 对参照（项目负责人设定）
+    scope: FP32 主权重全局 L2 范数的逐步相对差，窗口内带符号均值与最大单步
+    source: >-
+      项目负责人设定（2026-11-05），外部未找到公开门槛。公开资料里训练迁移的精度对齐只给 loss 和 grad norm 的线
+      （grad norm 量级是 5%–10% 的平均相对误差），没有一条针对参数范数的。
+      依据（混元 3 4 层、1000 步、lr 1e-5，01 实践 results/series/ 的逐步序列）：
+      ① 这个设置下 param_norm 本身约 3042.5，1000 步只走了 +0.146（相对 4.8e-5），窗口内对第 1 步值的带符号均值 3.67e-5；
+         一个权重完全不更新的运行对参照的带符号均值就是 3.67e-5、最大单步 4.9e-5，所以 1e-4 量级的线连「没训练」都拦不住。
+      ② GPU 生产 BF16 程序 rc-a..e 对精确轨迹 rce-a：带符号均值 2.48e-6 – 2.60e-6、最大单步 6.05e-6 – 6.27e-6
+         （第 1000 步差 1.8e-2 – 1.9e-2）。线取它的约 2 倍：一个 BF16 误差和 GPU 生产程序同量级的实现能过；
+         带符号均值 5e-6 约是「没训练」的 1/7；推断：参数范数的走向整体偏了约 14% 以上的错（如学习率、权重衰减配错）仍会被拦下。
+      ③ 量化：日志里的 param_norm 是 FP32 平方和开方，平方和在这一量级的 FP32 间距是 1，换到范数是 1/(2·3042.5) ≈ 1.64e-4，
+         相对 5.4e-8；噪声参照的 N（1.24e-7）只有两格多，参考档的线是它的 40 倍。
+      换模型、步数或学习率要按 ① ② 重新算，不能照搬这两个数。
+    applies: ["L4.param_norm"]
+    basis: [loss_series]
+    basis_note: ""
+    criteria:
+      - {metric: signed_mean, op: "<=", value: 0.000005, label: 带符号均值, show: "5e-6"}
+      - {metric: max_step, op: "<=", value: 0.0000125, label: 最大单步, show: "1.25e-5"}
+# 只写进文档、目前没有检查对应的参考值（照抄进 docs/reference/judging.md 的表）：
+#   MTP 等辅助 loss：±0.02%–0.2%；低精度配方：只报模式，另设单步硬上限；
+#   早期阶段 loss 门槛：首步 0.01%、窗口平均 0.1%；更大的模型：首步 0.05%、窗口平均 0.02%。

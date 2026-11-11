@@ -1,0 +1,47 @@
+# 混元 3 · 日常回归 · T0 冒烟：4 层，主切分（FSDP 8，per_device_batch_size 2，GA 1），20 步，不抓张量。
+# 跑 R01–R09、R14、R15、R17、R18、R20–R23（标准第六节）。检查都在 regression-common.yaml（与 T1 共用，只写一处）。
+# 用法：由 ../run_regression.sh 调（它给 --test / --lkg / --root）。手动跑：
+#   python -m janus run models/hunyuan3/regression/catalogs/regression-t0.yaml --root <运行根> --test <被测> --lkg <LKG> --out <结果目录>
+schema_version: 1
+model: hunyuan3-4l
+stage: regression-t0
+description: T0 冒烟（20 步）对 LKG
+runs:
+  root: /data/janus-runs
+  test: TEST_RUN          # run_regression.sh 用 --test 换
+  lkg: LKG_RUN            # run_regression.sh 用 --lkg 换
+  golden: []
+  # 容差门（role: tolerance）的噪声参照：TPU 执行噪声，基线 + 过了三关的扰动臂两两成对（28 对，正式；README 第五节）。
+  # 必须和 ../calibration.yaml 里 v5p / T0 最新一条的 pairs 相同（tests 核）；运行目录由 run_regression.sh 按那里的位置取回
+  noise:
+    - [reg-t0-fa-a, fa-vmem64-a]
+    - [reg-t0-fa-a, fa-vmem48-a]
+    - [reg-t0-fa-a, fa-vmem40-a]
+    - [reg-t0-fa-a, fa-vmem56-a]
+    - [reg-t0-fa-a, fa-sabwd1k-a]
+    - [reg-t0-fa-a, fa-sabwd256-a]
+    - [reg-t0-fa-a, fa-combo-a]
+    - [fa-vmem64-a, fa-vmem48-a]
+    - [fa-vmem64-a, fa-vmem40-a]
+    - [fa-vmem64-a, fa-vmem56-a]
+    - [fa-vmem64-a, fa-sabwd1k-a]
+    - [fa-vmem64-a, fa-sabwd256-a]
+    - [fa-vmem64-a, fa-combo-a]
+    - [fa-vmem48-a, fa-vmem40-a]
+    - [fa-vmem48-a, fa-vmem56-a]
+    - [fa-vmem48-a, fa-sabwd1k-a]
+    - [fa-vmem48-a, fa-sabwd256-a]
+    - [fa-vmem48-a, fa-combo-a]
+    - [fa-vmem40-a, fa-vmem56-a]
+    - [fa-vmem40-a, fa-sabwd1k-a]
+    - [fa-vmem40-a, fa-sabwd256-a]
+    - [fa-vmem40-a, fa-combo-a]
+    - [fa-vmem56-a, fa-sabwd1k-a]
+    - [fa-vmem56-a, fa-sabwd256-a]
+    - [fa-vmem56-a, fa-combo-a]
+    - [fa-sabwd1k-a, fa-sabwd256-a]
+    - [fa-sabwd1k-a, fa-combo-a]
+    - [fa-sabwd256-a, fa-combo-a]
+include: [regression-common.yaml]
+vars: {steps: 20, window: "1:21", units: 1300}
+checks: []

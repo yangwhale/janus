@@ -1,0 +1,112 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.0.1",
+  "commit": null
+ },
+ "catalog": {
+  "path": "catalogs/hunyuan3-4l/phase1-tp-cp.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "97d2e08959c51c8434ee1a80079f9e6f4c8265a6ae0691b2e60b9340c648ce84",
+  "raw_sha256": "df6b2613cf6df50b29b1bc2ba110092528b0bdf394d882a7ad6f1b7fe791f78f"
+ },
+ "runs": {
+  "p-tp2": {
+   "path": "/data/janus-runs2/p-tp2",
+   "meta_sha256": "5e8f5a6c0bf2af398c9d6588ca44c76d9317921b324967d17301893da31a6583"
+  },
+  "p-ep4f": {
+   "path": "/data/janus-runs2/p-ep4f",
+   "meta_sha256": "b67c9370ceea989ed33aabeb3c373855163f55016419a2ad91bfcf1abe7c2355"
+  }
+ },
+ "started_at": "2026-11-03T23:27:34+00:00",
+ "finished_at": "2026-11-03T23:27:34+00:00",
+ "summary": {
+  "pass": 2,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L3.loss.step1",
+   "type": "loss_series",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "d0": 0.0001,
+     "signed_mean": 0.001,
+     "max_step": 0.001
+    },
+    "source": "推断：只换并行方式时首步 loss 的宽松起点（BF16 前向、归约分组不同）"
+   },
+   "metrics": {
+    "d0": 4.99055246829814e-06,
+    "signed_mean": 1.9090225576453475e-06,
+    "mare": 4.8814433565924255e-06,
+    "max_step": 6.7904659142377734e-06,
+    "max_step_at": 2,
+    "window": "1:4",
+    "denominator": "golden",
+    "nonfinite_steps": [],
+    "signed_mean_se": 4.8814433565924255e-06
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/p-tp2",
+     "sha256": "5e8f5a6c0bf2af398c9d6588ca44c76d9317921b324967d17301893da31a6583"
+    },
+    {
+     "path": "/data/janus-runs2/p-ep4f",
+     "sha256": "b67c9370ceea989ed33aabeb3c373855163f55016419a2ad91bfcf1abe7c2355"
+    }
+   ],
+   "message": "在门槛内"
+  },
+  {
+   "id": "L4.grad_norm",
+   "type": "loss_series",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "d0": 0.001,
+     "signed_mean": 0.01,
+     "max_step": 0.01
+    },
+    "source": "推断：同上"
+   },
+   "metrics": {
+    "d0": 0.00023723442742530052,
+    "signed_mean": 0.00019655872689549136,
+    "mare": 0.00019655872689549136,
+    "max_step": 0.000271616734233102,
+    "max_step_at": 3,
+    "window": "1:4",
+    "denominator": "golden",
+    "nonfinite_steps": [],
+    "signed_mean_se": 7.505800733761065e-05
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/p-tp2",
+     "sha256": "5e8f5a6c0bf2af398c9d6588ca44c76d9317921b324967d17301893da31a6583"
+    },
+    {
+     "path": "/data/janus-runs2/p-ep4f",
+     "sha256": "b67c9370ceea989ed33aabeb3c373855163f55016419a2ad91bfcf1abe7c2355"
+    }
+   ],
+   "message": "在门槛内"
+  }
+ ]
+}

@@ -1,0 +1,27 @@
+# 03 · 路由回放验证（一）：rv-det 开整层重算 + 路由回放，确定性，2 步，第 1 步全量抓数。
+# 对照 r-remat（00 的整层重算、不回放，确定性，3 步）。比三件事：
+# ① 重算那次前向与首次前向逐位相同——包括每个 MoE 层的路由 logits、选中的专家（topk_idx）、路由概率（probs）；
+# ② 首次前向与 r-remat 逐位相同（回放只动反向里的重算，不改首次前向）；③ 第 1 步 loss 与 r-remat 相同。
+# 运行目录：rv-det 在 POC Pod 的 /data/rc/runs/，r-remat 从 /data/janus-runs2/ 链接过来（不对外）。
+schema_version: 1
+model: hunyuan3-4l
+stage: remat-replay
+runs:
+  test: rv-det
+  golden: [r-remat]
+  root: /data/rc/runs
+checks:
+  - id: DET.replay.vs_first
+    type: bitwise_equal
+    level: L2
+    compare: self
+    select: {kind: tensor, step: 1, name: "*.recompute", ref_rename: {from: .recompute, to: ""}}
+  - id: DET.replay.fwd_vs_remat
+    type: bitwise_equal
+    level: L2
+    select: {kind: tensor, step: 1, name: "layers.*", exclude: ["*.recompute", "*.grad", "*.counts"]}
+  - id: DET.replay.loss_vs_remat
+    type: loss_series
+    level: L4
+    select: {kind: metrics, field: lm_loss, window: "1:2"}
+    threshold: exact

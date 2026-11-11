@@ -1,0 +1,93 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.0.1",
+  "commit": null
+ },
+ "catalog": {
+  "path": "catalogs/hunyuan3-4l/phase1-hooks.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "c644837ac463ea77062fe8047feab211fb5ae9ba1f12283477f28165b0c6964b",
+  "raw_sha256": "a3c1d0e2ecb970f6cd01983dc3b6a2080a99610d202af2e3360959bc6f82ee93"
+ },
+ "runs": {
+  "h-light2": {
+   "path": "/data/janus-runs2/h-light2",
+   "meta_sha256": "695c46a29476f72caebee43b000f9fbc04341ef39bd80a9eb07b651e12969194"
+  },
+  "d-a": {
+   "path": "/data/janus-runs2/d-a",
+   "meta_sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+  }
+ },
+ "started_at": "2026-11-03T23:52:48+00:00",
+ "finished_at": "2026-11-03T23:52:48+00:00",
+ "summary": {
+  "pass": 2,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L0.hooks.data",
+   "type": "data_fingerprint",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "first_loss": {
+     "test": 11.4657564163208,
+     "ref": 11.4657564163208
+    },
+    "units": 1950,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/h-light2",
+     "sha256": "695c46a29476f72caebee43b000f9fbc04341ef39bd80a9eb07b651e12969194"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "token 与首步 loss 逐位相同",
+   "details": "details/L0.hooks.data.jsonl"
+  },
+  {
+   "id": "DET.hooks.noop",
+   "type": "determinism",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "fields": 8,
+    "first_differ": [],
+    "tensors": 0,
+    "tensors_differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/h-light2",
+     "sha256": "695c46a29476f72caebee43b000f9fbc04341ef39bd80a9eb07b651e12969194"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "逐位可复现"
+  }
+ ]
+}

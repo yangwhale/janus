@@ -1,0 +1,36 @@
+# 第一阶段 · 并行等价补全：EP8 → EP4（确定性、同权重同 batch、全量抓数），比第 1 步的稠密参数梯度与更新后参数。
+# 专家参数在两种 EP 下按本地编号存（weight0 指向不同的全局专家），不比；稠密参数（注意力、稠密 MLP、路由、共享专家、norm、embedding、输出层）同名同义。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase1-parallel-ext
+# 尺子用默认设置（非确定性）运行两两的差：只换并行方式带来的差，应不超过 GPU 自己重跑的噪声。
+runs:
+  test: p-ep4f
+  golden: [d-a]
+  noise:
+    - [s-b, s-c]
+    - [s-b, s-d]
+    - [s-c, s-d]
+  root: /data/janus-runs2
+checks:
+  - id: L2.parallel.grads.bitwise
+    type: bitwise_equal
+    level: L2
+    hard: false
+    select: {kind: tensor, step: 1, name: "grad.*", exclude: "*experts*"}
+  - id: L2.parallel.grads.ulp
+    type: ulp_distribution
+    level: L2
+    select: {kind: tensor, step: 1, name: "grad.decoder.layers.*", exclude: "*experts*"}
+  - id: L2.parallel.grads.tol
+    type: tensor_tolerance
+    level: L2
+    select: {kind: tensor, step: 1, name: "grad.*", exclude: "*experts*"}
+    metrics: [rel_l2, cosine, norm_ratio]
+    threshold: calibrated
+  - id: L3.parallel.updated
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "main_param_after.*", exclude: "*experts*"}
+    metrics: [rel_l2, max_abs]
+    threshold: calibrated

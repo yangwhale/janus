@@ -1,0 +1,100 @@
+# 混元 4 · T2 阶段 B（真实权重截层：第 0 层稠密 + 第 1 层 MoE（256 专家 top-8 + 1 共享），无 MTP；12,078,550,957 参数）TPU 一侧的训练配置。
+# 数值与优化器开关逐项照搬 T1 的现行配置 hy4-mini-t1.yml（含台账 M28 的 ihc_stream_sum_unrolled），只换模型：
+# model_name hy4-preview（发布配置的维度），层数由阶段给，初始权重是转换好的真实权重检查点（run.sh 的 CKPT 默认 …/maxtext/hy4-b-maxtext）。
+# 取值按 PROTOCOL.md 第 1.2 节；T2 的登记见 PROTOCOL.md 变更记录。改 T1 的数值开关时两份一起改（tests 里逐键核对与 hy4-mini-t1.yml 相同）。
+# 用法：YML=hy4-t2-b.yml STAGE=B GOLDEN=<GPU 运行目录> HF_DIR=<…/hf/hy4-4l> bash run.sh <运行名> 300
+base_config: "base.yml"
+
+model_name: "hy4-preview"
+override_model_config: true             # 层数与 MTP 由阶段 B 在命令行给（mt_common.stage_overrides：base_num_decoder_layers=2 mtp_num_layers=0）
+dtype: "bfloat16"                       # 生产：BF16 计算
+weight_dtype: "float32"                 # FP32 主权重
+grad_dtype: "float32"
+mu_dtype: "float32"                     # 优化器状态 FP32
+matmul_precision: "default"
+dropout_rate: 0.0
+use_random_routing: false
+load_balance_loss_weight: 0.0           # 生产 moe_aux_loss_coeff 0
+z_loss_multiplier: 0.0
+routed_bias_update_rate: 0.001          # 生产日志里没有更新率；1e-3 是 DeepSeek-V3 的值
+routed_bias_zero_mean_update: false     # 原版 Megatron-Core 没有零均值更新，T1 关（项目负责人 13:49 规矩；PROTOCOL 变更记录）
+indexer_loss_scaling_factor: 0.1        # 生产 dsa_indexer_kd_loss_coeff 0.1；MaxText 对各产出层取平均后乘它
+indexer_kd_mcore_log: true             # 原版 Megatron-Core 的 KL 写法（M20）
+indexer_kd_mcore_weight: true          # 原版 Megatron-Core：KL 按查询行数加权（M21）
+mtp_loss_mcore_per_rank: true          # 原版 Megatron-Core：MTP loss 每行按自己的 token 数重标（M22）
+indexer_fp32_scores: true              # 原版 Megatron-Core：索引器打分与 KD 教师 q.k 用真 FP32（M23）
+logits_matmul_precision: "highest"     # 输出头真 FP32 矩阵乘（只开 logits_dot_in_fp32 时 TPU 默认精度只做一遍 BF16；台账 M13）
+qk_clip_max_logit_exclude_sink: true   # 原版 Megatron-Core：QK-Clip 的最大 logit 不含 sink（台账 M25；阶段 B 上的 NaN 由 M35 修好，重新打开）
+indexer_weights_proj_bf16_weight: true # 原版 Megatron-Core：weights_proj 乘 BF16 的模型权重、FP32 输出（台账 M27）
+ihc_stream_sum_unrolled: true          # GPU：iHC 四路流加权和是 FP32 逐元素乘加，不是 HIGHEST einsum（台账 M28）
+ihc_force_bf16_rounding: true          # 同 T1（台账 M36）
+# GPU 一侧（Megatron-Core 0.20 + TE 2.20）的舍入位置，混元 3 已为同一套 GPU 栈打开的四个开关（台账 M8–M10、M12）：
+dense_fp32_accumulation: true          # TE GEMM：FP32 累加、输出只舍一次
+rmsnorm_single_rounding: true          # TE 融合 RMSNorm：FP32 里乘完 scale 只舍一次
+routed_gate_bf16_rounding: true        # 路由：BF16 权重 × BF16 激活，在 FP32 里乘
+mlp_activation_round_per_op: true      # 不融合的 SwiGLU：silu 舍一次、乘积再舍一次
+# mtp_loss_scaling_factor 0.1、indexer_sparse_training、路由 FP32 与 highest 精度：取模型 yml（hy4-preview.yml，与 hy4-mini.yml 只差维度）
+# indexer_loss_scaling_factor：hy4-preview.yml 里是 0，本文件的 0.1 由 mt_common.forced_overrides 补到命令行才生效
+
+# ---- 优化器：Muon（生产 momentum 0.95、NS 5 步、Nesterov）
+opt_type: "muon"
+muon_type: "optax_muon"
+muon_beta: 0.95
+muon_include_routers: true
+muon_exclude_ihc: true                  # 生产 muon_exclude_ihc
+muon_fuse_glu: true                     # 对上 Megatron-Core 融合的 fc1（项目负责人定）
+muon_attention_gate_whole_matrix: false # 照现状：输出门每头正交化（生产 muon_split_mla_* 语义未知）
+muon_mcore_nesterov: true              # 原版 Megatron-Core：Nesterov 不做偏差修正（台账 M15）
+muon_adam_plain: true                  # 原版 Megatron-Core：标量参数普通 Adam，不是 NAdam（M16）
+muon_mcore_ns_normalize: true          # 原版 Megatron-Core：NS 前 x / max(||x||, 1e-7)（M17）
+muon_mcore_ns_bf16: true               # 原版 Megatron-Core（emerging_optimizers，muon_fp32_matmul_prec medium）：NS 在 BF16 张量上迭代（M30、M31）
+transcendental_accuracy_highest: true  # GPU：FP32 exp / log / sigmoid / silu 约 1–2 ULP；TPU 默认的是近似（实测 62–105 ULP），换 accuracy=HIGHEST（M32、M33）
+muon_adam_accurate: true               # GPU（CUDA）的除法 / sqrt / 1−β^t 约 1 ULP；TPU 默认除法 2 ULP、1−β^t 最多 108 ULP（台账 M34）
+moe_mcore_prob_before_fc2: true        # GPU：路由专家在 fc2 之前乘 FP32 路由权重（act×up 舍 BF16 → × prob → 舍 BF16），top-k 输出在 BF16 里逐个相加（台账 M40）
+mlp_fused_fc1_dgrad: true              # GPU：linear_fc1 是 gate | up 一个 GEMM，输入梯度 [g0|g1][W0|W1]^T 只舍一次（台账 M41）
+splash_dsinks_fp32: false              # M42 暂从对齐配置撤下（t1zv-b：单开 M42 整网离 GPU 更远，主 loss r 0.65 → 1.32）；照 GPU 写法的 M42b 验证后再定（PROTOCOL 变更记录 2026-11-09）
+splash_dsinks_gpu_order: true           # M42b：sink 梯度照 GPU（Megatron-Core autograd）的写法：−Σ_q p_sink·Σ_j p_j·bf16(do·v_j)，p 与求和 FP32；t1zw-a 起（PROTOCOL 变更记录 2026-11-09）
+sa_use_base2_exp: false                # M43：splash 不走 base2 指数，与 GPU 的自然指数同。2026-11-11 起所有尺寸的对齐配置都关（PROTOCOL 变更记录 2026-11-11）；2026-11-09 开过一代
+indexer_kd_generalized_kl: true         # M50：索引器 KD 改记广义 KL Σp·log(p/q) − Σp + Σq，差值经 stop_gradient 加回，梯度逐位不变、只改记录值；t1zg-a 起（PROTOCOL 变更记录 2026-11-09，MaxText 47d31984 起有这个键）
+muon_weight_decay: 0.0                  # 照现状（MaxText 默认 0；生产值未知）
+adam_weight_decay: 0.0                  # 照现状
+adam_b1: 0.9                            # 生产
+adam_b2: 0.95                           # 生产
+adam_eps: 1.0e-10                       # 生产
+adam_eps_root: 0.0
+gradient_clipping_threshold: 1.0        # 生产
+use_qk_clip: true                       # 生产 alpha 0.5（MaxText 写死）、threshold 100
+qk_clip_threshold: 100.0
+qk_clip_mcore_denominator: true        # 原版 Megatron-Core：min(1, tau / max_logit)（M18）
+
+# ---- 学习率：常数 1e-5（项目负责人定；对齐用，不复现生产的 cosine）
+learning_rate: 1.0e-5
+lr_schedule_type: "wsd"
+warmup_steps_fraction: 0.0
+wsd_decay_steps_fraction: 0.0
+learning_rate_final_fraction: 1.0
+skip_step_on_spikes: false
+
+# ---- batch：8 个设备（v5p 2x2x2）对 GPU 8 卡，每个设备 1 条 × 累积 2；设备 d 第 m 个累积步拿 GPU rank d 的 micro m
+max_target_length: 4096
+per_device_batch_size: 1
+gradient_accumulation_steps: 2
+init_weights_seed: 1234
+data_shuffle_seed: 1234
+ici_fsdp_parallelism: -1
+ici_data_parallelism: 1
+ici_tensor_parallelism: 1
+ici_expert_parallelism: 1
+dcn_data_parallelism: 1
+megablox: true
+sparse_matmul: true
+capacity_factor: -1.0                   # 不丢 token
+
+# ---- 重算：整层重算、路由索引存下不重选。custom 下除层输入（decoder_layer_input: device，默认）外全部默认 remat；
+# moe_routing_maps: device 来自模型 yml。full 下 MaxText 不读 moe_routing_maps，反向会重选路由（PROTOCOL 变更记录）
+remat_policy: "custom"
+attention: "flash"                      # tokamax splash；QK-Clip 支持 dot_product 与 tokamax splash
+scan_layers: true
+enable_checkpointing: false
+dataset_type: "synthetic"               # train_hy4.py 按 golden 的 data/batches 原样回放
+log_period: 1

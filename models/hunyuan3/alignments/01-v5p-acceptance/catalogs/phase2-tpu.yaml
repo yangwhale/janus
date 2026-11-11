@@ -1,0 +1,266 @@
+# 第二阶段 · TPU（MaxText）对 GPU golden —— 草稿
+# 状态（2026-11-06）：历史草稿，没有按这份目录跑（runs.test / runs.lkg 是占位）。它的检查后来拆进 phase2-l0-state、phase2-l1-ops*、
+#   phase2-l2-replay-*、phase2-st1-prod-state、phase2-acceptance-rcc-on 等正式目录；下面的 TODO 也已由扰动系综（splash 块大小、
+#   片上内存上限，见 models/hunyuan3/ALIGNMENT-REPORT.md）完成。只作 config_diff 映射的参考。
+#
+# 被测：TPU 运行（models/hunyuan3/frameworks/maxtext/run.sh，默认 --dump-steps 1,1000 --full）。运行名在跑完后填进 runs.test / runs.lkg。
+# golden：g1k-a / g1k-b / g1k-c（GPU 默认设置，各 1000 步，第 1、1000 步全量抓数，同一份数据与权重）。
+# 噪声参照：同一种设置（默认设置）的 GPU 运行两两相比。g1k-det 是确定性设置，按 docs/reference/judging.md「只用同一种设置的运行对」不和默认设置混作参照。
+#
+# 两个已知缺口（跑之前就知道，写在这里免得误读结果）：
+# 1. 第 1 步前向：GPU 默认设置下第 1 步前向逐位可复现（docs/reference/environment.md「两种设置」），GPU 运行对的噪声是 0，
+#    calibrated 门槛等于「逐位相同」，TPU 必然判 fail。要等 TPU 扰动臂（只改执行方式的 TPU 运行，见下方 TODO）给出执行噪声，
+#    把它们加进 runs.noise 之后才有意义。在此之前第 1 步前向类检查都标 hard: false，只报不拦。
+# 2. 激活的梯度（<名>.grad）TPU 侧暂不抓（models/hunyuan3/model/name_map.yaml，status: not-captured），不比。
+#
+# TODO（TPU 扰动臂，跑完 TPU 第一份运行后补）：
+#   tpu-perturb-1：remat_policy 换一档（如 full + moe_routing_maps=device）    ── 待核对它是否只改执行方式
+#   tpu-perturb-2：attention 块大小换一档（sa_block_q / sa_block_kv）
+#   tpu-perturb-3：v7x 2x2x1（同代码同配置换芯片）—— 这个改了硬件，只能当跨平台参照，不当噪声
+#   每个扰动臂先用「同程序只改这一个开关」的两次运行证明它不改数学（docs/reference/environment.md「扰动臂候选」），再加进 runs.noise。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-tpu
+description: TPU（MaxText，v5p 8 片）对 GPU golden 的 L0–L4 检查草稿
+runs:
+  test: TODO-tpu-run            # 例：t-a（run.sh 的运行名）
+  lkg: TODO-tpu-nohooks-run     # 同配置不加钩子的 TPU 运行（run.sh … --no-hooks），给「抓数不改数值」用
+  golden: [g1k-a, g1k-b, g1k-c]
+  noise:
+    - [g1k-a, g1k-b]
+    - [g1k-a, g1k-c]
+    - [g1k-b, g1k-c]
+  root: /data/janus-runs        # 把 golden 与 TPU 运行目录都下载到这一个目录下（README「跑 janus 比对」）
+checks:
+  # ---------------- L0 地基：配置、数据、权重
+  - id: L0.config.diff
+    type: config_diff
+    level: L0
+    select: {kind: config}
+    params:
+      mapping:
+        # 模型结构与路由：两边都写成 Megatron 的键名（TPU 的值来自 MaxText 实际生效的配置，见 train_hy3.build_meta）
+        - {test: model_config.num_layers, ref: model_config.num_layers, must_equal: true}
+        - {test: model_config.hidden_size, ref: model_config.hidden_size, must_equal: true}
+        - {test: model_config.num_attention_heads, ref: model_config.num_attention_heads, must_equal: true}
+        - {test: model_config.num_query_groups, ref: model_config.num_query_groups, must_equal: true}
+        - {test: model_config.kv_channels, ref: model_config.kv_channels, must_equal: true}
+        - {test: model_config.ffn_hidden_size, ref: model_config.ffn_hidden_size, must_equal: true}
+        - {test: model_config.num_moe_experts, ref: model_config.num_moe_experts, must_equal: true}
+        - {test: model_config.moe_router_topk, ref: model_config.moe_router_topk, must_equal: true}
+        - {test: model_config.moe_ffn_hidden_size, ref: model_config.moe_ffn_hidden_size, must_equal: true}
+        - {test: model_config.moe_shared_expert_intermediate_size, ref: model_config.moe_shared_expert_intermediate_size, must_equal: true}
+        - {test: model_config.moe_router_dtype, ref: model_config.moe_router_dtype, must_equal: true}
+        - {test: model_config.moe_router_score_function, ref: model_config.moe_router_score_function, must_equal: true}
+        - {test: model_config.moe_router_enable_expert_bias, ref: model_config.moe_router_enable_expert_bias, must_equal: true}
+        - {test: model_config.moe_router_bias_update_rate, ref: model_config.moe_router_bias_update_rate, must_equal: true}
+        - {test: model_config.moe_router_topk_scaling_factor, ref: model_config.moe_router_topk_scaling_factor, must_equal: true}
+        - {test: model_config.moe_aux_loss_coeff, ref: model_config.moe_aux_loss_coeff, must_equal: true}
+        - {test: model_config.moe_z_loss_coeff, ref: model_config.moe_z_loss_coeff, must_equal: true}
+        - {test: model_config.layernorm_epsilon, ref: model_config.layernorm_epsilon, must_equal: true}
+        - {test: model_config.qk_layernorm, ref: model_config.qk_layernorm, must_equal: true}
+        - {test: model_config.rotary_base, ref: model_config.rotary_base, must_equal: true}
+        - {test: model_config.normalization, ref: model_config.normalization, must_equal: true}
+        - {test: model_config.bf16, ref: model_config.bf16, must_equal: true}
+        # RNG 消费者：两边都必须等于 0
+        - {test: model_config.hidden_dropout, equals: 0.0}
+        - {test: model_config.attention_dropout, equals: 0.0}
+        # 优化器与调度：GPU 实际生效的权重衰减在 scheduler_config（覆盖了 optimizer_config.weight_decay=0.1）
+        - {test: optimizer_config.lr, ref: optimizer_config.lr, must_equal: true}
+        - {test: optimizer_config.weight_decay, ref: scheduler_config.start_weight_decay, must_equal: true}
+        - {test: optimizer_config.adam_beta1, ref: optimizer_config.adam_beta1, must_equal: true}
+        - {test: optimizer_config.adam_beta2, ref: optimizer_config.adam_beta2, must_equal: true}
+        - {test: optimizer_config.adam_eps, ref: optimizer_config.adam_eps, must_equal: true}
+        - {test: optimizer_config.clip_grad, ref: optimizer_config.clip_grad, must_equal: true}
+        - {test: scheduler_config.lr_decay_style, ref: scheduler_config.lr_decay_style, must_equal: true}
+        - {test: scheduler_config.lr_warmup_iters, ref: scheduler_config.lr_warmup_iters, must_equal: true}
+        # 批、序列、初始权重、数据
+        - {test: config.gbs, ref: config.args.gbs, must_equal: true}
+        - {test: config.seq, ref: config.args.seq, must_equal: true}
+        - {test: checkpoint.manifest_sha256, ref: checkpoint.manifest_sha256, must_equal: true}
+        - {test: data.replay_of.manifest_sha256, ref: data.manifest_sha256, must_equal: true}
+        # 只列出、不拦：两边本来就不同
+        - {test: config.seed, ref: config.args.seed, must_equal: false}      # 权重载入 + 数据回放，种子不影响数值
+        - {test: parallelism, ref: parallelism, must_equal: false}           # TPU FSDP8，GPU DP8 + EP8
+        - {test: versions, ref: versions, must_equal: false}
+        - {test: dtypes, ref: dtypes, must_equal: false}                     # 写法不同（float32 / fp32），语义见 hy3-4l.yml
+        - {test: determinism, ref: determinism, must_equal: false}
+        # MTP：TPU 记了 model_config.mtp_num_layers=0；GPU 的 meta 没记（train_hy3.py 里 m.mtp_num_layers=None），
+        # 等 GPU 侧补记后加 {test: model_config.mtp_num_layers, equals: 0}
+  # 权重转换：MaxText 检查点逐张量还原回 HF 命名与形状，对 HF 原件逐位；两个运行由 verify_ckpt.py 写出（见 phase2-ckpt-convert.yaml）
+  - id: L0.ckpt.convert.bitwise
+    type: checkpoint_equal
+    level: L0
+    select: {kind: checkpoint, which: init, manifest: true, test_run: hy3-4l-maxtext-ckpt, ref_run: hy3-4l-hf}
+  - id: L0.ckpt.convert.dtype
+    type: dtype_manifest
+    level: L0
+    select: {kind: checkpoint, which: init, run: hy3-4l-maxtext-ckpt}
+    params:
+      rules:
+        - {pattern: "*.expert_bias", dtype: float32}
+        - {pattern: "*", exclude: "*.expert_bias", dtype: bfloat16}
+  - id: L0.data.fingerprint
+    type: data_fingerprint
+    level: L0
+    select: {kind: tokens, steps: "1:1001"}
+    params: {first_loss: false}       # 首步 loss 跨平台不逐位，不在这里比（L3 / L4 比）
+  - id: L0.weights.init
+    type: checkpoint_equal
+    level: L0
+    select: {kind: checkpoint, which: init, manifest: true}
+  - id: L0.weights.loaded
+    type: bitwise_equal
+    level: L0
+    select: {kind: tensor, step: 1, name: "param.*"}
+  - id: L0.main_params.loaded
+    type: bitwise_equal
+    level: L0
+    select: {kind: tensor, step: 1, name: "main_param.*"}
+  - id: L0.buffers.loaded
+    type: bitwise_equal
+    level: L0
+    select: {kind: tensor, step: 1, name: "buffer.*"}
+  - id: L0.dtype.manifest
+    type: dtype_manifest
+    level: L0
+    select: {kind: checkpoint, which: [init, final]}
+    params:
+      rules:
+        - {pattern: "buffer.*expert_bias", dtype: float32}
+        - {pattern: "*", exclude: "buffer.*", dtype: bfloat16}
+  # 抓数不改数值：加钩子的运行对不加钩子的运行，1000 步逐位；第 1 步状态类张量逐位
+  # （train_hy3.py 在每个抓数步还做了一次程序内自检，结果在 meta.json 的 hooks.selfcheck）
+  - id: L0.hooks.determinism
+    type: determinism
+    level: L0
+    compare: lkg
+    select: {kind: metrics, fields: [lm_loss, grad_norm, param_norm, router.bias_mean.1, router.bias_std.3], step: 1, name: "buffer*"}
+  - id: L0.hooks.final_weights
+    type: checkpoint_equal
+    level: L0
+    compare: lkg
+    select: {kind: checkpoint, which: final, manifest: true}
+  # ---------------- L1 优化器 / 路由：FP64 重放
+  - id: L1.optim.adamw.replay
+    type: optimizer_step
+    level: L1
+    select: {kind: tensor, step: 1, name: "decoder.layers.*"}
+    params: {replay_from: test}
+    metrics: [rel_l2, max_abs]
+    threshold: {rel_l2: 5.0e-3}
+    source: "沿用 models/hunyuan3/alignments/00-gpu-noise-and-drills/catalogs/phase1-full.yaml 的 L1.optim.adamw.replay（FP64 重放的更新量舍入到 FP32 后自身误差最大 1.79e-3）"
+  - id: L1.router.topk.fp64
+    type: discrete_agreement
+    level: L1
+    select: {kind: tensor, step: 1, name: "layers.*.mlp.router.topk_idx"}
+    params: {mode: topk, reference: fp64_replay}
+    threshold: {set_frac: 0.97}
+    source: "推断：沿用 phase1-full.yaml 的同名检查，先给宽松下限，量完 TPU 地板后收紧"
+  # ---------------- L2 逐层（第 1 步，同一份权重；不是逐层注入，后几层会带着前面的差）
+  - id: L2.layer{i}.fwd
+    foreach: {i: [0, 1, 2, 3]}
+    type: tensor_tolerance
+    level: L2
+    hard: false                      # 见文件头缺口 1
+    select: {kind: tensor, step: 1, name: "layers.{i}.*.out", exclude: "*.experts.out"}
+    metrics: [rel_l2, cosine, mean_shift, max_abs]
+    threshold: calibrated
+  - id: L2.layer{i}.router
+    foreach: {i: [1, 2, 3]}
+    type: discrete_agreement
+    level: L2
+    hard: false                      # 见文件头缺口 1
+    select: {kind: tensor, step: 1, name: "layers.{i}.mlp.router.topk_idx"}
+    params: {mode: topk}
+    threshold: calibrated
+  - id: L2.layer{i}.grads
+    foreach: {i: [0, 1, 2, 3]}
+    type: tensor_tolerance
+    level: L2
+    select: {kind: tensor, step: 1, name: "grad.decoder.layers.{i}.*"}
+    metrics: [rel_l2, cosine, norm_ratio]
+    threshold: calibrated
+  # ---------------- L3 第 1 步整网
+  - id: L3.step1.loss.per_token
+    type: tensor_tolerance
+    level: L3
+    hard: false                      # 见文件头缺口 1
+    select: {kind: tensor, step: 1, name: "loss.per_token"}
+    metrics: [rel_l2, max_abs, mean_shift]
+    threshold: calibrated
+  - id: L3.step1.logits
+    type: tensor_tolerance
+    level: L3
+    hard: false                      # 见文件头缺口 1
+    select: {kind: tensor, step: 1, name: "logits"}
+    metrics: [rel_l2, cosine, max_abs, kl]
+    threshold: calibrated
+  - id: L3.step1.grads.all
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "grad.*"}
+    metrics: [rel_l2, cosine, norm_ratio]
+    threshold: calibrated
+  - id: L3.step1.updated
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "main_param_after.*"}
+    metrics: [rel_l2, max_abs]
+    threshold: calibrated
+  - id: L3.step1.optim_state
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "exp_avg*"}
+    metrics: [rel_l2, cosine]
+    threshold: calibrated
+  # 路由偏置更新只看计数的符号：两边选的专家相同时应逐位相同（NUMERICS-ALIGNMENT 推断），这里先按噪声判
+  - id: L3.step1.bias_after
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "buffer_after.*"}
+    metrics: [rel_l2, max_abs]
+    threshold: calibrated
+  - id: L3.step1.fake_fp32.main_param
+    type: fake_fp32
+    level: L3
+    select: {kind: tensor, step: 1, name: "main_param_after.*"}
+  - id: L3.step1.coverage
+    type: coverage
+    level: L3
+    # GPU 的专家分发缓冲区（*.experts.out）TPU 没有对应量；激活梯度（*.grad）TPU 暂不抓
+    select: {kind: tensor, step: 1, name: "*", exclude: "*.experts.out"}
+    notes: "exclude 只能写一个通配；*.grad 的缺口要等 TPU 抓激活梯度，或给 coverage 加多个 exclude 后再收紧"
+  # ---------------- L4 多步
+  - id: L4.loss
+    type: multi_golden
+    level: L4
+    select: {kind: metrics, field: lm_loss, window: "1:1001"}
+    params: {signed_mean_se_k: 2}
+    threshold: calibrated
+  - id: L4.lr
+    type: scalar_series
+    level: L4
+    select: {kind: metrics, field: lr, window: "1:1001"}
+    params: {rtol: 0.0, abs_ulp: 0}
+  - id: L4.grad_norm
+    type: loss_series
+    level: L4
+    select: {kind: metrics, field: grad_norm, window: "1:1001"}   # 两边都是裁剪之前的总范数
+    threshold: calibrated
+  - id: L4.param_norm
+    type: loss_series
+    level: L4
+    select: {kind: metrics, field: param_norm, window: "1:1001"}
+    threshold: calibrated
+  - id: L4.router.bias_std
+    type: router_stats
+    level: L4
+    select: {kind: metrics, prefix: "router.bias_std.", window: "1:1001"}
+    threshold: calibrated
+  # router.load_*：GPU 记的是 rank 0 本地两个 microbatch 的专家计数；TPU 要每步都抓路由才有，暂不记，不比
+  - id: L4.health
+    type: health_signals
+    level: L4
+    select: {kind: metrics, fields: [lm_loss, grad_norm, param_norm]}
+    params: {window: 10, spike_ratio: 3, source: "推断：沿用 phase1-full.yaml（常数学习率下单步超前 10 步中位数 3 倍即异常）"}

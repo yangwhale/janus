@@ -1,0 +1,8 @@
+# 混元 3 · 日常回归 · T1 档位配置（字段同 t0.yaml）。sha256 登记在 lkg.yaml。
+tier: T1
+catalog: catalogs/regression-t1.yaml
+steps: 1000
+train_args: [--no-hooks, --dump-steps, none, --no-param-sha, --state-sha, --hlo-dir, /data/xla]
+overrides: [per_device_batch_size=2, gradient_accumulation_steps=1]
+# R25 对齐门的 GPU golden（只取 meta.json、metrics.jsonl、DONE）
+golden: [g1k-a, g1k-b, g1k-c]

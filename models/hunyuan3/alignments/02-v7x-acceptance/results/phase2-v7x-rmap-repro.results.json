@@ -1,0 +1,163 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "fb8fe475bfc114c0532bf8d30ad800e1fef742cf"
+ },
+ "catalog": {
+  "path": "models/hunyuan3/alignments/02-b200x8-to-v7x4-4layers/catalogs/phase2-v7x-rmap-repro.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "88e41a1b6f83fd42299c47be31244b4ed373b6436c4923549f611842f9986681",
+  "raw_sha256": "300780fa815ef3642f99616401bfb8ba5c00cf8f6a4ccf418e6e43a94cbbdc45"
+ },
+ "runs": {
+  "t-v7x-rmap-1000-b": {
+   "path": "/tmp/jr-02/t-v7x-rmap-1000-b",
+   "meta_sha256": "9697d4862ab100a9b9769f9e69521cd9d28de3779b4c8e4d707bb3800c1abf04"
+  },
+  "t-v7x-rmap-1000-a": {
+   "path": "/tmp/jr-02/t-v7x-rmap-1000-a",
+   "meta_sha256": "1a08030c0041bebd48829edfcffaf52a708754ce18e2d53f519a7b098b6b5ce2"
+  }
+ },
+ "started_at": "2026-11-05T06:36:43+00:00",
+ "finished_at": "2026-11-05T06:36:55+00:00",
+ "summary": {
+  "pass": 4,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L4.repro.lm_loss",
+   "type": "scalar_series",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "rtol": 0.0,
+     "abs_ulp": 0
+    },
+    "source": "规格默认值"
+   },
+   "metrics": {
+    "steps": 1000,
+    "bad_steps": 0,
+    "first_bad": null
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/jr-02/t-v7x-rmap-1000-b",
+     "sha256": "9697d4862ab100a9b9769f9e69521cd9d28de3779b4c8e4d707bb3800c1abf04"
+    },
+    {
+     "path": "/tmp/jr-02/t-v7x-rmap-1000-a",
+     "sha256": "1a08030c0041bebd48829edfcffaf52a708754ce18e2d53f519a7b098b6b5ce2"
+    }
+   ],
+   "message": "逐步在容差内"
+  },
+  {
+   "id": "L4.repro.grad_norm",
+   "type": "scalar_series",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "rtol": 0.0,
+     "abs_ulp": 0
+    },
+    "source": "规格默认值"
+   },
+   "metrics": {
+    "steps": 1000,
+    "bad_steps": 0,
+    "first_bad": null
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/jr-02/t-v7x-rmap-1000-b",
+     "sha256": "9697d4862ab100a9b9769f9e69521cd9d28de3779b4c8e4d707bb3800c1abf04"
+    },
+    {
+     "path": "/tmp/jr-02/t-v7x-rmap-1000-a",
+     "sha256": "1a08030c0041bebd48829edfcffaf52a708754ce18e2d53f519a7b098b6b5ce2"
+    }
+   ],
+   "message": "逐步在容差内"
+  },
+  {
+   "id": "L4.repro.param_norm",
+   "type": "scalar_series",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "rtol": 0.0,
+     "abs_ulp": 0
+    },
+    "source": "规格默认值"
+   },
+   "metrics": {
+    "steps": 1000,
+    "bad_steps": 0,
+    "first_bad": null
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/jr-02/t-v7x-rmap-1000-b",
+     "sha256": "9697d4862ab100a9b9769f9e69521cd9d28de3779b4c8e4d707bb3800c1abf04"
+    },
+    {
+     "path": "/tmp/jr-02/t-v7x-rmap-1000-a",
+     "sha256": "1a08030c0041bebd48829edfcffaf52a708754ce18e2d53f519a7b098b6b5ce2"
+    }
+   ],
+   "message": "逐步在容差内"
+  },
+  {
+   "id": "L0.repro.data.fingerprint",
+   "type": "data_fingerprint",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "units_per_field": {
+     "tokens": 16000,
+     "labels": 16000,
+     "loss_mask": 16000,
+     "position_ids": 16000
+    },
+    "units": 65000,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/jr-02/t-v7x-rmap-1000-b",
+     "sha256": "9697d4862ab100a9b9769f9e69521cd9d28de3779b4c8e4d707bb3800c1abf04"
+    },
+    {
+     "path": "/tmp/jr-02/t-v7x-rmap-1000-a",
+     "sha256": "1a08030c0041bebd48829edfcffaf52a708754ce18e2d53f519a7b098b6b5ce2"
+    }
+   ],
+   "message": "token 与首步 loss 逐位相同",
+   "details": "details/L0.repro.data.fingerprint.jsonl"
+  }
+ ]
+}

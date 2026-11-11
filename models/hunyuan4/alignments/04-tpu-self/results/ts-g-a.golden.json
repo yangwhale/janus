@@ -1,0 +1,85 @@
+{
+ "run": "ts-g-a",
+ "role": "TPU 自比的 golden",
+ "rerun": "ts-g-b（另一个切片）：1000 步 47 个逐步量、第 1 步全量抓数 728 个张量、最终参数清单 18 个文件逐位相同（results/ts-g-b-vs-golden.json）",
+ "code": [
+  {
+   "repo": "maxtext",
+   "commit": "b87a55aad08b9f223cb4e248f2877fde9c51ac33"
+  },
+  {
+   "repo": "janus",
+   "commit": "57be82b8cd3af337f13448cd5905f296da2173b0"
+  }
+ ],
+ "image": "us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf",
+ "versions": {
+  "jax": "0.11.1",
+  "jaxlib": "0.11.1",
+  "flax": "0.12.9",
+  "optax": "0.2.8"
+ },
+ "libtpu": "镜像自带；运行记录里只有构建日期 2026-08-12，pip 版本号未记录",
+ "config": {
+  "yml": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+  "yml_sha256": "b244939e2fecc0a2250fbd0db3fb57cfdd2a1ff89d52f93a2fc88504d85b07e6",
+  "overrides_beyond_stage": []
+ },
+ "hardware": {
+  "accelerator": "TPU v5",
+  "count": 8,
+  "topology": "2x2x2",
+  "processes": 2
+ },
+ "parallelism": {
+  "dp": 1,
+  "fsdp": 8,
+  "tp": 1,
+  "ep": 1,
+  "cp": 1,
+  "pp": 1
+ },
+ "batch": {
+  "per_device_batch_size": 1,
+  "gradient_accumulation_steps": 2,
+  "gbs": 16,
+  "seq": 4096
+ },
+ "data": "回放 GPU g3-a 的 batch 与 loss_mask",
+ "steps": 1000,
+ "files": {
+  "metrics.jsonl": "943d52f0f84c81400ceb65250b919b555fbe15ceca8efdec972b661fa7c3fd4d",
+  "step_1/index.json": "b27138df996a8822165b7051afb32174317ed63c112660bc44c5a667fa2221c5",
+  "params_sha/rank0.final.json": "d0305f3145dcd529c19f658902ba412739f185d7cf7a7953db64796de4b5e233"
+ },
+ "hlo": {
+  "train_step_compiled_modules": 1,
+  "after_optimizations_sha256": "fe30e8eb6849a7d9b542e288ec2a85a3373f951a22f390b7c7d3b6e3c927e17d",
+  "fingerprint": "6eeadbb9aa0821a2b52eff2496bedc71cde5fc6be772cd50a2bad41fe0eccdab",
+  "fingerprint_rule": "去掉 metadata={…} 与 stack_frame_id 后的 sha256（janus.checks.extra.hlo_fingerprint）",
+  "bytes": 34401948
+ },
+ "step_time_s": {
+  "step1_incl_compile": 122.68651819229126,
+  "median_11_300": 0.4938751459121704,
+  "median_11_1000": 0.49374961853027344
+ },
+ "wall_seconds": 947.7626621723175,
+ "peak_hbm_bytes_per_device_max": 1815854080,
+ "final_step": {
+  "lm_loss": 7.265872955322266,
+  "mtp_loss_mt": 0.7949662208557129,
+  "indexer_loss": 4.961238118994515e-06,
+  "grad_norm": 3.613586664199829,
+  "param_norm_fp64": 225.0364821021316
+ },
+ "step1": {
+  "lm_loss": 11.718015670776367,
+  "mtp_loss_mt": 1.1712411642074585,
+  "indexer_loss": 8.479240932501853e-06,
+  "raw_grad_norm": 6.3602824211120605,
+  "param_norm_fp64": 211.28761590662896
+ },
+ "step1_train_grad": "第 1 步全量抓数与 mz-opt2 逐位相同（results/mz-opt2-vs-golden.json），所以第 1 步训练梯度对 CPU FP64 的逐张量结果就是 ../01-mini/results/t1zg-step1-train-grad-vs-fp64.json",
+ "same_trajectory_as": "t1zg-b、mz-g1（MaxText fd30fbfb）1000 步全部共有逐步量逐位相同（results/t1zg-b-vs-golden.json、mz-g1-vs-golden.json）"
+}

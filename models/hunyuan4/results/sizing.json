@@ -1,0 +1,133 @@
+{
+ "modules": {
+  "mla": 165022208,
+  "gate_proj": 100663296,
+  "sink": 64,
+  "indexer": 9371904,
+  "ihc_per_layer": 393236,
+  "layer_norms": 12288,
+  "dense_mlp": 339738624,
+  "one_expert": 37748736,
+  "routed_experts": 9663676416,
+  "router": 1573120,
+  "shared_expert": 37748736,
+  "embed": 742391808,
+  "lm_head": 742391808,
+  "final_norm": 6144,
+  "hc_head": 98309,
+  "mtp_extra": 75528192,
+  "attention": 265685568
+ },
+ "layer0": 615201620,
+ "moe_layer_full_indexer": 9978461268,
+ "moe_layer_shared_indexer": 9969089364,
+ "backbone": 769907408797,
+ "mtp": 10053583936,
+ "total_with_mtp": 779960992733,
+ "active_backbone_incl_embed_and_head": 49057546141,
+ "active_mtp": 691897408,
+ "anchors": {
+  "backbone": "770B",
+  "active": "49B",
+  "mtp": "10B",
+  "mtp_active": "0.7B",
+  "source": "Hugging Face tencent/Hy4-preview 模型卡（backbone 不含 MTP）"
+ },
+ "stages": {
+  "A": {
+   "layers": 1,
+   "mtp": false,
+   "params": 2100089689,
+   "routed_expert_params": 0,
+   "non_expert_params": 2100089689,
+   "moe_blocks": 0,
+   "activation_gb_est": 7.41376,
+   "tpu_v5p_8dev_static_gb": 5.2502242225,
+   "tpu_v5p_8dev_total_gb_est": 12.6639842225,
+   "gpu_b200_8_fsdp_static_gb": 4.200179378,
+   "gpu_b200_8_fsdp_transient_gb": 6.1520162
+  },
+  "B": {
+   "layers": 2,
+   "mtp": false,
+   "params": 12078550957,
+   "routed_expert_params": 9663676416,
+   "non_expert_params": 2414874541,
+   "moe_blocks": 1,
+   "activation_gb_est": 11.8784,
+   "tpu_v5p_8dev_static_gb": 30.1963773925,
+   "tpu_v5p_8dev_total_gb_est": 42.0747773925,
+   "gpu_b200_8_fsdp_static_gb": 24.157101914,
+   "gpu_b200_8_fsdp_transient_gb": 99.78461268
+  },
+  "C": {
+   "layers": 3,
+   "mtp": false,
+   "params": 22047640321,
+   "routed_expert_params": 19327352832,
+   "non_expert_params": 2720287489,
+   "moe_blocks": 2,
+   "activation_gb_est": 16.34304,
+   "tpu_v5p_8dev_static_gb": 55.1191008025,
+   "tpu_v5p_8dev_total_gb_est": 71.4621408025,
+   "gpu_b200_8_fsdp_static_gb": 44.095280642,
+   "gpu_b200_8_fsdp_transient_gb": 99.78461268
+  },
+  "D_3L_mtp": {
+   "layers": 3,
+   "mtp": true,
+   "params": 32101224257,
+   "routed_expert_params": 28991029248,
+   "non_expert_params": 3110195009,
+   "moe_blocks": 3,
+   "activation_gb_est": 24.90368,
+   "tpu_v5p_8dev_static_gb": 80.2530606425,
+   "tpu_v5p_8dev_total_gb_est": 105.1567406425,
+   "gpu_b200_8_fsdp_static_gb": 64.202448514,
+   "gpu_b200_8_fsdp_transient_gb": 99.78461268
+  },
+  "D_2L_mtp": {
+   "layers": 2,
+   "mtp": true,
+   "params": 22132134893,
+   "routed_expert_params": 19327352832,
+   "non_expert_params": 2804782061,
+   "moe_blocks": 2,
+   "activation_gb_est": 20.43904,
+   "tpu_v5p_8dev_static_gb": 55.3303372325,
+   "tpu_v5p_8dev_total_gb_est": 75.7693772325,
+   "gpu_b200_8_fsdp_static_gb": 44.264269786,
+   "gpu_b200_8_fsdp_transient_gb": 99.78461268
+  },
+  "4L_mtp": {
+   "layers": 4,
+   "mtp": true,
+   "params": 42070313621,
+   "routed_expert_params": 38654705664,
+   "non_expert_params": 3415607957,
+   "moe_blocks": 4,
+   "activation_gb_est": 29.36832,
+   "tpu_v5p_8dev_static_gb": 105.1757840525,
+   "tpu_v5p_8dev_total_gb_est": 134.5441040525,
+   "gpu_b200_8_fsdp_static_gb": 84.140627242,
+   "gpu_b200_8_fsdp_transient_gb": 99.78461268
+  }
+ },
+ "memory_assumptions": {
+  "tpu_bytes_per_param": 20,
+  "gpu_fsdp_bytes_per_param": 16,
+  "gpu_unit_transient_bytes_per_param": 10,
+  "act_bytes_per_token": {
+   "moe_layer": 1090000.0,
+   "dense_layer": 810000.0,
+   "head": 1000000.0
+  },
+  "seq": 4096
+ },
+ "checkpoint_check": {
+  "tensors": 2006,
+  "params": 779960992733,
+  "per_layer_equal": true,
+  "mtp_equal": true
+ }
+}

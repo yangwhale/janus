@@ -1,0 +1,342 @@
+{
+ "schema_version": 1,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": null
+ },
+ "catalog": {
+  "path": "models/hunyuan3/frameworks/megatron/causal_model.py",
+  "sha256": "e006be83e889a4364c8e7365e7045bc965d9592d876631371708bf17ad1b65fb"
+ },
+ "runs": {
+  "g61-obs": {
+   "path": "/data/janus-runs2/g61-obs",
+   "meta_sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+  }
+ },
+ "started_at": "2026-11-06T10:29:13+00:00",
+ "finished_at": "2026-11-06T10:34:59+00:00",
+ "environment": {
+  "torch": "2.14.0a0+b2c75dd062.nv26.09",
+  "transformer_engine": "2.20.2+44f31bbe",
+  "cuda": "13.4",
+  "cublas": "13.8.0.4",
+  "device": "NVIDIA B200",
+  "allow_tf32_matmul_default": true,
+  "allow_tf32_cudnn_default": true,
+  "float32_matmul_precision_default": "high",
+  "env": {
+   "TORCH_ALLOW_TF32_CUBLAS_OVERRIDE": "1",
+   "NVIDIA_TF32_OVERRIDE": null,
+   "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+   "NVTE_ALLOW_NONDETERMINISTIC_ALGO": "0"
+  },
+  "determinism": {
+   "NVTE_ALLOW_NONDETERMINISTIC_ALGO": "0",
+   "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+   "NCCL_ALGO": "Ring",
+   "TRITON_CACHE_AUTOTUNING": "1",
+   "torch_deterministic": true
+  },
+  "model_build_seconds": 9.4,
+  "experts_type": "TEGroupedMLP"
+ },
+ "summary": {
+  "pass": 3,
+  "fail": 3,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": true
+ },
+ "checks": [
+  {
+   "id": "L2.causal.model.repeat",
+   "type": "op_replay",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "bit_match_frac": 1.0,
+    "cases": 1287
+   },
+   "worst": [
+    {
+     "name": "repeat.embed.out",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "repeat.embed.out.grad",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "repeat.final_norm.out",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "repeat.final_norm.out.grad",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "repeat.layers.0.attn.core.out",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "逐位全中（bit_match_frac）",
+   "details": "details/L2.causal.model.repeat.jsonl"
+  },
+  {
+   "id": "L2.causal.model.fwd",
+   "type": "op_replay",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "bit_match_frac": 0.00244140625,
+    "cases": 98
+   },
+   "worst": [
+    {
+     "name": "p2048.loss.per_token",
+     "metric": "bit_match_frac",
+     "value": 0.00244140625,
+     "location": null
+    },
+    {
+     "name": "p3001.loss.per_token",
+     "metric": "bit_match_frac",
+     "value": 0.002999000333222259,
+     "location": null
+    },
+    {
+     "name": "p3001.layers.3.mlp.out",
+     "metric": "bit_match_frac",
+     "value": 0.4012741195643119,
+     "location": null
+    },
+    {
+     "name": "p3001.layers.3.mlp.shared.out",
+     "metric": "bit_match_frac",
+     "value": 0.40505972293089804,
+     "location": null
+    },
+    {
+     "name": "p2048.layers.3.mlp.out",
+     "metric": "bit_match_frac",
+     "value": 0.40653836727142334,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "没有逐位全中：bit_match_frac=0.00244140625",
+   "details": "details/L2.causal.model.fwd.jsonl"
+  },
+  {
+   "id": "L2.causal.model.act_grad",
+   "type": "op_replay",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "bit_match_frac": 0.27405981046682354,
+    "cases": 96
+   },
+   "worst": [
+    {
+     "name": "p3001.layers.0.attn.q_norm.out.grad",
+     "metric": "bit_match_frac",
+     "value": 0.27405981046682354,
+     "location": null
+    },
+    {
+     "name": "p2048.layers.0.attn.q_norm.out.grad",
+     "metric": "bit_match_frac",
+     "value": 0.2766492962837219,
+     "location": null
+    },
+    {
+     "name": "p3001.layers.0.attn.core.out.grad",
+     "metric": "bit_match_frac",
+     "value": 0.2932705699662612,
+     "location": null
+    },
+    {
+     "name": "p2048.layers.0.attn.core.out.grad",
+     "metric": "bit_match_frac",
+     "value": 0.2969489097595215,
+     "location": null
+    },
+    {
+     "name": "p3001.layers.0.attn.qkv.out.grad",
+     "metric": "bit_match_frac",
+     "value": 0.2975028831535322,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "没有逐位全中：bit_match_frac=0.27405981046682354",
+   "details": "details/L2.causal.model.act_grad.jsonl"
+  },
+  {
+   "id": "L2.causal.model.param_grad.dense",
+   "type": "op_replay",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "bit_match_frac": 0.085205078125,
+    "cases": 76
+   },
+   "worst": [
+    {
+     "name": "p2048.grad.decoder.layers.3.pre_mlp_layernorm.weight",
+     "metric": "bit_match_frac",
+     "value": 0.085205078125,
+     "location": null
+    },
+    {
+     "name": "p3001.grad.decoder.layers.3.pre_mlp_layernorm.weight",
+     "metric": "bit_match_frac",
+     "value": 0.106689453125,
+     "location": null
+    },
+    {
+     "name": "p3001.grad.decoder.layers.3.mlp.router.weight",
+     "metric": "bit_match_frac",
+     "value": 0.14202753702799478,
+     "location": null
+    },
+    {
+     "name": "p2048.grad.decoder.layers.3.mlp.router.weight",
+     "metric": "bit_match_frac",
+     "value": 0.1716028849283854,
+     "location": null
+    },
+    {
+     "name": "p3001.grad.decoder.layers.2.mlp.router.weight",
+     "metric": "bit_match_frac",
+     "value": 0.29515838623046875,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "没有逐位全中：bit_match_frac=0.085205078125",
+   "details": "details/L2.causal.model.param_grad.dense.jsonl"
+  },
+  {
+   "id": "L2.causal.model.param_grad.experts",
+   "type": "op_replay",
+   "level": "L2",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "bit_match_frac": 0.01322635014851888,
+    "cases": 2304
+   },
+   "worst": [
+    {
+     "name": "p3001.grad.decoder.layers.3.mlp.experts.linear_fc1.weight66",
+     "metric": "bit_match_frac",
+     "value": 0.01322635014851888,
+     "location": null
+    },
+    {
+     "name": "p3001.grad.decoder.layers.3.mlp.experts.linear_fc2.weight66",
+     "metric": "bit_match_frac",
+     "value": 0.014615217844645182,
+     "location": null
+    },
+    {
+     "name": "p3001.grad.decoder.layers.3.mlp.experts.linear_fc1.weight51",
+     "metric": "bit_match_frac",
+     "value": 0.016434669494628906,
+     "location": null
+    },
+    {
+     "name": "p3001.grad.decoder.layers.3.mlp.experts.linear_fc2.weight51",
+     "metric": "bit_match_frac",
+     "value": 0.01871967315673828,
+     "location": null
+    },
+    {
+     "name": "p2048.grad.decoder.layers.3.mlp.experts.linear_fc1.weight36",
+     "metric": "bit_match_frac",
+     "value": 0.020971139272054035,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "诊断：只报数，不判",
+   "details": "details/L2.causal.model.param_grad.experts.jsonl"
+  },
+  {
+   "id": "L2.causal.model.attribution",
+   "type": "op_replay",
+   "level": "L2",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "past_tokens_out_differ": 144,
+    "explained": 144
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "诊断：第一个 MoE 层里过去位置输出不同的 token，有多少路由到了 token 数变了且 ≤ 32 的专家",
+   "details": "details/L2.causal.model.attribution.jsonl"
+  }
+ ]
+}

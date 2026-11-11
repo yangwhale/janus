@@ -1,0 +1,31 @@
+# 混元 3 · 第一阶段故障演练的期望（janus fault-matrix 的输入）：每个故障运行埋了什么、理应被哪些检查抓到。
+# 基线是确定性运行 d-a；目录是 alignments/00-gpu-noise-and-drills/catalogs/phase1-faults.yaml。
+# 生成的矩阵在 alignments/00-gpu-noise-and-drills/faults/phase1-faults.md。
+faults:
+  f-weight:
+    what: 第 2 层 linear_proj 的 FP32 主权重 ×(1+1e-3)（小于 BF16 半格，BF16 权重逐位不变）
+    expect: [L0.main_params.loaded, L3.step1.updated]
+  f-weight2:
+    what: 第 2 层 linear_proj 权重 ×(1+1e-2)（大于 BF16 一格，模拟权重转换错）
+    expect: [L0.weights.init, L0.weights.loaded, L2.layer2.fwd]
+  f-data:
+    what: rank 0 输入 token 循环错位一格（模拟数据错位）
+    expect: [L0.data.fingerprint, L3.step1.embed]
+  f-router:
+    what: 路由改在 BF16 算（模拟路由精度设置错）
+    expect: [L0.config.diff, L2.layer1.router]
+  f-lr:
+    what: 学习率差 1 个 FP32 ULP
+    expect: [L0.config.diff, L4.lr]
+  f-drop:
+    what: 开 dropout 0.1（模拟非数值配置没对齐）
+    expect: [L0.config.diff, L3.step1.loss.per_token]
+  f-grad:
+    what: 第 1 层 linear_qkv 梯度在抓数之后、优化器之前 ×1/8（抓到的梯度没被缩放）
+    expect: [L1.optim.adamw.replay, L3.step1.updated]
+  f-gscale:
+    what: 第 1 层 linear_qkv 梯度在抓数之前 ×1/8（抓到的就是缩放后的梯度）
+    expect: [L3.step1.grads.scale, L2.layer1.grads]
+  f-bias:
+    what: expert_bias 更新率置 0（模拟路由偏置不更新）
+    expect: [L0.config.diff, L3.step1.bias_after, L4.router.bias_std]

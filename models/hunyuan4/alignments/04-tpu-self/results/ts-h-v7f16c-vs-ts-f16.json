@@ -1,0 +1,199 @@
+{
+ "test": "ts-h-v7f16c",
+ "golden": "ts-f16",
+ "code": {
+  "test": [
+   {
+    "repo": "maxtext",
+    "commit": "b87a55aad08b9f223cb4e248f2877fde9c51ac33"
+   },
+   {
+    "repo": "janus",
+    "commit": "b2bc099f04c43cece18b6012e7e4dc481c193708"
+   }
+  ],
+  "golden": [
+   {
+    "repo": "maxtext",
+    "commit": "b87a55aad08b9f223cb4e248f2877fde9c51ac33"
+   },
+   {
+    "repo": "janus",
+    "commit": "6bf0c2504f242dc260e2cf72429c0ca35d8856b8"
+   }
+  ]
+ },
+ "overrides_only_in_test": [],
+ "bitwise": {
+  "metrics": {
+   "steps": 300,
+   "steps_missing_in_golden": [],
+   "fields": 47,
+   "fields_differ": 42,
+   "first_differ_step": 1,
+   "first_differ_fields": [
+    "grad_norm",
+    "grad_norm_clipped",
+    "group_sq.attn",
+    "group_sq.attn_gate",
+    "group_sq.dense_mlp",
+    "group_sq.embedding",
+    "group_sq.experts",
+    "group_sq.ihc"
+   ],
+   "equal": false
+  },
+  "step1_dump": {
+   "available": false
+  }
+ },
+ "hlo": {
+  "test": {
+   "fingerprint": null,
+   "sha256": null,
+   "compiled_modules": 0
+  },
+  "golden": {
+   "fingerprint": "06a2f486ba5acbd9d65faed5415457448c46397a9be7d4340cdcf389fc6fa335",
+   "sha256": "52e254579361b0b5d58a0f06555e14aea28eaf8526af2cbfc35a4607d0268902",
+   "compiled_modules": 1
+  },
+  "equal": null
+ },
+ "step_time_median_from_11": {
+  "test": 0.21225976943969727,
+  "golden": 0.32097482681274414
+ },
+ "peak_hbm_bytes_max_local_device": {
+  "test": null,
+  "golden": 1479738368
+ },
+ "curves": {
+  "janus_rc": 0,
+  "results": "ts-h-v7f16c-vs-ts-f16.curves.results.json",
+  "checks": [
+   {
+    "id": "C.loss",
+    "status": "pass",
+    "worst_key": "max_step",
+    "value": 4.201035617059541e-05,
+    "scale": 4.5309563432916835e-05,
+    "r": 0.9271851897843582,
+    "r_all": {
+     "signed_mean": 0.741943877320726,
+     "mare": 0.9230315880023803,
+     "max_step": 0.9271851897843582
+    },
+    "first_differ_step": 1
+   },
+   {
+    "id": "C.loss.tail",
+    "status": "pass",
+    "worst_key": "max_step",
+    "value": 4.201035617059541e-05,
+    "scale": 4.5309563432916835e-05,
+    "r": 0.9271851897843582,
+    "r_all": {
+     "signed_mean": 0.5859642167510548,
+     "mare": 0.9011120797883899,
+     "max_step": 0.9271851897843582
+    },
+    "first_differ_step": 101
+   },
+   {
+    "id": "C.mtp_loss",
+    "status": "inconclusive",
+    "worst_key": "max_step",
+    "value": 0.0001341169050583132,
+    "scale": 0.00012395807033368174,
+    "r": 1.0819537985488559,
+    "r_all": {
+     "signed_mean": 0.2643830921511338,
+     "mare": 0.6515574193061863,
+     "max_step": 1.0819537985488559
+    },
+    "first_differ_step": 1
+   },
+   {
+    "id": "C.indexer_loss",
+    "status": "pass",
+    "worst_key": "mare",
+    "value": 0.0002167796734935822,
+    "scale": 0.0002517811599640821,
+    "r": 0.8609844895642984,
+    "r_all": {
+     "signed_mean": 0.04728036387468207,
+     "mare": 0.8609844895642984,
+     "max_step": 0.6597057972371241
+    },
+    "first_differ_step": 1
+   },
+   {
+    "id": "C.grad_norm",
+    "status": "pass",
+    "worst_key": "signed_mean",
+    "value": -9.017348888985368e-05,
+    "scale": 9.92384994170004e-05,
+    "r": 0.9086542966650923,
+    "r_all": {
+     "signed_mean": 0.9086542966650923,
+     "mare": 0.8866906818080186,
+     "max_step": 0.7398869080273344
+    },
+    "first_differ_step": 1
+   },
+   {
+    "id": "C.param_norm",
+    "status": "pass",
+    "worst_key": "max_step",
+    "value": 4.771873636041542e-07,
+    "scale": 6.946306996041723e-07,
+    "r": 0.6869655543241526,
+    "r_all": {
+     "signed_mean": 0.34952838587405594,
+     "mare": 0.40549035488204704,
+     "max_step": 0.6869655543241526
+    },
+    "first_differ_step": 1
+   },
+   {
+    "id": "C.router.bias_mean",
+    "status": "pass",
+    "worst_key": "mare",
+    "value": 0.22886511929912523,
+    "scale": 1.522238867564551,
+    "r": 0.15034770440810605,
+    "r_all": {
+     "signed_mean": 0.08375957067679753,
+     "mare": 0.15034770440810605,
+     "max_step": 0.029729555733785946
+    },
+    "first_differ_step": null
+   },
+   {
+    "id": "C.router.bias_std",
+    "status": "pass",
+    "worst_key": "mare",
+    "value": 0.004886492704931151,
+    "scale": 0.006766519001015578,
+    "r": 0.7221575383439762,
+    "r_all": {
+     "signed_mean": 0.3995367590155869,
+     "mare": 0.7221575383439762,
+     "max_step": 0.6969977008058533
+    },
+    "first_differ_step": null
+   }
+  ],
+  "within": false,
+  "r_max": 1.0819537985488559
+ },
+ "verdict": {
+  "tier": 3,
+  "label": "超出刻度",
+  "band": "略超",
+  "curves_r_max": 1.0819537985488559,
+  "why": "超出刻度：C.mtp_loss r 1.08"
+ },
+ "step1_rows": []
+}

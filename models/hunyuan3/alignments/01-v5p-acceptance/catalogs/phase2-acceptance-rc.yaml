@@ -1,0 +1,37 @@
+# 【状态（2026-11-06）】本目录是第二层：对 GPU 生产 golden rc 的差写成已解释差异（ALIGNMENT-REPORT 第 3 节），不是第一层；第一层是 phase2-acceptance-rcc-on.yaml。
+# 第二阶段 · 正式迁移验收：TPU 生产配置对 GPU 生产近似 golden rc-a..rc-e
+#
+# 被测：t-rmap-1000（生产 yml：GA 2 + 三个精度开关；重算设置对齐 rc：custom 策略里除层输入和 moe_routing_maps 外全部 remat，
+#       moe_routing_maps=device），1000 步。
+# golden：03 的 rc-a..rc-e（GPU 整层重算 + 路由回放，生产近似，见 ../../03-gpu-remat-golden/）。
+#         模型 README 约定：正式迁移验收对 rc-*；00 的 g1k-*（不重算）只做归因（phase2-tpu.yaml、phase2-t-loss30.yaml 用它）。
+# 噪声参照：rc 五份两两 10 对。
+# 运行根：把下面这些运行目录下载到同一个目录（约定 /data/janus-runs，见 README「运行根目录」），或者 janus run --root 换：
+#   gcloud storage cp -r gs://<桶>/janus/hunyuan3-4l/golden/rc-{a,b,c,d,e} gs://<桶>/janus/hunyuan3-4l/tpu/t-rmap-1000 /data/janus-runs/
+# 结果（2026-11-04，case 01）：301–1000 步 loss 带符号均值对 rc 均值 −1.34e-4，rc 各份对自己均值的标准差 2.6e-5；param_norm 第 1000 步
+#   多 +2.1e-2。验收不通过（cases/01-loss-offset-param-norm.md 第 6 节末「验收结果」）。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-acceptance-rc
+description: （第二层）正式迁移验收（TPU 生产配置 t-rmap-1000 对 GPU rc-a..rc-e）
+runs:
+  test: t-rmap-1000
+  golden: [rc-a, rc-b, rc-c, rc-d, rc-e]
+  noise:
+    - [rc-a, rc-b]
+    - [rc-a, rc-c]
+    - [rc-a, rc-d]
+    - [rc-a, rc-e]
+    - [rc-b, rc-c]
+    - [rc-b, rc-d]
+    - [rc-b, rc-e]
+    - [rc-c, rc-d]
+    - [rc-c, rc-e]
+    - [rc-d, rc-e]
+  root: /data/janus-runs
+checks:
+  - {id: L4.loss, type: multi_golden, level: L4, select: {kind: metrics, field: lm_loss, window: "1:1001"}, params: {baseline: rc-a, signed_mean_se_k: 2}, threshold: calibrated}
+  - {id: L4.loss.tail, type: multi_golden, level: L4, select: {kind: metrics, field: lm_loss, window: "301:1001"}, params: {baseline: rc-a, signed_mean_se_k: 2}, threshold: calibrated}
+  - {id: L4.grad_norm, type: loss_series, level: L4, select: {kind: metrics, field: grad_norm, window: "1:1001"}, threshold: calibrated}
+  - {id: L4.param_norm, type: loss_series, level: L4, select: {kind: metrics, field: param_norm, window: "1:1001"}, threshold: calibrated}
+  - {id: L4.lr, type: scalar_series, level: L4, select: {kind: metrics, field: lr, window: "1:1001"}, params: {rtol: 0.0, abs_ulp: 0}}

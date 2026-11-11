@@ -1,0 +1,33 @@
+# 第一阶段 · 新观测点不改数值：g61-obs 在 d-a 的配置上另开 --observe attn,moe,expw,gemm
+# （核心注意力 q/k/v、MoE 层内各阶段、本地全部专家权重、GEMM 清单），训练脚本另在 on_train_start 做一次 TF32 实测。
+# d-a 里有的第 1 步张量必须逐位相同（新观测点多出来的张量 exclude 掉，另由 coverage 列出），前 2 步 loss / grad_norm 逐位，数据指纹相同。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase1-obs
+runs:
+  test: g61-obs
+  golden: [d-a]
+  root: /data/janus-runs2
+checks:
+  - id: DET.obs.data
+    type: data_fingerprint
+    level: L0
+    select: {kind: tokens, steps: "1:3"}
+  - id: DET.obs.metrics
+    type: determinism
+    level: L4
+    select: {kind: metrics, fields: [lm_loss, grad_norm, num_zeros]}
+  - id: DET.obs.step1.bitwise
+    type: bitwise_equal
+    level: L3
+    select:
+      kind: tensor
+      step: 1
+      name: "*"
+      exclude: ["*.attn.core.[qkv]", "*.attn.core.[qkv].grad", "*.mlp.moe.*", "*.mlp.experts.in*", "*.experts.fc1.out*",
+                "*.experts.act.out*", "*.experts.probs", "*.experts.tokens_per_expert",
+                "param.*.experts.linear_fc?.weight[2-9]", "param.*.experts.linear_fc?.weight[0-9][0-9]"]
+  - id: DET.obs.step1.coverage
+    type: coverage
+    level: L3
+    select: {kind: tensor, step: 1, name: "*"}

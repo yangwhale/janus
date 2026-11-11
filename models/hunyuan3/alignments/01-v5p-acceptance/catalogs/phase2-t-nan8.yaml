@@ -1,0 +1,18 @@
+# 第二阶段 · TPU 侧梯度 NaN 演练
+#
+# 被测 t-nan8：train_hy3.py --inject-nan-grad 5，第 5 步在第 0 层注意力输出投影的梯度里埋一个 NaN（裁剪与优化器之前），其余步照常，8 步。
+# 同 GPU 演练 phase1-nan：期望健康检查在第 5 步就从梯度范数报警，而不是等 loss（loss 要到第 6 步才变 NaN，那时参数已经坏了）。
+# 配置：每设备 2 行、不累积（埋 NaN 的程序只支持 GA 1），yml 为生产那一版（三个精度开关）。golden 只占位（健康检查只看被测）。
+# 两条的说明里各写着第一次报警的步号：梯度在第 5 步、loss 在第 6 步，即梯度先报。
+# 总览里这一格是演练（items.yaml 的 v5p_expect: fail）：L4.health.grad_norm 报了才算 ✅。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-t-nan8
+description: TPU 梯度 NaN 演练（第 5 步埋 NaN）
+runs:
+  test: t-nan8
+  golden: [g1k-a]
+  root: /data/janus-runs
+checks:
+  - {id: L4.health.grad_norm, type: health_signals, level: L4, select: {kind: metrics, fields: [grad_norm]}}
+  - {id: L4.health.loss, type: health_signals, level: L4, select: {kind: metrics, fields: [lm_loss]}}

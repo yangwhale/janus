@@ -1,0 +1,1293 @@
+columns:
+  mini: mini
+  w300: w300
+  real: 真实权重
+header:
+- '[janus](../../../../README.md) › [混元 4](../../README.md) › [mini](README.md) ｜ 检查清单'
+- ''
+- '# 混元 4 · mini（hy4-mini）· 检查清单'
+- ''
+- 这一页回答：hy4-mini 的对齐比了哪些量，每一项的对象是哪些模块和张量，用什么指标、什么门槛判，现行配置下各是什么结果；模型的每个算子由哪条检查覆盖、哪些还没覆盖。
+- ''
+- '- 页面由 `models/hunyuan4/dashboard/build.py` 按 [`dashboard/checks.yaml`](dashboard/checks.yaml) 从结果文件生成，数字和判定都不手写；没有写成 janus 结果文件的原始 JSON（单算子回放、第 1 步诊断等）由 `build.py` 按写明出处的规则现读。'
+- '- **判定**：GPU（Megatron-Core，B200 × 8）是 golden，TPU（MaxText，v5p 8 个设备）是被测；R = rel_L2(TPU, CPU FP64) ÷ rel_L2(GPU, CPU FP64)。**语义**以 MaxText 的混元 4 实现为准（[`PROTOCOL.md`](../../PROTOCOL.md) 第 1.2 节）。'
+- '- 三列：**mini** 是现行比较（L4 是现行对齐配置（2026-11-11 起 base2 关）的 TPU `tz-off-rep` 1000 步对 GPU `g3-a`；L1–L3 是各项最新的回放，配置写在各行）；**w300** 是同一运行的前 300 步对 GPU `g2-a`；**真实权重** 是 AdamW 时期截层真实权重的 L0 转换与第 0 层单算子，不依赖优化器，仍有效。历代与诊断代见[历代比较](../../dashboard/history.md)；运行代号见[对齐细节第 1 节「代号」](DETAILS.md#代号)。'
+- '- 结论与偏差台账在[对齐报告](ALIGNMENT-REPORT.md)；两边配置在 [`config-alignment.md`](config-alignment.md)；每一份运行的来历在 [`goldens.md`](goldens.md)。 每一级为什么这样比见[用户指南第 4 章](../../../../docs/guide/04-level-by-level.md)。'
+- ''
+summary_lead:
+- '## 规模'
+- ''
+- '- **检查项**：表里的一行，回答一个问题；**检查条数**：结果文件里的检查，一个检查 id 算一条（mini / w300 / 真实权重）。'
+- '- **张量级比较**：这些检查逐个比了多少个张量；**其他比较单元**：数据指纹、dtype 条目、逐步曲线的步数等。写「待结果」「未开始」「进行中」的格子不进计数。 一个格子可以含几条检查，所以比较单元的合计不等于格子数。'
+- ''
+how_to_read:
+- '## 怎么读'
+- ''
+- '### 一个数是怎么聚合出来的'
+- ''
+- 表里每个数属于下面三种之一，每一行「对象」格最后一句写明是哪一种：
+- ''
+- '| 种类 | 怎么算 | 例 |'
+- '|---|---|---|'
+- '| 逐步标量 | 每步一个数，算被测对参照的逐步相对差，再在窗口内算带符号均值、MARE（平均绝对相对差）、最大单步三个判定量，各自对噪声上限 N 判，最差的决定结果 | L4 的 loss（全局批的平均 loss）、grad_norm（裁剪前全局梯度范数）、param_norm（更新后参数范数；现行比较两边比精确值） |'
+- '| 逐张量取最差 | 每个张量（或算子输出）拉直成一个向量，单独算一个数（如 R 比 = rel_L2(TPU, 参照) ÷ rel_L2(GPU, 参照)）；一条检查选中一批张量时取最差的那个，不取平均 | L1 单算子、L3 索引器参数梯度 |'
+- '| 诊断 | 只报不判，判定写成 🟡；说明里写实测 | 第 1 步逐张量梯度对 GPU 三份散布的比值、第 1 步 grad_norm、第 0 层 KD 的值 |'
+- ''
+- '### 三种严格门槛'
+- ''
+- '| 门槛 | 用在哪 | 怎么判 |'
+- '|---|---|---|'
+- '| 逐位 | L0 设置、数据、权重、配置；TPU 同设置重跑 | 逐位相同才过（设置核对是两边每一步都等于登记值） |'
+- '| R 比 ≤ 1.2 | L1 单算子；L3 第 1 步超出噪声的项对 CPU FP64 定责 | R = rel_L2(TPU, 参照) ÷ rel_L2(GPU, 参照)（GPU 是参照答案，TPU 是被测）。R ≤ 1.2 即 TPU 不比 GPU 离精确算术远 |'
+- '| 噪声上限 N | L4 的逐步曲线；L3 第 1 步梯度与状态 | N 只用 GPU。L4：同一代 GPU 8 份（`g1-*` / `g2-*` / `g3-*`）两两 28 对，每一对算一次判定量，每个判定量取 28 对里的最大值；L3：第 1 步参照三份（`g1s-*` / `g2s-*`）两两。r = 被测对基线的判定量 ÷ N：≤ 1 过，> 2 不过，之间待定。TPU 只改执行参数的扰动运行只作诊断 |'
+- ''
+- 定义与依据见 [`docs/reference/judging.md`](../../../../docs/reference/judging.md) 与 [`PROTOCOL.md`](../../PROTOCOL.md) 第 3–5 节。
+- ''
+- '### 表里各栏'
+- ''
+- '- **证据来源**：「生产程序」是正式训练运行的逐步记录；「单算子回放」是单独编译、把 GPU 抓到的输入喂给 TPU 的程序；「第 1 步诊断」是训练程序的诊断模式（同一个梯度累积函数算第 1 步、不更新）；「离线计算」在 CPU 上算。'
+- '- **判法**：「｜」前是严格档，决定验收；「参考」后是同类 GPU→TPU 迁移项目用过的经验门槛，只并列报告。'
+- '- **平台格子**：实测值，括号里是离严格门槛多远，然后是判定。点格子打开那份结果。'
+- '- **符号**：✅ 过　🟡 待定、诊断或进行中　❌ 不过　⬜ 未开始　— 不适用；参考档：参✅ 过　参☑️ 记录了的都过、有门槛项没记录　参❌ 不过　参❔ 所需指标未记录。'
+- '- 每张表下面写非 ✅ 格子的原因；已定责的写明谁接受、证据在哪。'
+- '- 检查名后标「（只报）」的行不在验收路径上（旧协议的结果、诊断、默认实现的对照、只统计的量）：格子照实写结果文件里的判定，但不进判定计数。'
+- '- 张量名用 HF 检查点的名字（`model.layers.{0..6}…`、`model.mtp_layers.0…`）。hy4-mini 第 0 层是稠密层，第 1–6 层是 MoE 层（16 个路由专家 top-4 + 1 个共享专家）；索引器第 0、1、5 层与 MTP 层自己算 top-k，第 2–4、6 层复用（IndexCache）。'
+- ''
+evidence_sources:
+- match: t1zo-step1-train-grad-vs-fp64
+  source: 训练步实际用的第 1 步梯度（由 `tz-off-rep` 第 1 步全量抓数的动量反推，`export_train_grads.py`）对 GPU 三份第 1 步参照 g2s＋CPU FP64 整网重算
+- match: t1zg-step1-train-grad-vs-fp64
+  source: 训练步实际用的第 1 步梯度（由 `mz-opt2` 第 1 步动量反推，相对误差约 1e-7）对 GPU 三份第 1 步参照 g2s＋CPU FP64 整网重算
+- match: t1zg-step1-grad-vs-fp64
+  source: 第 1 步诊断（TPU `mz-diag1`，现行配置）对 GPU 三份第 1 步参照 g2s＋CPU FP64 整网重算
+- match: t1-l3-optim-step1
+  source: 第 1 步优化器一步：各侧对「FP64 优化器作用在自己的梯度上」比（TPU 梯度由动量反推）
+- match: t1zo-health
+  source: 生产程序（TPU `tz-off-qkc`，现行 yml、base2 关，1000 步；GPU `g3-a`）逐步记录
+- match: t1zo*-l4-qkclip
+  source: 生产程序（TPU `tz-off-qkq`：`tz-off-qkc` 的 metrics 加一列全局最大注意力 logit；GPU `g3-*`）逐步记录
+- match: t1zo-determinism
+  source: 生产程序（现行 yml、base2 关两份 1000 步：`tz-off-qkc` 对 `tz-off-rep`）逐步记录
+- match: t1mz-health
+  source: 生产程序（TPU `mz-g1`，现行 yml，1000 步；GPU `g3-a`）逐步记录
+- match: t1mz*-l4-qkclip
+  source: 生产程序（TPU `mz-g1q`：`mz-g1` 的 metrics 加一列全局最大注意力 logit；GPU `g3-*`）逐步记录
+- match: t1mz-determinism
+  source: 生产程序（现行 yml 两份 1000 步：`mz-g1` 对 `t1zg-b`）逐步记录
+- match: t1mz-dump-determinism
+  source: 现行 yml 30 步两份（`mz-dump30` 开全量抓数，`t1zg-b` 不抓）逐步记录
+- match: t1-log-ulp
+  source: 单算子（GPU B200 torch.log 与 TPU v5p 三种写法，同一批输入，输入 sha256 两边逐个相同）＋离线 FP64
+- match: t1zo-qkclip-maxlogit
+  source: 生产程序（TPU `tz-off-qk01`，现行 yml、base2 关，τ 0.1，30 步）对 GPU g6-qk-a / b＋CPU FP64 前向重算
+- match: t1-qkclip-maxlogit
+  source: 生产程序（TPU `mz-qk-a`，现行 yml，τ 0.1，30 步）对 GPU g6-qk-a / b＋CPU FP64 前向重算
+- match: t1-l0-muon-partition
+  source: 离线核对（GPU g3-a 的 optimizer_partition.json 对 TPU 优化器叶子，经权重转换映射）
+- match: t1-l0-config
+  source: 离线核对（t1zg-a 实际生效的 MaxText 配置对 g3-a meta 与 HF config.json）
+- match: t1-l2-flip-stats
+  source: 第 1、8、30、100 步抓数（同路由一致率）逐层、按 FP64 分差分桶
+- match: hy4-mini-l0-negative-control
+  source: 离线核对（不去交错的负对照）
+- match: t1-l0-init-vs-gpu-mcore
+  source: 离线核对（TPU 载入后清单对检查点、对 GPU 初始参数清单）
+- match: t1zg-l0-data
+  source: 离线核对（回放数据对 GPU 基线 g3-a）
+- match: t1-l0-settings
+  source: 生产程序（逐步记录）
+- match: t1s-l0-settings
+  source: 生产程序（逐步记录）
+- match: t1t-l0-settings
+  source: 生产程序（逐步记录）
+- match: t1u-l0-settings
+  source: 生产程序（逐步记录）
+- match: t1-l4*
+  source: 生产程序（逐步记录）
+- match: t1s-l4
+  source: 生产程序（逐步记录）
+- match: t1t-l4
+  source: 生产程序（逐步记录）
+- match: t1u-l4
+  source: 生产程序（逐步记录）
+- match: t1z-l4
+  source: 生产程序（逐步记录）
+- match: t1z-l0-settings
+  source: 生产程序（逐步记录）
+- match: t1zk-l4
+  source: 生产程序（逐步记录）
+- match: t1zw-l4
+  source: 生产程序（逐步记录）
+- match: t1zo*-l4
+  source: 生产程序（逐步记录）
+- match: t1zga*-l4
+  source: 生产程序（逐步记录）
+- match: t1zw300-l4
+  source: 生产程序（逐步记录）
+- match: t1zu-l4
+  source: 生产程序（逐步记录）
+- match: t1zu300-l4
+  source: 生产程序（逐步记录）
+- match: t1zr-l4
+  source: 生产程序（逐步记录）
+- match: t1zr300-l4
+  source: 生产程序（逐步记录）
+- match: t1zk-l0-settings
+  source: 生产程序（逐步记录）
+- match: t1zw-l0-settings
+  source: 生产程序（逐步记录）
+- match: t1-route-agree
+  source: 第 1、8、30、100 步抓数（TPU 自选，只抓不灌）对 GPU 三份与 CPU FP64 自选
+- match: hy4-mini-l0-*
+  source: 离线核对（CPU，检查点文件）
+- match: hy4-mini-tpu-determinism
+  source: 生产程序（TPU 同设置两份）
+- match: tpu-elementwise-ulp
+  source: 单算子回放（TPU v5p，合成与真实输入，单独编译）＋离线 FP64 计算
+- match: t1-l1-op-tpu-r3
+  source: 单算子回放（TPU v5p，MaxText 2b005b3d，tw-opmini-d：tw-opmini-c 再开 M40）＋GPU 一侧 FP64 计算
+- match: t1-l1-op-tpu-r2
+  source: 单算子回放（TPU v5p，MaxText 7c95fabe，transcendental_accuracy_highest 含 M37 的 sigmoid / silu 与交叉熵，tw-opmini-c）＋GPU 一侧 FP64 计算
+- match: t1-l1-op-tpu
+  source: 单算子回放（TPU v5p，单独编译，吃 GPU g7-l1-a 的输入）＋GPU 一侧 FP64 计算
+- match: t1-optim-replay-tpu
+  source: 优化器回放（TPU v5p，吃 GPU g2o-a 每步的梯度与主权重）＋离线 FP64 计算
+- match: t1-qk-clip-tpu
+  source: 生产程序（TPU 30 步，τ 0.1）对 GPU g6-qk-a / b＋CPU FP64 前向重算
+- match: t1-step1-transcendental-accuracy
+  source: 第 1 步诊断（TPU，开关关 / 开两组）＋离线 FP64 计算
+- match: t1-optim-replay-adam-acc-r2-tpu
+  source: 优化器 8 步回放（TPU v5p，MaxText 7c95fabe，再开 muon_adam_accurate 最终版，台账 M34）＋FP64 参照
+- match: t1-optim-replay-adam-acc-tpu
+  source: 优化器 8 步回放（TPU v5p，MaxText optax_muon，再开 muon_adam_accurate，台账 M34、J24）＋FP64 参照
+- match: t1-l2-layer-vs-fp64
+  source: 逐层回放（TPU v5p `tw-l2-g`，单层单独编译，吃 GPU g7-l1-a 每层的输入，台账 J19）＋CPU FP64 单层重算
+- match: hy4-?-l0-*
+  source: 离线核对（CPU，检查点文件）
+- match: hy4-d1-l0-*
+  source: 离线核对（CPU，检查点文件）
+- match: hy4-l0-names
+  source: 离线核对（CPU，检查点文件）
+- match: hy4-cpu-smoke
+  source: 离线核对（CPU 冒烟，hy4-tiny）
+- match: hy4-a-replay-check-*
+  source: 离线核对（CPU，回放数据）
+- match: hy4-a-l1-op-tpu-fix
+  source: 单算子回放（TPU v5p，单独编译）＋离线 FP64 计算
+- match: t1-layer0-kd-attribution
+  source: 第 1 步诊断（TPU）＋CPU FP64 前向重算与离线 FP64 计算
+- match: t1s-step1-grad-vs-fp64
+  source: 第 1 步诊断（TPU `t1diag15`）＋CPU FP64 整网重算
+- match: t1-step1-diag-tpu
+  source: 第 1 步诊断（TPU 对 GPU 第 1 步：grad_norm 对 g1 8 份，张量对 g1s 三份）
+- match: t1-step1*
+  source: 第 1 步诊断（TPU 对 GPU 三份第 1 步参照）
+- match: t1z-step1-grad-vs-fp64
+  source: 第 1 步诊断（TPU 对 GPU 三份第 1 步参照 g2s）＋CPU FP64 整网重算
+- match: t1v-step1-grad-vs-fp64
+  source: 第 1 步诊断（TPU 对 GPU 三份第 1 步参照 g2s）＋CPU FP64 整网重算
+- match: t1t-step1-grad-vs-fp64
+  source: 第 1 步诊断（TPU 对 GPU 三份第 1 步参照 g2s）＋CPU FP64 整网重算
+- match: t1v-l*
+  source: 生产程序（逐步记录）
+- match: t1w-l*
+  source: 生产程序（逐步记录）
+- match: t1-early-grad-norm-vs-fp32
+  source: 生产程序（TPU 30 步 FP32 轨迹）
+- match: t1-ihc-post-grad-conditioning
+  source: 离线计算（GPU 第 1 步抓数）
+levels:
+- id: L0
+  title: L0 · 地基：设置、数据、权重、配置
+  purpose: 两边从同一套设置、同一份输入、同一份权重出发
+  lead:
+  - 目的：证明两边从同一套设置、同一份输入、同一份权重出发。这一级不过，上面各级的差都说不清来源。
+  - ''
+  - L0 共 {rows} 项检查，检查条数 {checks}（{cols}），张量级比较 {tensors} 次（同上列序）。全部要求逐位相同。
+  tables:
+  - rows:
+    - name: 设置核对：逐步学习率
+      what: 两边每一步记下的学习率都等于登记的常数 1e-5。学习率是设置的常数，不是观测量，所以归设置核对、不进 L4（`PROTOCOL.md` 变更记录 2026-11-07「报告口径」一行）
+      objects: '`lr`，TPU 被测与 GPU 基线各自第 1–1000 步。被测是 `t1zw-a`：现行 `t1zg-a` 只多开 M50（只改 KD 记录值），学习率设置相同，没有单独出这份结果'
+      src:
+        mini: t1zw-l0-settings:L0.settings.lr
+    - name: 检查点张量名、形状、dtype
+      what: HF 目录里每个张量的名字、形状、dtype 逐个等于形状表与 dtype 表，参数量对上
+      objects: mini：hy4-mini 的随机初始化 HF 目录（`make_tiny_hf.py --config mini`，清单 sha256 登记在 `PROTOCOL.md` 第 1.1 节）；真实权重：hy4-preview 截层的 HF 目录（135 个张量）
+      src:
+        real: hy4-l0-names:*
+        mini: hy4-mini-l0-names:*
+      info: true
+    - name: 权重转换往返
+      what: HF 权重转成 MaxText 检查点后，逐张量还原回 HF 对原件逐位，加转换前后两份 dtype 清单
+      objects: mini：hy4-mini 的 HF 目录（212 个张量）；真实权重阶段 A / B / C / D 各一份
+      src:
+        real:
+        - hy4-a-l0-ckpt-convert:*
+        - hy4-b-l0-ckpt-convert:*
+        - hy4-c-l0-ckpt-convert:*
+        - hy4-d-l0-ckpt-convert:*
+        mini: hy4-mini-l0-ckpt-convert:*
+    - name: RoPE 列去交错
+      what: 检查点的 q_pe / k_pe 交错存放，转换时去交错（偶数位接奇数位），逆置换逐位回到原件
+      objects: mini：hy4-mini（32 个张量）；真实权重阶段 A / B / C / D
+      src:
+        real:
+        - hy4-a-l0-rope:*
+        - hy4-b-l0-rope:*
+        - hy4-c-l0-rope:*
+        - hy4-d-l0-rope:*
+        mini: hy4-mini-l0-rope:*
+      info: true
+    - name: 负对照：不去交错必须判不一致
+      what: 不去交错的检查点按去交错的读法核，必须判不一致（证明上一行的核对能抓到错）
+      objects: mini：hy4-mini 212 个张量不去交错，往返、RoPE 核对、对 GPU 初始参数清单三处都必须报不一致；真实权重：hy4-tiny CPU 冒烟（阶段 A 结构）
+      src:
+        real: hy4-cpu-smoke:L0.ckpt.rope.negative_control
+        mini: hy4-mini-l0-negative-control:*
+    - name: 跨侧初始权重
+      what: TPU 载入后的初始权重对检查点、对 GPU 初始参数清单（还原成 GPU 名字、FP32、按 GPU 的分片分 rank）逐位
+      objects: mini：两条检查，TPU 载入后清单对检查点复算 0 / 1,647 不同（8 份 × 参数 + 路由偏置），TPU 对 GPU 初始参数清单 0 / 1,968 不同（8 rank × 246）；真实权重：阶段 A（对 `ga-b`、`ga1-a`，248 个）、阶段 B（对 `gb-a`，472 个）
+      src:
+        real:
+        - hy4-a-l0-init-vs-gpu:*
+        - hy4-b-l0-init-vs-gpu:*
+        mini: t1-l0-init-vs-gpu-mcore:*
+      unit: 个参数张量
+    - name: 每步输入指纹
+      what: TPU 回放的每一步、每个 rank、每个 microbatch 的输入，对 GPU 存下的输入
+      objects: mini：TPU `t1zg-a` 回放的 tokens、labels、loss_mask 对 GPU `g3-a` 存下的（台账 G9）；真实权重：`ga-a` 300 步 × 8 rank × 2 microbatch
+      src:
+        real: hy4-a-replay-check-ga-a:L0.data.fingerprint
+        mini: t1zg-l0-data:L0.data.fingerprint
+    - name: Muon / Adam 分区
+      what: 每个参数走 Muon 还是 Adam、Newton–Schulz 作用在哪个矩阵上，两边逐参数一致
+      objects: GPU `g3-a` 的 `optimizer_partition.json`（239 个参数：140 个 Muon / 99 个 Adam，台账 G5）逐个经权重转换映射找到 TPU 上装它的叶子（TPU 表 [`results/hy4-mini-muon-partition.md`](../../results/hy4-mini-muon-partition.md)）
+      src:
+        mini: t1-l0-muon-partition:L0.optim.partition
+    - name: 配置逐项对照
+      what: 两边训练配置里必须相同的语义设置逐项对照（精度开关不在这里判，见 [`config-alignment.md`](config-alignment.md)）
+      objects: '`t1zg-a` 实际生效的 MaxText 配置对 `g3-a` 的 meta 与两边共同的 HF `config.json`：结构 37 项对 HF config、训练设置 20 项对 GPU meta、登记值 12 项'
+      src:
+        mini: t1-l0-config:L0.config.items
+    columns:
+    - mini
+    - real
+- id: L1
+  title: L1 · 单算子
+  purpose: 每个算子单独看，TPU 不比 GPU 离 FP64 真值远
+  lead:
+  - 目的：把每个算子单独拿出来，看 TPU 和 GPU 是否离 FP64 真值一样近。整网的差是各算子的差叠起来的，这一级定位到具体算子。
+  - ''
+  - L1 共 {rows} 项检查，检查条数 {checks}（{cols}），张量级比较 {tensors} 次（同上列序）。
+  - ''
+  - mini 的单算子回放用现行开关（`t1-l1-op-tpu-r3.json`，GPU 分母 Megatron-Core + TE），99 个算子全过；真实权重的阶段 A（第 0 层，GPU 分母是 HF 参照模型）只用第 1 步前向、不依赖优化器，仍有效，单列一表。
+  - ''
+  - ''
+  - 回放的注入覆盖全部输入（位置与关键字参数，janus `8cacde9` 起）：每个算子吃的都是 GPU 的同一个输入。
+  modules:
+    title: 模型的每个算子由哪条检查覆盖
+    lead:
+    - 按前向顺序列出 hy4-mini 的算子，再列损失与优化器。算子名与语义按两边代码核过：MaxText（混元 4 集成分支）、`frameworks/megatron/hy4_mcore.py`（Megatron-Core 0.20）、HF `hy_v4` 参考实现。
+    - ''
+    - '- 「判定」列取前三列（有判定的检查）里最差的一条；三列都没有检查的写「尚未覆盖」。'
+    - '- 「L3 第 1 步」一列是现行配置训练步的第 1 步梯度对 GPU 第 1 步参照 `g2s-*` 三份下这个算子的参数梯度（或流经它的梯度）：超出 GPU 噪声的张量要对 CPU FP64 参照定责（R ≤ 1.2），N = 0 且两边误差都小于 u = 2^-8 的按分辨率下限过；有超 2N 而未定责的判不过、只有 1–2N 未定责的判待定（规则见 `build.py` 的 `_step1_judge`）。'
+    - '- L1、L3 两列的 R 比格子在判定后并排写「GPU a、TPU b → R」：a、b 是两边对参照的 rel_L2（决定 R 的那个算子或张量），R = b ÷ a。只看 R 看不出两边的误差是否都在一次 BF16 舍入（u ≈ 3.9e-3）以下。'
+    - '- 「L4」一列是现行比较 `tz-off-rep` 的专项曲线（1000 步）。'
+    - '- 「说明」一列写更高一级在哪里间接覆盖、为什么还没单独覆盖。只在整网 L4 loss 里间接体现的，记「尚未覆盖」。'
+    - '- 格子与上一行同一列相同时写「同 #k」（k 是第一次出现的行号）。'
+    - '- 逐元素函数的 ulp 检查（L1 表「逐元素函数」）不进本表的判定：它不是 TPU 对 GPU 的比较；对用到这些函数的算子，TPU 对 GPU 的比较看 L1 与 L3 两列。'
+    - ''
+    - 共 {modules_total} 个算子：有判定的检查覆盖且全过 {modules_pass} 个，覆盖但有待定或不过的 {modules_open} 个（其中已定责 {modules_attributed} 个），尚未覆盖 {modules_none} 个。
+    columns:
+      l1: L1 单算子（hy4-mini 7 层 + MTP，现行开关）
+      l3: L3 第 1 步（现行配置训练步梯度，超出 GPU 噪声的对 CPU FP64 定责）
+      l4: L4 专项曲线（tz-off-rep 1000 步）
+      note: 说明
+    count:
+    - l1
+    - l3
+    - l4
+    status: 判定
+    rows:
+    - name: 词嵌入
+      does: token id → 1024 维（FP32 表查出转 BF16）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.embed
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.embed
+        note: L0 权重转换逐位；L4 loss 间接
+    - name: iHC pre：归一化因子
+      does: 4 路流拼平后 rsqrt(mean(x²) + eps)，无可学习权重；乘在混合矩阵乘的结果上
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.ihc_mix
+        note: 单算子回放比的是混合后的分支输入（`attn_hc.out` / `ffn_hc.out`），pre 的四步合在一起比
+    - name: iHC pre：混合矩阵乘（hc_fn）
+      does: 'FP32 拼平的流 × hc_fn（TPU `hc_matmul_precision: highest`）'
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.ihc_mix
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.ihc
+        note: 单算子回放同上。L3：hc_pre 的 hc_fn / hc_base / hc_scale 的梯度同时流经 pre 与 post；现行配置超线 6 个，已定责、已接受（对齐细节第 4 节注 2）；单层回放（单行）6 个里 5 个 R ≤ 1.2（对齐细节 D11）
+    - name: iHC pre：sigmoid
+      does: pre = sigmoid(logit · scale + base) + hc_eps
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.ihc_mix
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.ihc
+        note: 同上
+    - name: iHC pre：加权求和
+      does: 4 路流按 pre 加权求和，得到分支输入（TPU 默认用 HIGHEST einsum，HLO 核过编译后是 FP32 逐元素乘 + reduce；开关打开后逐路 FP32 乘加；GPU 是逐元素 FP32 乘加）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.ihc_mix
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.ihc
+        note: 同上（TPU 逐路 FP32 乘加，台账 M28）
+    - name: iHC post：2·sigmoid
+      does: post = 2.0 · sigmoid(logit · scale + base) + hc_eps（`hc_post_magnitude` 2.0）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.ihc_writeback
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.ihc
+        note: MaxText 不把 post 单独输出，单算子回放只在 hy4-mini 的 iHC 写回里间接比（post 不单独比）；L3 是 hc_pre 参数的梯度，同时含 pre 与 post 两条路
+    - name: iHC post：写回
+      does: x_n + post_n · 分支输出（FP32 里算，转回流的精度）；iHC 没有 res_alpha，残差是恒等
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.ihc_writeback
+        note: 同上；L4 loss 间接
+    - name: 输入 RMSNorm
+      does: 注意力前的 RMSNorm（TPU 单次舍入，`rmsnorm_single_rounding`）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.norm
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.input_norm
+    - name: MLA q_a 投影
+      does: x → q 潜空间（q_lora 512）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.q_a
+        note: 只在注意力整块里比
+    - name: MLA q_norm
+      does: q 潜空间的 RMSNorm（eps 1e-5）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.q_norm
+        note: 同上
+    - name: MLA q_b 投影
+      does: 潜空间 → 8 头 × (nope 192 + rope 64)
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.q_b
+        note: 同上
+    - name: MLA kv_a 投影
+      does: x → kv 潜空间（kv_lora 512）+ 共享的 k_pe（64）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.kv_a
+        note: 同上
+    - name: MLA kv_norm
+      does: kv 潜空间的 RMSNorm（eps 1e-5）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.kv_norm
+        note: 同上
+    - name: MLA kv_b 投影
+      does: 潜空间 → 8 头 × (k_nope 192 + v 256)
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.kv_b
+        note: 同上
+    - name: MLA RoPE
+      does: θ = 1e7，YaRN factor 1（= 普通 RoPE）。检查点交错存放：TPU 转换时去交错、跑拼接式；GPU 运行时去交错（`mla_rotary_interleaved`）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        note: L0 去交错逐位；只在注意力整块里比
+    - name: 索引器 wq_b
+      does: q 潜空间 → 32 头 × 128
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.indexer_wq_b
+        note: 前向只在注意力整块里比；第 1 步梯度含第 0、1、5 层与 MTP 层
+    - name: 索引器 wk
+      does: x → k（128）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.indexer_wk
+        note: 同上
+    - name: 索引器 k_norm
+      does: k 的 LayerNorm（带 bias，不是 RMSNorm；eps 1e-6），两边都在 FP32 里算
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.indexer_k_norm
+        note: 同上
+    - name: 索引器 RoPE（每头后 64 维）
+      does: 'RoPE 放在每头的后 qk_rope_head_dim 维（`indexer_rope_position: last`；Megatron-Core 原版放前面，GPU 侧改了）'
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.indexer_wq_b
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.indexer_wk
+        note: 同上；L3 是流经 RoPE 的 wq_b、wk 的梯度
+    - name: 索引器 weights_proj
+      does: x → 每头一个权重，乘 H^-0.5 · d^-0.5（BF16 权重、FP32 输出，台账 M27）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.indexer_weights_proj
+        note: 同上
+    - name: 索引器 ReLU 与按头加权求和
+      does: 分数 = Σ_头 w_h · ReLU(q_h · k)（TPU `indexer_fp32_scores` 真 FP32）
+      checks:
+        l1:
+        - t1-layer0-kd-attribution:L1.indexer_kd.inputs
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.indexer_weights_proj
+        note: KD 输入一条比的就是这个分数（第 0 层第 0 行）；L3 是流经它的 weights_proj 梯度
+    - name: 索引器 top-k（full 层）
+      does: 每个 query 选 2048 个 key（第 0、1、5 层与 MTP 层）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        note: 只在注意力整块里间接比；逐层不重合率统计见 L2
+    - name: 索引器 top-k（shared 层复用）
+      does: 第 2–4、6 层复用本组第一层的 top-k（IndexCache）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        note: hy4-mini 逐算子回放里只在注意力整块里间接比（shared 层用块首层自选的掩码）
+    - name: 注意力 logits
+      does: q · k × softmax scale（被选中的 2048 个 key + 因果）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        note: 只在注意力整块里比；logits 的精度两边不同，见下方「已知的覆盖缺口」
+    - name: 可学习 sink
+      does: 每头一个 FP32 logit，作为额外的一列键拼进 softmax，不带 value
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.sink
+        note: 同上
+    - name: softmax
+      does: FP32（TPU 是 splash 的在线 softmax，exp2）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        note: 同上
+    - name: 乘 V（PV）
+      does: 概率 × V
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        note: 同上
+    - name: 输出门投影
+      does: x → 8 头 × 256（门控 MLA，读注意力的输入）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.gate_proj
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.gate
+        note: 单算子回放比的是投影的输出（sigmoid 之前）
+    - name: 输出门 sigmoid 与相乘
+      does: out × sigmoid(gate)
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.gate
+        note: 只在注意力整块里比；L3 是流经 sigmoid 的 linear_gate 梯度；sigmoid 的精度两边不同（下方逐元素函数表，对齐细节 D10）
+    - name: o_proj
+      does: 8 头 × 256 → 1024
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.o_proj
+        note: 同上
+    - name: FFN 前 RMSNorm
+      does: 注意力写回之后、FFN 之前的 RMSNorm
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.norm
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.post_norm
+    - name: 稠密 MLP（第 0 层）
+      does: silu(gate) · up，再 down（3072 宽，不截断）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.dense_mlp
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.dense_mlp
+    - name: 路由 logits（FP32）
+      does: 'FP32 激活 × 路由权重（TPU 先把权重舍成 BF16，`routed_gate_bf16_rounding`；`router_matmul_precision: highest`）'
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.router_logits
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.router
+        note: 阶段 A 没有 MoE；hy4-mini 单算子回放比了路由 logits；L3 是路由权重（`mlp.gate.weight`）的梯度
+    - name: 路由 sigmoid 与偏置
+      does: sigmoid 打分；路由偏置只参与选择，门控权重用不带偏置的分数
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.moe
+        l4:
+        - t1zo-l4:L4.router.*
+        note: 偏置的逐步更新由 L4 路由偏置曲线比；L4 偏置标准差待定已定责、已接受（对齐细节 D23）
+      attributed: D23
+    - name: 路由 top-k
+      does: 16 个专家选 4 个（不分组）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.moe
+        l4:
+        - t1zo-l4:L4.router.*
+        note: 偏置按负载更新，负载由 top-k 决定，所以偏置曲线间接覆盖选择；逐层翻转统计见 L2；L4 偏置标准差待定已定责、已接受（对齐细节 D23）
+      attributed: D23
+    - name: 路由权重归一化与缩放
+      does: w / (Σw + 1e-20) × 2.827
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.moe
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.router
+        note: 路由权重的梯度流经归一化与缩放（L3 同上一行）；前向没有单独比
+    - name: 路由专家（含 SwiGLU 截断）
+      does: gate ≤ 10、up ∈ [−10, 10] 截断后 silu(gate) · up，再 down；路由权重 TPU 乘在 down 之后、GPU 乘在 down 之前
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.routed_experts
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.experts
+        note: L3 只含 rank 0 本地的 0–3 号专家（GPU 抓数只有这 4 个，台账 G12）；路由权重乘的位置两边不同（舍入点不同，M40 对上）
+    - name: 共享专家
+      does: silu(gate) · up，再 down（256 宽，不截断）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.shared_expert
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.shared
+    - name: hc_head
+      does: 4 路流合成 1 路（归一化因子、hc_fn、sigmoid 加权）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.hc_head
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.hc_head
+        note: TPU 先归一化再乘、GPU 先乘再乘因子：数学相同、舍入不同
+    - name: 最后的 RMSNorm
+      does: hc_head 之后的 RMSNorm
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.norm
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.final_norm
+    - name: 输出头（FP32）
+      does: 1024 → 120832 维 logits，FP32 权重与输出
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.lm_head
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.lm_head
+        note: '现行配置设 `logits_matmul_precision: highest`，TPU 也是真 FP32 矩阵乘（台账 M13）；GPU 的 dgrad 每 1024 个词分段累加（台账 G19）'
+    - name: MTP enorm、hnorm
+      does: 下一个 token 的嵌入与主干隐状态（hc_head + 最后的 norm 之后）各一个 RMSNorm
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.norm
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.mtp_norms
+        note: MTP loss 曲线间接；L3 现行训练步梯度下 `enorm` R 1.18（GPU 1.57e-3，TPU 1.85e-3）
+    - name: MTP 拼接与 eh_proj
+      does: '[嵌入, 隐状态] 拼成 2048 维，投影回 1024'
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.eh_proj
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.mtp_eh_proj
+        note: 同上
+    - name: MTP 的 transformer 层（注意力、MoE）
+      does: 一层 MoE 层（不带超连接；索引器自己算 top-k）
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.attn
+        - t1-l1-op-tpu-r3:L1.mini3.moe
+        l3:
+        - t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.mtp_layer
+        note: 其中的索引器算在上面索引器各行（L3 索引器各组含 MTP 层的张量）；前向在单算子回放里比了注意力整块与 MoE 整块
+    - name: 主损失（交叉熵）
+      does: 逐 token 交叉熵，eod 位置不算（`loss_mask`），按全局有效 token 数平均
+      checks:
+        l1:
+        - t1-l1-op-tpu-r3:L1.mini3.cross_entropy
+        l4:
+        - t1zo-l4:L4.loss
+        - t1zo-l4:L4.loss.tail
+    - name: MTP 损失
+      does: 预测下下个 token 的交叉熵 × 0.1（两边都读 MaxText 口径 `mtp_loss_mt`）
+      checks:
+        l4:
+        - t1zo-l4:L4.mtp_loss*
+    - name: 索引器 KD 损失
+      does: KL(教师注意力分布 ‖ 索引器分布)，各产出层平均 × 0.1
+      checks:
+        l1:
+        - t1-layer0-kd-attribution:L1.indexer_kd.inputs
+        l4:
+        - t1zo-l4:L4.indexer_loss
+        note: 1000 步与前 300 步都过（打开 M50 后，对齐细节 D1）；第 0 层 KD 值的诊断见 L1 表
+    - name: Muon：Newton–Schulz
+      does: 5 步，系数 (3.4445, −4.7750, 2.0315)；归一化 x / max(‖x‖, 1e-7)
+      checks:
+        l1:
+        - t1-optim-replay-adam-acc-r2-tpu:L1.optim_adam_r2.tpu_adam_acc
+        note: L1 是优化器连续 8 步回放（对齐细节 D17）；另有 MaxText 单测对 Megatron-Core 的固定参照（台账 M15–M17）
+    - name: Muon：Nesterov
+      does: β = 0.95，方向 = β · mu_t + (1 − β) · g_t，不做偏差修正
+      checks:
+        l1:
+        - t1-optim-replay-adam-acc-r2-tpu:L1.optim_adam_r2.tpu_adam_acc
+        note: 同上
+    - name: Muon：更新缩放
+      does: √max(1, fan_out / fan_in)
+      checks:
+        l1:
+        - t1-optim-replay-adam-acc-r2-tpu:L1.optim_adam_r2.tpu_adam_acc
+        note: '同上；两边公式相同（GPU `muon_scale_mode: shape_scaling`，台账 G18）'
+    - name: Muon：分区
+      does: 哪些参数走 Muon（iHC 矩阵走 Adam、gate / up 拼接正交化、输出门每头一个矩阵）
+      checks:
+        note: L0 逐参数对拍
+        l1:
+        - t1-l0-muon-partition:L0.optim.partition
+    - name: 标量参数的 Adam
+      does: 普通 Adam（不是 NAdam），β 0.9 / 0.95，ε 1e-10，权重衰减 0
+      checks:
+        l1:
+        - t1-optim-replay-adam-acc-r2-tpu:L1.optim_adam_r2.tpu_adam_acc
+        note: 同上；另有 MaxText 单测对 torch Adam（台账 M16）
+    - name: QK-Clip
+      does: 每层每头 scale = min(1, 100 / 最大 logit)（最大 logit 只取选中且因果的位置，不含 sink），q_b / kv_b 的 nope 列 × √scale、rope 列 × scale；梯度累积时最大 logit 取最大
+      checks:
+        l1:
+        - t1-qk-clip-tpu:L1.qkclip.formula
+        - t1zo-qkclip-maxlogit:L1.qkclip.max_logit
+        note: T1 的 τ 100 下从未触发；L1 是 τ 0.1 的 30 步对比：裁剪算法过（打开 M31、M33 之前的设置）；第 1 步逐头最大 logit 在 base2 开时过（对齐细节 D15），关 base2 的现行配置下不过（第 4 层 R 1.55，一个头差 −1.19e-2）；L4 的 QK-Clip 曲线还没进目录；MaxText 单测见台账 M1、M18、M19，最大 logit 不含 sink 见 M25
+    same_as_above: true
+  tables:
+  - title: 单算子回放（阶段 A 真实权重，第 1 步前向）
+    lead:
+    - 每个算子的输入换成 GPU `ga1-a` 第 1 步抓到的同一个输入，抓 TPU 这个算子的输出，对 GPU 侧 FP64 单算子回放存下的真值算 R。参考档的「rel_L2 对 GPU」是同一输入下 TPU 输出对 GPU 输出。
+    rows:
+    - name: iHC 混合与 hc_head
+      what: 注意力前 / FFN 前的 iHC 混合（pre 的四步）与 hc_head
+      objects: '`attn_hc.out`、`ffn_hc.out`、`hc_head`'
+      src:
+        real:
+        - hy4-a-l1-op-tpu-fix:L1.ops.op.ihc_*
+        - hy4-a-l1-op-tpu-fix:L1.ops.op.hc_head
+    - name: RMSNorm
+      what: 输入、FFN 前、最后的 RMSNorm
+      objects: '`input_layernorm`、`post_attention_layernorm`、`final_norm`'
+      src:
+        real: hy4-a-l1-op-tpu-fix:L1.ops.op.*norm
+    - name: 输出门投影
+      what: gate_proj 的输出（sigmoid 之前）
+      objects: '`self_attn.gate_proj`'
+      src:
+        real: hy4-a-l1-op-tpu-fix:L1.ops.op.gate_proj
+    - name: 注意力整块
+      what: MLA 投影与 norm、RoPE、索引器自选 top-k、稀疏注意力与 sink、输出门、o_proj
+      objects: '`self_attn`（自选 top-k）'
+      src:
+        real: hy4-a-l1-op-tpu-fix:L1.ops.op.attn_block
+    - name: 稠密 MLP
+      what: 第 0 层稠密 MLP
+      objects: '`mlp`'
+      src:
+        real: hy4-a-l1-op-tpu-fix:L1.ops.op.dense_mlp
+    - name: 输出头
+      what: FP32 输出头
+      objects: '`lm_head`'
+      src:
+        real: hy4-a-l1-op-tpu-fix:L1.ops.op.lm_head
+    columns:
+    - real
+  - title: mini 的单算子（GPU 分母 Megatron-Core + TE）
+    lead:
+    - 每个算子的输入换成 GPU `g7-l1-a` 第 1 步 rank 0 第 0 个 microbatch 抓到的同一个输入（`op_replay_mini.py`），TPU 输出与 GPU 输出各对 GPU 一侧在 CPU 上的 FP64 重算（`mini-l1/fp64`）算 R。对象都是 hy4-mini 第 0–6 层与 MTP 层里的同一类算子，每类取最差的一层（逐用例算 R 比，取最差）。
+    rows:
+    - name: RMSNorm
+      what: 输入、FFN 前、最后的 RMSNorm 与 MTP 的 enorm / hnorm / final norm
+      objects: ''
+      src:
+        mini: t1-l1-op-tpu-r3:L1.mini3.norm
+      agg: 同表头
+    - name: 输出门投影
+      what: gate_proj 的输出（sigmoid 之前）
+      objects: ''
+      src:
+        mini: t1-l1-op-tpu-r3:L1.mini3.gate_proj
+      agg: 同表头
+    - name: 注意力整块
+      what: MLA 投影与 norm、RoPE、索引器自选 top-k（共享层用块首层自选的掩码）、稀疏注意力与 sink、输出门、o_proj
+      objects: ''
+      src:
+        mini: t1-l1-op-tpu-r3:L1.mini3.attn
+      agg: 同表头
+    - name: 稠密 MLP
+      what: 第 0 层稠密 MLP（SwiGLU 两次舍入）
+      objects: ''
+      src:
+        mini: t1-l1-op-tpu-r3:L1.mini3.dense_mlp
+      agg: 同表头
+    - name: MoE 整块
+      what: 路由（sigmoid + 偏置选、归一化、缩放）、路由专家（含 clamp 10）、共享专家，自选路由
+      objects: ''
+      src:
+        mini: t1-l1-op-tpu-r3:L1.mini3.moe
+      agg: 同表头
+    - name: 路由 logits
+      what: 路由矩阵乘的输出（FP32，sigmoid 之前）
+      objects: ''
+      src:
+        mini: t1-l1-op-tpu-r3:L1.mini3.router_logits
+      agg: 同表头
+    - name: 共享专家
+      what: 共享专家整块（FP64 参照在 CPU 上用 HF 检查点的权重算）
+      objects: ''
+      src:
+        mini: t1-l1-op-tpu-r3:L1.mini3.shared_expert
+      agg: 同表头
+    - name: 路由专家
+      what: MoE 整块减共享专家（GPU 一侧没单独抓，用 mlp.out − shared.out）
+      objects: ''
+      src:
+        mini: t1-l1-op-tpu-r3:L1.mini3.routed_experts
+      agg: 同表头
+    - name: iHC 混合
+      what: 4 路流按 pre 加权求和成分支输入（注意力前、FFN 前）
+      objects: ''
+      src:
+        mini: t1-l1-op-tpu-r3:L1.mini3.ihc_mix
+      agg: 同表头
+    - name: iHC 写回
+      what: 4 路流 + post × 分支输出（分支输出换成 GPU 的），MTP 是两次残差相加
+      objects: ''
+      src:
+        mini: t1-l1-op-tpu-r3:L1.mini3.ihc_writeback
+      agg: 同表头
+    - name: hc_head
+      what: 最后的 4 路流合成一路
+      objects: ''
+      src:
+        mini: t1-l1-op-tpu-r3:L1.mini3.hc_head
+      agg: 同表头
+    - name: MTP 的 eh_proj
+      what: cat(enorm, hnorm) 的投影
+      objects: ''
+      src:
+        mini: t1-l1-op-tpu-r3:L1.mini3.eh_proj
+      agg: 同表头
+    - name: 输出头
+      what: FP32 输出头
+      objects: ''
+      src:
+        mini: t1-l1-op-tpu-r3:L1.mini3.lm_head
+      agg: 同表头
+    - name: 交叉熵
+      what: GPU 的 logits 进 MaxText 的交叉熵（逐 token）
+      objects: ''
+      src:
+        mini: t1-l1-op-tpu-r3:L1.mini3.cross_entropy
+      agg: 同表头
+    - name: embedding
+      what: 查表
+      objects: ''
+      src:
+        mini: t1-l1-op-tpu-r3:L1.mini3.embed
+      agg: 同表头
+    columns:
+    - mini
+  - title: mini 的其他 L1 检查（KD 输入、优化器回放、逐元素函数、QK-Clip）
+    rows:
+    - name: 索引器 KD 的输入
+      what: 第 0 层第 0 行（GPU rank 0 micro 0 = TPU 第 0 行）的教师 q、教师 k、索引器分数，对 CPU FP64（`step1_ref.py --forward-only`，`t1-l1-kd-qkclip-vs-fp64.json`）；TPU 是 t1z 设置的 `t1zdiag2`，GPU 是 `g1p-kdd`
+      objects: 教师 q、教师 k、索引器分数（只比因果部分）
+      src:
+        mini: t1-layer0-kd-attribution:L1.indexer_kd.inputs
+    - name: 优化器连续 8 步回放（现行：M30（T1 开，M31）、M34）
+      what: GPU `g2o-a` 第 1–8 步的梯度与主权重喂 MaxText 优化器，对 FP64 参照（Adam 一支的除法、sqrt、1 − β^t 用精确写法，台账 M34）
+      objects: rank 0 的 205 个张量 × 8 步
+      agg: 逐步逐张量算 R，取最差
+      src:
+        mini: t1-optim-replay-adam-acc-r2-tpu:L1.optim_adam_r2.tpu_adam_acc
+      why: 最差是 Muon 第 6 步 `weights_proj`：GPU 1.36e-2，TPU 1.41e-2，R 1.03（对齐细节 D17）。
+    - name: 逐元素函数：XLA 默认实现（FP32）
+      what: exp、log、sigmoid、silu、rsqrt 对 FP64 正确舍入的 ulp；合成输入（均匀、对数均匀、[1, 4) 全部 FP32）与真实输入（GPU `g2s-a` 的路由 logits、稠密 MLP gate、RMSNorm 均方，TPU 第 0 层 KD 的分数与教师目标）
+      objects: 每个函数 3–5 个用例
+      src:
+        mini:
+        - tpu-elementwise-ulp:L1.elem.exp.fp32
+        - tpu-elementwise-ulp:L1.elem.log.fp32
+        - tpu-elementwise-ulp:L1.elem.sigmoid.fp32
+        - tpu-elementwise-ulp:L1.elem.silu.fp32
+        - tpu-elementwise-ulp:L1.elem.rsqrt.fp32
+      why: exp 105、log 62、sigmoid 83、silu 86 ulp，超过 CUDA 文档门槛（exp ≤ 2、log ≤ 1、sigmoid / silu ≤ 4）（对齐细节 D14）。
+      info: true
+      agg: 逐函数取最差用例；只报（生产不开开关时的精度，判定看现行开关写法一行）
+    - name: 逐元素 sqrt、除法：XLA 默认实现（FP32）
+      what: FP32 sqrt（对数均匀 1e-30–1e30）与除法（随机、Adam 形状）对 FP64 正确舍入的 ulp；另报 1 − β^t（t = 1..1000）
+      objects: 3 个用例
+      src:
+        mini:
+        - tpu-elementwise-ulp:L1.elem.sqrt.fp32
+        - tpu-elementwise-ulp:L1.elem.div.fp32
+      why: 门槛都是 1 ulp（CUDA 默认 sqrtf、x / y 正确舍入）；TPU v5p 实测 sqrt 3、除法 2 ulp，1 − β^t 最多 108 ulp（只报）。M34 换成修正写法后见下一行（对齐细节 D17）。
+      info: true
+      agg: 逐用例取最差；只报
+    - name: 逐元素函数：现行开关写法（FP32）
+      what: '`transcendental_accuracy_highest` 的 exp / log / sigmoid / silu（`maxtext.utils.accurate_math`，M32 + M37）与 `muon_adam_accurate` 的 sqrt、除法（M34），加 rsqrt（无开关）；同一批输入'
+      objects: 每个函数 3–5 个用例
+      agg: 逐函数取最差用例，按函数取 CUDA 文档门槛：exp ≤ 2、log ≤ 1、sigmoid / silu ≤ 4、sqrt / 除法 ≤ 1、rsqrt ≤ 2 ulp
+      src:
+        mini:
+        - tpu-elementwise-ulp:L1.elem.exp.fp32_mt
+        - tpu-elementwise-ulp:L1.elem.log.fp32_mt
+        - tpu-elementwise-ulp:L1.elem.sigmoid.fp32_mt
+        - tpu-elementwise-ulp:L1.elem.silu.fp32_mt
+        - tpu-elementwise-ulp:L1.elem.sqrt.fp32_mt
+        - tpu-elementwise-ulp:L1.elem.div.fp32_mt
+        - tpu-elementwise-ulp:L1.elem.rsqrt.fp32
+      why: log 3 ulp 超过 CUDA logf 的 1 ulp 门槛，GPU B200 实测 1 ulp；MaxText 开关 M51（精确 log，默认关，对齐配置未开）同一批输入 ≤ 1 ulp（下一行，对齐细节 D14）；其余过：exp 1、sigmoid 3、silu 4、sqrt 1、除法 1、rsqrt 2 ulp（1 − β^t 2，只报）。
+    - name: 逐元素 log：GPU 实测与 TPU 精确写法
+      info: true
+      what: FP32 log 对 FP64 正确舍入的 ulp：GPU B200 `torch.log` 实测；TPU 精确写法（e_logf.c 算法的 FP32 移植加精确除法）的独立实现与 MaxText 开关 `transcendental_log_freebsd`（M51，默认关，对齐配置未开）
+      objects: 4 批输入：[0.5, 4) 全部 FP32、两段对数均匀、KD 真实输入
+      agg: 逐批取最大 ulp，取最差的一批；只报
+      src:
+        mini:
+        - t1-log-ulp:L1.elem.log.gpu_b200
+        - t1-log-ulp:L1.elem.log.tpu_fdlibm
+        - t1-log-ulp:L1.elem.log.tpu_maxtext_m51
+    - name: 逐元素 relu、clamp、加乘与类型转换
+      what: relu、clamp（±10，路由专家 SwiGLU 的截断）、FP32 加乘、FP32 → BF16，必须逐位等于 numpy（次正规数另计）
+      objects: 合成与真实输入
+      src:
+        mini:
+        - tpu-elementwise-ulp:L1.elem.relu.fp32
+        - tpu-elementwise-ulp:L1.elem.clamp.fp32
+        - tpu-elementwise-ulp:L1.elem.basic
+    - name: log-sum-exp（KD 的 log_softmax）
+      info: true
+      what: logsumexp 与 log_softmax 反推的 LSE 对 FP64 的 ulp；真实 KD 输入（4096 行）与三种合成行；另拆 exp、FP32 求和、log 三步
+      objects: 4 组行
+      agg: 逐组算，只报不判
+      src:
+        mini: tpu-elementwise-ulp:L1.elem.lse.fp32
+      why: 诊断：单独编译时在同一批 KD 输入上复现了 LSE 平均偏低约 0.95 格；偏差来自 TPU 的 FP32 exp（输入近 0 时平均偏低约 2.5 格）与 log（约 0.6 格），求和不贡献。
+    - name: FP32 超越函数精度开关（KD 第 0 行）
+      info: true
+      what: MaxText `transcendental_accuracy_highest`（台账 M32）关 / 开：第 0 层索引器 KD 第 0 行，TPU 图内对同一批输入的 FP64 重算
+      objects: 1 行，两组
+      agg: 两组各一个相对差，只报不判
+      src:
+        mini: t1-step1-transcendental-accuracy:L1.transcendental.kd_row0
+      why: 诊断：开关打开后 KD 第 0 行的偏低与 LSE 的 0.95 格偏差都消失（数字见格子），第 0 层 KD 的定责成立（对齐细节 D14）。
+    - name: 低阈值 QK-Clip：裁剪的算法
+      what: τ 0.1、30 步（GPU `g6-qk-a/b`，TPU `tw-qk-a`，打开 M31、M33 之前的设置）：TPU 裁剪后的 q / kv 上投影主权重 ≟ GPU 裁剪前的主权重 × TPU 自己记下的 η（Megatron-Core 的行规则，α 0.5）
+      objects: 第 1 步 7 层 + MTP 的 q_b / kv_b
+      src:
+        mini: t1-qk-clip-tpu:L1.qkclip.formula
+    - name: 低阈值 QK-Clip：逐头最大 logit
+      what: 第 1 步逐层逐头的最大 logit（η 的分母）对 CPU FP64；TPU 是现行配置（base2 关）的 `tz-off-qk01`（base2 开的上一代 `mz-qk-a` 见 `t1-qkclip-maxlogit`），GPU 取 `g6-qk-a` / `b` 的中位数
+      objects: 8 层 × 8 头
+      src:
+        mini: t1zo-qkclip-maxlogit:L1.qkclip.max_logit
+      why: 未定责：关 base2 后第 4 层 R 1.55（最差一个头相对差 −1.19e-2，约 3 个 BF16 舍入单位）；base2 开时同一量过（第 4 层 0.94，最差层 1.05）。还没有查
+    - name: 低阈值 QK-Clip：被裁的头
+      info: true
+      what: 30 步逐步逐头被裁的集合，TPU 对 GPU-a，对照 GPU-b 对 GPU-a
+      objects: 30 步 × 64 头
+      agg: 集合差的合计，只报不判
+      src:
+        mini: t1-qk-clip-tpu:L1.qkclip.heads
+      why: 诊断：第 1 步 TPU 与 GPU 两份都裁同样的 47 个头；30 步的集合差合计 TPU 对 a 与 b 对 a 同一量级（数字见格子）。
+    - name: 低阈值 QK-Clip：GPU 另裁 BF16 权重
+      info: true
+      what: GPU 把 BF16 模型权重单独按 bf16(W_bf16 × 因子) 裁，不是 bf16(裁剪后主权重)；MaxText 只有 FP32 主权重（已知语义差）
+      objects: 第 1–5 步 7 层 + MTP 的 q_b / kv_b
+      agg: 两种 BF16 权重的差与 30 步 lm_loss 的散布，只报不判
+      src:
+        mini: t1-qk-clip-tpu:L1.qkclip.gpu_bf16_copy
+      why: 诊断：GPU 的 BF16 权重与 bf16(主权重) 只差 1 个 BF16 ulp，下一次优化器更新就被主权重覆盖；30 步 lm_loss 的 TPU 对 GPU 在 GPU 两份的散布内，所以不加开关。
+    - name: T0：hy4-tiny 逐层
+      what: hy4-tiny（FP32、CPU）逐层前向 / 反向与第 1 步更新，两侧各对 FP64
+      objects: 7 层 + MTP
+      src:
+        mini: 'todo: 待做'
+      why: T0 还没做。
+    columns:
+    - mini
+- id: L2
+  title: L2 · 逐层
+  purpose: 每层输入取参照的，单层前向、反向不比参照离 FP64 远
+  lead:
+  - 目的：每层输入取参照的，单独跑一层，把误差隔离到层。
+  - ''
+  - L2 共 {rows} 项检查。逐层隔离回放 `layer_replay.py`（台账 J12、J19）：GPU `g7-l1-a` 第 1 步每层的输入进 TPU 单层程序，比输出与输入梯度。现行结果是 TPU `tw-l2-g`（T1 的全部开关，含 M40 / M41，MaxText `3741e818`）对 CPU FP64 单层重算（`frameworks/megatron/layer_ref.py`，`t1-l2-layer-vs-fp64.json`）。
+  tables:
+  - rows:
+    - name: 各层前向 / 反向对 CPU FP64
+      what: 第 1 步，每层输入取 GPU 的，单层前向输出与反向的层输入梯度，TPU 与 GPU 各对 CPU FP64 单层重算的 R
+      objects: hy4-mini 第 0–6 层与 MTP 层
+      src:
+        mini: t1-l2-layer-vs-fp64:L2.layer.*
+      why: 前向 R 最大 1.08（第 1 层），层输入梯度 R 最大 1.16（第 2 层：GPU 1.23e-2、TPU 1.42e-2）。MTP 层 R 0.20 / 0.24 偏低要打折看：GPU 抓到的 MTP 输出是 BF16 存的，多一次舍入（结果文件 note）。
+    - name: 索引器 top-k 翻转与路由翻转
+      what: 逐层翻转率（路由）与不重合率（DSA top-k）对 CPU FP64 自选，按 FP64 分差分桶；判定用 L3 路由一致率的对真值口径（同一批数），这里把逐层、逐分差桶的统计摊开
+      objects: 第 1、8、30、100 步；路由 28 个（步, 层），DSA 16 个（步, 层）。TPU 抓数：第 1 步是 base2 关的 `tw-ra1z`（现行配置），第 8、30、100 步是 `t1zw-a` 那一代（含 M42b、base2 开），关 base2 后没有重测
+      src:
+        mini: t1-l2-flip-stats:*
+      agg: 每个（步, 层）算 R = TPU 对 FP64 的翻转率 ÷ GPU 三份的最大值，取最差
+      info: true
+      why: 只统计、不设过线（PROTOCOL 第 5 节）；格子是结果文件按 L3 同一门槛算的读数，判定由 L3 路由一致率给（同一批数）。
+    columns:
+    - mini
+- id: L3
+  title: L3 · 整网第 1 步
+  purpose: 第 1 步的梯度与状态在 GPU 第 1 步参照的噪声内，超出的对参照定责（参照是 CPU FP64 整网重算，与 TPU 不同源）
+  lead:
+  - 目的：同一份权重、同一个 batch，整网跑第 1 步，比梯度与优化器状态。
+  - ''
+  - L3 共 {rows} 项检查，检查条数 {checks}，张量级比较 {tensors} 次。
+  - ''
+  - '- TPU 的第 1 步来自训练程序的诊断模式（`train_hy4.py --diag-step1`：回放 GPU 第 1 步的 batch，用训练里同一个梯度累积函数，不更新）。'
+  - '- TPU 用现行配置训练步实际用的第 1 步梯度（由 `tz-off-rep` 第 1 步全量抓数的动量反推；base2 开的上一代 `mz-opt2` 与诊断程序 `mz-diag1` 只作旁证）对 GPU 第 1 步全量抓数参照 `g2s-a/b/c`（HF 名字与布局，台账 G15；注意力 q·k 在 FP32 里算，台账 G17）。'
+  - '- 噪声只用这三份两两（协议第 5 节）。逐张量 r = TPU 对最近一份 GPU 的 rel_L2 ÷ GPU 三份两两的最大 rel_L2。'
+  - '- **分辨率下限**（PROTOCOL 第 5 节）：GPU 第 1 步噪声 N = 0、且两边对参照的 rel_L2 都小于 BF16 单位舍入 u = 2^-8 的张量，记「低于分辨率（按下限过）」，不再用 R 判。有 5 个这样的张量（第 0、1 层索引器的 `k_norm`、`weights_proj` 等）。'
+  - '- 超出噪声的张量对 CPU FP64 参照定责：GPU golden 同一套 Megatron-Core 代码与 loss 语义在 CPU 上全程 FP64 重算第 1 步（`frameworks/megatron/step1_ref.py`；逐算子核过没有 FP64 以外的浮点输出；同一代码的 CPU FP32 版离它的 rel_L2 中位数 1.34e-4），离散选择（DSA top-k、MoE 路由）由 FP64 自己选。R = rel_L2(TPU, FP64) ÷ rel_L2(GPU, FP64)（GPU 取三份的中位数）≤ 1.2 算已定责。有超 2N 而未定责的张量判不过，只有 1–2N 未定责的判待定。'
+  tables:
+  - rows:
+    - name: 全部参数梯度对 GPU 第 1 步噪声，超出的对参照定责
+      what: 逐张量算 r 与 R（见本级开头），参照是 CPU FP64
+      objects: 205 个张量（HF 名字；路由专家只有 rank 0 的 0–3 号）
+      agg: 逐张量算 r 与 R，数「超出 N 且 R > 1.2」的张量：有超 2N 的就不过（待定责），只有 1–2N 的待定
+      src:
+        mini: t1zo-step1-train-grad-vs-fp64:L3.step1.grads.vs_gpu
+      why: 超出 N 而 R > 1.2 的 6 个 iHC 张量已定责、已接受（最差第 4 层注意力前 `hc_scale`：GPU 2.86e-1，TPU 1.49，R 5.22；对齐细节 D11）；单层回放（单行、同一份输入与余切）R 0.50–1.25、5 个 ≤ 1.2，同一回放另有 14 个张量 R > 1.2（单行噪声大，`t1zg-l2-param-grads.json`）。MTP `enorm` 过（R 1.18）。诊断程序梯度（旁证）未定责是同一批 6 个。
+    - name: 按算子分组的参数梯度
+      what: 同上一行，按算子分组各判一次（分组见 `build.py` 的 `STEP1_OPS`），供「模型的每个算子由哪条检查覆盖」的 L3 列用
+      objects: 205 个张量分成 27 组
+      agg: 每组同上一行的规则；格子写最差的一组，并排写这一组里 R 最大的张量两边对参照的 rel_L2
+      src:
+        mini: t1zo-step1-train-grad-vs-fp64:L3.step1.ref.op.*
+      why: iHC（hc_pre）一组不过；其余过（索引器 k_norm 一组按分辨率下限过；enorm 已接受）。
+    - name: iHC post 门控梯度的条件数
+      info: true
+      what: 每个 token 的 dL/dpost_k = Σ_d h[t,d]·g[t,k,d]（h 是本层 FFN 分支输出，g 是本层输出流的梯度），条件数 κ_k = Σ_t ｜项｜ ÷ ｜Σ_t 项｜；GPU `g2s-a` 第 1 步 rank 0 第 0 个 microbatch 的一条 4096 token 序列
+      objects: 第 1–3 层 FFN 一侧，各 4 路
+      agg: 每层 4 路的 κ 范围，只报不判
+      src:
+        mini: t1-ihc-post-grad-conditioning:L3.step1.ihc.post_conditioning
+      why: 诊断。κ 约 25–1400：每个 token 的项里 1e-4 量级的系统差，加总以后放大成 1e-2 量级的相对差（层号按 HF 检查点从 0 数）。第 1 层 κ 710–1359、第 3 层约 95，放大倍数够大；第 2 层只有约 25。
+    - name: 路由一致率（对 CPU FP64）
+      what: TPU 自选的 MoE 路由（每个 token 选中的专家集合）与 DSA top-k（每个 query 选中的位置集合）逐层对 CPU FP64 自选比；每层 R = TPU 的翻转率（DSA 为不重合率）÷ GPU 三份对 FP64 的最大值
+      objects: 第 1、8、30、100 步；路由第 1–6 层与 MTP 层，DSA 第 0、1、5 层与 MTP 层；第 8、30、100 步三方从 GPU 同一份重建状态起步；TPU 只取现行配置的抓数（第 1 步 `tw-ra1b`；base2 关的 `tw-ra1z` 不计）。格子链到第 1 步的文件，最差一格在说明里写明是哪一步
+      agg: 每步取路由与 DSA 各层里最差的 R；≤ 1.2 过、≤ 2 待定、> 2 不过（PROTOCOL 第 5 节，2026-11-09 起）
+      src:
+        mini: t1-route-agree:L3.route_agree.*
+    - name: Muon 动量、Adam 状态、更新后参数
+      what: 第 1 步优化器一步本身：各侧对「FP64 优化器作用在自己的梯度上」比（TPU 梯度由自己的动量反推，GPU 用同一次运行抓的梯度）
+      objects: 更新后参数 205 个张量（98 个低于分辨率下限）、Adam 二阶动量 99 个（都低于分辨率下限，格子里的 R 是两次舍入之比、按下限过）；一阶动量与 Muon 动量按定义是 (1−β)·梯度，TPU 梯度又由一阶动量反推，比较是循环的，只报
+      src:
+        mini:
+        - t1-l3-optim-step1:L3.step1.optim_arith.delta
+        - t1-l3-optim-step1:L3.step1.optim_arith.adam_v
+    - name: 第 1 步更新端到端对 FP64
+      info: true
+      what: 更新后参数、Adam 一阶 / 二阶动量、Muon 动量各对 CPU FP64 端到端比（含梯度的差）
+      objects: 同上一行
+      src:
+        mini:
+        - t1-l3-optim-step1:L3.step1.optim.*
+        - t1-l3-optim-step1:L3.step1.optim_arith.adam_m
+      why: 只报：未定责来自梯度。更新后参数 17 个（6 个 iHC 张量与 `input_layernorm`、`kv_a_layernorm`、`q_a_layernorm`、索引器 `k_norm` / `wk` / `wq_b`、`model.norm` 等），Adam 二阶动量 13 个（含 sink、enorm、hnorm）；Adam 第 1 步约为 −lr·sign(g)，近零梯度元素翻符号就是整格更新。Muon 动量 GPU 抓数里没有，只报 TPU 对 FP64（rel_L2 中位数 6.1e-3）。
+    columns:
+    - mini
+- id: L4
+  title: L4 · 多步训练
+  purpose: 300 步 / 1000 步的逐步曲线在 GPU 重跑的噪声内
+  lead:
+  - 目的：训练 300 步或 1000 步，看 TPU 被测对 GPU 基线的差是否落在 GPU 自己重跑的散布里。
+  - ''
+  - L4 共 {rows} 项检查，检查条数 {checks}（{cols}）。
+  - '- 现行比较（mini 列，目录 `t1zo-l4.yaml`，2026-11-11 起）：TPU 被测 `tz-off-rep`（T1 yml 的全部开关，含 M50，base2 关）对 GPU 基线 `g3-a`，噪声 `g3-a … g3-p` 16 份两两 120 对；1000 步过 7、待定 2（主 loss 两个窗口）。上一代 `t1zg-a`（base2 开）与诊断代见[历代比较](../../dashboard/history.md)。'
+  - '- 同一运行的前 300 步（w300 列，目录 `t1zo300-l4.yaml`）对 GPU `g2-a`，噪声 `g2-a … g2-h` 两两 28 对：过 7、待定 2（主 loss 全程、grad_norm）。'
+  - ''
+  - '- 噪声上限 N 只用 GPU，每个判定量取各对的最大值（协议第 3 节）。TPU 只改执行参数的扰动运行只作诊断。'
+  - '- 每条序列算三个判定量：带符号均值、MARE、最大单步；三个都对 N 判，取最差。格子写最差那个判定量的 TPU 实测（括号里是名字、实测 ÷ N 的倍数，N 与判法栏不同时另写 N）。首步差只报。'
+  - '- 学习率不在这一级：它是登记的常数，归 L0 设置核对。'
+  tables:
+  - title: 现行比较
+    rows:
+    - name: loss
+      what: 全程逐步主 loss 的相对差
+      objects: '`lm_loss`，第 1–1000 步（w300 列：第 1–300 步）'
+      src:
+        mini: t1zo-l4:L4.loss
+        w300: t1zo300-l4:L4.loss
+      why: 待定，与 base2 无关：1000 步带符号均值 N 4.65e-6（16 份 120 对），TPU +7.21e-6，r 1.55；前 300 步 N 3.01e-6，TPU 3.31e-6，r 1.10。开、关 base2 各 4 份 1000 步两组交叠，8 份 TPU 都比 GPU 16 份均值高约 +4.3e-6，原因待查（对齐细节 D30、根源一览「还没查明」）。
+    - name: loss 后段
+      what: 第 101 步起
+      objects: '`lm_loss`，第 101–1000 步（w300 列：第 101–300 步）'
+      src:
+        mini: t1zo-l4:L4.loss.tail
+        w300: t1zo300-l4:L4.loss.tail
+      why: 同上一行：第 101 步起 N 5.02e-6，TPU +7.62e-6，r 1.52；前 300 步的第 101 步起过（0.78）。
+    - name: MTP loss
+      what: 逐步 MTP loss（两边都读 MaxText 口径 `mtp_loss_mt`），全程与后段
+      objects: '`mtp_loss_mt`，全程与第 101 步起'
+      src:
+        mini: t1zo-l4:L4.mtp_loss*
+        w300: t1zo300-l4:L4.mtp_loss*
+    - name: 索引器 KD loss
+      what: 逐步索引器 KD loss（各产出层平均 × 0.1）
+      objects: '`indexer_loss`，全程'
+      src:
+        mini: t1zo-l4:L4.indexer_loss
+        w300: t1zo300-l4:L4.indexer_loss
+      why: 过（1000 步 MARE：N 3.90e-4，TPU 2.98e-4，r 0.77）：M50 改记广义 KL 后由待定变过（对齐细节 D1、根源一览第 25 行）。
+    - name: grad_norm
+      what: 逐步裁剪前全局梯度范数；分母用参照（2026-11-10 起，原为两边均值）
+      objects: '`grad_norm`，全程'
+      src:
+        mini: t1zo-l4:L4.grad_norm
+        w300: t1zo300-l4:L4.grad_norm
+      why: 1000 步过（MARE r 0.81）；前 300 步 MARE N 3.85e-4，TPU 4.74e-4，r 1.23，待定。base2 开的上一代同一项已定责、已接受（同一状态单步 6 次里 5 次 TPU 更近 FP64），那套证据没在关 base2 的状态上重做（对齐细节 D2）。
+    - name: param_norm
+      what: 逐步更新后的参数范数，两边读精确值：GPU `param_norm_fp64`，TPU `param_norm_exact`（每 128 个元素一段 FP32 求平方和、FP64 合成）
+      objects: 全程
+      src:
+        mini: t1zo-l4:L4.param_norm
+        w300: t1zo300-l4:L4.param_norm
+      why: TPU 原来记的 FP32 全局求和单步误差 −4.4e-7 至 +2.9e-7，与 N 同量级，所以两边比精确值（对齐细节 D12）。
+    - name: 路由偏置曲线
+      what: 逐步每层路由偏置的均值、标准差
+      objects: 第 1–6 层与 MTP 层
+      src:
+        mini: t1zo-l4:L4.router.*
+        w300: t1zo300-l4:L4.router.*
+      why: 两个窗口都过：1000 步均值 r 0.20、标准差 0.77；前 300 步 0.92、0.67。base2 开的上一代标准差 1000 步 1.14 倍，已定责、已接受（对齐细节 D23）。
+    - name: QK-Clip
+      what: 每步全局最大注意力 logit（各层含 MTP 各头最大 logit 的最大值，不含 sink）的相对差；被裁头数见健康信号一行
+      objects: TPU `tz-off-qkq`（现行 yml、base2 关，1000 步；由 `tz-off-qkc` 派生）对 GPU `g3-a`，噪声 `g3` 16 份两两 120 对；w300 列对 `g2` 一组
+      src:
+        mini: t1zo-l4-qkclip:L4.qkclip.max_logit
+        w300: t1zo300-l4-qkclip:L4.qkclip.max_logit
+      why: 待定：1000 步 MARE N 1.86e-3、TPU 2.02e-3，r 1.09；前 300 步单步最大 N 4.34e-2、TPU 4.54e-2，r 1.05（base2 开的上一代：1000 步 1.02、前 300 步带符号均值 1.77，已定责、已接受，对齐细节 D29）。关 base2 后同一状态单步的定责证据没有重做
+    - name: 健康信号
+      what: NaN / Inf、跳步、梯度裁剪是否触发、QK-Clip 被裁头数、MoE 是否丢 token、loss 尖峰（协议第 4 节）
+      objects: TPU `tz-off-qkc`（现行 yml、base2 关）对 GPU `g3-a`，1000 步
+      src:
+        mini: t1zo-health:*
+    columns:
+    - mini
+    - w300
+  - title: 程序与参照
+    rows:
+    - name: TPU 同设置重跑逐位
+      what: TPU 同一份代码、配置、数据跑两份 100 步，`metrics.jsonl` 的逐步量逐位比；只作记录，不改变噪声的取法（协议第 3 节）
+      objects: 现行 yml（base2 关）两份 1000 步：`tz-off-qkc` 对 `tz-off-rep`（同一代码包、不同节点池）；base2 开的上一代 `mz-g1` 对 `t1zg-b` 见 `t1mz-determinism`；旧配置两组各两份 100 步（`t1det-a/b`、`t1det2-a/b`）
+      src:
+        mini:
+        - t1zo-determinism:DET.tpu.rerun.current
+        - hy4-mini-tpu-determinism:DET.tpu.rerun
+    - name: TPU 抓数不改数值
+      what: 开全量抓数的运行与不抓的运行，前 30 步两边都记的逐步量逐位比（步时除外）
+      objects: '`mz-dump30`（现行 yml，30 步，第 1、30 步全量抓数：更新前后 FP32 主权重、Adam / Muon 动量、BF16 参数、路由偏置）对 `t1zg-b`（同一 MaxText 提交 `fd30fbfb`，不抓）'
+      src:
+        mini: t1mz-dump-determinism:DET.tpu.dump_no_effect
+    columns:
+    - mini
+footer:
+- '## 逐元素函数的精度'
+- ''
+- 逐元素函数在 TPU 上做了 ulp 检查（L1 表「逐元素函数」各行，`results/tpu-elementwise-ulp.json`）：XLA 默认的 FP32 exp / log / sigmoid / silu 是近似实现，ulp_max 105 / 62 / 83 / 86，超过 CUDA 文档给 GPU 的门槛；rsqrt、relu、clamp、加乘与类型转换过。下表先按代码列出每个函数在两边的计算精度；「检查」一栏说的是检查做没做，不是两边是否相同。
+- ''
+- 出处：TPU 为 MaxText 混元 4 集成分支（`d723fa2d`）在 T1 配置（`hy4-mini-t1.yml` + 模型 yml）下的代码路径；GPU 为 `frameworks/megatron/hy4_mcore.py` 与 Megatron-Core 0.20。Transformer Engine（TE）融合算子内部的精度没有源码可查，标「待核」。
+- ''
+- '| 函数 | 用在哪 | TPU（MaxText） | GPU（Megatron + TE） | 两边 | 检查 |'
+- '|---|---|---|---|---|---|'
+- '| sigmoid | iHC pre / post、hc_head | FP32（`mhc.py` `gates`） | FP32（`Hy4HyperConnection`，autocast 关） | dtype 相同；TPU 的 FP32 sigmoid 是近似实现，精度不同（对齐细节 D14） | 逐元素 ulp（`L1.elem.sigmoid.fp32` ❌，D14）；hy4-mini 单算子 iHC 混合、写回与 hc_head（✅） |'
+- '| sigmoid | 路由打分 | FP32（`float32_gate_logits`） | FP32（Megatron-Core `moe_utils`） | dtype 相同；TPU 的 FP32 sigmoid 是近似实现，精度不同（对齐细节 D14） | 逐元素 ulp（`L1.elem.sigmoid.fp32` ❌，D14）；hy4-mini 单算子 MoE 整块里间接比（✅） |'
+- '| sigmoid | 输出门 | FP32 算、舍成 BF16 后乘（`attention_mla.py`） | BF16 输入、BF16 输出（`torch.sigmoid(gate)`，`hy4_mcore.py`） | **不同**（未处理，对齐细节第 5 节 D10） | 只在注意力整块里间接比；L3 第 1 步 linear_gate 梯度 R ≤ 0.98 |'
+- '| silu | 稠密 MLP、共享专家、路由专家 | FP32 算、输出舍 BF16，乘积再舍一次（`mlp_activation_round_per_op`） | BF16 逐算子（非融合 SwiGLU） | 舍入点相同（按算子舍入；TPU 用开关对上，台账 M10）；TPU 的 FP32 silu 是近似实现（D14） | 逐元素 ulp（`L1.elem.silu.fp32` ❌，D14）；稠密 MLP 的 L1（阶段 A 与 hy4-mini，✅）；专家在 hy4-mini 的共享专家、路由专家里间接比（✅） |'
+- '| clamp | 路由专家 SwiGLU（gate ≤ 10、up ∈ [−10, 10]） | FP32 里对 BF16 值截断（精确），边界处梯度照 torch.clamp（`mlp_activations_limit_inclusive_grad`） | BF16 `clamp` | 相同（截断不产生舍入） | TPU 上逐位（`L1.elem.clamp.fp32` ✅）；路由专家在 hy4-mini 单算子里间接比（✅） |'
+- '| rsqrt | 各 RMSNorm | FP32；scale 舍 BF16，输出只舍一次（`rmsnorm_single_rounding`） | TE 融合 RMSNorm（待核） | 待核 | L1 三个 RMSNorm（阶段 A，GPU 分母是 HF 写法） |'
+- '| rsqrt | iHC、hc_head 的归一化因子 | FP32 | FP32 | 相同；hc_head 先归一化再乘（TPU）对先乘再乘因子（GPU），舍入点不同 | L1 iHC 混合与 hc_head（阶段 A） |'
+- '| rsqrt | 索引器 k_norm（LayerNorm） | FP32 | FP32 输入（Megatron-Core `dsa.py`），TE LayerNorm 内部待核 | 待核 | L3 索引器梯度 |'
+- '| exp / softmax | 注意力 | FP32 在线 softmax，用 exp2（splash，`sa_use_base2_exp`），sink 作初始最大值 | FP32 `torch.softmax`，sink 拼成一列 | dtype 相同、算法不同；TPU 的 FP32 exp 是近似实现（D14） | 只在注意力整块里间接比 |'
+- '| exp / softmax | KD 教师分布 | FP32 | FP32（Megatron-Core `dsa_masking`） | dtype 相同；TPU 的 FP32 exp 是近似实现，精度不同（对齐细节 D14） | L1 KD 输入（R ≤ 1.2） |'
+- '| log_softmax / log-sum-exp | 主损失、MTP 损失 | FP32 | FP32 | dtype 相同；TPU 的 FP32 exp / log 是近似实现，精度不同（对齐细节 D14） | hy4-mini 单算子交叉熵（✅）；L4 loss、MTP loss |'
+- '| log_softmax / log-sum-exp | 索引器 KD（学生） | FP32 `jax.nn.log_softmax` | FP32 `torch.log_softmax` | dtype 相同；TPU 的 f32 结果平均比 FP64 低约 1 格（实测，`t1-layer0-kd-attribution.json`），来自近似 exp / log（D14） | L1 KD 值（诊断）；L4 KD 过（M50 后，D1） |'
+- '| log(max(p, 1e-10)) | 索引器 KD（教师目标） | FP32，p = 0 的项不计（`indexer_kd_mcore_log`） | 同（Megatron-Core `dsa_indexer_loss`） | 写法相同（TPU 用开关对上，台账 M20）；TPU 的 FP32 log 是近似实现（D14） | L1 KD 值（诊断） |'
+- '| relu | 索引器分数 | FP32（`indexer_fp32_scores`） | FP32 | 相同（TPU 用开关对上，台账 M23） | L1 KD 输入 |'
+- '| 除法 / 归一化 | 路由权重 w / (Σw + 1e-20)；KD 的 L1 归一化 / max(Σ, 1e-10)；NS 前 / max(‖x‖, 1e-7) | FP32 | FP32 | dtype 相同 | 路由权重在 hy4-mini 单算子 MoE 整块里间接比；NS 与 KD 有 MaxText 单测（台账 M17、M20）；Adam 的 m̂ / (√v̂ + eps) 里 TPU 的 FP32 开方与除法不精确，由 M34 修正（对齐细节 D17） |'
+- '| sqrt | QK-Clip 的 √scale；Muon 缩放；索引器 H^-0.5 · d^-0.5 | FP32 | FP32 | 相同（Muon 缩放两边都是 √max(1, fan_out / fan_in)，台账 G18） | 尚未覆盖 |'
+- '| softplus | — | 混元 4 不用 | 不用（Megatron-Core 只有 `sqrtsoftplus` 路由打分一支，没选） | — | 不适用 |'
+- ''
+- '## 已知的覆盖缺口'
+- ''
+- 下面几处没有覆盖，或者读代码时发现两边写法不同、还没核实；它们不改变上面任何一格的判定，但限定了结论的范围。按级的缺口与补法见[对齐细节第 4 节「覆盖缺口」](DETAILS.md#覆盖缺口)。逐张量的比较在第 0、1 步（路由一致率另有第 8、30、100 步，优化器回放 8 步）；多步只比标量曲线。
+- ''
+- '| 缺口 | 现状 | 补做的办法 |'
+- '|---|---|---|'
+- '| iHC post 与写回没有单独比 | MaxText 不把 post 单独输出 | 加观测点，或在逐层回放里比流的状态 |'
+- '| MoE 路由的归一化与缩放没有单独的观测点 | 路由 logits、路由专家、共享专家与 MoE 整块都比过 | 加观测点 |'
+- '| 输出门 sigmoid 两边写法不同 | GPU 在 BF16 上算，TPU 在 FP32 里算再舍 BF16（对齐细节 D10），第 1 步梯度上没看到影响 | 看要不要加开关对上 |'
+- '| 现行配置没有扰动运行 | TPU 被测只有 `t1zg-a` 与同设置重跑 `t1zg-b`，没有只改执行参数的运行 | 只改执行参数跑几份 |'
+- '| GPU 一侧自身的噪声与演练 | 只有 L4 尺子用的 28 对；GPU 自比、确定性与故障演练没做（[`gpu-noise/`](gpu-noise/README.md)） | 照 gpu-noise 的计划补 |'
+- '| L1、L2 不全在现行配置上 | L1 索引器 KD 输入是 t1z 设置、低阈值 QK-Clip 裁剪算法是 t1v 设置（`tw-qk-a`）；L2 逐层回放没有 M42b、M50（现行配置只有第 2–4 层的单层回放，`t1zg-l2-param-grads.json`） | 用现行配置重跑这三项 |'
+- '| L3 噪声只有 3 对 | GPU 第 1 步参照三份两两 3 对，签字要求 15 对（对齐细节「离签字还差什么」2c） | 补 GPU 第 1 步参照到 6 份 |'
+unlisted_lead:
+- '## 未列入本页的结果文件'
+- ''
+- 01 实践里下面这些 janus 格式的结果文件不进清单；原始 JSON（探针、抓数核对等）由报告与案例直接引用，不在这里列。原因相同的并成一行。
+- ''
+unlisted_reasons:
+  t1-step1-grad-vs-ref: 第 1 步梯度对 TPU 一侧产出的参照，与被测同源、不作定责；正式比较是对应的 `*-step1-grad-vs-fp64`（CPU FP64）
+  t1t-step1-grad-vs-ref: 第 1 步梯度对 TPU 一侧产出的参照，与被测同源、不作定责；正式比较是对应的 `*-step1-grad-vs-fp64`（CPU FP64）
+  t1v-step1-grad-vs-ref: 第 1 步梯度对 TPU 一侧产出的参照，与被测同源、不作定责；正式比较是对应的 `*-step1-grad-vs-fp64`（CPU FP64）
+  t1z-step1-grad-vs-ref: 第 1 步梯度对 TPU 一侧产出的参照，与被测同源、不作定责；正式比较是对应的 `*-step1-grad-vs-fp64`（CPU FP64）
+  t1t-step1-ihc-experiments: iHC 梯度三种 TPU 写法对 TPU 一侧产出的参照的比较，不作定责；M28 对 CPU FP64 的效果见 t1t / t1v-step1-grad-vs-fp64
+  t1-l4-vs-8gpu: 诊断：四代 TPU 各对 8 份 GPU（g3-a…h）的 r 与 GPU 28 对留一 r；L4 判定只对单一 golden g3-a，多份 GPU 只定噪声
+  t1-l4-vs-8gpu-rules: 诊断：同 t1-l4-vs-8gpu，由 l4_vs_all_goldens.py 从正式目录文件重跑；文件里的 rules（C1–C3）是未采用的候选，不作判定
+  t1-route-agree-step1: 路由一致率第 1 步只有 GPU 尺子的一版（TPU 抓数到位前），被 t1-route-agree-s1 取代
+  t1-route-agree-step1-tpu: 被 t1-route-agree-s1 取代：它用的 tw-ra1 抓数文件第 1 行有一段 DSA top-k 在取回时被零填充；重抓的 tw-ra1b 与作业内的 sha256 逐位一致
+  t1-switch-isolation-tpu: 逐个开关单独量（以 T1 现行全开为底，每次只关一个：M13、M26、M27、M23、M9、M8、M10、M12、M28、M36、M25）：前向单算子对 FP64 与 GPU、第 1 步参数梯度 TPU 对 GPU、开关前后是否逐位相同、M13 / M27 / M8 换训练后权重重放、M26 重选计数；诊断
+  t1-embed-scatter-precision-tpu: 词嵌入反向 scatter-add 的累加精度核实（tembd-scatter）：excess precision 开 / 关下 TPU 结果逐位等于哪种累加方式（FP32 累加舍一次 / BF16 逐次舍），与对 FP64 的 rel_L2；诊断
+  t1-step1-embed-grad-fp32: 第 1 步整网梯度 excess precision 开 / 关 × embedding_grad_fp32 开 / 关四档各对 CPU FP64（ihcopt-a / d、tembd-a / d）；诊断
+  t1-step1-rmsnorm-gpu-order-tpu: rmsnorm_scale_grad_gpu_order（M48）开 / 关第 1 步整网梯度各对 CPU FP64（tdg-m2 / tdg-m02）与前向核对；记录 TPU 上打开后前向与非 norm 梯度也变了，整网结果作废待查；诊断
+  t1-hlo-probe-tpu: M28 / M9 机制核实（tw-hlo-a / b）：TPU 结果逐位等于哪种加法顺序 / 舍入次数，与对 FP64 的 rel_L2；诊断
+  t1-w-combo-tpu: '#4：GPU g2w-a 第 k 步状态进 TPU（不灌路由）的 M40 / M41 四种组合与 M42 / M42b 单步梯度对 GPU；组合之间看不出区别，推断被路由翻转盖住；灌选择的版本等 g2w-b；诊断'
+  t1-forced-replay-tpu: GPU 第 1 步的路由下标（M45）与 DSA 索引器 top-k（M46）灌进 TPU 后第 1 步梯度对 GPU g8-chg-a（tw-fr0 / fr1 / fri1 / fi1、tw-g42b）：灌路由后逐张量 rel_L2 中位数 4.25e-3 → 2.23e-3；只报 TPU 对 GPU，R 等 CPU FP64 参照；诊断
+  t1-sink-probe-m42b-tpu: M42b（splash_dsinks_gpu_order）的 TPU 单层探针（tw-sinkprobe2）：sink 梯度对按 GPU 写法算的 dsink 逐元素比、对 FP64 的 R（5 层都在 1.000–1.001）；诊断
+  t1-sink-probe-tpu: tokamax splash 精度探针（tw-sinkprobe）：sink 梯度 tokamax 原样 / splash_dsinks_fp32（M42）对 FP64 与按 GPU 写法算的 dsink，前向 logsumexp / o 在 sa_use_base2_exp 开 / 关下对 FP64；诊断
+  t1-l2-m40-m41-tpu: L2 逐层回放 M40 / M41 四种组合（tw-l2-g / h / i / j）的逐位核对与 TPU 对 GPU 的 rel_L2，只作 M41 疑点（t1zu-c）的诊断：M41 在 TPU 上前向逐位不变、只改层输入梯度
+  t1zs-l4: 诊断代与上一代的 1000 步 / 前 300 步比较（设置见 [`goldens.md`](goldens.md)）；历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1zs300-l4: 诊断代与上一代的 1000 步 / 前 300 步比较（设置见 [`goldens.md`](goldens.md)）；历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1zt-l4: 诊断代与上一代的 1000 步 / 前 300 步比较（设置见 [`goldens.md`](goldens.md)）；历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1zt300-l4: 诊断代与上一代的 1000 步 / 前 300 步比较（设置见 [`goldens.md`](goldens.md)）；历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1zub-l4: 诊断代与上一代的 1000 步 / 前 300 步比较（设置见 [`goldens.md`](goldens.md)）；历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1zub300-l4: 诊断代与上一代的 1000 步 / 前 300 步比较（设置见 [`goldens.md`](goldens.md)）；历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1zuc-l4: 诊断代与上一代的 1000 步 / 前 300 步比较（设置见 [`goldens.md`](goldens.md)）；历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1zuc300-l4: 诊断代与上一代的 1000 步 / 前 300 步比较（设置见 [`goldens.md`](goldens.md)）；历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1zud-l4: 诊断代与上一代的 1000 步 / 前 300 步比较（设置见 [`goldens.md`](goldens.md)）；历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1zud300-l4: 诊断代与上一代的 1000 步 / 前 300 步比较（设置见 [`goldens.md`](goldens.md)）；历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1zv-l4: 诊断代与上一代的 1000 步 / 前 300 步比较（设置见 [`goldens.md`](goldens.md)）；历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1zv300-l4: 诊断代与上一代的 1000 步 / 前 300 步比较（设置见 [`goldens.md`](goldens.md)）；历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1zga-l4: 上一代现行（`t1zg-a`，base2 开）的 1000 步 / 前 300 步比较；2026-11-11 起对齐配置关 base2，现行换成 `t1zo-l4`，判定见[历代比较](../../dashboard/history.md)
+  t1zga300-l4: 上一代现行（`t1zg-a`，base2 开）的 1000 步 / 前 300 步比较；2026-11-11 起对齐配置关 base2，现行换成 `t1zo300-l4`，判定见[历代比较](../../dashboard/history.md)
+  t1zg-step1-train-grad-vs-fp64: 上一代现行（base2 开，`mz-opt2`）训练步第 1 步梯度对 CPU FP64；2026-11-11 起现行换成 `t1zo-step1-train-grad-vs-fp64`，判定见[历代比较](../../dashboard/history.md)
+  t1-qkclip-maxlogit: 上一代（base2 开，`mz-qk-a`）的低阈值 QK-Clip 第 1 步逐头最大 logit；2026-11-11 起现行换成 `t1zo-qkclip-maxlogit`
+  t1mz-l4-qkclip: 上一代（base2 开，`mz-g1q`）的 L4 QK-Clip 曲线；2026-11-11 起现行换成 `t1zo-l4-qkclip`
+  t1mz300-l4-qkclip: 上一代（base2 开，`mz-g1q`）的 L4 QK-Clip 曲线前 300 步；2026-11-11 起现行换成 `t1zo300-l4-qkclip`
+  t1mz-health: 上一代（base2 开，`mz-g1`）的健康信号；2026-11-11 起现行换成 `t1zo-health`
+  t1mz-determinism: 上一代（base2 开）同设置重跑逐位（`mz-g1` 对 `t1zg-b`）；2026-11-11 起现行换成 `t1zo-determinism`
+  t1zz-l4: 验证关 base2 的 `t1zz-a`（`t1zw-a` 再关 `sa_use_base2_exp`）1000 步 / 前 300 步；没有采用（根源一览第 24 行）
+  t1zz300-l4: 验证关 base2 的 `t1zz-a`（`t1zw-a` 再关 `sa_use_base2_exp`）1000 步 / 前 300 步；没有采用（根源一览第 24 行）
+  t1zw-l4: 诊断代与上一代的 1000 步 / 前 300 步比较（设置见 [`goldens.md`](goldens.md)）；历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1zw300-l4: 诊断代与上一代的 1000 步 / 前 300 步比较（设置见 [`goldens.md`](goldens.md)）；历代比较，判定见[历代比较](../../dashboard/history.md)
+  tq-base-l4: 单开关 A/B 300 步（以 `t1zu-a` 设置为底每次只关一个；`tq-alloff` 15 个全关）；只作诊断，代价与效果见对齐细节第 6 节
+  tq-m13-l4: 单开关 A/B 300 步（以 `t1zu-a` 设置为底每次只关一个；`tq-alloff` 15 个全关）；只作诊断，代价与效果见对齐细节第 6 节
+  tq-m26-l4: 单开关 A/B 300 步（以 `t1zu-a` 设置为底每次只关一个；`tq-alloff` 15 个全关）；只作诊断，代价与效果见对齐细节第 6 节
+  tq-m27-l4: 单开关 A/B 300 步（以 `t1zu-a` 设置为底每次只关一个；`tq-alloff` 15 个全关）；只作诊断，代价与效果见对齐细节第 6 节
+  tq-m23-l4: 单开关 A/B 300 步（以 `t1zu-a` 设置为底每次只关一个；`tq-alloff` 15 个全关）；只作诊断，代价与效果见对齐细节第 6 节
+  tq-m12-l4: 单开关 A/B 300 步（以 `t1zu-a` 设置为底每次只关一个；`tq-alloff` 15 个全关）；只作诊断，代价与效果见对齐细节第 6 节
+  tq-m9-l4: 单开关 A/B 300 步（以 `t1zu-a` 设置为底每次只关一个；`tq-alloff` 15 个全关）；只作诊断，代价与效果见对齐细节第 6 节
+  tq-m8-l4: 单开关 A/B 300 步（以 `t1zu-a` 设置为底每次只关一个；`tq-alloff` 15 个全关）；只作诊断，代价与效果见对齐细节第 6 节
+  tq-m10-l4: 单开关 A/B 300 步（以 `t1zu-a` 设置为底每次只关一个；`tq-alloff` 15 个全关）；只作诊断，代价与效果见对齐细节第 6 节
+  tq-m36-l4: 单开关 A/B 300 步（以 `t1zu-a` 设置为底每次只关一个；`tq-alloff` 15 个全关）；只作诊断，代价与效果见对齐细节第 6 节
+  tq-m31-l4: 单开关 A/B 300 步（以 `t1zu-a` 设置为底每次只关一个；`tq-alloff` 15 个全关）；只作诊断，代价与效果见对齐细节第 6 节
+  tq-m33-l4: 单开关 A/B 300 步（以 `t1zu-a` 设置为底每次只关一个；`tq-alloff` 15 个全关）；只作诊断，代价与效果见对齐细节第 6 节
+  tq-m34-l4: 单开关 A/B 300 步（以 `t1zu-a` 设置为底每次只关一个；`tq-alloff` 15 个全关）；只作诊断，代价与效果见对齐细节第 6 节
+  tq-m25-l4: 单开关 A/B 300 步（以 `t1zu-a` 设置为底每次只关一个；`tq-alloff` 15 个全关）；只作诊断，代价与效果见对齐细节第 6 节
+  tq-m40-l4: 单开关 A/B 300 步（以 `t1zu-a` 设置为底每次只关一个；`tq-alloff` 15 个全关）；只作诊断，代价与效果见对齐细节第 6 节
+  tq-m41-l4: 单开关 A/B 300 步（以 `t1zu-a` 设置为底每次只关一个；`tq-alloff` 15 个全关）；只作诊断，代价与效果见对齐细节第 6 节
+  tq-m28-l4: 单开关 A/B 300 步（以 `t1zu-a` 设置为底每次只关一个；`tq-alloff` 15 个全关）；只作诊断，代价与效果见对齐细节第 6 节
+  tq-base2-l4: 单开关 A/B 300 步（以 `t1zu-a` 设置为底每次只关一个；`tq-alloff` 15 个全关）；只作诊断，代价与效果见对齐细节第 6 节
+  tq-alloff-l4: 单开关 A/B 300 步（以 `t1zu-a` 设置为底每次只关一个；`tq-alloff` 15 个全关）；只作诊断，代价与效果见对齐细节第 6 节
+  t1-bf16-offgrid-frac: 主权重离开 BF16 网格的比例随步数（tgrid-b；tgrid-a 判法错、作废，并列作对照），案例 13 引用；只作诊断
+  t1-1000step-loss-tpu-variants: 1000 步主 loss 在几种 TPU 写法下的带符号偏差（定责证据），只作诊断
+  hy4-a-probe-forward-cpu: 阶段 A 在 CPU 上的前向探针（模块是否都被标记、loss），01 README「真实权重截层（AdamW 时期）的 L0 与 L1」引用；工具自检，不是判定
+  hy4-a-probe-forward-cpu-neg-no-deinterleave: 同上的负对照（不做 RoPE 去交错应当对不上），01 README 引用；工具自检
+  hy4-mini-aot-memory: hy4-mini 在 v5p 上的编译期显存估算（01 README）；不是数值比较
+  t1-step1-precision-switches: t1n 一代第 1 步四个舍入开关的消融（对 g1s 三份），对齐细节 D3 引用；被 t1s 及之后的 L3 结果取代
+  t1zgb-l4: 现行 t1zg-a 的重跑，M50 修订版（MaxText fd30fbfb）的重跑 t1zg-b；判定与 t1zga-l4 相同
+  t1-l4: 历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1-l4-nozm: 历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1s-l4: 历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1t-l4: 历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1u-l4: 历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1v-l4: 历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1w-l4: 历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1z-l4: 历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1zk-l4: 历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1zr-l4: 历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1zr300-l4: 历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1zu-l4: 历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1zu300-l4: 历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1-l0-settings: 历代的设置核对（学习率逐步等于 1e-5，各代都过）；mini 列用 `t1zw-l0-settings`（现行 `t1zg-a` 只多开 M50，学习率设置相同）
+  t1s-l0-settings: 历代的设置核对（学习率逐步等于 1e-5，各代都过）；mini 列用 `t1zw-l0-settings`（现行 `t1zg-a` 只多开 M50，学习率设置相同）
+  t1t-l0-settings: 历代的设置核对（学习率逐步等于 1e-5，各代都过）；mini 列用 `t1zw-l0-settings`（现行 `t1zg-a` 只多开 M50，学习率设置相同）
+  t1u-l0-settings: 历代的设置核对（学习率逐步等于 1e-5，各代都过）；mini 列用 `t1zw-l0-settings`（现行 `t1zg-a` 只多开 M50，学习率设置相同）
+  t1v-l0-settings: 历代的设置核对（学习率逐步等于 1e-5，各代都过）；mini 列用 `t1zw-l0-settings`（现行 `t1zg-a` 只多开 M50，学习率设置相同）
+  t1w-l0-settings: 历代的设置核对（学习率逐步等于 1e-5，各代都过）；mini 列用 `t1zw-l0-settings`（现行 `t1zg-a` 只多开 M50，学习率设置相同）
+  t1z-l0-settings: 历代的设置核对（学习率逐步等于 1e-5，各代都过）；mini 列用 `t1zw-l0-settings`（现行 `t1zg-a` 只多开 M50，学习率设置相同）
+  t1zk-l0-settings: 历代的设置核对（学习率逐步等于 1e-5，各代都过）；mini 列用 `t1zw-l0-settings`（现行 `t1zg-a` 只多开 M50，学习率设置相同）
+  t1s-step1-grad-vs-fp64: 历代的第 1 步整网；现行一代是 `t1z-step1-grad-vs-fp64`
+  t1t-step1-grad-vs-fp64: 历代的第 1 步整网；现行一代是 `t1z-step1-grad-vs-fp64`
+  t1v-step1-grad-vs-fp64: 历代的第 1 步整网；现行一代是 `t1z-step1-grad-vs-fp64`
+  t1-l1-op-tpu-r2: 没有 M40 的逐算子回放（第一版与 tw-opmini-c）；现行是含 M40 的 `t1-l1-op-tpu-r3`
+  t1-optim-replay-adam-acc-tpu: 优化器回放的旧版本（配置原样 / muon_adam_accurate 第一版）；现行是最终版 `t1-optim-replay-adam-acc-r2-tpu`
+  t1-step1-diag-tpu: t1n 一代的第 1 步诊断（grad_norm、开关打开前的逐算子散布），只作诊断，已被之后各代的第 1 步取代
+  t1-l1-op-tpu: 没有 M40 的逐算子回放（第一版与 tw-opmini-c）；现行是含 M40 的 `t1-l1-op-tpu-r3`
+  t1-optim-replay-tpu: 优化器回放的旧版本（配置原样 / muon_adam_accurate 第一版）；现行是最终版 `t1-optim-replay-adam-acc-r2-tpu`
+  t1-l2-flip-stats-diag: 同 `t1-l2-flip-stats`，总览用的只统计写法（状态记为诊断）
+  t1zla-l4: 验证：`t1zl-a`（`t1zg-a` 再开 M51 精确 log）1000 步 / 前 300 步；主 loss 变差，M51 没进对齐配置；历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1zla300-l4: 验证：`t1zl-a`（`t1zg-a` 再开 M51 精确 log）1000 步 / 前 300 步；主 loss 变差，M51 没进对齐配置；历代比较，判定见[历代比较](../../dashboard/history.md)
+  t1z-step1-grad-vs-fp64: 上一代（t1z 设置）的第 1 步整网；现行是 `t1zg-step1-train-grad-vs-fp64`（诊断程序梯度 `t1zg-step1-grad-vs-fp64` 作旁证）
+  t1zg-step1-grad-vs-fp64: 旁证：现行配置的诊断程序（`--diag-step1`）梯度；诊断程序与训练步分开编译，梯度相对差中位数 2.9e-4，正式判定用训练步梯度 `t1zg-step1-train-grad-vs-fp64`
+unlisted_group: true

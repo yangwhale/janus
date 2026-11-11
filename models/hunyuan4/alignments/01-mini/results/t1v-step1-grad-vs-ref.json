@@ -1,0 +1,1683 @@
+{
+ "what": "T1 第 1 步全部参数梯度：TPU（t1vdiag，t1v 设置：t1t + ihc_stream_sum_unrolled）对 GPU 第 1 步参照 g1s-a/b/c 与对 TPU FP32 参照（t1diag18b）",
+ "n_tensors": 205,
+ "n_over_2N_gpu_noise": 134,
+ "R_vs_ref_median": 0.8837763918687634,
+ "R_vs_ref_max": 8.724407214372707,
+ "n_R_gt_1.2": 7,
+ "R_gt_1.2": [
+  [
+   "model.layers.3.hc_mlp_layer.hc_pre.hc_base",
+   8.724
+  ],
+  [
+   "model.layers.0.hc_attn_layer.hc_pre.hc_scale",
+   4.354
+  ],
+  [
+   "model.layers.3.hc_attn_layer.hc_pre.hc_scale",
+   2.366
+  ],
+  [
+   "model.layers.5.hc_attn_layer.hc_pre.hc_scale",
+   2.302
+  ],
+  [
+   "model.hc_head.hc_head_scale",
+   1.689
+  ],
+  [
+   "model.layers.1.self_attn.indexer.k_norm.weight",
+   1.592
+  ],
+  [
+   "model.mtp_layers.0.enorm.weight",
+   1.231
+  ]
+ ],
+ "rows": [
+  {
+   "tensor": "lm_head.weight",
+   "tpu_vs_gpu_min": 0.0032865658759010617,
+   "gpu_noise_max": 0.0010133509036374284,
+   "gpu_vs_ref": 0.004093555934698525,
+   "tpu_vs_ref": 0.00357467778799726,
+   "R_vs_ref": 0.873245130889001
+  },
+  {
+   "tensor": "model.embed_tokens.weight",
+   "tpu_vs_gpu_min": 0.004426998888468176,
+   "gpu_noise_max": 0.002478623722520945,
+   "gpu_vs_ref": 0.004163863875791809,
+   "tpu_vs_ref": 0.0037437124288052415,
+   "R_vs_ref": 0.8990957774990493
+  },
+  {
+   "tensor": "model.hc_head.hc_head_base",
+   "tpu_vs_gpu_min": 0.034959993331991915,
+   "gpu_noise_max": 0.046454659096093795,
+   "gpu_vs_ref": 0.032778739485655184,
+   "tpu_vs_ref": 0.024158456261804396,
+   "R_vs_ref": 0.7370160244379366
+  },
+  {
+   "tensor": "model.hc_head.hc_head_fn",
+   "tpu_vs_gpu_min": 0.073143062578741,
+   "gpu_noise_max": 0.06879328762836719,
+   "gpu_vs_ref": 0.06617399738492076,
+   "tpu_vs_ref": 0.048392504855685525,
+   "R_vs_ref": 0.731291848279863
+  },
+  {
+   "tensor": "model.hc_head.hc_head_scale",
+   "tpu_vs_gpu_min": 0.010084961980488277,
+   "gpu_noise_max": 0.05261156706677789,
+   "gpu_vs_ref": 0.015255596722404478,
+   "tpu_vs_ref": 0.02576178820314037,
+   "R_vs_ref": 1.6886778453776523
+  },
+  {
+   "tensor": "model.layers.0.hc_attn_layer.hc_pre.hc_base",
+   "tpu_vs_gpu_min": 0.006214374452482243,
+   "gpu_noise_max": 0.0022785327087040913,
+   "gpu_vs_ref": 0.0060579577113310055,
+   "tpu_vs_ref": 0.0009947462382597309,
+   "R_vs_ref": 0.1642048831736023
+  },
+  {
+   "tensor": "model.layers.0.hc_attn_layer.hc_pre.hc_fn",
+   "tpu_vs_gpu_min": 0.00902742383049865,
+   "gpu_noise_max": 0.005033769072119234,
+   "gpu_vs_ref": 0.008208762559443491,
+   "tpu_vs_ref": 0.008340408366149923,
+   "R_vs_ref": 1.016037229211239
+  },
+  {
+   "tensor": "model.layers.0.hc_attn_layer.hc_pre.hc_scale",
+   "tpu_vs_gpu_min": 0.02180261207853066,
+   "gpu_noise_max": 0.01915309878527802,
+   "gpu_vs_ref": 0.006307196660295032,
+   "tpu_vs_ref": 0.027461842565602704,
+   "R_vs_ref": 4.354048881729037
+  },
+  {
+   "tensor": "model.layers.0.hc_mlp_layer.hc_pre.hc_base",
+   "tpu_vs_gpu_min": 0.006119229101754893,
+   "gpu_noise_max": 0.00412213543540608,
+   "gpu_vs_ref": 0.011295254432140949,
+   "tpu_vs_ref": 0.003149577564386555,
+   "R_vs_ref": 0.2788407807286171
+  },
+  {
+   "tensor": "model.layers.0.hc_mlp_layer.hc_pre.hc_fn",
+   "tpu_vs_gpu_min": 0.007622928241513776,
+   "gpu_noise_max": 0.004057095259533055,
+   "gpu_vs_ref": 0.008195402161710035,
+   "tpu_vs_ref": 0.006352851686259831,
+   "R_vs_ref": 0.7751726591211306
+  },
+  {
+   "tensor": "model.layers.0.hc_mlp_layer.hc_pre.hc_scale",
+   "tpu_vs_gpu_min": 0.003541155126151302,
+   "gpu_noise_max": 0.004099527661619727,
+   "gpu_vs_ref": 0.0022921179897268562,
+   "tpu_vs_ref": 0.0018334726264364375,
+   "R_vs_ref": 0.7999032487219063
+  },
+  {
+   "tensor": "model.layers.0.input_layernorm.weight",
+   "tpu_vs_gpu_min": 0.003612757404283949,
+   "gpu_noise_max": 0.002343090352435091,
+   "gpu_vs_ref": 0.0036895514019219975,
+   "tpu_vs_ref": 0.0035848306650543235,
+   "R_vs_ref": 0.9716169459481925
+  },
+  {
+   "tensor": "model.layers.0.mlp.down_proj.weight",
+   "tpu_vs_gpu_min": 0.0052186900280257065,
+   "gpu_noise_max": 0.0023242403351283335,
+   "gpu_vs_ref": 0.005535542928712649,
+   "tpu_vs_ref": 0.005074292646928941,
+   "R_vs_ref": 0.9166747891356383
+  },
+  {
+   "tensor": "model.layers.0.mlp.gate_proj.weight",
+   "tpu_vs_gpu_min": 0.005294576953185897,
+   "gpu_noise_max": 0.0024257919599240288,
+   "gpu_vs_ref": 0.005635050842728848,
+   "tpu_vs_ref": 0.005150171581131773,
+   "R_vs_ref": 0.9139529925940713
+  },
+  {
+   "tensor": "model.layers.0.mlp.up_proj.weight",
+   "tpu_vs_gpu_min": 0.005258351200409408,
+   "gpu_noise_max": 0.002398584348596865,
+   "gpu_vs_ref": 0.005583434027282031,
+   "tpu_vs_ref": 0.0051304568390843205,
+   "R_vs_ref": 0.9188712204739319
+  },
+  {
+   "tensor": "model.layers.0.post_attention_layernorm.weight",
+   "tpu_vs_gpu_min": 0.0050873421018691745,
+   "gpu_noise_max": 0.002369083875020467,
+   "gpu_vs_ref": 0.005166607319838453,
+   "tpu_vs_ref": 0.005069173831897921,
+   "R_vs_ref": 0.9811416889442299
+  },
+  {
+   "tensor": "model.layers.0.self_attn.indexer.k_norm.bias",
+   "tpu_vs_gpu_min": 0.003207372487002915,
+   "gpu_noise_max": 0.0,
+   "gpu_vs_ref": 0.004037844730502012,
+   "tpu_vs_ref": 0.0034621877703121403,
+   "R_vs_ref": 0.8574345972638968
+  },
+  {
+   "tensor": "model.layers.0.self_attn.indexer.k_norm.weight",
+   "tpu_vs_gpu_min": 0.0008405323709739165,
+   "gpu_noise_max": 0.0,
+   "gpu_vs_ref": 0.0010964789952618839,
+   "tpu_vs_ref": 0.000829095327035,
+   "R_vs_ref": 0.7561433740342451
+  },
+  {
+   "tensor": "model.layers.0.self_attn.indexer.weights_proj.weight",
+   "tpu_vs_gpu_min": 0.002491495532812782,
+   "gpu_noise_max": 0.0,
+   "gpu_vs_ref": 0.0038118501213817114,
+   "tpu_vs_ref": 0.003336535575874676,
+   "R_vs_ref": 0.8753060770042175
+  },
+  {
+   "tensor": "model.layers.0.self_attn.indexer.wk.weight",
+   "tpu_vs_gpu_min": 0.006238813050730639,
+   "gpu_noise_max": 0.0,
+   "gpu_vs_ref": 0.007982356038599694,
+   "tpu_vs_ref": 0.007054548452228482,
+   "R_vs_ref": 0.8837677019310237
+  },
+  {
+   "tensor": "model.layers.0.self_attn.indexer.wq_b.weight",
+   "tpu_vs_gpu_min": 0.005229528217863191,
+   "gpu_noise_max": 0.0,
+   "gpu_vs_ref": 0.006834053112150078,
+   "tpu_vs_ref": 0.006289726760345293,
+   "R_vs_ref": 0.920350874821701
+  },
+  {
+   "tensor": "model.layers.0.self_attn.kv_a_layernorm.weight",
+   "tpu_vs_gpu_min": 0.0038863228782059123,
+   "gpu_noise_max": 0.0021424796319956876,
+   "gpu_vs_ref": 0.004246767591527753,
+   "tpu_vs_ref": 0.004151976174250593,
+   "R_vs_ref": 0.9776791606241255
+  },
+  {
+   "tensor": "model.layers.0.self_attn.kv_a_proj_with_mqa.weight",
+   "tpu_vs_gpu_min": 0.0036169409322695206,
+   "gpu_noise_max": 0.0021989815791290095,
+   "gpu_vs_ref": 0.003969415107437431,
+   "tpu_vs_ref": 0.0036939037488173303,
+   "R_vs_ref": 0.9305914470613368
+  },
+  {
+   "tensor": "model.layers.0.self_attn.kv_b_proj.weight",
+   "tpu_vs_gpu_min": 0.003927057878209816,
+   "gpu_noise_max": 0.0019846647937120537,
+   "gpu_vs_ref": 0.00459048317762644,
+   "tpu_vs_ref": 0.004307583754522504,
+   "R_vs_ref": 0.938372626114227
+  },
+  {
+   "tensor": "model.layers.0.self_attn.learnable_sink_param",
+   "tpu_vs_gpu_min": 0.012651110503765335,
+   "gpu_noise_max": 0.004831449712633819,
+   "gpu_vs_ref": 0.01336061123420748,
+   "tpu_vs_ref": 0.004619779041457867,
+   "R_vs_ref": 0.3457760247996544
+  },
+  {
+   "tensor": "model.layers.0.self_attn.linear_gate.weight",
+   "tpu_vs_gpu_min": 0.009055808835770477,
+   "gpu_noise_max": 0.004705620970420452,
+   "gpu_vs_ref": 0.009750562032433773,
+   "tpu_vs_ref": 0.008248766703227887,
+   "R_vs_ref": 0.8459785882895374
+  },
+  {
+   "tensor": "model.layers.0.self_attn.o_proj.weight",
+   "tpu_vs_gpu_min": 0.004449724723342032,
+   "gpu_noise_max": 0.0018365150999503305,
+   "gpu_vs_ref": 0.00507900862156132,
+   "tpu_vs_ref": 0.0047870074454337665,
+   "R_vs_ref": 0.9425082338139859
+  },
+  {
+   "tensor": "model.layers.0.self_attn.q_a_layernorm.weight",
+   "tpu_vs_gpu_min": 0.008563711606686177,
+   "gpu_noise_max": 0.004271192757464503,
+   "gpu_vs_ref": 0.008767930116231469,
+   "tpu_vs_ref": 0.00854973364108885,
+   "R_vs_ref": 0.9751142547613734
+  },
+  {
+   "tensor": "model.layers.0.self_attn.q_a_proj.weight",
+   "tpu_vs_gpu_min": 0.008417289967339996,
+   "gpu_noise_max": 0.004580892278051344,
+   "gpu_vs_ref": 0.008793566505906354,
+   "tpu_vs_ref": 0.008243104062150756,
+   "R_vs_ref": 0.9374016852677614
+  },
+  {
+   "tensor": "model.layers.0.self_attn.q_b_proj.weight",
+   "tpu_vs_gpu_min": 0.008404071043153206,
+   "gpu_noise_max": 0.004287558681280223,
+   "gpu_vs_ref": 0.008947712153616528,
+   "tpu_vs_ref": 0.008376572234070673,
+   "R_vs_ref": 0.9361691670741767
+  },
+  {
+   "tensor": "model.layers.1.hc_attn_layer.hc_pre.hc_base",
+   "tpu_vs_gpu_min": 0.009219983562608888,
+   "gpu_noise_max": 0.001539341477996815,
+   "gpu_vs_ref": 0.0066582430349246486,
+   "tpu_vs_ref": 0.0033832333510793785,
+   "R_vs_ref": 0.5081270439263361
+  },
+  {
+   "tensor": "model.layers.1.hc_attn_layer.hc_pre.hc_fn",
+   "tpu_vs_gpu_min": 0.012623513152542598,
+   "gpu_noise_max": 0.004835628539425449,
+   "gpu_vs_ref": 0.012033148869712912,
+   "tpu_vs_ref": 0.010550696289324714,
+   "R_vs_ref": 0.8768026061640866
+  },
+  {
+   "tensor": "model.layers.1.hc_attn_layer.hc_pre.hc_scale",
+   "tpu_vs_gpu_min": 0.0626637234151914,
+   "gpu_noise_max": 0.09938743335154661,
+   "gpu_vs_ref": 0.08272248186406349,
+   "tpu_vs_ref": 0.03259933367280223,
+   "R_vs_ref": 0.39408070137900586
+  },
+  {
+   "tensor": "model.layers.1.hc_mlp_layer.hc_pre.hc_base",
+   "tpu_vs_gpu_min": 0.002909200623200193,
+   "gpu_noise_max": 0.0032896709402891445,
+   "gpu_vs_ref": 0.009591155411564835,
+   "tpu_vs_ref": 0.00606567109043317,
+   "R_vs_ref": 0.6324233974062498
+  },
+  {
+   "tensor": "model.layers.1.hc_mlp_layer.hc_pre.hc_fn",
+   "tpu_vs_gpu_min": 0.009281460175533962,
+   "gpu_noise_max": 0.0038186466380826212,
+   "gpu_vs_ref": 0.013000921143835428,
+   "tpu_vs_ref": 0.012396185300891588,
+   "R_vs_ref": 0.9534851541476671
+  },
+  {
+   "tensor": "model.layers.1.hc_mlp_layer.hc_pre.hc_scale",
+   "tpu_vs_gpu_min": 0.006177022315591052,
+   "gpu_noise_max": 0.002938750922662566,
+   "gpu_vs_ref": 0.007633354662599045,
+   "tpu_vs_ref": 0.0010116178941645233,
+   "R_vs_ref": 0.13252599137324536
+  },
+  {
+   "tensor": "model.layers.1.input_layernorm.weight",
+   "tpu_vs_gpu_min": 0.004383614047485252,
+   "gpu_noise_max": 0.001879548645324881,
+   "gpu_vs_ref": 0.0049399247534860635,
+   "tpu_vs_ref": 0.004611959309643442,
+   "R_vs_ref": 0.9336092227698044
+  },
+  {
+   "tensor": "model.layers.1.mlp.experts.down_proj",
+   "tpu_vs_gpu_min": 0.016494528724923792,
+   "gpu_noise_max": 0.003441417854608086,
+   "gpu_vs_ref": 0.01610356185696321,
+   "tpu_vs_ref": 0.013325900609967318,
+   "R_vs_ref": 0.8275126166702786
+  },
+  {
+   "tensor": "model.layers.1.mlp.experts.gate_up_proj",
+   "tpu_vs_gpu_min": 0.01726914578649311,
+   "gpu_noise_max": 0.0036769927647937873,
+   "gpu_vs_ref": 0.016768146074685245,
+   "tpu_vs_ref": 0.013941873198244819,
+   "R_vs_ref": 0.831449889340645
+  },
+  {
+   "tensor": "model.layers.1.mlp.gate.weight",
+   "tpu_vs_gpu_min": 0.02506236886900055,
+   "gpu_noise_max": 0.004839435849400505,
+   "gpu_vs_ref": 0.023577317696639108,
+   "tpu_vs_ref": 0.023165849491466856,
+   "R_vs_ref": 0.9825481333175187
+  },
+  {
+   "tensor": "model.layers.1.mlp.shared_experts.down_proj.weight",
+   "tpu_vs_gpu_min": 0.005760779111525719,
+   "gpu_noise_max": 0.002523935364245282,
+   "gpu_vs_ref": 0.006737480158377524,
+   "tpu_vs_ref": 0.005681713456618421,
+   "R_vs_ref": 0.8432994714728264
+  },
+  {
+   "tensor": "model.layers.1.mlp.shared_experts.gate_proj.weight",
+   "tpu_vs_gpu_min": 0.005986972689291464,
+   "gpu_noise_max": 0.0025970970105029722,
+   "gpu_vs_ref": 0.006860798186861823,
+   "tpu_vs_ref": 0.0061079965526467635,
+   "R_vs_ref": 0.8902749193735727
+  },
+  {
+   "tensor": "model.layers.1.mlp.shared_experts.up_proj.weight",
+   "tpu_vs_gpu_min": 0.00591962343876968,
+   "gpu_noise_max": 0.002564462801543803,
+   "gpu_vs_ref": 0.006743144868709495,
+   "tpu_vs_ref": 0.005999863483293738,
+   "R_vs_ref": 0.8897722946951891
+  },
+  {
+   "tensor": "model.layers.1.post_attention_layernorm.weight",
+   "tpu_vs_gpu_min": 0.010618028380516018,
+   "gpu_noise_max": 0.0029287972306662607,
+   "gpu_vs_ref": 0.011109215365964932,
+   "tpu_vs_ref": 0.010296426029167896,
+   "R_vs_ref": 0.9268364767427985
+  },
+  {
+   "tensor": "model.layers.1.self_attn.indexer.k_norm.bias",
+   "tpu_vs_gpu_min": 0.0030434232279600323,
+   "gpu_noise_max": 0.0,
+   "gpu_vs_ref": 0.0035160489978257044,
+   "tpu_vs_ref": 0.0036225350008931546,
+   "R_vs_ref": 1.0302856994124088
+  },
+  {
+   "tensor": "model.layers.1.self_attn.indexer.k_norm.weight",
+   "tpu_vs_gpu_min": 0.0012908506806582744,
+   "gpu_noise_max": 0.0,
+   "gpu_vs_ref": 0.0007073864315806277,
+   "tpu_vs_ref": 0.001126356931524424,
+   "R_vs_ref": 1.5922795253615805
+  },
+  {
+   "tensor": "model.layers.1.self_attn.indexer.weights_proj.weight",
+   "tpu_vs_gpu_min": 0.0029087964749164455,
+   "gpu_noise_max": 0.0,
+   "gpu_vs_ref": 0.0032247839074655434,
+   "tpu_vs_ref": 0.0030336472785816903,
+   "R_vs_ref": 0.9407288567642124
+  },
+  {
+   "tensor": "model.layers.1.self_attn.indexer.wk.weight",
+   "tpu_vs_gpu_min": 0.005588761563222496,
+   "gpu_noise_max": 0.0,
+   "gpu_vs_ref": 0.00584930655705712,
+   "tpu_vs_ref": 0.005596925861464831,
+   "R_vs_ref": 0.956852886213017
+  },
+  {
+   "tensor": "model.layers.1.self_attn.indexer.wq_b.weight",
+   "tpu_vs_gpu_min": 0.005112147478254368,
+   "gpu_noise_max": 0.0,
+   "gpu_vs_ref": 0.005109443555041197,
+   "tpu_vs_ref": 0.004906000541924223,
+   "R_vs_ref": 0.9601829414640958
+  },
+  {
+   "tensor": "model.layers.1.self_attn.kv_a_layernorm.weight",
+   "tpu_vs_gpu_min": 0.004734745759808568,
+   "gpu_noise_max": 0.00191175014996051,
+   "gpu_vs_ref": 0.005487927458310026,
+   "tpu_vs_ref": 0.004773843507795958,
+   "R_vs_ref": 0.8698809421336692
+  },
+  {
+   "tensor": "model.layers.1.self_attn.kv_a_proj_with_mqa.weight",
+   "tpu_vs_gpu_min": 0.00413347264842365,
+   "gpu_noise_max": 0.0017590505683445319,
+   "gpu_vs_ref": 0.004792618306382454,
+   "tpu_vs_ref": 0.004352293499554223,
+   "R_vs_ref": 0.9081243740521043
+  },
+  {
+   "tensor": "model.layers.1.self_attn.kv_b_proj.weight",
+   "tpu_vs_gpu_min": 0.004203415148041784,
+   "gpu_noise_max": 0.0017649989661577877,
+   "gpu_vs_ref": 0.005017143509482593,
+   "tpu_vs_ref": 0.004460116299492575,
+   "R_vs_ref": 0.8889752288454146
+  },
+  {
+   "tensor": "model.layers.1.self_attn.learnable_sink_param",
+   "tpu_vs_gpu_min": 0.015275783063200649,
+   "gpu_noise_max": 0.004454027736819539,
+   "gpu_vs_ref": 0.01416677963198489,
+   "tpu_vs_ref": 0.011136044789719413,
+   "R_vs_ref": 0.7860674817427901
+  },
+  {
+   "tensor": "model.layers.1.self_attn.linear_gate.weight",
+   "tpu_vs_gpu_min": 0.007260297918819313,
+   "gpu_noise_max": 0.0030409302040512167,
+   "gpu_vs_ref": 0.008162816217871157,
+   "tpu_vs_ref": 0.0075216642376603965,
+   "R_vs_ref": 0.9214545613795564
+  },
+  {
+   "tensor": "model.layers.1.self_attn.o_proj.weight",
+   "tpu_vs_gpu_min": 0.0042118701997187775,
+   "gpu_noise_max": 0.0017419639721341685,
+   "gpu_vs_ref": 0.005055441175608993,
+   "tpu_vs_ref": 0.004487972779041013,
+   "R_vs_ref": 0.8877509643854927
+  },
+  {
+   "tensor": "model.layers.1.self_attn.q_a_layernorm.weight",
+   "tpu_vs_gpu_min": 0.007793300854857124,
+   "gpu_noise_max": 0.003011829675109522,
+   "gpu_vs_ref": 0.00830404991312768,
+   "tpu_vs_ref": 0.007722322455415565,
+   "R_vs_ref": 0.929946536473429
+  },
+  {
+   "tensor": "model.layers.1.self_attn.q_a_proj.weight",
+   "tpu_vs_gpu_min": 0.008249403879301634,
+   "gpu_noise_max": 0.0031442859016195916,
+   "gpu_vs_ref": 0.008573194576507088,
+   "tpu_vs_ref": 0.007786558131369109,
+   "R_vs_ref": 0.9082446527816388
+  },
+  {
+   "tensor": "model.layers.1.self_attn.q_b_proj.weight",
+   "tpu_vs_gpu_min": 0.00844936458838149,
+   "gpu_noise_max": 0.0031577093493081127,
+   "gpu_vs_ref": 0.008730457946827369,
+   "tpu_vs_ref": 0.007963975362658155,
+   "R_vs_ref": 0.9122059130417378
+  },
+  {
+   "tensor": "model.layers.2.hc_attn_layer.hc_pre.hc_base",
+   "tpu_vs_gpu_min": 0.009672817185949168,
+   "gpu_noise_max": 0.0026161086925789528,
+   "gpu_vs_ref": 0.01927099412919645,
+   "tpu_vs_ref": 0.007942112278048877,
+   "R_vs_ref": 0.4121277929308384
+  },
+  {
+   "tensor": "model.layers.2.hc_attn_layer.hc_pre.hc_fn",
+   "tpu_vs_gpu_min": 0.011408549459578367,
+   "gpu_noise_max": 0.004086364703550164,
+   "gpu_vs_ref": 0.019460557280060308,
+   "tpu_vs_ref": 0.010448055171388151,
+   "R_vs_ref": 0.5368836575966632
+  },
+  {
+   "tensor": "model.layers.2.hc_attn_layer.hc_pre.hc_scale",
+   "tpu_vs_gpu_min": 0.0021336080822116753,
+   "gpu_noise_max": 0.002325031229263842,
+   "gpu_vs_ref": 0.0014537829908083484,
+   "tpu_vs_ref": 0.0010275940881918464,
+   "R_vs_ref": 0.7068414575551418
+  },
+  {
+   "tensor": "model.layers.2.hc_mlp_layer.hc_pre.hc_base",
+   "tpu_vs_gpu_min": 0.006417039716640875,
+   "gpu_noise_max": 0.001236631659978681,
+   "gpu_vs_ref": 0.003948106883298412,
+   "tpu_vs_ref": 0.003238828593021428,
+   "R_vs_ref": 0.8203497749066957
+  },
+  {
+   "tensor": "model.layers.2.hc_mlp_layer.hc_pre.hc_fn",
+   "tpu_vs_gpu_min": 0.00879066494202538,
+   "gpu_noise_max": 0.004008742017144375,
+   "gpu_vs_ref": 0.008053169823814642,
+   "tpu_vs_ref": 0.007592889557344635,
+   "R_vs_ref": 0.9428448329614412
+  },
+  {
+   "tensor": "model.layers.2.hc_mlp_layer.hc_pre.hc_scale",
+   "tpu_vs_gpu_min": 0.13192881134777817,
+   "gpu_noise_max": 0.008704982608770924,
+   "gpu_vs_ref": 0.1456475376313544,
+   "tpu_vs_ref": 0.011033048425992594,
+   "R_vs_ref": 0.07575169896739431
+  },
+  {
+   "tensor": "model.layers.2.input_layernorm.weight",
+   "tpu_vs_gpu_min": 0.004501037412413465,
+   "gpu_noise_max": 0.001707434756109261,
+   "gpu_vs_ref": 0.0050520101040219334,
+   "tpu_vs_ref": 0.004417417025887677,
+   "R_vs_ref": 0.8743880029794372
+  },
+  {
+   "tensor": "model.layers.2.mlp.experts.down_proj",
+   "tpu_vs_gpu_min": 0.014180483435807717,
+   "gpu_noise_max": 0.006111745704652625,
+   "gpu_vs_ref": 0.014808433783150573,
+   "tpu_vs_ref": 0.013633627196272915,
+   "R_vs_ref": 0.9206663848398077
+  },
+  {
+   "tensor": "model.layers.2.mlp.experts.gate_up_proj",
+   "tpu_vs_gpu_min": 0.014789597362683392,
+   "gpu_noise_max": 0.006210805576871494,
+   "gpu_vs_ref": 0.014965624734329056,
+   "tpu_vs_ref": 0.013756966262618457,
+   "R_vs_ref": 0.9192376868211786
+  },
+  {
+   "tensor": "model.layers.2.mlp.gate.weight",
+   "tpu_vs_gpu_min": 0.020467409732330674,
+   "gpu_noise_max": 0.0091464296353577,
+   "gpu_vs_ref": 0.019570048117132744,
+   "tpu_vs_ref": 0.01881651951305444,
+   "R_vs_ref": 0.9614958226179003
+  },
+  {
+   "tensor": "model.layers.2.mlp.shared_experts.down_proj.weight",
+   "tpu_vs_gpu_min": 0.00589325149048452,
+   "gpu_noise_max": 0.0023741053234027734,
+   "gpu_vs_ref": 0.007096840144473197,
+   "tpu_vs_ref": 0.006492981086891712,
+   "R_vs_ref": 0.9149115598930669
+  },
+  {
+   "tensor": "model.layers.2.mlp.shared_experts.gate_proj.weight",
+   "tpu_vs_gpu_min": 0.005801527527375466,
+   "gpu_noise_max": 0.0023305027576164842,
+   "gpu_vs_ref": 0.006601569047758723,
+   "tpu_vs_ref": 0.00625375724728525,
+   "R_vs_ref": 0.9473137676880684
+  },
+  {
+   "tensor": "model.layers.2.mlp.shared_experts.up_proj.weight",
+   "tpu_vs_gpu_min": 0.005446653454850991,
+   "gpu_noise_max": 0.0023200150229259,
+   "gpu_vs_ref": 0.006547963121380742,
+   "tpu_vs_ref": 0.005900804814897312,
+   "R_vs_ref": 0.9011664704753306
+  },
+  {
+   "tensor": "model.layers.2.post_attention_layernorm.weight",
+   "tpu_vs_gpu_min": 0.010074569529259834,
+   "gpu_noise_max": 0.004334495914882204,
+   "gpu_vs_ref": 0.01015303319461646,
+   "tpu_vs_ref": 0.009780015182257837,
+   "R_vs_ref": 0.963260436048174
+  },
+  {
+   "tensor": "model.layers.2.self_attn.kv_a_layernorm.weight",
+   "tpu_vs_gpu_min": 0.004351626023245495,
+   "gpu_noise_max": 0.0016840950668914974,
+   "gpu_vs_ref": 0.005293849855302291,
+   "tpu_vs_ref": 0.004498549547203725,
+   "R_vs_ref": 0.8497690093529954
+  },
+  {
+   "tensor": "model.layers.2.self_attn.kv_a_proj_with_mqa.weight",
+   "tpu_vs_gpu_min": 0.004240011609473418,
+   "gpu_noise_max": 0.0017829511277423272,
+   "gpu_vs_ref": 0.005081965989907006,
+   "tpu_vs_ref": 0.0044946048800420255,
+   "R_vs_ref": 0.8844224634656147
+  },
+  {
+   "tensor": "model.layers.2.self_attn.kv_b_proj.weight",
+   "tpu_vs_gpu_min": 0.003984218243781201,
+   "gpu_noise_max": 0.0016370174290749487,
+   "gpu_vs_ref": 0.0049403296860042415,
+   "tpu_vs_ref": 0.0042404222999888365,
+   "R_vs_ref": 0.8583277978394408
+  },
+  {
+   "tensor": "model.layers.2.self_attn.learnable_sink_param",
+   "tpu_vs_gpu_min": 0.006647032625315329,
+   "gpu_noise_max": 0.00600149158903604,
+   "gpu_vs_ref": 0.01705060992195206,
+   "tpu_vs_ref": 0.013882004191293007,
+   "R_vs_ref": 0.8141646694656016
+  },
+  {
+   "tensor": "model.layers.2.self_attn.linear_gate.weight",
+   "tpu_vs_gpu_min": 0.006221290043859028,
+   "gpu_noise_max": 0.00253998873569879,
+   "gpu_vs_ref": 0.007231717183411903,
+   "tpu_vs_ref": 0.006442842888540443,
+   "R_vs_ref": 0.8909146645445458
+  },
+  {
+   "tensor": "model.layers.2.self_attn.o_proj.weight",
+   "tpu_vs_gpu_min": 0.00391332027906883,
+   "gpu_noise_max": 0.0016123431965136025,
+   "gpu_vs_ref": 0.004955525227448932,
+   "tpu_vs_ref": 0.004194552330613942,
+   "R_vs_ref": 0.8464395070334991
+  },
+  {
+   "tensor": "model.layers.2.self_attn.q_a_layernorm.weight",
+   "tpu_vs_gpu_min": 0.010067774534471486,
+   "gpu_noise_max": 0.0031489660819252127,
+   "gpu_vs_ref": 0.011363746678005698,
+   "tpu_vs_ref": 0.010386800855627716,
+   "R_vs_ref": 0.9140296022025165
+  },
+  {
+   "tensor": "model.layers.2.self_attn.q_a_proj.weight",
+   "tpu_vs_gpu_min": 0.009873896057463187,
+   "gpu_noise_max": 0.003082688379245006,
+   "gpu_vs_ref": 0.011200594762706396,
+   "tpu_vs_ref": 0.010290926028229438,
+   "R_vs_ref": 0.9187838901639582
+  },
+  {
+   "tensor": "model.layers.2.self_attn.q_b_proj.weight",
+   "tpu_vs_gpu_min": 0.01003188782020189,
+   "gpu_noise_max": 0.003060200264678534,
+   "gpu_vs_ref": 0.0112944305129397,
+   "tpu_vs_ref": 0.010462180800113281,
+   "R_vs_ref": 0.9263132645888665
+  },
+  {
+   "tensor": "model.layers.3.hc_attn_layer.hc_pre.hc_base",
+   "tpu_vs_gpu_min": 0.05324089915722868,
+   "gpu_noise_max": 0.030310449973762393,
+   "gpu_vs_ref": 0.09622232860237137,
+   "tpu_vs_ref": 0.03264985210524365,
+   "R_vs_ref": 0.33931679454740404
+  },
+  {
+   "tensor": "model.layers.3.hc_attn_layer.hc_pre.hc_fn",
+   "tpu_vs_gpu_min": 0.01783179228232163,
+   "gpu_noise_max": 0.0074033770189720904,
+   "gpu_vs_ref": 0.026688029608369208,
+   "tpu_vs_ref": 0.014078728638935488,
+   "R_vs_ref": 0.5275297144649631
+  },
+  {
+   "tensor": "model.layers.3.hc_attn_layer.hc_pre.hc_scale",
+   "tpu_vs_gpu_min": 0.003226336089471115,
+   "gpu_noise_max": 0.0032060573719355505,
+   "gpu_vs_ref": 0.0012381566093985863,
+   "tpu_vs_ref": 0.0029300539075728096,
+   "R_vs_ref": 2.366464698674939
+  },
+  {
+   "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_base",
+   "tpu_vs_gpu_min": 0.023789246756466112,
+   "gpu_noise_max": 0.011235450234091183,
+   "gpu_vs_ref": 0.0040244390235169665,
+   "tpu_vs_ref": 0.035110844850574474,
+   "R_vs_ref": 8.724407214372707
+  },
+  {
+   "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_fn",
+   "tpu_vs_gpu_min": 0.018847525276774607,
+   "gpu_noise_max": 0.011786763406506404,
+   "gpu_vs_ref": 0.019481866983369855,
+   "tpu_vs_ref": 0.02012218707950952,
+   "R_vs_ref": 1.0328674914311988
+  },
+  {
+   "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_scale",
+   "tpu_vs_gpu_min": 0.011930354020095148,
+   "gpu_noise_max": 0.02533169637026202,
+   "gpu_vs_ref": 0.062005378269696355,
+   "tpu_vs_ref": 0.04901257460706352,
+   "R_vs_ref": 0.7904568276945299
+  },
+  {
+   "tensor": "model.layers.3.input_layernorm.weight",
+   "tpu_vs_gpu_min": 0.0038982668721471107,
+   "gpu_noise_max": 0.0017111028315219456,
+   "gpu_vs_ref": 0.004969038030775218,
+   "tpu_vs_ref": 0.004370992026204386,
+   "R_vs_ref": 0.8796455167243847
+  },
+  {
+   "tensor": "model.layers.3.mlp.experts.down_proj",
+   "tpu_vs_gpu_min": 0.01588858285727285,
+   "gpu_noise_max": 0.008833174965613314,
+   "gpu_vs_ref": 0.015759206354787544,
+   "tpu_vs_ref": 0.014384762519038053,
+   "R_vs_ref": 0.9127847047112277
+  },
+  {
+   "tensor": "model.layers.3.mlp.experts.gate_up_proj",
+   "tpu_vs_gpu_min": 0.01674172963811467,
+   "gpu_noise_max": 0.00935728353229519,
+   "gpu_vs_ref": 0.01672947358346482,
+   "tpu_vs_ref": 0.015260999962309398,
+   "R_vs_ref": 0.9122223652866853
+  },
+  {
+   "tensor": "model.layers.3.mlp.gate.weight",
+   "tpu_vs_gpu_min": 0.029329526307684036,
+   "gpu_noise_max": 0.01913387579996919,
+   "gpu_vs_ref": 0.028966682785038438,
+   "tpu_vs_ref": 0.029918117405163303,
+   "R_vs_ref": 1.0328458259161208
+  },
+  {
+   "tensor": "model.layers.3.mlp.shared_experts.down_proj.weight",
+   "tpu_vs_gpu_min": 0.005178626531774385,
+   "gpu_noise_max": 0.0020756267797398258,
+   "gpu_vs_ref": 0.006462814227561876,
+   "tpu_vs_ref": 0.005399970928973579,
+   "R_vs_ref": 0.8355448166751253
+  },
+  {
+   "tensor": "model.layers.3.mlp.shared_experts.gate_proj.weight",
+   "tpu_vs_gpu_min": 0.005569584089611384,
+   "gpu_noise_max": 0.0021653766536456937,
+   "gpu_vs_ref": 0.007190284573839768,
+   "tpu_vs_ref": 0.005627020922670421,
+   "R_vs_ref": 0.7825866785777951
+  },
+  {
+   "tensor": "model.layers.3.mlp.shared_experts.up_proj.weight",
+   "tpu_vs_gpu_min": 0.005054600811840429,
+   "gpu_noise_max": 0.002036334477060627,
+   "gpu_vs_ref": 0.0062066084218246175,
+   "tpu_vs_ref": 0.005416462467218316,
+   "R_vs_ref": 0.8726927975949198
+  },
+  {
+   "tensor": "model.layers.3.post_attention_layernorm.weight",
+   "tpu_vs_gpu_min": 0.010430029563431725,
+   "gpu_noise_max": 0.005748012680146059,
+   "gpu_vs_ref": 0.011436061156633147,
+   "tpu_vs_ref": 0.01010692086619976,
+   "R_vs_ref": 0.8837763918687634
+  },
+  {
+   "tensor": "model.layers.3.self_attn.kv_a_layernorm.weight",
+   "tpu_vs_gpu_min": 0.003943294110011214,
+   "gpu_noise_max": 0.001718165088295392,
+   "gpu_vs_ref": 0.004967114156898823,
+   "tpu_vs_ref": 0.003945470808107192,
+   "R_vs_ref": 0.7943185285217029
+  },
+  {
+   "tensor": "model.layers.3.self_attn.kv_a_proj_with_mqa.weight",
+   "tpu_vs_gpu_min": 0.0037463978978365307,
+   "gpu_noise_max": 0.0015760324801742402,
+   "gpu_vs_ref": 0.004777836465994302,
+   "tpu_vs_ref": 0.003983056646482451,
+   "R_vs_ref": 0.8336527787904413
+  },
+  {
+   "tensor": "model.layers.3.self_attn.kv_b_proj.weight",
+   "tpu_vs_gpu_min": 0.003721988119568995,
+   "gpu_noise_max": 0.0015679168918209367,
+   "gpu_vs_ref": 0.004772298058031794,
+   "tpu_vs_ref": 0.0038762792804638924,
+   "R_vs_ref": 0.8122458474570969
+  },
+  {
+   "tensor": "model.layers.3.self_attn.learnable_sink_param",
+   "tpu_vs_gpu_min": 0.01837118254894551,
+   "gpu_noise_max": 0.0071274856565300415,
+   "gpu_vs_ref": 0.024298172338763233,
+   "tpu_vs_ref": 0.01810409327968063,
+   "R_vs_ref": 0.7450804540882651
+  },
+  {
+   "tensor": "model.layers.3.self_attn.linear_gate.weight",
+   "tpu_vs_gpu_min": 0.005555323362429601,
+   "gpu_noise_max": 0.002280400044806155,
+   "gpu_vs_ref": 0.006740229473263223,
+   "tpu_vs_ref": 0.005751611659989063,
+   "R_vs_ref": 0.8533257929576795
+  },
+  {
+   "tensor": "model.layers.3.self_attn.o_proj.weight",
+   "tpu_vs_gpu_min": 0.003713051476443406,
+   "gpu_noise_max": 0.0015948097097565736,
+   "gpu_vs_ref": 0.004873936661129344,
+   "tpu_vs_ref": 0.003880666319526345,
+   "R_vs_ref": 0.7962077863004384
+  },
+  {
+   "tensor": "model.layers.3.self_attn.q_a_layernorm.weight",
+   "tpu_vs_gpu_min": 0.010630734479728322,
+   "gpu_noise_max": 0.004424233838535696,
+   "gpu_vs_ref": 0.012514116018238453,
+   "tpu_vs_ref": 0.010513115975477633,
+   "R_vs_ref": 0.8401005680429603
+  },
+  {
+   "tensor": "model.layers.3.self_attn.q_a_proj.weight",
+   "tpu_vs_gpu_min": 0.01121657627753026,
+   "gpu_noise_max": 0.004527505424195066,
+   "gpu_vs_ref": 0.012462878046442532,
+   "tpu_vs_ref": 0.010443357529195339,
+   "R_vs_ref": 0.837957130791017
+  },
+  {
+   "tensor": "model.layers.3.self_attn.q_b_proj.weight",
+   "tpu_vs_gpu_min": 0.011021743343877517,
+   "gpu_noise_max": 0.004478852280471301,
+   "gpu_vs_ref": 0.0123570755024685,
+   "tpu_vs_ref": 0.01033626711820333,
+   "R_vs_ref": 0.8364654821554272
+  },
+  {
+   "tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_base",
+   "tpu_vs_gpu_min": 0.0012689713820690967,
+   "gpu_noise_max": 0.002806776300410046,
+   "gpu_vs_ref": 0.00793941655429173,
+   "tpu_vs_ref": 0.00653480491607843,
+   "R_vs_ref": 0.8230837708780977
+  },
+  {
+   "tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_fn",
+   "tpu_vs_gpu_min": 0.007129580504077203,
+   "gpu_noise_max": 0.0035328686149576605,
+   "gpu_vs_ref": 0.009920336407986006,
+   "tpu_vs_ref": 0.009604034992270851,
+   "R_vs_ref": 0.9681158578996849
+  },
+  {
+   "tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_scale",
+   "tpu_vs_gpu_min": 0.12453769082458029,
+   "gpu_noise_max": 1.2826394164557735,
+   "gpu_vs_ref": 0.3074560873074396,
+   "tpu_vs_ref": 0.2534202356440788,
+   "R_vs_ref": 0.824248554853533
+  },
+  {
+   "tensor": "model.layers.4.hc_mlp_layer.hc_pre.hc_base",
+   "tpu_vs_gpu_min": 0.010977048363366361,
+   "gpu_noise_max": 0.0006252643543649363,
+   "gpu_vs_ref": 0.0055219437998462444,
+   "tpu_vs_ref": 0.005595252405315148,
+   "R_vs_ref": 1.0132758695354604
+  },
+  {
+   "tensor": "model.layers.4.hc_mlp_layer.hc_pre.hc_fn",
+   "tpu_vs_gpu_min": 0.012981839185692495,
+   "gpu_noise_max": 0.003472166306626455,
+   "gpu_vs_ref": 0.007921325939680453,
+   "tpu_vs_ref": 0.009181169018249924,
+   "R_vs_ref": 1.1590444690905235
+  },
+  {
+   "tensor": "model.layers.4.hc_mlp_layer.hc_pre.hc_scale",
+   "tpu_vs_gpu_min": 0.012407656563141032,
+   "gpu_noise_max": 0.0008351148141312128,
+   "gpu_vs_ref": 0.012938836419460266,
+   "tpu_vs_ref": 0.00024381596369805493,
+   "R_vs_ref": 0.01884373183135316
+  },
+  {
+   "tensor": "model.layers.4.input_layernorm.weight",
+   "tpu_vs_gpu_min": 0.004174457661479099,
+   "gpu_noise_max": 0.0016100269914952722,
+   "gpu_vs_ref": 0.005000558280978152,
+   "tpu_vs_ref": 0.004255255794637935,
+   "R_vs_ref": 0.8509561444018547
+  },
+  {
+   "tensor": "model.layers.4.mlp.experts.down_proj",
+   "tpu_vs_gpu_min": 0.018971623760164643,
+   "gpu_noise_max": 0.012321392404480574,
+   "gpu_vs_ref": 0.019009645047606823,
+   "tpu_vs_ref": 0.01730276365595218,
+   "R_vs_ref": 0.9102097178889973
+  },
+  {
+   "tensor": "model.layers.4.mlp.experts.gate_up_proj",
+   "tpu_vs_gpu_min": 0.0198692643651706,
+   "gpu_noise_max": 0.013067329168565352,
+   "gpu_vs_ref": 0.020012443672757556,
+   "tpu_vs_ref": 0.017853512009569732,
+   "R_vs_ref": 0.8921205376769293
+  },
+  {
+   "tensor": "model.layers.4.mlp.gate.weight",
+   "tpu_vs_gpu_min": 0.021980471768440757,
+   "gpu_noise_max": 0.014403984706366524,
+   "gpu_vs_ref": 0.027309501972650852,
+   "tpu_vs_ref": 0.025162476255333403,
+   "R_vs_ref": 0.9213817330148462
+  },
+  {
+   "tensor": "model.layers.4.mlp.shared_experts.down_proj.weight",
+   "tpu_vs_gpu_min": 0.00507698779394389,
+   "gpu_noise_max": 0.002025016982351745,
+   "gpu_vs_ref": 0.006196889991857435,
+   "tpu_vs_ref": 0.00546781782517642,
+   "R_vs_ref": 0.8823486994865168
+  },
+  {
+   "tensor": "model.layers.4.mlp.shared_experts.gate_proj.weight",
+   "tpu_vs_gpu_min": 0.005313705297307732,
+   "gpu_noise_max": 0.002209578498211842,
+   "gpu_vs_ref": 0.006587961029443363,
+   "tpu_vs_ref": 0.005912764878483453,
+   "R_vs_ref": 0.8975106033653997
+  },
+  {
+   "tensor": "model.layers.4.mlp.shared_experts.up_proj.weight",
+   "tpu_vs_gpu_min": 0.005128164533496159,
+   "gpu_noise_max": 0.0021252212027924183,
+   "gpu_vs_ref": 0.006370920885962405,
+   "tpu_vs_ref": 0.0055722173341742395,
+   "R_vs_ref": 0.874632950858326
+  },
+  {
+   "tensor": "model.layers.4.post_attention_layernorm.weight",
+   "tpu_vs_gpu_min": 0.012267351295311984,
+   "gpu_noise_max": 0.007357800577557214,
+   "gpu_vs_ref": 0.012407400963053768,
+   "tpu_vs_ref": 0.011620061286014133,
+   "R_vs_ref": 0.936542739338872
+  },
+  {
+   "tensor": "model.layers.4.self_attn.kv_a_layernorm.weight",
+   "tpu_vs_gpu_min": 0.0036473279292797917,
+   "gpu_noise_max": 0.0014225993298729056,
+   "gpu_vs_ref": 0.0046292960923913365,
+   "tpu_vs_ref": 0.0039111764044922025,
+   "R_vs_ref": 0.844874971579496
+  },
+  {
+   "tensor": "model.layers.4.self_attn.kv_a_proj_with_mqa.weight",
+   "tpu_vs_gpu_min": 0.0037336721109539907,
+   "gpu_noise_max": 0.0015449218901532093,
+   "gpu_vs_ref": 0.004682955862562223,
+   "tpu_vs_ref": 0.003826641728030335,
+   "R_vs_ref": 0.8171423862057572
+  },
+  {
+   "tensor": "model.layers.4.self_attn.kv_b_proj.weight",
+   "tpu_vs_gpu_min": 0.003604442832148302,
+   "gpu_noise_max": 0.0015115577321282714,
+   "gpu_vs_ref": 0.004532566436751302,
+   "tpu_vs_ref": 0.0037506205222085495,
+   "R_vs_ref": 0.8274827461540291
+  },
+  {
+   "tensor": "model.layers.4.self_attn.learnable_sink_param",
+   "tpu_vs_gpu_min": 0.016684716581804485,
+   "gpu_noise_max": 0.008605264819629853,
+   "gpu_vs_ref": 0.02466446645750342,
+   "tpu_vs_ref": 0.015199668819089154,
+   "R_vs_ref": 0.6162577587185193
+  },
+  {
+   "tensor": "model.layers.4.self_attn.linear_gate.weight",
+   "tpu_vs_gpu_min": 0.005502090549178947,
+   "gpu_noise_max": 0.002261819830540831,
+   "gpu_vs_ref": 0.006549819003563628,
+   "tpu_vs_ref": 0.005699835115133466,
+   "R_vs_ref": 0.8702278814166158
+  },
+  {
+   "tensor": "model.layers.4.self_attn.o_proj.weight",
+   "tpu_vs_gpu_min": 0.0035746899654301428,
+   "gpu_noise_max": 0.0014792926875518116,
+   "gpu_vs_ref": 0.004472750146630916,
+   "tpu_vs_ref": 0.003691174891783454,
+   "R_vs_ref": 0.8252584586160753
+  },
+  {
+   "tensor": "model.layers.4.self_attn.q_a_layernorm.weight",
+   "tpu_vs_gpu_min": 0.011415848266454918,
+   "gpu_noise_max": 0.004829490225757461,
+   "gpu_vs_ref": 0.012361617515295934,
+   "tpu_vs_ref": 0.011067768223949098,
+   "R_vs_ref": 0.8953333340280216
+  },
+  {
+   "tensor": "model.layers.4.self_attn.q_a_proj.weight",
+   "tpu_vs_gpu_min": 0.013278954149734058,
+   "gpu_noise_max": 0.005622721307823128,
+   "gpu_vs_ref": 0.014231154408420038,
+   "tpu_vs_ref": 0.012380538410582944,
+   "R_vs_ref": 0.869960233391737
+  },
+  {
+   "tensor": "model.layers.4.self_attn.q_b_proj.weight",
+   "tpu_vs_gpu_min": 0.013673134133685426,
+   "gpu_noise_max": 0.0058027965727072,
+   "gpu_vs_ref": 0.014495796018513621,
+   "tpu_vs_ref": 0.012847436739783646,
+   "R_vs_ref": 0.8862870809837047
+  },
+  {
+   "tensor": "model.layers.5.hc_attn_layer.hc_pre.hc_base",
+   "tpu_vs_gpu_min": 0.0020289802848656516,
+   "gpu_noise_max": 0.000555100355173046,
+   "gpu_vs_ref": 0.005395268220873751,
+   "tpu_vs_ref": 0.003127734336681846,
+   "R_vs_ref": 0.579718043410883
+  },
+  {
+   "tensor": "model.layers.5.hc_attn_layer.hc_pre.hc_fn",
+   "tpu_vs_gpu_min": 0.00542382434296282,
+   "gpu_noise_max": 0.002843061540239158,
+   "gpu_vs_ref": 0.008036266237375321,
+   "tpu_vs_ref": 0.006419528626263889,
+   "R_vs_ref": 0.7988198047008127
+  },
+  {
+   "tensor": "model.layers.5.hc_attn_layer.hc_pre.hc_scale",
+   "tpu_vs_gpu_min": 0.0020727335269960056,
+   "gpu_noise_max": 0.00247820496806674,
+   "gpu_vs_ref": 0.001130188098935998,
+   "tpu_vs_ref": 0.0026019012982299887,
+   "R_vs_ref": 2.3021843007190728
+  },
+  {
+   "tensor": "model.layers.5.hc_mlp_layer.hc_pre.hc_base",
+   "tpu_vs_gpu_min": 0.004443292609068875,
+   "gpu_noise_max": 0.03756412984495918,
+   "gpu_vs_ref": 0.013582094798683665,
+   "tpu_vs_ref": 0.009479099548012463,
+   "R_vs_ref": 0.6979114553766145
+  },
+  {
+   "tensor": "model.layers.5.hc_mlp_layer.hc_pre.hc_fn",
+   "tpu_vs_gpu_min": 0.01899540119546277,
+   "gpu_noise_max": 0.02755678201132726,
+   "gpu_vs_ref": 0.01824905445879571,
+   "tpu_vs_ref": 0.019170960477652425,
+   "R_vs_ref": 1.0505180156560041
+  },
+  {
+   "tensor": "model.layers.5.hc_mlp_layer.hc_pre.hc_scale",
+   "tpu_vs_gpu_min": 0.009643446697270571,
+   "gpu_noise_max": 0.029198943396843337,
+   "gpu_vs_ref": 0.024686706855241512,
+   "tpu_vs_ref": 0.015289466930724159,
+   "R_vs_ref": 0.6193400772480061
+  },
+  {
+   "tensor": "model.layers.5.input_layernorm.weight",
+   "tpu_vs_gpu_min": 0.003670501673094749,
+   "gpu_noise_max": 0.0013635600761966141,
+   "gpu_vs_ref": 0.0045910600518937455,
+   "tpu_vs_ref": 0.004041868946043722,
+   "R_vs_ref": 0.8803781480437203
+  },
+  {
+   "tensor": "model.layers.5.mlp.experts.down_proj",
+   "tpu_vs_gpu_min": 0.017415729451831365,
+   "gpu_noise_max": 0.011925174810199293,
+   "gpu_vs_ref": 0.017161797688336557,
+   "tpu_vs_ref": 0.01638012202265458,
+   "R_vs_ref": 0.9544525765961442
+  },
+  {
+   "tensor": "model.layers.5.mlp.experts.gate_up_proj",
+   "tpu_vs_gpu_min": 0.017921131176223126,
+   "gpu_noise_max": 0.011815953152938072,
+   "gpu_vs_ref": 0.017619535226986737,
+   "tpu_vs_ref": 0.01651691013514258,
+   "R_vs_ref": 0.9374203077641154
+  },
+  {
+   "tensor": "model.layers.5.mlp.gate.weight",
+   "tpu_vs_gpu_min": 0.03168483388928909,
+   "gpu_noise_max": 0.01864915698597009,
+   "gpu_vs_ref": 0.03719340831147895,
+   "tpu_vs_ref": 0.028008689284422742,
+   "R_vs_ref": 0.7530551932713964
+  },
+  {
+   "tensor": "model.layers.5.mlp.shared_experts.down_proj.weight",
+   "tpu_vs_gpu_min": 0.005544713788572543,
+   "gpu_noise_max": 0.002146933046530175,
+   "gpu_vs_ref": 0.006879643713400262,
+   "tpu_vs_ref": 0.005816337122333197,
+   "R_vs_ref": 0.845441619455388
+  },
+  {
+   "tensor": "model.layers.5.mlp.shared_experts.gate_proj.weight",
+   "tpu_vs_gpu_min": 0.005023393643253593,
+   "gpu_noise_max": 0.002013937059672882,
+   "gpu_vs_ref": 0.006257718610610277,
+   "tpu_vs_ref": 0.005420485607561509,
+   "R_vs_ref": 0.8662079497104268
+  },
+  {
+   "tensor": "model.layers.5.mlp.shared_experts.up_proj.weight",
+   "tpu_vs_gpu_min": 0.0047377006190428405,
+   "gpu_noise_max": 0.0018671555282836318,
+   "gpu_vs_ref": 0.005858150078518761,
+   "tpu_vs_ref": 0.005194933707437913,
+   "R_vs_ref": 0.8867874052061596
+  },
+  {
+   "tensor": "model.layers.5.post_attention_layernorm.weight",
+   "tpu_vs_gpu_min": 0.012041876390265542,
+   "gpu_noise_max": 0.00792683688166467,
+   "gpu_vs_ref": 0.01214300156394804,
+   "tpu_vs_ref": 0.011460590859549553,
+   "R_vs_ref": 0.943802139791818
+  },
+  {
+   "tensor": "model.layers.5.self_attn.indexer.k_norm.bias",
+   "tpu_vs_gpu_min": 0.004730986158948664,
+   "gpu_noise_max": 0.0009836214122313498,
+   "gpu_vs_ref": 0.006623445364841924,
+   "tpu_vs_ref": 0.005359386554172692,
+   "R_vs_ref": 0.809153885773858
+  },
+  {
+   "tensor": "model.layers.5.self_attn.indexer.k_norm.weight",
+   "tpu_vs_gpu_min": 0.0034138558038816448,
+   "gpu_noise_max": 0.0009541637826650124,
+   "gpu_vs_ref": 0.005168025414418645,
+   "tpu_vs_ref": 0.005062296868097934,
+   "R_vs_ref": 0.9795417905597501
+  },
+  {
+   "tensor": "model.layers.5.self_attn.indexer.weights_proj.weight",
+   "tpu_vs_gpu_min": 0.005130555466697424,
+   "gpu_noise_max": 0.001542084483438354,
+   "gpu_vs_ref": 0.007968985287042223,
+   "tpu_vs_ref": 0.006463206340867463,
+   "R_vs_ref": 0.811045083917623
+  },
+  {
+   "tensor": "model.layers.5.self_attn.indexer.wk.weight",
+   "tpu_vs_gpu_min": 0.008609498315341246,
+   "gpu_noise_max": 0.002703044145289136,
+   "gpu_vs_ref": 0.011195037413260243,
+   "tpu_vs_ref": 0.010184521237744031,
+   "R_vs_ref": 0.9097353462776926
+  },
+  {
+   "tensor": "model.layers.5.self_attn.indexer.wq_b.weight",
+   "tpu_vs_gpu_min": 0.008915367388039549,
+   "gpu_noise_max": 0.002782072372216139,
+   "gpu_vs_ref": 0.011402477269122276,
+   "tpu_vs_ref": 0.01040047982498186,
+   "R_vs_ref": 0.9121245830628569
+  },
+  {
+   "tensor": "model.layers.5.self_attn.kv_a_layernorm.weight",
+   "tpu_vs_gpu_min": 0.003675422446795172,
+   "gpu_noise_max": 0.0013567355818773664,
+   "gpu_vs_ref": 0.0044040993218374125,
+   "tpu_vs_ref": 0.004024236409647951,
+   "R_vs_ref": 0.913747877958624
+  },
+  {
+   "tensor": "model.layers.5.self_attn.kv_a_proj_with_mqa.weight",
+   "tpu_vs_gpu_min": 0.0034337823516324005,
+   "gpu_noise_max": 0.0013435187022930726,
+   "gpu_vs_ref": 0.004517069949790111,
+   "tpu_vs_ref": 0.0037246070694811387,
+   "R_vs_ref": 0.8245626281820598
+  },
+  {
+   "tensor": "model.layers.5.self_attn.kv_b_proj.weight",
+   "tpu_vs_gpu_min": 0.003384186256547979,
+   "gpu_noise_max": 0.0013598927022674416,
+   "gpu_vs_ref": 0.004413509825874173,
+   "tpu_vs_ref": 0.0037360689732980363,
+   "R_vs_ref": 0.8465074556751535
+  },
+  {
+   "tensor": "model.layers.5.self_attn.learnable_sink_param",
+   "tpu_vs_gpu_min": 0.012448095022264183,
+   "gpu_noise_max": 0.010472047934929719,
+   "gpu_vs_ref": 0.016221848512994932,
+   "tpu_vs_ref": 0.012872324598080201,
+   "R_vs_ref": 0.7935177416906891
+  },
+  {
+   "tensor": "model.layers.5.self_attn.linear_gate.weight",
+   "tpu_vs_gpu_min": 0.0052758677100122,
+   "gpu_noise_max": 0.0021567701654158495,
+   "gpu_vs_ref": 0.006473191288096723,
+   "tpu_vs_ref": 0.005630126105489956,
+   "R_vs_ref": 0.8697605021873764
+  },
+  {
+   "tensor": "model.layers.5.self_attn.o_proj.weight",
+   "tpu_vs_gpu_min": 0.003310624989447396,
+   "gpu_noise_max": 0.0013558552596749929,
+   "gpu_vs_ref": 0.0042245492855243405,
+   "tpu_vs_ref": 0.0035962278024503176,
+   "R_vs_ref": 0.8512689897530602
+  },
+  {
+   "tensor": "model.layers.5.self_attn.q_a_layernorm.weight",
+   "tpu_vs_gpu_min": 0.013835012756583462,
+   "gpu_noise_max": 0.005952880041339191,
+   "gpu_vs_ref": 0.014088299579142925,
+   "tpu_vs_ref": 0.013329243624406514,
+   "R_vs_ref": 0.9461215350743848
+  },
+  {
+   "tensor": "model.layers.5.self_attn.q_a_proj.weight",
+   "tpu_vs_gpu_min": 0.013466802692787093,
+   "gpu_noise_max": 0.005768828538272474,
+   "gpu_vs_ref": 0.014414007930860647,
+   "tpu_vs_ref": 0.013329036670735542,
+   "R_vs_ref": 0.9247279961736277
+  },
+  {
+   "tensor": "model.layers.5.self_attn.q_b_proj.weight",
+   "tpu_vs_gpu_min": 0.013579320761287827,
+   "gpu_noise_max": 0.005669710920804834,
+   "gpu_vs_ref": 0.01421315895972849,
+   "tpu_vs_ref": 0.012953988432098064,
+   "R_vs_ref": 0.9114081161550255
+  },
+  {
+   "tensor": "model.layers.6.hc_attn_layer.hc_pre.hc_base",
+   "tpu_vs_gpu_min": 0.005479149338589313,
+   "gpu_noise_max": 0.0015939547051796487,
+   "gpu_vs_ref": 0.008152950494033301,
+   "tpu_vs_ref": 0.0010677591713685957,
+   "R_vs_ref": 0.13096598245629362
+  },
+  {
+   "tensor": "model.layers.6.hc_attn_layer.hc_pre.hc_fn",
+   "tpu_vs_gpu_min": 0.0074544471333110205,
+   "gpu_noise_max": 0.0027034467462960293,
+   "gpu_vs_ref": 0.009048701277602312,
+   "tpu_vs_ref": 0.005433280739807606,
+   "R_vs_ref": 0.6004486802162724
+  },
+  {
+   "tensor": "model.layers.6.hc_attn_layer.hc_pre.hc_scale",
+   "tpu_vs_gpu_min": 0.001572762796794266,
+   "gpu_noise_max": 0.0027498902055291445,
+   "gpu_vs_ref": 0.01269467922792027,
+   "tpu_vs_ref": 0.008428175779452922,
+   "R_vs_ref": 0.6639140405309543
+  },
+  {
+   "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_base",
+   "tpu_vs_gpu_min": 0.0008724382602097965,
+   "gpu_noise_max": 0.0028614751552335687,
+   "gpu_vs_ref": 0.008266405606267896,
+   "tpu_vs_ref": 0.007724977405056851,
+   "R_vs_ref": 0.9345025846783378
+  },
+  {
+   "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_fn",
+   "tpu_vs_gpu_min": 0.011309496238786455,
+   "gpu_noise_max": 0.008073313889716417,
+   "gpu_vs_ref": 0.013227781461514826,
+   "tpu_vs_ref": 0.011538435455810354,
+   "R_vs_ref": 0.8722880317746791
+  },
+  {
+   "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_scale",
+   "tpu_vs_gpu_min": 0.0025194186508256116,
+   "gpu_noise_max": 0.02712064760271212,
+   "gpu_vs_ref": 0.03149805317743208,
+   "tpu_vs_ref": 0.033987641792159975,
+   "R_vs_ref": 1.079039444142905
+  },
+  {
+   "tensor": "model.layers.6.input_layernorm.weight",
+   "tpu_vs_gpu_min": 0.0035910816419524967,
+   "gpu_noise_max": 0.0012692616286605,
+   "gpu_vs_ref": 0.004504787445838035,
+   "tpu_vs_ref": 0.0041527956439480805,
+   "R_vs_ref": 0.9218627280150236
+  },
+  {
+   "tensor": "model.layers.6.mlp.experts.down_proj",
+   "tpu_vs_gpu_min": 0.02069342850009183,
+   "gpu_noise_max": 0.014419990061545353,
+   "gpu_vs_ref": 0.020041019818964487,
+   "tpu_vs_ref": 0.019214612758270282,
+   "R_vs_ref": 0.9587642211744041
+  },
+  {
+   "tensor": "model.layers.6.mlp.experts.gate_up_proj",
+   "tpu_vs_gpu_min": 0.021582280533581858,
+   "gpu_noise_max": 0.014831878466163132,
+   "gpu_vs_ref": 0.02091488438116452,
+   "tpu_vs_ref": 0.020155261401879017,
+   "R_vs_ref": 0.9636802687769288
+  },
+  {
+   "tensor": "model.layers.6.mlp.gate.weight",
+   "tpu_vs_gpu_min": 0.024726890365121355,
+   "gpu_noise_max": 0.01589220330761709,
+   "gpu_vs_ref": 0.025035509845854696,
+   "tpu_vs_ref": 0.022707752082415357,
+   "R_vs_ref": 0.9070217551880709
+  },
+  {
+   "tensor": "model.layers.6.mlp.shared_experts.down_proj.weight",
+   "tpu_vs_gpu_min": 0.004704765625066072,
+   "gpu_noise_max": 0.0019387802757977433,
+   "gpu_vs_ref": 0.005796389585816644,
+   "tpu_vs_ref": 0.0053181227089023645,
+   "R_vs_ref": 0.9174888316540066
+  },
+  {
+   "tensor": "model.layers.6.mlp.shared_experts.gate_proj.weight",
+   "tpu_vs_gpu_min": 0.005149459918341654,
+   "gpu_noise_max": 0.0021284810768141724,
+   "gpu_vs_ref": 0.00629346270326598,
+   "tpu_vs_ref": 0.005579539314036182,
+   "R_vs_ref": 0.8865611154159524
+  },
+  {
+   "tensor": "model.layers.6.mlp.shared_experts.up_proj.weight",
+   "tpu_vs_gpu_min": 0.005779714506776123,
+   "gpu_noise_max": 0.0024757671471271237,
+   "gpu_vs_ref": 0.006703357390476999,
+   "tpu_vs_ref": 0.006285830656617463,
+   "R_vs_ref": 0.9377137888466625
+  },
+  {
+   "tensor": "model.layers.6.post_attention_layernorm.weight",
+   "tpu_vs_gpu_min": 0.01356417969095064,
+   "gpu_noise_max": 0.00896572636249158,
+   "gpu_vs_ref": 0.01334440020384155,
+   "tpu_vs_ref": 0.01329427943858515,
+   "R_vs_ref": 0.9962440600933138
+  },
+  {
+   "tensor": "model.layers.6.self_attn.kv_a_layernorm.weight",
+   "tpu_vs_gpu_min": 0.0033137223945628926,
+   "gpu_noise_max": 0.0010755080155761933,
+   "gpu_vs_ref": 0.004074016470222674,
+   "tpu_vs_ref": 0.0038038158053730793,
+   "R_vs_ref": 0.9336770808796396
+  },
+  {
+   "tensor": "model.layers.6.self_attn.kv_a_proj_with_mqa.weight",
+   "tpu_vs_gpu_min": 0.0032324450645043325,
+   "gpu_noise_max": 0.0011241458163921433,
+   "gpu_vs_ref": 0.0043280408110492954,
+   "tpu_vs_ref": 0.0036123861340463673,
+   "R_vs_ref": 0.8346469665498778
+  },
+  {
+   "tensor": "model.layers.6.self_attn.kv_b_proj.weight",
+   "tpu_vs_gpu_min": 0.0031610604342904697,
+   "gpu_noise_max": 0.001183418663894423,
+   "gpu_vs_ref": 0.0043515271919859055,
+   "tpu_vs_ref": 0.0037254065494890225,
+   "R_vs_ref": 0.8561147351555121
+  },
+  {
+   "tensor": "model.layers.6.self_attn.learnable_sink_param",
+   "tpu_vs_gpu_min": 0.029507915125375043,
+   "gpu_noise_max": 0.016502721191517918,
+   "gpu_vs_ref": 0.03225889977175035,
+   "tpu_vs_ref": 0.02588100565117188,
+   "R_vs_ref": 0.8022904015417259
+  },
+  {
+   "tensor": "model.layers.6.self_attn.linear_gate.weight",
+   "tpu_vs_gpu_min": 0.00519778084848424,
+   "gpu_noise_max": 0.002102007603187558,
+   "gpu_vs_ref": 0.006352868942730536,
+   "tpu_vs_ref": 0.005550373496172889,
+   "R_vs_ref": 0.8736798360249621
+  },
+  {
+   "tensor": "model.layers.6.self_attn.o_proj.weight",
+   "tpu_vs_gpu_min": 0.0031444761858932103,
+   "gpu_noise_max": 0.0011632137746956258,
+   "gpu_vs_ref": 0.004345972474916035,
+   "tpu_vs_ref": 0.003715315192874654,
+   "R_vs_ref": 0.8548869589760654
+  },
+  {
+   "tensor": "model.layers.6.self_attn.q_a_layernorm.weight",
+   "tpu_vs_gpu_min": 0.014804242843012266,
+   "gpu_noise_max": 0.005540235303108782,
+   "gpu_vs_ref": 0.015435514235833815,
+   "tpu_vs_ref": 0.01479120965806486,
+   "R_vs_ref": 0.9582583017368355
+  },
+  {
+   "tensor": "model.layers.6.self_attn.q_a_proj.weight",
+   "tpu_vs_gpu_min": 0.015546754668864791,
+   "gpu_noise_max": 0.005887034403822467,
+   "gpu_vs_ref": 0.015740614062073426,
+   "tpu_vs_ref": 0.01492816690611392,
+   "R_vs_ref": 0.9483852947060639
+  },
+  {
+   "tensor": "model.layers.6.self_attn.q_b_proj.weight",
+   "tpu_vs_gpu_min": 0.015050736832889485,
+   "gpu_noise_max": 0.005770826638635841,
+   "gpu_vs_ref": 0.015434643952108498,
+   "tpu_vs_ref": 0.014459311894329382,
+   "R_vs_ref": 0.9368089046429946
+  },
+  {
+   "tensor": "model.mtp_layers.0.eh_proj.weight",
+   "tpu_vs_gpu_min": 0.0032574139583020838,
+   "gpu_noise_max": 0.0012539544017262344,
+   "gpu_vs_ref": 0.0040655866895549205,
+   "tpu_vs_ref": 0.0035261709239853925,
+   "R_vs_ref": 0.8673215437871821
+  },
+  {
+   "tensor": "model.mtp_layers.0.enorm.weight",
+   "tpu_vs_gpu_min": 0.001828006581750204,
+   "gpu_noise_max": 0.0012596918029968089,
+   "gpu_vs_ref": 0.0016530045126678466,
+   "tpu_vs_ref": 0.002034861076972337,
+   "R_vs_ref": 1.2310075752232508
+  },
+  {
+   "tensor": "model.mtp_layers.0.final_layernorm.weight",
+   "tpu_vs_gpu_min": 0.0035406277675463604,
+   "gpu_noise_max": 0.0012110727207724765,
+   "gpu_vs_ref": 0.0041840317490848015,
+   "tpu_vs_ref": 0.0035807916337918843,
+   "R_vs_ref": 0.8558232462206178
+  },
+  {
+   "tensor": "model.mtp_layers.0.hnorm.weight",
+   "tpu_vs_gpu_min": 0.003578554625520329,
+   "gpu_noise_max": 0.0012827325842829935,
+   "gpu_vs_ref": 0.00427747841627573,
+   "tpu_vs_ref": 0.0038721355744515446,
+   "R_vs_ref": 0.9052378989729408
+  },
+  {
+   "tensor": "model.mtp_layers.0.input_layernorm.weight",
+   "tpu_vs_gpu_min": 0.0032971333828366698,
+   "gpu_noise_max": 0.0010358694926000179,
+   "gpu_vs_ref": 0.0041838497160526355,
+   "tpu_vs_ref": 0.0036644143167000316,
+   "R_vs_ref": 0.8758475006022255
+  },
+  {
+   "tensor": "model.mtp_layers.0.mlp.experts.down_proj",
+   "tpu_vs_gpu_min": 0.046434562464795874,
+   "gpu_noise_max": 0.03484806096984313,
+   "gpu_vs_ref": 0.046508686720153826,
+   "tpu_vs_ref": 0.04424017586258069,
+   "R_vs_ref": 0.9512239321823268
+  },
+  {
+   "tensor": "model.mtp_layers.0.mlp.experts.gate_up_proj",
+   "tpu_vs_gpu_min": 0.04838727067902714,
+   "gpu_noise_max": 0.03602549060040529,
+   "gpu_vs_ref": 0.04842729508414496,
+   "tpu_vs_ref": 0.0456393010688985,
+   "R_vs_ref": 0.9424292847576522
+  },
+  {
+   "tensor": "model.mtp_layers.0.mlp.gate.weight",
+   "tpu_vs_gpu_min": 0.05063427592322886,
+   "gpu_noise_max": 0.04087449913278862,
+   "gpu_vs_ref": 0.04864722292508152,
+   "tpu_vs_ref": 0.044138399319403054,
+   "R_vs_ref": 0.9073159096332751
+  },
+  {
+   "tensor": "model.mtp_layers.0.mlp.shared_experts.down_proj.weight",
+   "tpu_vs_gpu_min": 0.006471965204153601,
+   "gpu_noise_max": 0.003114704849846804,
+   "gpu_vs_ref": 0.007014053948254208,
+   "tpu_vs_ref": 0.006161382753197376,
+   "R_vs_ref": 0.8784338983778331
+  },
+  {
+   "tensor": "model.mtp_layers.0.mlp.shared_experts.gate_proj.weight",
+   "tpu_vs_gpu_min": 0.005770119158448037,
+   "gpu_noise_max": 0.002768931263285059,
+   "gpu_vs_ref": 0.006508068420086121,
+   "tpu_vs_ref": 0.005726069615107278,
+   "R_vs_ref": 0.8798416435565847
+  },
+  {
+   "tensor": "model.mtp_layers.0.mlp.shared_experts.up_proj.weight",
+   "tpu_vs_gpu_min": 0.0057665822866054236,
+   "gpu_noise_max": 0.0026804807482009026,
+   "gpu_vs_ref": 0.00640181362507472,
+   "tpu_vs_ref": 0.005599901801279498,
+   "R_vs_ref": 0.8747367744892974
+  },
+  {
+   "tensor": "model.mtp_layers.0.post_attention_layernorm.weight",
+   "tpu_vs_gpu_min": 0.02137915179340853,
+   "gpu_noise_max": 0.015699667168577874,
+   "gpu_vs_ref": 0.02130541859088992,
+   "tpu_vs_ref": 0.019842044056739845,
+   "R_vs_ref": 0.9313144434169528
+  },
+  {
+   "tensor": "model.mtp_layers.0.self_attn.indexer.k_norm.bias",
+   "tpu_vs_gpu_min": 0.0037646061178220848,
+   "gpu_noise_max": 0.0008406485357277929,
+   "gpu_vs_ref": 0.004359156278439508,
+   "tpu_vs_ref": 0.0031875567936808986,
+   "R_vs_ref": 0.7312325115405087
+  },
+  {
+   "tensor": "model.mtp_layers.0.self_attn.indexer.k_norm.weight",
+   "tpu_vs_gpu_min": 0.0017491829556765767,
+   "gpu_noise_max": 0.0006459212231680074,
+   "gpu_vs_ref": 0.001995344184490594,
+   "tpu_vs_ref": 0.0018187765354314817,
+   "R_vs_ref": 0.9115101793306956
+  },
+  {
+   "tensor": "model.mtp_layers.0.self_attn.indexer.weights_proj.weight",
+   "tpu_vs_gpu_min": 0.005309620165225804,
+   "gpu_noise_max": 0.0015065119330486306,
+   "gpu_vs_ref": 0.005954028856127385,
+   "tpu_vs_ref": 0.00492523707941883,
+   "R_vs_ref": 0.8272108178229923
+  },
+  {
+   "tensor": "model.mtp_layers.0.self_attn.indexer.wk.weight",
+   "tpu_vs_gpu_min": 0.00690505286086733,
+   "gpu_noise_max": 0.0025837463730517176,
+   "gpu_vs_ref": 0.007410927215352525,
+   "tpu_vs_ref": 0.006425970752193393,
+   "R_vs_ref": 0.8670940309441051
+  },
+  {
+   "tensor": "model.mtp_layers.0.self_attn.indexer.wq_b.weight",
+   "tpu_vs_gpu_min": 0.007368445650021168,
+   "gpu_noise_max": 0.0028865580436603982,
+   "gpu_vs_ref": 0.007886468568555826,
+   "tpu_vs_ref": 0.007028303469640045,
+   "R_vs_ref": 0.8911851240569987
+  },
+  {
+   "tensor": "model.mtp_layers.0.self_attn.kv_a_layernorm.weight",
+   "tpu_vs_gpu_min": 0.003255745648314286,
+   "gpu_noise_max": 0.000946360198453369,
+   "gpu_vs_ref": 0.004086835366814382,
+   "tpu_vs_ref": 0.003517773310988498,
+   "R_vs_ref": 0.8607572841209264
+  },
+  {
+   "tensor": "model.mtp_layers.0.self_attn.kv_a_proj_with_mqa.weight",
+   "tpu_vs_gpu_min": 0.003168952515830959,
+   "gpu_noise_max": 0.0009245536657591832,
+   "gpu_vs_ref": 0.004196678918816342,
+   "tpu_vs_ref": 0.0034073759151138313,
+   "R_vs_ref": 0.811921993802392
+  },
+  {
+   "tensor": "model.mtp_layers.0.self_attn.kv_b_proj.weight",
+   "tpu_vs_gpu_min": 0.0033062728759174244,
+   "gpu_noise_max": 0.0009511005261105676,
+   "gpu_vs_ref": 0.004251461552559475,
+   "tpu_vs_ref": 0.003438932795026834,
+   "R_vs_ref": 0.8088824872370113
+  },
+  {
+   "tensor": "model.mtp_layers.0.self_attn.learnable_sink_param",
+   "tpu_vs_gpu_min": 0.01586663955671426,
+   "gpu_noise_max": 0.007185687775424103,
+   "gpu_vs_ref": 0.02917021994234156,
+   "tpu_vs_ref": 0.018583395807252972,
+   "R_vs_ref": 0.6370673873555045
+  },
+  {
+   "tensor": "model.mtp_layers.0.self_attn.linear_gate.weight",
+   "tpu_vs_gpu_min": 0.0053391853505089515,
+   "gpu_noise_max": 0.0021261207757200533,
+   "gpu_vs_ref": 0.006447184787397872,
+   "tpu_vs_ref": 0.005518436907746771,
+   "R_vs_ref": 0.8559452055001591
+  },
+  {
+   "tensor": "model.mtp_layers.0.self_attn.o_proj.weight",
+   "tpu_vs_gpu_min": 0.0032627475016479713,
+   "gpu_noise_max": 0.0009168052698881453,
+   "gpu_vs_ref": 0.004206469119349231,
+   "tpu_vs_ref": 0.0033544664955185853,
+   "R_vs_ref": 0.7974542069234407
+  },
+  {
+   "tensor": "model.mtp_layers.0.self_attn.q_a_layernorm.weight",
+   "tpu_vs_gpu_min": 0.007856537895967118,
+   "gpu_noise_max": 0.003975491408064665,
+   "gpu_vs_ref": 0.007878737117829448,
+   "tpu_vs_ref": 0.007514344479353387,
+   "R_vs_ref": 0.9537498671390563
+  },
+  {
+   "tensor": "model.mtp_layers.0.self_attn.q_a_proj.weight",
+   "tpu_vs_gpu_min": 0.007559082292878687,
+   "gpu_noise_max": 0.003793077086345695,
+   "gpu_vs_ref": 0.007730031240130196,
+   "tpu_vs_ref": 0.007235294359583024,
+   "R_vs_ref": 0.9359980748876198
+  },
+  {
+   "tensor": "model.mtp_layers.0.self_attn.q_b_proj.weight",
+   "tpu_vs_gpu_min": 0.007450321223444056,
+   "gpu_noise_max": 0.0036994901846001365,
+   "gpu_vs_ref": 0.007483985466732933,
+   "tpu_vs_ref": 0.007064146687943543,
+   "R_vs_ref": 0.9439017111062528
+  },
+  {
+   "tensor": "model.norm.weight",
+   "tpu_vs_gpu_min": 0.0037145052591420857,
+   "gpu_noise_max": 0.0012715111343898134,
+   "gpu_vs_ref": 0.004125945345572212,
+   "tpu_vs_ref": 0.0036251496168779053,
+   "R_vs_ref": 0.8786227914454224
+  }
+ ],
+ "rule": "超出 GPU 噪声两倍的张量对参照定责：R = rel_L2(TPU, 参照) ÷ rel_L2(GPU, 参照) ≤ 1.2 即 TPU 不比 GPU 离精确算术远",
+ "correction_2026_11_07": "更正：上面 \"what\" 里写的 GPU 第 1 步参照 g1s-a/b/c 是笔误；本文件所有 GPU 列（tpu_vs_gpu_min、gpu_noise_max、gpu_vs_ref）用的是 g2s-a/b/c（hy4_attn_scores_fp32 打开后的第 1 步参照）。数字未改",
+ "correction_rule_2026_11_07": "rule 字段的「超出 GPU 噪声两倍的张量才定责」已过时：现行规则（PROTOCOL 第 5 节）是超出 N 的张量都要对参照定责（R ≤ 1.2）；N = 0 的张量同样要求 R ≤ 1.2。下游统计以现行规则为准"
+}

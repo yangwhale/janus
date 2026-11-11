@@ -1,0 +1,15 @@
+# 对齐实践 02 · 第 1 步「比全了没有」。照 01 的 phase2-t-a-coverage.yaml 复制；被测换成 v7x 观测构建 obs-v7x-t1 的第 1 步全量抓数
+# （01 用加钩子的 t-a；v7x 上没有单独跑 t-a，观测构建抓的是同一套名字）。剔除规则同 01。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-v7x-coverage
+description: 第 1 步张量清单覆盖率（t-a 对 g1k-a）
+runs:
+  test: obs-v7x-t1
+  golden: [g1k-a]
+  root: /data/janus-runs
+checks:
+  - id: L3.step1.coverage
+    type: coverage
+    level: L3
+    select: {kind: tensor, step: 1, name: "*", exclude: ["*.experts.out", "*.grad", "input.*"]}

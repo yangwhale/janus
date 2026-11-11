@@ -1,0 +1,18 @@
+# <实践名> · 运行清单。每次运行一条；数据位置写成占位（gs://<POC 桶>/…），不写桶名。
+schema: 1
+alignment: <NN-做什么，如 01-v5p-acceptance>
+golden:                       # 源平台的运行（golden 与噪声参照）
+  - name: <运行名>
+    steps: <步数>
+    setting: <默认 / 确定性 / …>
+    dump: <--dump-steps … --full …>
+    code: {framework: <repo@commit>, janus: <commit>, image: <digest>}
+    location: gs://<POC 桶>/<前缀>/<运行名>/
+test:                         # 目标平台的运行（被测、扰动参照、故障演练）
+  - name: <运行名>
+    steps: <步数>
+    role: <被测 / 扰动参照 / 故障演练 / 不加钩子的对照>
+    setting: <和 golden 的差别>
+    code: {framework: <repo@commit>, janus: <commit>, image: <digest>}
+    location: gs://<POC 桶>/<前缀>/<运行名>/
+    results: <results/ 下的结果文件名，没跑完写 null>

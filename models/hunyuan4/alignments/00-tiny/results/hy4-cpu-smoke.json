@@ -1,0 +1,195 @@
+{
+ "checks": [
+  {
+   "id": "make_tiny_hf",
+   "ok": true,
+   "detail": "写了 135 个张量到 /tmp/hy4-cpu-smoke3/hf"
+  },
+  {
+   "id": "make_fake_golden",
+   "ok": true,
+   "detail": "写了合成 golden /tmp/hy4-cpu-smoke3/golden（8 rank × 2 micro × 3 步，seq 128）"
+  },
+  {
+   "id": "names_shapes",
+   "ok": true,
+   "detail": "OK"
+  },
+  {
+   "id": "A.convert",
+   "ok": true,
+   "detail": "已存 /tmp/hy4-cpu-smoke3/ckpt-A/0/items（0 s）"
+  },
+  {
+   "id": "A.roundtrip_bitwise",
+   "ok": true,
+   "detail": "OK"
+  },
+  {
+   "id": "A.rope_deinterleave",
+   "ok": true,
+   "detail": "OK"
+  },
+  {
+   "id": "A.negative_control_unpatched_rope_fails",
+   "ok": true,
+   "detail": "FAIL"
+  },
+  {
+   "id": "A.train",
+   "ok": true,
+   "detail": "[janus] step 3 lm_loss 6.974116325378418 grad_norm 0.7454361319541931 param_norm 36.54294967651367 (0.11 s)"
+  },
+  {
+   "id": "A.params_sha_init_equals_hf",
+   "ok": true,
+   "detail": "31 个张量（GPU 名字、FP32、rank 0 的分片），不同 []"
+  },
+  {
+   "id": "A.indexer_frozen_no_decay",
+   "ok": true,
+   "detail": "indexer 张量 5 个，变了 []"
+  },
+  {
+   "id": "A.data_fingerprints",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "A.lr_constant_finite_loss",
+   "ok": true,
+   "detail": "lm_loss [6.972, 6.9849, 6.9741]"
+  },
+  {
+   "id": "A.indexer_grad_zero",
+   "ok": true,
+   "detail": "indexer 主权重逐位不变 5/5；第 1 步动量 max|m|,|v| = 0.0；第 1 步 grad_norm 冻 / 不冻 0.745445191860199 / 0.745445191860199"
+  },
+  {
+   "id": "B.convert",
+   "ok": true,
+   "detail": "已存 /tmp/hy4-cpu-smoke3/ckpt-B/0/items（0 s）"
+  },
+  {
+   "id": "B.roundtrip_bitwise",
+   "ok": true,
+   "detail": "OK"
+  },
+  {
+   "id": "B.rope_deinterleave",
+   "ok": true,
+   "detail": "OK"
+  },
+  {
+   "id": "B.train",
+   "ok": true,
+   "detail": "[janus] step 3 lm_loss 6.980439186096191 grad_norm 0.8833566308021545 param_norm 47.16786193847656 (0.16 s)"
+  },
+  {
+   "id": "B.params_sha_init_equals_hf",
+   "ok": true,
+   "detail": "60 个张量（GPU 名字、FP32、rank 0 的分片），不同 []"
+  },
+  {
+   "id": "B.indexer_frozen_no_decay",
+   "ok": true,
+   "detail": "indexer 张量 10 个，变了 []"
+  },
+  {
+   "id": "B.data_fingerprints",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "B.lr_constant_finite_loss",
+   "ok": true,
+   "detail": "lm_loss [6.9794, 6.9826, 6.9804]"
+  },
+  {
+   "id": "C.convert",
+   "ok": true,
+   "detail": "已存 /tmp/hy4-cpu-smoke3/ckpt-C/0/items（0 s）"
+  },
+  {
+   "id": "C.roundtrip_bitwise",
+   "ok": true,
+   "detail": "OK"
+  },
+  {
+   "id": "C.rope_deinterleave",
+   "ok": true,
+   "detail": "OK"
+  },
+  {
+   "id": "C.train",
+   "ok": true,
+   "detail": "[janus] step 3 lm_loss 6.981321334838867 grad_norm 1.0020055770874023 param_norm 55.37343215942383 (0.20 s)"
+  },
+  {
+   "id": "C.params_sha_init_equals_hf",
+   "ok": true,
+   "detail": "84 个张量（GPU 名字、FP32、rank 0 的分片），不同 []"
+  },
+  {
+   "id": "C.indexer_frozen_no_decay",
+   "ok": true,
+   "detail": "indexer 张量 10 个，变了 []"
+  },
+  {
+   "id": "C.data_fingerprints",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "C.lr_constant_finite_loss",
+   "ok": true,
+   "detail": "lm_loss [6.9859, 6.9812, 6.9813]"
+  },
+  {
+   "id": "D.convert",
+   "ok": true,
+   "detail": "已存 /tmp/hy4-cpu-smoke3/ckpt-D/0/items（0 s）"
+  },
+  {
+   "id": "D.roundtrip_bitwise",
+   "ok": true,
+   "detail": "OK"
+  },
+  {
+   "id": "D.rope_deinterleave",
+   "ok": true,
+   "detail": "OK"
+  },
+  {
+   "id": "D.train",
+   "ok": true,
+   "detail": "[janus] step 3 lm_loss 6.979974269866943 grad_norm 0.8873332142829895 param_norm 62.71490478515625 (0.21 s)"
+  },
+  {
+   "id": "D.params_sha_init_equals_hf",
+   "ok": true,
+   "detail": "87 个张量（GPU 名字、FP32、rank 0 的分片），不同 []"
+  },
+  {
+   "id": "D.indexer_frozen_no_decay",
+   "ok": true,
+   "detail": "indexer 张量 15 个，变了 []"
+  },
+  {
+   "id": "D.data_fingerprints",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "D.lr_constant_finite_loss",
+   "ok": true,
+   "detail": "lm_loss [6.9794, 6.9821, 6.98]"
+  },
+  {
+   "id": "D.indexer_grad_zero",
+   "ok": true,
+   "detail": "indexer 主权重逐位不变 15/15；第 1 步动量 max|m|,|v| = 0.0；第 1 步 grad_norm 冻 / 不冻 0.8909807205200195 / 0.8909807205200195"
+  }
+ ],
+ "ok": true
+}

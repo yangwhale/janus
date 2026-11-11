@@ -1,0 +1,241 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.0.1",
+  "commit": null
+ },
+ "catalog": {
+  "path": "/tmp/jc/catalogs/hunyuan3-4l/phase1-remat.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "c18bba85fdc7dc7dce59a644725a1ef7fddd25209613d0fefcc39728b476c210",
+  "raw_sha256": "b6ff333fe378201f8ea9e16f6fb51cd5f204d8b81207211476fc904191ad8a2f"
+ },
+ "runs": {
+  "r-remat": {
+   "path": "/data/janus-runs2/r-remat",
+   "meta_sha256": "f8b8c293c40d9d8b37db625b8d71d5205e1a60dc9777db952d3b8fb55208ab37"
+  },
+  "d-a": {
+   "path": "/data/janus-runs2/d-a",
+   "meta_sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+  }
+ },
+ "started_at": "2026-11-04T06:20:14+00:00",
+ "finished_at": "2026-11-04T06:20:27+00:00",
+ "summary": {
+  "pass": 0,
+  "fail": 4,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": true
+ },
+ "checks": [
+  {
+   "id": "DET.remat.vs_first",
+   "type": "bitwise_equal",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 51,
+    "differ": 9
+   },
+   "worst": [
+    {
+     "name": "layers.1.mlp.experts.out.recompute",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.1.mlp.out.recompute",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.1.out.recompute",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.2.mlp.experts.out.recompute",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.2.mlp.out.recompute",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/r-remat",
+     "sha256": "f8b8c293c40d9d8b37db625b8d71d5205e1a60dc9777db952d3b8fb55208ab37"
+    },
+    {
+     "path": "/data/janus-runs2/r-remat",
+     "sha256": "f8b8c293c40d9d8b37db625b8d71d5205e1a60dc9777db952d3b8fb55208ab37"
+    }
+   ],
+   "message": "9 / 51 个张量不同",
+   "details": "details/DET.remat.vs_first.jsonl"
+  },
+  {
+   "id": "DET.remat.recompute_vs_baseline",
+   "type": "bitwise_equal",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 51,
+    "differ": 26
+   },
+   "worst": [
+    {
+     "name": "layers.2.attn.core.out.recompute",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.2.attn.k_norm.out.recompute",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.2.attn.out.recompute",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.2.attn.proj.out.recompute",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.2.attn.q_norm.out.recompute",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/r-remat",
+     "sha256": "f8b8c293c40d9d8b37db625b8d71d5205e1a60dc9777db952d3b8fb55208ab37"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "26 / 51 个张量不同",
+   "details": "details/DET.remat.recompute_vs_baseline.jsonl"
+  },
+  {
+   "id": "DET.remat.fwd_vs_baseline",
+   "type": "bitwise_equal",
+   "level": "L2",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 46,
+    "differ": 26
+   },
+   "worst": [
+    {
+     "name": "final_norm.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.1.mlp.experts.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.1.mlp.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.1.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "layers.2.attn.core.out",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/r-remat",
+     "sha256": "f8b8c293c40d9d8b37db625b8d71d5205e1a60dc9777db952d3b8fb55208ab37"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "26 / 46 个张量不同",
+   "details": "details/DET.remat.fwd_vs_baseline.jsonl"
+  },
+  {
+   "id": "DET.remat.loss",
+   "type": "loss_series",
+   "level": "L4",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "d0": 7.485828702447209e-07,
+    "signed_mean": -6.302624923278834e-06,
+    "mare": 6.302624923278834e-06,
+    "max_step": 8.106579543154611e-06,
+    "max_step_at": 3,
+    "window": "1:4",
+    "denominator": "golden",
+    "nonfinite_steps": [],
+    "signed_mean_se": 1.8039546198757768e-06
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/r-remat",
+     "sha256": "f8b8c293c40d9d8b37db625b8d71d5205e1a60dc9777db952d3b8fb55208ab37"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": ""
+  }
+ ]
+}

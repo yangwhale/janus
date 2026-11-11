@@ -1,0 +1,22 @@
+# 04 · TPU 自比（hy4-mini）· 运行清单。数据位置写成占位，不写桶名。
+# 角色：golden 是一次确认过的 TPU 运行；被测是只改一样东西的 TPU 运行。GPU 只当尺子（自己重跑的波动上限）。
+schema: 1
+alignment: 04-tpu-self
+golden:   # TPU golden
+  - {name: ts-g-a, stage: T1, steps: 1000, role: "TPU 自比的 golden：现行对齐 yml、MaxText b87a55aa、v5p 2x2x2、FSDP 8、微批 1 × 累积 2，回放 GPU g3-a；第 1 步全量抓数、训练步优化后 HLO", results: [ts-g-a.golden, ts-g-a-vs-gpu], location: "gs://<POC 桶>/janus/hunyuan4/tpu/ts-g-a/"}
+reference:   # 尺子与对照（不是被测）
+  - {name: g2-a..g2-h, stage: T1, steps: 300, role: "曲线的尺子：GPU 同设置 8 份两两 28 对（catalogs/vs-golden.yaml）", location: "gs://<POC 桶>/janus/hunyuan4/gpu/g2-*/"}
+  - {name: g3-a..g3-h, stage: T1, steps: 1000, role: "golden 对 GPU 的 1000 步比较（g3-a 是基线，28 对是噪声；catalogs/golden-vs-gpu.yaml）", results: [ts-g-a-vs-gpu], location: "gs://<POC 桶>/janus/hunyuan4/gpu/g3-*/"}
+  - {name: g2s-a..g2s-c, stage: T1, steps: 1, role: "第 1 步梯度的尺子：GPU 三份两两"}
+  - {name: mini-fp64, role: "第 1 步梯度的 CPU FP64 参照（frameworks/megatron/step1_ref.py，同 01-mini）"}
+test:     # TPU：对 golden 比
+  - {name: ts-g-b, stage: T1, steps: 1000, role: "负对照：golden 在另一个切片上重跑，同一命令", golden: ts-g-a, results: [ts-g-b-vs-golden], location: "gs://<POC 桶>/janus/hunyuan4/tpu/ts-g-b/"}
+  - {name: t1zg-b / mz-g1, stage: T1, steps: 1000, role: "旁证：同一 yml 的值、MaxText fd30fbfb（01-mini 的运行；mz-g1 多记逐头最大 logit）", golden: ts-g-a, results: [t1zg-b-vs-golden, mz-g1-vs-golden]}
+  - {name: mz-opt2, stage: T1, steps: 1, role: "旁证：01-mini 第 1 步全量抓数（MaxText fd30fbfb），第 1 步训练梯度对 FP64 的正式结果来自它", golden: ts-g-a, results: [mz-opt2-vs-golden]}
+  - {name: ts-pc-logits, stage: T1, steps: 300, role: "正对照：输出头矩阵乘降回默认精度（logits_matmul_precision=default）", golden: ts-g-a, results: [ts-pc-logits-vs-golden], location: "gs://<POC 桶>/janus/hunyuan4/tpu/ts-pc-logits/"}
+  - {name: ts-pc-zm, stage: T1, steps: 300, role: "正对照：路由偏置改零均值更新（routed_bias_zero_mean_update=true），第 2 步起才改数值", golden: ts-g-a, results: [ts-pc-zm-vs-golden], location: "gs://<POC 桶>/janus/hunyuan4/tpu/ts-pc-zm/"}
+  - {name: ts-c300, stage: T1, steps: 300, role: "阶段 0 校准：golden 同一命令跑 300 步（学习率恒定），核 300 步变种能不能直接对 golden 前 300 步比", golden: ts-g-a, results: [ts-c300-vs-golden], location: "gs://<POC 桶>/janus/hunyuan4/tpu/ts-c300/"}
+  - {name: ts-dp8, stage: T1, steps: 300, role: "阶段 1 并行方式：纯数据并行 8（ici_data_parallelism=8、ici_fsdp_parallelism=1），其余同 golden", golden: ts-g-a, results: [ts-dp8-vs-golden], location: "gs://<POC 桶>/janus/hunyuan4/tpu/ts-dp8/"}
+  - {name: ts-f16, stage: T1, steps: 300, role: "阶段 1 并行方式：v5p 2x2x4（16 个设备），FSDP 16、每设备微批 1、累积 1，全局批仍 16 × 4096", golden: ts-g-a, results: [ts-f16-vs-golden], location: "gs://<POC 桶>/janus/hunyuan4/tpu/ts-f16/"}
+  - {name: "ts-*（其余各臂）", stage: T1, steps: "300 或 1000", role: "实验矩阵的各臂：运行名、对照、改法、场景在 arms.yaml，结果在 results/<运行名>-vs-<对照>.json；第 1 步全量抓数与训练步 HLO 在各运行目录", location: "gs://<POC 桶>/janus/hunyuan4/tpu/<运行名>/"}
+  - {name: "g2-a..g2-h / g3-a..g3-h（留一法）", stage: T1, role: "GPU 重跑的留一法 r 分布（analysis/gpu_loo_r.py），给「和 GPU 重跑分不开」的解读用", results: [gpu-rerun-loo-r-300, gpu-rerun-loo-r-1000]}

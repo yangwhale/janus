@@ -1,0 +1,89 @@
+# 第二阶段 · L0 TPU 侧地基：载入后的参数、FP32 主权重、expert_bias、dtype 清单、模型结构
+#
+# 全部来自「训练步之间从状态读」（零扰动）：train_hy3.py 在抓数步训练之前读状态（param.* / main_param.* / buffer.*），
+# 训练前写参数清单 params_sha/rank*.init.json，启动时写 modules.txt。这些都不经过加钩子的程序：t-a 的钩子自检没过
+# （TPU 上多出的输出改变 XLA 融合，frameworks/maxtext/README.md「上 TPU 才能核对的九项：结果与现状」第 2 条），但它只影响抓到的激活与梯度，
+# 状态类张量来自生产图（meta.hooks.extras_are），而且第 1 步训练之前的状态就是刚载入的检查点，还没有任何计算。
+#
+# 被测 t-a（第 1 步全量抓数），golden g1k-a（第 1 步全量抓数，同一份 HF 权重）。
+# 生产配置 t-rmap-1000 只有参数清单与 modules.txt，没有第 1 步张量：L0.weights.init.prod 用 select.test_run 单独比它的初始清单。
+# 训练状态的 FP32 dtype 清单（state_sha）只有日常回归的运行写：用 T1 LKG reg-t1-lkg2-a（同一份检查点、同一个 TPU 栈，select.run 指定）。
+# 张量要整个运行目录（README「运行根目录」）：t-a 与 g1k-a 的 step_1、params_sha、modules.txt。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-l0-state
+description: L0 TPU 侧载入后状态：参数 / FP32 主权重 / expert_bias 逐位、dtype 清单、模型结构
+runs:
+  test: t-a
+  golden: [g1k-a]
+  root: /data/janus-runs
+checks:
+  # 初始参数清单（全量 1781 个张量按 GPU EP8 的持有关系分 8 个 rank，BF16 参数 + FP32 expert_bias）对 golden 逐项 sha256
+  - id: L0.weights.init
+    type: checkpoint_equal
+    level: L0
+    select: {kind: checkpoint, which: init, manifest: true}
+  - id: L0.weights.init.prod
+    type: checkpoint_equal
+    level: L0
+    select: {kind: checkpoint, which: init, manifest: true, test_run: t-rmap-1000}
+  # 第 1 步训练之前从状态读出的张量（每层只留专家 0、1，= GPU rank 0 的 weight0 / weight1；非专家参数全量）
+  - id: L0.weights.loaded
+    type: bitwise_equal
+    level: L0
+    select: {kind: tensor, step: 1, name: "param.*"}
+  # FP32 主权重单独比：BF16 里看不见主权重上不到半格的扰动（00 README 第 11 条）
+  - id: L0.main_params.loaded
+    type: bitwise_equal
+    level: L0
+    select: {kind: tensor, step: 1, name: "main_param.*"}
+  - id: L0.buffers.loaded
+    type: bitwise_equal
+    level: L0
+    select: {kind: tensor, step: 1, name: "buffer.*"}
+  # 参数清单的 dtype：规则同 GPU 自比（phase1-full 的 L0.dtype.manifest）——expert_bias FP32，其余参数 BF16（清单里的参数按 BF16 记，与 GPU 的 BF16 参数同义）
+  - id: L0.dtype.manifest
+    type: dtype_manifest
+    level: L0
+    select: {kind: checkpoint, which: [init, final]}
+    params:
+      rules:
+        - {pattern: "buffer.*expert_bias", dtype: float32}
+        - {pattern: "*", exclude: "buffer.*", dtype: bfloat16}
+  # 训练状态本身的 dtype（不转 BF16）：主权重、两个动量、路由偏置都必须 FP32；BF16 存的主权重或偏置会把小更新舍掉
+  - id: L0.dtype.state
+    type: dtype_manifest
+    level: L0
+    select: {kind: checkpoint, which: [init, final], source: state, run: reg-t1-lkg2-a}
+    params:
+      rules:
+        - {pattern: "MoEBiasVar/*/gate/bias", dtype: float32}
+        - {pattern: "params/*", dtype: float32}
+        - {pattern: "OptVariable/optimizer/opt_state/0/mu/*", dtype: float32}
+        - {pattern: "OptVariable/optimizer/opt_state/0/nu/*", dtype: float32}
+        - {pattern: "OptArray/optimizer/opt_state/*/count", dtype: int32}
+        - {pattern: "OptState/optimizer/step", dtype: uint32}
+  # 实例化出来的结构：modules.txt 里的状态叶子与形状（MaxText 扫描层，层轴在第 1 维；路由偏置层轴在第 0 维）。
+  # 期望值来自 HF 配置与 name_map（frameworks/maxtext/README.md「权重：映射与核对」）：1 层稠密 + 3 层 MoE，192 个路由专家、
+  # 专家中间维 1536，共享专家 1 个，64 个 q 头、8 个 kv 头、每头 128，稠密 MLP 13312，词表 120832，无 MTP
+  - id: L0.model.structure
+    type: artifact_check
+    level: L0
+    select: {kind: artifact, file: modules.txt}
+    params:
+      rules:
+        - {name: 路由（3 层 × 192 专家）, regex: "params/model/decoder/moe_layers/Hunyuan3MoeBlock_0/MoeBlock_0/gate/kernel\\t\\(4096, 3, 192\\)\\tfloat32", min: 1, max: 1}
+        - {name: 路由偏置（3 层 × 192，FP32）, regex: "MoEBiasVar/model/decoder/moe_layers/Hunyuan3MoeBlock_0/MoeBlock_0/gate/bias\\t\\(3, 192\\)\\tfloat32", min: 1, max: 1}
+        - {name: 分组专家 gate, regex: "params/model/decoder/moe_layers/Hunyuan3MoeBlock_0/MoeBlock_0/wi_0\\t\\(192, 3, 4096, 1536\\)", min: 1, max: 1}
+        - {name: 分组专家 up, regex: "params/model/decoder/moe_layers/Hunyuan3MoeBlock_0/MoeBlock_0/wi_1\\t\\(192, 3, 4096, 1536\\)", min: 1, max: 1}
+        - {name: 分组专家 down, regex: "params/model/decoder/moe_layers/Hunyuan3MoeBlock_0/MoeBlock_0/wo\\t\\(192, 3, 1536, 4096\\)", min: 1, max: 1}
+        - {name: 共享专家（3 层，中间维 1536）, regex: "params/model/decoder/moe_layers/Hunyuan3MoeBlock_0/shared_experts/wi_0/kernel\\t\\(4096, 3, 1536\\)", min: 1, max: 1}
+        - {name: 稠密层 MLP（1 层，13312）, regex: "params/model/decoder/dense_layers/mlp/wi_0/kernel\\t\\(4096, 1, 13312\\)", min: 1, max: 1}
+        - {name: q 投影（64 头 × 128，1 + 3 层）, regex: "params/model/decoder/(dense|moe)_layers/self_attention/query/kernel\\t\\(4096, [13], 64, 128\\)", min: 2, max: 2}
+        - {name: k 投影（8 头 × 128）, regex: "params/model/decoder/(dense|moe)_layers/self_attention/key/kernel\\t\\(4096, [13], 8, 128\\)", min: 2, max: 2}
+        - {name: q 归一化（1 + 3 层）, regex: "params/model/decoder/(dense|moe)_layers/self_attention/query_norm/scale\\t\\(128, [13]\\)", min: 2, max: 2}
+        - {name: k 归一化（1 + 3 层）, regex: "params/model/decoder/(dense|moe)_layers/self_attention/key_norm/scale\\t\\(128, [13]\\)", min: 2, max: 2}
+        - {name: 词表 120832, regex: "params/model/token_embedder/embedding\\t\\(120832, 4096\\)", min: 1, max: 1}
+        - {name: 输出层不和词表共享, regex: "params/model/decoder/logits_dense/kernel\\t\\(4096, 120832\\)", min: 1, max: 1}
+        - {name: 主权重 FP32（全部 29 个参数叶子）, regex: "(?m)^param\\tparams/[^\\t]+\\t[^\\t]+\\tfloat32$", min: 29, max: 29}
+        - {name: 没有 MTP, regex: "(?i)mtp", min: 0, max: 0}

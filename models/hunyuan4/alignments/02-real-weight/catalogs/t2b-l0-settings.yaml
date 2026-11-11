@@ -1,0 +1,12 @@
+# 混元 4 · T2 阶段 B 设置核对：两边每一步记下的学习率都等于登记的常数 1e-5（PROTOCOL.md 第 1.2 节），归 L0，不进 L4。
+# 被测 tb2-a（TPU，frameworks/maxtext/hy4-t2-b.yml），参照 gb2-a（GPU）。事先登记，写于任何 T2 运行之前。
+schema_version: 1
+model: hunyuan4-trunc
+stage: t2b-l0-settings
+description: T2 阶段 B 设置核对（逐步学习率等于登记的常数 1e-5，两边都要）
+runs:
+  test: tb2-a
+  golden: [gb2-a]
+  root: /data/janus-runs
+checks:
+  - {id: L0.settings.lr, type: scalar_series, level: L0, select: {kind: metrics, field: lr, window: "1:301"}, params: {equals: 1.0e-5, rtol: 0.0, abs_ulp: 0}}

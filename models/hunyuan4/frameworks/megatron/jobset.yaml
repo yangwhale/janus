@@ -1,0 +1,65 @@
+# 混元 4 Megatron 版多机训练的 JobSet 模板（GKE，B200 × 8 每台，GPU 与 RDMA 网卡都走 DRA）。
+# 用法：把 <…> 换掉，`kubectl create configmap <名字>-scripts --from-file=pod_run.sh` 后 `kubectl apply -f`。
+# 每台机器一个 Pod，跑同一个 pod_run.sh；NODE_RANK 取 Indexed Job 的 JOB_COMPLETION_INDEX，
+# MASTER_ADDR 是 0 号 Pod 的稳定域名 <名字>-w-0-0.<名字>（enableDNSHostnames）。
+# 两份 ResourceClaimTemplate（每台 8 张 GPU、8 张 RDMA 网卡）先建好：
+#   gpu：deviceClassName gpu.nvidia.com，count 8；rdma：deviceClassName mrdma.google.com，count 8。
+apiVersion: jobset.x-k8s.io/v1alpha2
+kind: JobSet
+metadata:
+  name: <名字>
+  # 集群按队列准入时，队列标签等站点设置照站点的规矩加（不写在这里）
+spec:
+  network: {enableDNSHostnames: true, publishNotReadyAddresses: true}
+  failurePolicy: {maxRestarts: 0}
+  replicatedJobs:
+  - name: w
+    replicas: 1
+    template:
+      spec:
+        backoffLimit: 0
+        completionMode: Indexed
+        completions: <机器数>
+        parallelism: <机器数>
+        template:
+          spec:
+            serviceAccountName: <能读写桶的 KSA>
+            restartPolicy: Never
+            activeDeadlineSeconds: 3600
+            nodeSelector: {cloud.google.com/gke-nodepool: <B200 节点池>}
+            tolerations: [{key: nvidia.com/gpu, operator: Exists, effect: NoSchedule}]
+            affinity:   # 一台机器一个 Pod
+              podAntiAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector: {matchLabels: {jobset.sigs.k8s.io/jobset-name: <名字>}}
+                  topologyKey: kubernetes.io/hostname
+            resourceClaims:
+            - {name: gpu, resourceClaimTemplateName: <GPU 的 ResourceClaimTemplate>}
+            - {name: rdma, resourceClaimTemplateName: <RDMA 网卡的 ResourceClaimTemplate>}
+            containers:
+            - name: main
+              image: nvcr.io/nvidia/nemo:26.10@sha256:fc75bf516de6845fd85fe627c7c18e69e7568428fe56438e31ff3b1917044b6c
+              command: ["bash", "/scripts/pod_run.sh"]
+              securityContext: {privileged: true}
+              env:
+              - {name: NNODES, value: "<机器数>"}
+              - {name: MASTER_ADDR, value: "<名字>-w-0-0.<名字>"}
+              - {name: BKT, value: "<桶>"}
+              - {name: PFX, value: "<桶内前缀>"}
+              - {name: JOB, value: "<名字>"}
+              - {name: CODE, value: "<桶内代码包>"}
+              - {name: HFDIR, value: "<HF 目录名>"}
+              - {name: HF_FILES, value: "<要拉的 HF 文件>"}
+              - {name: RUNS, value: "<运行名:层数:步数:附加参数>"}
+              resources:
+                claims: [{name: gpu}, {name: rdma}]
+                requests: {cpu: "96", memory: 600Gi, ephemeral-storage: 600Gi}
+                limits: {memory: 1500Gi, ephemeral-storage: 1200Gi}
+              volumeMounts:
+              - {name: data, mountPath: /data}
+              - {name: shm, mountPath: /dev/shm}
+              - {name: scripts, mountPath: /scripts}
+            volumes:
+            - {name: data, emptyDir: {}}
+            - {name: shm, emptyDir: {medium: Memory, sizeLimit: 256Gi}}
+            - {name: scripts, configMap: {name: <名字>-scripts}}

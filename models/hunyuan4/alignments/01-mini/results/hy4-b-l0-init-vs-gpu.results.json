@@ -1,0 +1,61 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "7b2c4d3117eb44c0adde04f7db8e01922467264c"
+ },
+ "catalog": {
+  "path": "models/hunyuan4/alignments/01-v5p-acceptance/catalogs/l0-init-vs-gpu-b.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "670da22f346ca69c9bbf97e69b9669a328b4af0d5c76d3db7bbdfc40c996af9d",
+  "raw_sha256": "9c00d1fa0a97a0ad7140ffbdec25f87964a035f08e48c7a2a678ba066fe35a5c"
+ },
+ "runs": {
+  "hy4-b-maxtext-gpunames": {
+   "path": "/tmp/janus-runs/hy4-b-maxtext-gpunames",
+   "meta_sha256": "47935baa7851ad6cd3805d7a831229a1c0353d3ba1fdc03bf190f08260fd08fa"
+  },
+  "gb-a": {
+   "path": "/tmp/janus-runs/gb-a",
+   "meta_sha256": "227f3478496a64e65c9027972893523eb633a63c2f4660ddab25dd2bbbbd8060"
+  }
+ },
+ "started_at": "2026-11-06T19:16:59+00:00",
+ "finished_at": "2026-11-06T19:16:59+00:00",
+ "summary": {
+  "pass": 1,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L0.init.tpu_vs_gpu.gb-a",
+   "type": "checkpoint_equal",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "params": 472,
+    "differ": 0,
+    "only_one_side": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/janus-runs/hy4-b-maxtext-gpunames",
+     "sha256": "47935baa7851ad6cd3805d7a831229a1c0353d3ba1fdc03bf190f08260fd08fa"
+    },
+    {
+     "path": "/tmp/janus-runs/gb-a",
+     "sha256": "227f3478496a64e65c9027972893523eb633a63c2f4660ddab25dd2bbbbd8060"
+    }
+   ],
+   "message": "全部参数逐位相同"
+  }
+ ]
+}

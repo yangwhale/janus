@@ -1,0 +1,79 @@
+# 第二阶段 · 观测构建过标定三关的第三关与「观测不改数值」
+#
+# 观测构建（train_hy3.py --observe）：每一步都用同一个加钩子的程序往下训练，整条轨迹只有这一个编译好的程序，抓到的值是它自己的中间值。
+# 它和生产构建（不加钩子）不逐位：多出的输出改变 XLA 融合（frameworks/maxtext/README.md「上 TPU 才能核对的九项：结果与现状」第 2 条）。
+# 把它当一个执行级扰动臂，照 docs/reference/regression.md 第五节过三关；过了，它抓到的第 1 步张量才当 L2 / L3 的正式证据。
+#
+# 被测 obs-t1：同提交（maxtext 237a3270）、同一份 yml（7704115，日常回归 T1 那一版）、同档位覆盖（每设备 2 行、不累积），只多 --observe --full。
+# 基线 reg-t1-lkg2-a：日常回归 T1 的 LKG（同提交、同 yml、同覆盖，不加钩子），1000 步。
+# 噪声参照：GPU 默认设置 10 份 1000 步运行两两 45 对（g1k-a/b/c 与只差日志选项的 7 份；regression/README.md 第三节第 2 条），
+#   第三关的上限就是这 45 对的最大值（calibrated 判定的 N）。
+#
+# - OBS.gate3.loss：观测构建对基线，窗口 1:1001 的 loss 三个量，calibrated（≤ N 过三关这一条）
+# - OBS.gate3.grad_norm / param_norm：同样三个量，只报（第三关只规定 loss 与第 1 步梯度），帮助读
+# - DET.hooks.noop：观测构建对基线逐步逐位（「开 / 不开抓数」是否改数值；GPU 侧 phase1-hooks 的同名检查）
+# 第三关的「第 1 步参数梯度」一条在 phase2-obs-grad.yaml；第一关（自己重跑逐位）、第二关（只改了执行）见 results/phase2-obs-calibrate.json。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-obs-gate
+description: 观测构建（每步同一个加钩子程序）对生产构建 T1 LKG：第三关 loss 与观测不改数值
+runs:
+  test: obs-t1
+  lkg: reg-t1-lkg2-a
+  golden: [reg-t1-lkg2-a]
+  noise:
+    - [g1k-a, g1k-b]
+    - [g1k-a, g1k-c]
+    - [g1k-a, g-ctl]
+    - [g1k-a, g-ctl-b]
+    - [g1k-a, g-ctl-c]
+    - [g1k-a, g-gn-a]
+    - [g1k-a, g-gn-b]
+    - [g1k-a, g-rs-a]
+    - [g1k-a, g-rs-b]
+    - [g1k-b, g1k-c]
+    - [g1k-b, g-ctl]
+    - [g1k-b, g-ctl-b]
+    - [g1k-b, g-ctl-c]
+    - [g1k-b, g-gn-a]
+    - [g1k-b, g-gn-b]
+    - [g1k-b, g-rs-a]
+    - [g1k-b, g-rs-b]
+    - [g1k-c, g-ctl]
+    - [g1k-c, g-ctl-b]
+    - [g1k-c, g-ctl-c]
+    - [g1k-c, g-gn-a]
+    - [g1k-c, g-gn-b]
+    - [g1k-c, g-rs-a]
+    - [g1k-c, g-rs-b]
+    - [g-ctl, g-ctl-b]
+    - [g-ctl, g-ctl-c]
+    - [g-ctl, g-gn-a]
+    - [g-ctl, g-gn-b]
+    - [g-ctl, g-rs-a]
+    - [g-ctl, g-rs-b]
+    - [g-ctl-b, g-ctl-c]
+    - [g-ctl-b, g-gn-a]
+    - [g-ctl-b, g-gn-b]
+    - [g-ctl-b, g-rs-a]
+    - [g-ctl-b, g-rs-b]
+    - [g-ctl-c, g-gn-a]
+    - [g-ctl-c, g-gn-b]
+    - [g-ctl-c, g-rs-a]
+    - [g-ctl-c, g-rs-b]
+    - [g-gn-a, g-gn-b]
+    - [g-gn-a, g-rs-a]
+    - [g-gn-a, g-rs-b]
+    - [g-gn-b, g-rs-a]
+    - [g-gn-b, g-rs-b]
+    - [g-rs-a, g-rs-b]
+  root: /data/janus-runs
+checks:
+  - {id: OBS.gate3.loss, type: loss_series, level: L4, compare: lkg, select: {kind: metrics, field: lm_loss, window: "1:1001"}, threshold: calibrated}
+  - {id: OBS.gate3.grad_norm, type: loss_series, level: L4, hard: false, compare: lkg, select: {kind: metrics, field: grad_norm, window: "1:1001"}, threshold: calibrated}
+  - {id: OBS.gate3.param_norm, type: loss_series, level: L4, hard: false, compare: lkg, select: {kind: metrics, field: param_norm, window: "1:1001"}, threshold: calibrated}
+  - id: DET.hooks.noop
+    type: determinism
+    level: L4
+    compare: lkg
+    select: {kind: metrics, fields: [lm_loss, grad_norm, param_norm, router.bias_std.1, router.bias_std.2, router.bias_std.3]}

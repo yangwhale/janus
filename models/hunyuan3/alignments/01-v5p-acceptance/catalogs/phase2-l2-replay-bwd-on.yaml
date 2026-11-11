@@ -1,0 +1,28 @@
+# 第二阶段 · L2 逐层反向：逐层隔离回放的输入梯度对 golden
+#
+# 被测 r-l2-on（对齐配置 yml a238883…，dense_fp32_accumulation 打开；此前的 r-l2-norm-perop 见 phase2-l2-replay-bwd.yaml）：layer_replay.py --grad，每层输入用 golden 的 layers.k.in、余切用 golden 的 layers.k.out.grad，
+# 在 TPU 上只编译这一层，反向得到 layers.k.in.grad（回放程序本身就是测量对象，没有「钩子改生产图」的问题，results/phase2-l1-l2-replay.md）。
+# 开关：rmsnorm_single_rounding、mlp_activation_round_per_op 打开（routed_gate_bf16_rounding 在第 1 步不起作用，L1 已核）——与生产 yml 一致。
+# golden g1k-a，噪声参照 g1k-a / b / c 两两（GPU 默认设置下反向不逐位，噪声非零）。
+# 口径说明：GPU 两两的差是整条反向链上的不确定性累积到这一层的结果；被测只有这一层自己的差（余切与输入都是 golden 的），
+# 所以这把尺子对被测偏宽（推断：越靠前的层，GPU 噪声里累积的上游部分越多）。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-l2-replay-bwd-on
+description: L2 逐层隔离回放的反向（layers.k.in.grad）对 golden，GPU 噪声参照 3 对
+runs:
+  test: r-l2-on
+  golden: [g1k-a, g1k-b, g1k-c]
+  noise:
+    - [g1k-a, g1k-b]
+    - [g1k-a, g1k-c]
+    - [g1k-b, g1k-c]
+  root: /data/janus-runs
+checks:
+  - id: L2.layer{i}.bwd
+    foreach: {i: [0, 1, 2, 3]}
+    type: tensor_tolerance
+    level: L2
+    select: {kind: tensor, step: 1, name: "layers.{i}.in.grad"}
+    metrics: [rel_l2, cosine, norm_ratio]
+    threshold: calibrated

@@ -1,0 +1,92 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "012eeb98e9959178512ab67ce6f140ea49b6cc6b"
+ },
+ "catalog": {
+  "path": "models/hunyuan4/alignments/01-v5p-acceptance/catalogs/l0-init-vs-gpu-a.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "9475edcc6c8de07075d73ee367f7b2efa20df69c133cd11b4ec1f974df9d1dba",
+  "raw_sha256": "359bcd1d53bad6ef3a1934d51f0ef12baddef3c134ac94f54d65b49207c8328e"
+ },
+ "runs": {
+  "hy4-a-maxtext-gpunames": {
+   "path": "/tmp/janus-runs/hy4-a-maxtext-gpunames",
+   "meta_sha256": "8fbf97e616d76a4a4989aa1c5d2019eedb62cdfbe8ff247c71ee65018d9b10bc"
+  },
+  "ga-b": {
+   "path": "/tmp/janus-runs/ga-b",
+   "meta_sha256": "8a84b0a5fd05141f7f613f94c6359c0e307052f4e1f64179641009d2a9eb91be"
+  },
+  "ga1-a": {
+   "path": "/tmp/janus-runs/ga1-a",
+   "meta_sha256": "f354e00acea105bd304fb4ea7ea48c6a869575f36ed31bb0a1d2175a09785bbf"
+  }
+ },
+ "started_at": "2026-11-06T18:41:21+00:00",
+ "finished_at": "2026-11-06T18:41:21+00:00",
+ "summary": {
+  "pass": 2,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L0.init.tpu_vs_gpu.ga-b",
+   "type": "checkpoint_equal",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "params": 248,
+    "differ": 0,
+    "only_one_side": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/janus-runs/hy4-a-maxtext-gpunames",
+     "sha256": "8fbf97e616d76a4a4989aa1c5d2019eedb62cdfbe8ff247c71ee65018d9b10bc"
+    },
+    {
+     "path": "/tmp/janus-runs/ga-b",
+     "sha256": "8a84b0a5fd05141f7f613f94c6359c0e307052f4e1f64179641009d2a9eb91be"
+    }
+   ],
+   "message": "全部参数逐位相同"
+  },
+  {
+   "id": "L0.init.tpu_vs_gpu.ga1-a",
+   "type": "checkpoint_equal",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "params": 248,
+    "differ": 0,
+    "only_one_side": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/janus-runs/hy4-a-maxtext-gpunames",
+     "sha256": "8fbf97e616d76a4a4989aa1c5d2019eedb62cdfbe8ff247c71ee65018d9b10bc"
+    },
+    {
+     "path": "/tmp/janus-runs/ga1-a",
+     "sha256": "f354e00acea105bd304fb4ea7ea48c6a869575f36ed31bb0a1d2175a09785bbf"
+    }
+   ],
+   "message": "全部参数逐位相同"
+  }
+ ]
+}

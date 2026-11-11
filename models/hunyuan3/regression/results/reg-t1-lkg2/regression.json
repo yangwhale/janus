@@ -1,0 +1,610 @@
+{
+ "tier": "T1",
+ "platform": "v5p",
+ "test": "reg-t1-lkg2-b",
+ "lkg": "reg-t1-lkg2-a",
+ "declare": "数学不变",
+ "scope": [],
+ "class": "通过",
+ "verdict": "PASS",
+ "first_differ": null,
+ "counts": {
+  "pass": 19,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "report": 2
+ },
+ "tier_config": {
+  "path": "models/hunyuan3/regression/tiers/t1.yaml",
+  "sha256": "abd58de70a97a7e0f279ad085e0544b10c698c16de2da6f36736d1957838eb85"
+ },
+ "catalog": {
+  "path": "/tmp/janus-runner/models/hunyuan3/regression/catalogs/regression-t1.yaml",
+  "sha256": "c68049cc4bb80c2231d0afd6f4efbef6c43d8ad46461a33c3b5e6dbf356bb2a6",
+  "includes": [
+   {
+    "path": "/tmp/janus-runner/models/hunyuan3/regression/catalogs/regression-common.yaml",
+    "sha256": "386ccee9ca6e89dc68984649f77c771cf460f23cb935a8ccc945988bcc064b79"
+   }
+  ]
+ },
+ "janus": {
+  "version": "0.0.1",
+  "commit": null
+ },
+ "commits": {
+  "test": {
+   "maxtext": "237a32705feb9f028910eb28216299139415d007",
+   "janus": "3fff02dc81307f9128565a8a9d4ec61725f7aa46"
+  },
+  "lkg": {
+   "maxtext": "237a32705feb9f028910eb28216299139415d007",
+   "janus": "3fff02dc81307f9128565a8a9d4ec61725f7aa46"
+  }
+ },
+ "rows": {
+  "R01": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R01.run_complete",
+     "status": "pass",
+     "hard": true,
+     "message": "1000 步全部完成、无重复、无重启",
+     "metrics": {
+      "planned": 1000,
+      "logged": 1000,
+      "duplicate": 0,
+      "missing": 0,
+      "extra": 0,
+      "restarts": 0
+     }
+    }
+   ]
+  },
+  "R02": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R02.inputs",
+     "status": "pass",
+     "hard": true,
+     "message": "必须相同的字段都相同；其他不同 0 项",
+     "metrics": {
+      "fields": 7,
+      "must_equal_differ": 0,
+      "other_differ": 0,
+      "missing": 0,
+      "equals_rules": 3
+     }
+    },
+    {
+     "id": "R02.registry",
+     "status": "pass",
+     "hard": true,
+     "metrics": {
+      "tier_config_sha256": "abd58de70a97",
+      "catalog_files": 2
+     },
+     "message": "档位配置与目录的 sha256 与 lkg.yaml 登记的相同"
+    }
+   ]
+  },
+  "R03": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R03.data_fingerprint",
+     "status": "pass",
+     "hard": true,
+     "message": "token 与首步 loss 逐位相同",
+     "metrics": {
+      "units_per_field": {
+       "tokens": 16000,
+       "labels": 16000,
+       "loss_mask": 16000,
+       "position_ids": 16000
+      },
+      "units": 65000,
+      "differ": 0
+     }
+    }
+   ]
+  },
+  "R04": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R04.versions",
+     "status": "pass",
+     "hard": true,
+     "message": "必须相同的字段都相同；其他不同 0 项",
+     "metrics": {
+      "fields": 7,
+      "must_equal_differ": 0,
+      "other_differ": 0,
+      "missing": 0,
+      "equals_rules": 0
+     }
+    }
+   ]
+  },
+  "R05": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R05.process_flags",
+     "status": "pass",
+     "hard": true,
+     "message": "必须相同的字段都相同；其他不同 0 项",
+     "metrics": {
+      "fields": 6,
+      "must_equal_differ": 0,
+      "other_differ": 0,
+      "missing": 0,
+      "equals_rules": 0
+     }
+    },
+    {
+     "id": "R05.compiler_flagfile",
+     "status": "pass",
+     "hard": true,
+     "message": "全部规则满足，指纹与参照相同",
+     "metrics": {
+      "rules": 0,
+      "bad": 0,
+      "fingerprint": "8494a7374f44f508",
+      "ref_fingerprint": "8494a7374f44f508",
+      "fingerprint_equal": true
+     }
+    },
+    {
+     "id": "R05.compiler_debug_options",
+     "status": "pass",
+     "hard": true,
+     "message": "全部规则满足，指纹与参照相同",
+     "metrics": {
+      "rules": 0,
+      "bad": 0,
+      "fingerprint": "59407bf7dd627e57",
+      "ref_fingerprint": "59407bf7dd627e57",
+      "fingerprint_equal": true,
+      "ignored_lines": {
+       "test": 4,
+       "ref": 3
+      }
+     }
+    }
+   ]
+  },
+  "R06": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R06.must_equal",
+     "status": "pass",
+     "hard": true,
+     "message": "必须相同的字段都相同；其他不同 0 项",
+     "metrics": {
+      "fields": 25,
+      "must_equal_differ": 0,
+      "other_differ": 0,
+      "missing": 0,
+      "equals_rules": 25
+     }
+    }
+   ]
+  },
+  "R07": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R07.state_init",
+     "status": "pass",
+     "hard": true,
+     "message": "全部参数逐位相同",
+     "metrics": {
+      "params": 91,
+      "differ": 0,
+      "only_one_side": 0
+     }
+    }
+   ]
+  },
+  "R08": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R08.step1_loss",
+     "status": "pass",
+     "hard": true,
+     "message": "逐位可复现",
+     "metrics": {
+      "fields": 2,
+      "first_differ": [],
+      "tensors": 0,
+      "tensors_differ": 0
+     }
+    },
+    {
+     "id": "R08.loss_tolerance",
+     "status": "inconclusive",
+     "hard": false,
+     "message": "门槛待标定（TPU 执行噪声待标定（README 第五节）），只报被测值",
+     "metrics": {
+      "d0": 0.0,
+      "signed_mean": 0.0,
+      "mare": 0.0,
+      "max_step": 0.0,
+      "max_step_at": 2,
+      "window": "1:1001",
+      "denominator": "golden",
+      "nonfinite_steps": [],
+      "signed_mean_se": 0.0,
+      "first_differ_step": null
+     }
+    }
+   ]
+  },
+  "R09": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R09.step1_norms",
+     "status": "pass",
+     "hard": true,
+     "message": "逐位可复现",
+     "metrics": {
+      "fields": 2,
+      "first_differ": [],
+      "tensors": 0,
+      "tensors_differ": 0
+     }
+    }
+   ]
+  },
+  "R12": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R12.loss",
+     "status": "pass",
+     "hard": true,
+     "message": "",
+     "metrics": {
+      "d0": 0.0,
+      "signed_mean": 0.0,
+      "mare": 0.0,
+      "max_step": 0.0,
+      "max_step_at": 2,
+      "window": "1:1001",
+      "denominator": "golden",
+      "nonfinite_steps": [],
+      "signed_mean_se": 0.0,
+      "first_differ_step": null
+     }
+    },
+    {
+     "id": "R12.loss_tolerance",
+     "status": "inconclusive",
+     "hard": false,
+     "message": "门槛待标定（TPU 执行噪声待标定（README 第五节）），只报被测值",
+     "metrics": {
+      "d0": 0.0,
+      "signed_mean": 0.0,
+      "mare": 0.0,
+      "max_step": 0.0,
+      "max_step_at": 2,
+      "window": "1:1001",
+      "denominator": "golden",
+      "nonfinite_steps": [],
+      "signed_mean_se": 0.0,
+      "first_differ_step": null
+     }
+    }
+   ]
+  },
+  "R13": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R13.raw_grad_norm",
+     "status": "pass",
+     "hard": true,
+     "message": "",
+     "metrics": {
+      "d0": 0.0,
+      "signed_mean": 0.0,
+      "mare": 0.0,
+      "max_step": 0.0,
+      "max_step_at": 2,
+      "window": "1:1001",
+      "denominator": "golden",
+      "nonfinite_steps": [],
+      "signed_mean_se": 0.0,
+      "first_differ_step": null
+     }
+    },
+    {
+     "id": "R13.param_norm",
+     "status": "pass",
+     "hard": true,
+     "message": "",
+     "metrics": {
+      "d0": 0.0,
+      "signed_mean": 0.0,
+      "mare": 0.0,
+      "max_step": 0.0,
+      "max_step_at": 2,
+      "window": "1:1001",
+      "denominator": "golden",
+      "nonfinite_steps": [],
+      "signed_mean_se": 0.0,
+      "first_differ_step": null
+     }
+    },
+    {
+     "id": "R13.raw_grad_norm_tolerance",
+     "status": "inconclusive",
+     "hard": false,
+     "message": "门槛待标定（TPU 执行噪声待标定（README 第五节）），只报被测值",
+     "metrics": {
+      "d0": 0.0,
+      "signed_mean": 0.0,
+      "mare": 0.0,
+      "max_step": 0.0,
+      "max_step_at": 2,
+      "window": "1:1001",
+      "denominator": "golden",
+      "nonfinite_steps": [],
+      "signed_mean_se": 0.0,
+      "first_differ_step": null
+     }
+    },
+    {
+     "id": "R13.param_norm_tolerance",
+     "status": "inconclusive",
+     "hard": false,
+     "message": "门槛待标定（TPU 执行噪声待标定（README 第五节）），只报被测值",
+     "metrics": {
+      "d0": 0.0,
+      "signed_mean": 0.0,
+      "mare": 0.0,
+      "max_step": 0.0,
+      "max_step_at": 2,
+      "window": "1:1001",
+      "denominator": "golden",
+      "nonfinite_steps": [],
+      "signed_mean_se": 0.0,
+      "first_differ_step": null
+     }
+    }
+   ]
+  },
+  "R14": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R14.lr_wd",
+     "status": "pass",
+     "hard": true,
+     "message": "逐位可复现",
+     "metrics": {
+      "fields": 2,
+      "first_differ": [],
+      "tensors": 0,
+      "tensors_differ": 0
+     }
+    }
+   ]
+  },
+  "R15": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R15.state_final",
+     "status": "pass",
+     "hard": true,
+     "message": "全部参数逐位相同",
+     "metrics": {
+      "params": 91,
+      "differ": 0,
+      "only_one_side": 0
+     }
+    }
+   ]
+  },
+  "R16": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R16.bias_stats",
+     "status": "pass",
+     "hard": true,
+     "message": "",
+     "metrics": {
+      "signed_mean_max": 0.0,
+      "mare_max": 0.0,
+      "max_step_max": 0.0,
+      "stats": 6
+     }
+    },
+    {
+     "id": "R16.bias_stats_tolerance",
+     "status": "inconclusive",
+     "hard": false,
+     "message": "门槛待标定（TPU 执行噪声待标定（README 第五节）），只报被测值",
+     "metrics": {
+      "signed_mean_max": 0.0,
+      "mare_max": 0.0,
+      "max_step_max": 0.0,
+      "stats": 6
+     }
+    }
+   ]
+  },
+  "R17": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R17.health",
+     "status": "pass",
+     "hard": true,
+     "message": "健康",
+     "metrics": {
+      "fields": 3,
+      "problems": 0
+     }
+    }
+   ]
+  },
+  "R18": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R18.dtypes",
+     "status": "pass",
+     "hard": true,
+     "message": "182 项 dtype 全部符合规则",
+     "metrics": {
+      "entries": 182,
+      "wrong_dtype": 0,
+      "unmatched": 0,
+      "rule_hits": {
+       "params/*": 58,
+       "MoEBiasVar/*": 2,
+       "*/opt_state/*/mu/*": 58,
+       "*/opt_state/*/nu/*": 58,
+       "*/opt_state/*/count": 4,
+       "OptState/optimizer/step": 2
+      }
+     }
+    }
+   ]
+  },
+  "R20": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R20.artifact_counts",
+     "status": "pass",
+     "hard": true,
+     "message": "全部规则满足",
+     "metrics": {
+      "rules": 7,
+      "bad": 0
+     }
+    }
+   ]
+  },
+  "R21": {
+   "status": "report",
+   "note": "",
+   "checks": [
+    {
+     "id": "R21.hlo_fingerprint",
+     "status": "pass",
+     "hard": false,
+     "message": "全部规则满足，指纹与参照相同",
+     "metrics": {
+      "rules": 0,
+      "bad": 0,
+      "fingerprint": "209341bb971a111d",
+      "ref_fingerprint": "209341bb971a111d",
+      "fingerprint_equal": true
+     }
+    }
+   ]
+  },
+  "R25": {
+   "status": "pass",
+   "note": "回归门逐位通过：数值与 LKG 相同，对齐门结论继承 LKG（标准第二节）",
+   "checks": [
+    {
+     "id": "R25.loss_vs_golden",
+     "status": "fail",
+     "hard": false,
+     "message": "超过噪声参照两倍",
+     "metrics": {
+      "d0_max": 2.49527623414907e-06,
+      "signed_mean_max": 0.0001395242740472091,
+      "mare_max": 0.00015986456664279902,
+      "max_step_max": 0.0006924308967491942,
+      "goldens": 3,
+      "in_band_frac": 0.2992992992992993,
+      "window": "1:1001",
+      "denominator": "golden",
+      "noise_dropped": [],
+      "noise_loo": [
+       {
+        "pair": "g1k-a~g1k-b",
+        "signed_mean": 0.6962907412322953,
+        "mare": 0.9310357834371853,
+        "max_step": 0.819056803837571
+       },
+       {
+        "pair": "g1k-a~g1k-c",
+        "signed_mean": 0.3040126266972713,
+        "mare": 0.9364001831929528,
+        "max_step": 0.9561160741070172
+       },
+       {
+        "pair": "g1k-b~g1k-c",
+        "signed_mean": 1.4361816706483848,
+        "mare": 1.0679194835163142,
+        "max_step": 1.0458981153872653
+       }
+      ]
+     }
+    }
+   ],
+   "metrics": {
+    "test_signed_mean_max": 0.0001395242740472091,
+    "test_mare_max": 0.00015986456664279902,
+    "test_max_step_max": 0.0006924308967491942
+   }
+  },
+  "R22": {
+   "status": "report",
+   "checks": [],
+   "metrics": {
+    "test_median_s": 0.8986063003540039,
+    "lkg_median_s": 0.8981919288635254,
+    "rel_diff": 0.00046133958362642644,
+    "steps_used": 998,
+    "skip_first": 2
+   },
+   "note": "只报。阈值待标定（标准 R22：同一提交 ≥ 5 次运行的步时极差）；峰值 HBM、编译期临时区还没记"
+  },
+  "R23": {
+   "status": "pass",
+   "checks": [],
+   "metrics": {
+    "rows": 21,
+    "problems": 0
+   },
+   "note": "每一行都出了结论、单元数对得上"
+  }
+ },
+ "first_lkg": true,
+ "lkg_candidate": true,
+ "created_at": "2026-11-05T00:08:07+08:00"
+}

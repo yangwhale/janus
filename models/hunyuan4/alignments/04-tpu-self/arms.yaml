@@ -1,0 +1,204 @@
+# TPU 自比的每一次实验（知识库里叫「臂」：从基准运行 golden 出发只改一样东西的那次运行）：MATRIX.md 与 README 的结果表由 build_tables.py 按这里加 results/ 生成。
+# 字段：id、run（运行名）、vs（对谁比，默认 ts-g-a）、change（改什么，知识库口径，可带开关名）、plain（给人看的说法，不带开关名）、
+#       scenario（场景）、expect（预期）、fix（怎么固定，给人看）、note（不支持 / 待跑等，没有结果文件时显示）、
+#       chips（芯片数，默认 8；算力代价按芯片·秒折算）、long（同一改动跑 1000 步的运行）、long_vs（它对谁比，默认 golden 的 1000 步）
+#       kind（broken：故意改坏、用来证明工具抓得到；precision：动了精度的改动。S 类默认 broken）、
+#       issue（和 GPU 重跑分得开时必填：归到下面 issues 里的哪一件）、group（逐位相同那张表的分组，默认按类：重跑与环境 / 代码写法 / 编译开关 / 版本）
+# issues：README「真有影响」每件一行的文字（标题、详解文件、能不能忍、怎么修）；fix_arms 是修法对应的实验（arm）与修之前的那次（vs），golden 表示默认配置。数字一律由 build_tables.py 从 results/ 算；机制写在详解文件里
+classes:
+  A: 校准（按理不该变的）
+  B: 并行与切分
+  C: 编译开关
+  D: 数学上等价的代码改写
+  E: 会影响精度的真实改动
+  F: 软件版本
+  G: 上下文并行
+  H: 硬件（v5p ↔ v7x）
+  S: 灵敏度（故意埋的 bug 扫大小）
+  L: 长跑（1000 步）
+arms:
+  - {id: A1, run: ts-g-b, change: 不改，换切片重跑, plain: 同一作业换一组机器重跑, scenario: 重跑 / 换机器, expect: 逐位相同, fix: 不用管}
+  - {id: A2, run: ts-c300, change: 同一命令跑 300 步（golden 1000 步，学习率恒定）, plain: 只跑前 300 步, scenario: 短跑冒烟, expect: 逐位相同, fix: 不用管}
+  - {id: A3, run: ts-a-8c, change: 换到另一个节点池重跑, plain: 换一批机器重跑, scenario: 换节点池, expect: 逐位相同, fix: 不用管}
+  - {id: A4, run: ts-a-8f, change: 再换一个节点池重跑, plain: 再换一批机器重跑, scenario: 换节点池, expect: 逐位相同, fix: 不用管}
+  - {id: A6, run: ts-a-shared, change: golden 的命令在另一个 v5p 集群（另一个区域）上跑, plain: 换一个集群重跑, scenario: 换集群 / 换区域, expect: 逐位相同, fix: 不用管}
+  - {id: A5, group: 版本, run: t1zg-b, change: 上一个 MaxText 提交（只少一个默认关的开关）, plain: 升级到只加了默认关功能的版本, scenario: 升级代码, expect: 逐位相同, fix: 不用管}
+  - {id: B1, issue: dp, run: ts-dp8, change: "纯数据并行 8（ici_data_parallelism=8、ici_fsdp_parallelism=1）", plain: FSDP 改成纯数据并行, scenario: DDP ↔ FSDP, expect: 不逐位, fix: 打开词嵌入梯度 FP32 累加（MaxText d5c9b113 起梯度累积下也可用），或只在本地 FP32 累加、跨卡仍 BF16（f70d74cb 起），或只把词嵌入表沿数据并行轴切开（9099c8ce 起）}
+  - {id: B1b, issue: dp, run: ts-dp8-embf32, change: "在 B1 上词嵌入梯度改在 FP32 里累加（embedding_grad_fp32=true）", plain: 纯数据并行 + 词嵌入梯度用 FP32 累加（修复前，有 bug）, scenario: DDP 的修法, expect: 词嵌入梯度回到噪声内, fix: 已修（MaxText d5c9b113），见下一行}
+  - {id: B1f, run: ts-fx-dp8-embf32, long: ts-fx-dp8-embf32-1ks2, change: "B1b 换成修复后的 MaxText（d5c9b113）", plain: 纯数据并行 + 词嵌入梯度用 FP32 累加（修复后）, scenario: DDP 的修法, expect: 在噪声内, fix: 不用管}
+  - {id: B1g, group: 版本, run: ts-fx-g, change: "golden 换成修复后的 MaxText（d5c9b113）重跑", plain: 基准运行用修复后的代码重跑, scenario: 修复不碰默认路径, expect: 逐位相同, fix: 不用管}
+  - {id: B1h, run: ts-ebc-dp8, long: ts-ebc-dp8-1k, change: "在 B1 上 embedding_grad_fp32_local_bf16_comm=true（MaxText f70d74cb：本地 FP32 scatter-add、舍一次 BF16、BF16 跨卡 all-reduce）", plain: 纯数据并行 + 词嵌入梯度本地 FP32 累加、BF16 跨卡求和, scenario: DDP 的修法（跨卡仍传 BF16）, expect: 词嵌入梯度回到噪声内, fix: 不用管}
+  - {id: B1i, group: 版本, run: ts-ebc-g, change: "golden 换成加了这个开关（关着）的 MaxText（f70d74cb）重跑", plain: 基准运行用加开关后的代码重跑, scenario: 新开关不碰默认路径, expect: 逐位相同, fix: 不用管}
+  - {id: B1j, run: ts-esd-dp8, long: ts-esd-dp8-1k, change: "在 B1 上 embedding_shard_over_data=true（MaxText 9099c8ce：只把词嵌入表的隐藏维再沿 data 轴切开，其余参数仍是纯数据并行）", plain: 纯数据并行 + 只把词嵌入表按 FSDP 的方式切开, scenario: DDP 的修法（词嵌入不再整表跨卡求和）, expect: 词嵌入梯度回到噪声内、跨卡字节减少, fix: 不用管}
+  - {id: B1k, group: 版本, run: ts-esd-g, change: "golden 换成加了这个开关（关着）的 MaxText（9099c8ce）重跑", plain: 基准运行用加开关后的代码重跑, scenario: 新开关不碰默认路径, expect: 逐位相同, fix: 不用管}
+  - {id: B1d, issue: dp, run: ts-dp8-ga1, change: "纯数据并行 8，每设备微批 2 × 累积 1", plain: 纯数据并行、不做梯度累积, scenario: DDP, expect: 不逐位, fix: 打开词嵌入梯度 FP32 累加}
+  - {id: B1e, run: ts-dp8-embf32-ga1, change: "在 B1d 上 embedding_grad_fp32=true", plain: 纯数据并行、不累积，词嵌入梯度用 FP32 累加, scenario: DDP 的修法, expect: 词嵌入梯度回到噪声内, fix: —}
+  - {id: B1c, run: null, change: "在 B1 上优化器状态按数据并行切分（shard_optimizer_over_data=true，ZeRO-1）", plain: 纯数据并行 + 切分优化器状态, scenario: ZeRO-1, expect: 不逐位, fix: —, note: "未跑通：本仓库训练入口载入检查点时的状态切分与 ZeRO-1 不一致（jit 报 sharding 不符）"}
+  - {id: B2, run: ts-f16, long: ts-f16-1k, chips: 16, change: v5p 2x2x4（16 设备）FSDP 16、累积 2→1、全局批不变, plain: 卡数翻倍、全局批不变, scenario: 扩卡, expect: 在噪声内, fix: 不用管}
+  - {id: B2b, run: ts-f16b, chips: 16, vs: ts-f16, change: B2 在同一个 16 片池子上重跑, plain: 16 卡配置重跑, scenario: 重跑, expect: 逐位相同, fix: 不用管}
+  - {id: B2c, run: ts-f16-dp2, long: ts-f16-dp2-1k, chips: 16, change: v5p 16 设备 数据并行 2 × FSDP 8、累积 1, plain: 16 卡上混合切分, scenario: 扩卡 + 混合切分, expect: 不逐位, fix: —}
+  - {id: B2g, run: ts-fx-dp16-embf32, long: ts-fx-dp16-embf32-1ks, chips: 16, change: "B2e + embedding_grad_fp32=true（修复后的 MaxText，累积 1）", plain: 16 卡纯数据并行 + 词嵌入梯度用 FP32 累加, scenario: 扩卡 + DDP 的修法, expect: 在噪声内, fix: 不用管}
+  - {id: B2d, run: ts-f16-tp2, chips: 16, change: v5p 16 设备 FSDP 8 × 张量并行 2、累积 1, plain: 16 卡上加张量并行, scenario: 扩卡 + TP, expect: 不逐位, fix: —}
+  - {id: B2e, issue: dp, run: ts-f16-dp16, chips: 16, change: v5p 16 设备 纯数据并行 16、累积 1, plain: 16 卡纯数据并行, scenario: 扩卡 + DDP, expect: 超（词嵌入梯度 16 路 BF16 求和）, fix: 打开词嵌入梯度 FP32 累加}
+  - {id: B2f, run: ts-f16-scar, chips: 16, vs: ts-f16, change: 在 B2 上 all-reduce 交给 SparseCore, plain: 16 卡上 all-reduce 交给 SparseCore, scenario: 通信卸载, expect: 同 C6, fix: —}
+  - {id: B3, run: ts-tp2, long: ts-tp2-1k, change: FSDP 4 × 张量并行 2, plain: 加张量并行, scenario: 加 TP, expect: 不逐位, fix: —}
+  - {id: B4, run: ts-mb2, long: ts-mb2-1k, change: 每设备微批 2 × 累积 1（全局批不变）, plain: 微批 1×2 改成 2×1, scenario: 调微批与累积, expect: 不逐位, fix: —}
+  - {id: B5, run: ts-dp2f4, long: ts-dp2f4-1k, change: 数据并行 2 × FSDP 4, plain: 一半数据并行一半 FSDP, scenario: 混合切分, expect: 不逐位, fix: —}
+  - {id: B6, run: ts-ep-base, change: 关 moe_mcore_prob_before_fc2（专家并行的前提）, plain: 路由权重相乘的位置改到专家输出之后, scenario: 开专家并行前必须改, expect: 不逐位, fix: —}
+  - {id: B7, run: ts-ep2, vs: ts-ep-base, change: 在 B6 上专家并行 2, plain: 专家并行 2, scenario: 加 EP, expect: 不逐位, fix: —}
+  - {id: B8, run: ts-ep4, vs: ts-ep-base, change: 在 B6 上专家并行 4, plain: 专家并行 4, scenario: 加 EP, expect: 不逐位, fix: —}
+  - {id: B9, run: ts-ep8, vs: ts-ep-base, change: 在 B6 上专家并行 8, plain: 专家并行 8, scenario: 加 EP, expect: 不逐位, fix: —}
+  - {id: B10, run: ts-remat-full, long: ts-remat-full-1k, change: 重算策略 custom → full, plain: 重算策略改成全重算, scenario: 省显存, expect: 逐位或极近, fix: —}
+  - {id: B11, run: ts-remat-min, long: ts-remat-min-1k, change: 重算策略 → minimal, plain: 重算策略改成少量保存, scenario: 省显存, expect: 逐位或极近, fix: —}
+  - {id: B12, run: ts-remat-all, long: ts-remat-all-1k, change: 重算策略 → save_everything, plain: 不重算, scenario: 换速度, expect: 逐位或极近, fix: —}
+  - {id: B13, run: null, change: scan_layers=false, plain: 关层扫描, scenario: 调试, expect: —, fix: —, note: "不支持：索引器隔层共享要求层扫描，配置检查拒绝"}
+  - {id: B14, run: ts-dense-moe, long: ts-dense-moe-1k, change: MoE 稠密实现（sparse_matmul=false、megablox=false）, plain: MoE 换成稠密实现, scenario: 换 MoE 实现, expect: 不逐位, fix: —}
+  - {id: C1, issue: excess, run: ts-c-noexcess, change: "XLA_FLAGS --xla_allow_excess_precision=false", plain: 关掉编译器的省舍入, scenario: 编译开关, expect: 不逐位, fix: 别关（关了词嵌入梯度真按 BF16 累加）}
+  - {id: C2, run: ts-c-mmhigh, change: "matmul_precision=highest", plain: 全局矩阵乘最高精度, scenario: 提精度, expect: 不逐位、离 FP64 更近, fix: —}
+  - {id: C3, run: ts-c-nolhs, long: ts-c-nolhs-1k, change: "xla_tpu_enable_latency_hiding_scheduler=false", plain: 关延迟隐藏调度, scenario: 调性能, expect: 逐位或极近, fix: —}
+  - {id: C4, run: ts-c-noacf, change: "xla_tpu_enable_async_collective_fusion=false", plain: 关异步集合通信融合, scenario: 调性能, expect: 逐位或极近, fix: —}
+  - {id: C5, run: ts-c-nodparb, change: "xla_tpu_enable_data_parallel_all_reduce_opt=false", plain: 关数据并行 all-reduce 优化, scenario: 调性能, expect: 逐位或极近, fix: —}
+  - {id: C6, run: ts-c-scar, long: ts-c-scar-1k, change: "xla_tpu_enable_sparse_core_collective_offload_all_reduce=true", plain: all-reduce 交给 SparseCore, scenario: 通信卸载, expect: 可能不逐位, fix: —}
+  - {id: C7, run: ts-c-scrs, change: "xla_tpu_enable_sparse_core_collective_offload_reduce_scatter=true", plain: reduce-scatter 交给 SparseCore, scenario: 通信卸载, expect: 可能不逐位, fix: —}
+  - {id: C8, run: ts-c-scag, long: ts-c-scag-1k, change: "xla_tpu_enable_sparse_core_collective_offload_all_gather=true", plain: all-gather 交给 SparseCore, scenario: 通信卸载, expect: 逐位, fix: —}
+  - {id: C9, run: ts-c-scf32, change: "xla_sc_force_bf16_collective_reductions_to_f32=true", plain: 集合通信的 BF16 归约强制 FP32, scenario: 提精度, expect: 可能变, fix: —}
+  - {id: C10, run: ts-c-crsbf16b, change: "xla_jf_bf16_inside_cross_replica_sum=true", plain: 跨副本求和用 BF16, scenario: 省带宽, expect: 不逐位, fix: —}
+  - {id: C11, run: ts-c-autorp, long: ts-c-autorp-1k, change: "xla_tpu_auto_reduce_precision=true", plain: 编译器自动降精度, scenario: 调性能, expect: 不逐位, fix: —}
+  - {id: C12, run: ts-c-nowe, long: ts-c-nowe-1k, change: "xla_tpu_enable_windowed_einsum_for_all_gather=false", plain: 关 all-gather 与矩阵乘的重叠, scenario: 调性能, expect: 逐位或极近, fix: —}
+  - {id: C13, run: ts-c-norwb, change: "xla_tpu_rwb_fusion=false", plain: 关一种融合, scenario: 调性能, expect: 可能不逐位, fix: —}
+  - {id: C14, run: ts-c-nodd, long: ts-c-nodd-1k, change: "xla_tpu_dot_dot_fusion=false", plain: 关矩阵乘之间的融合, scenario: 调性能, expect: 可能不逐位, fix: —}
+  - {id: C15, issue: smallmm, run: ts-c-nosrb, change: "xla_tpu_enable_dot_strength_reduction=false", plain: 关小矩阵乘改写, scenario: 调性能, expect: 可能不逐位, fix: —}
+  - {id: C16, run: ts-c-nocopy, change: "xla_tpu_enable_copy_fusion=false", plain: 关拷贝融合, scenario: 调性能, expect: 逐位, fix: —}
+  - {id: C17, run: ts-c-nobf16p, change: "xla_jf_bf16_propagation=false", plain: 关 BF16 传播, scenario: 调精度, expect: 不逐位, fix: —}
+  - {id: C18, run: ts-c-noovl, change: "xla_tpu_overlap_compute_collective_tc=false", plain: 关计算与通信重叠, scenario: 调性能, expect: 逐位或极近, fix: —}
+  - {id: C19, run: ts-c-vmem, change: "xla_tpu_scoped_vmem_limit_kib=65536", plain: 调片上缓存上限, scenario: 调性能, expect: 可能不逐位, fix: —}
+  - {id: C20, run: ts-c-mfags, change: "xla_tpu_megacore_fusion_allow_ags=true", plain: 开一种融合, scenario: 调性能, expect: 可能不逐位, fix: —}
+  - {id: D1, run: ts-d-square, long: ts-d-square-1ks, change: "RMSNorm：lax.square(x) → x * x", plain: 平方换一种写法, scenario: 改写法, expect: 逐位, fix: —}
+  - {id: D2, run: ts-d-meansum, change: "RMSNorm：mean(x²) → sum(x²) / n", plain: 求平均换成求和再除, scenario: 改写法, expect: 可能不逐位, fix: —}
+  - {id: D3, run: ts-d-einsum, long: ts-d-einsum-1k, change: "RMSNorm：einsum(\"...k,k->...k\") → 广播乘", plain: einsum 换成广播乘, scenario: 改写法, expect: 逐位或极近, fix: —}
+  - {id: D4, run: ts-d-rsqrt, long: ts-d-rsqrt-1k, change: "RMSNorm：x * rsqrt(m + ε) → x / sqrt(m + ε)", plain: 乘倒数平方根换成除以平方根, scenario: 改写法, expect: 不逐位, fix: —}
+  - {id: D5, run: ts-d-ckname, change: RMSNorm 输出加一个重算名字（重算策略里没有它）, plain: 给中间值起个名字, scenario: 加标注, expect: 逐位, fix: —}
+  - {id: D6, run: ts-d-helper, change: RMSNorm 的计算挪进辅助函数, plain: 拆出一个函数, scenario: 重构, expect: 逐位, fix: —}
+  - {id: D7, run: ts-d-commute, change: "x * rsqrt(·) → rsqrt(·) * x", plain: 乘法换个顺序, scenario: 改写法, expect: 逐位, fix: —}
+  - {id: D8, run: ts-d-metrics, long: ts-d-metrics-1k, change: "record_internal_nn_metrics=1（每层多记三个统计量）", plain: 每层多记几个统计量, scenario: 加日志, expect: 逐位, fix: —}
+  - {id: D9, run: ts-d-qklog, change: "qk_clip_log_per_head=true（多记逐头最大 logit）", plain: 多记一个监控量, scenario: 加日志, expect: 逐位, fix: —}
+  - {id: D10, run: ts-d-lossdiv, change: "梯度累积：g / n → g * (1 / n)", plain: 除以 n 换成乘 1/n, scenario: 改写法, expect: 不逐位, fix: —}
+  - {id: D11, run: ts-d-clip, change: "梯度裁剪：optax 写法 → 手写 g · min(1, 阈值 / 范数)", plain: 梯度裁剪换一种写法, scenario: 改写法, expect: 可能不逐位, fix: —}
+  - {id: D12, run: ts-d-dotattn, long: ts-d-dotattn-1k, change: "attention=dot_product（不走 splash 核）", plain: 注意力换成普通实现, scenario: 换实现, expect: 不逐位, fix: —}
+  - {id: E1, kind: broken, run: ts-pc-logits, change: "logits_matmul_precision=default", plain: 输出头矩阵乘降回默认精度, scenario: 真改坏, expect: 超, fix: 输出头矩阵乘用最高精度}
+  - {id: E2, kind: broken, run: ts-pc-zm, change: "routed_bias_zero_mean_update=true", plain: 路由偏置改零均值更新, scenario: 真改坏（改语义）, expect: 超, fix: 照原版更新}
+  - {id: E3, kind: precision, run: ts-e-bf16acc, long: ts-e-bf16acc-1k, change: "dense_fp32_accumulation=false（对齐开关关掉，投影回到 MaxText 默认写法）", plain: 关掉「投影照 GPU 的 FP32 累加」对齐开关, scenario: 少开一个对齐开关, expect: 超, fix: —}
+  - {id: E4, kind: precision, run: ts-e-approx, long: ts-e-approx-1k, change: "transcendental_accuracy_highest=false（指数 / log / sigmoid 回到 TPU 默认近似）", plain: 指数等函数回到 TPU 默认近似, scenario: 少开一个对齐开关, expect: 超, fix: —}
+  - {id: E5, kind: broken, run: ts-e-eps, change: "normalization_layer_epsilon 1e-5 → 1e-6", plain: RMSNorm 的 ε 改小, scenario: 改超参, expect: 超, fix: —}
+  - {id: E6, kind: precision, issue: rms2, run: ts-e-rms2r, change: "rmsnorm_single_rounding=false", plain: RMSNorm 多舍一次, scenario: 少开一个对齐开关, expect: 超或略超, fix: —}
+  - {id: E7, kind: broken, run: ts-e-adameps, change: "adam_eps 1e-10 → 1e-8", plain: Adam 的 ε 改大, scenario: 改超参, expect: 超, fix: —}
+  - {id: E8, kind: precision, issue: ihc, run: ts-e-ihcr, long: ts-e-ihcr-1k, change: "ihc_force_bf16_rounding=false", plain: iHC 不强制舍成 BF16, scenario: 少开一个对齐开关, expect: 略超或超, fix: —}
+  - {id: E9, kind: precision, run: ts-e-swiglu, long: ts-e-swiglu-1ks, change: "mlp_activation_round_per_op=false", plain: SwiGLU 少舍一次, scenario: 少开一个对齐开关, expect: 略超或超, fix: —}
+  - {id: E10, kind: precision, run: ts-e-nsfp32, long: ts-e-nsfp32-1ks, change: "muon_mcore_ns_bf16=false", plain: Muon 正交化改 FP32, scenario: 少开一个对齐开关, expect: 超, fix: —}
+  - {id: E11, run: ts-e-lossorder, change: loss 先按行求和再求总和, plain: loss 求和换个顺序, scenario: 改写法, expect: 不逐位, fix: —}
+  - {id: E13, run: ts-e-embf32, change: "embedding_grad_fp32=true", plain: 词嵌入梯度改在 FP32 里累加, scenario: 提精度, expect: 不逐位、词嵌入梯度更近 FP64, fix: —}
+  - {id: E12, kind: precision, run: ts-e-idx32, long: ts-e-idx32-1ks, change: "indexer_fp32_scores=false", plain: 索引器打分不用真 FP32, scenario: 少开一个对齐开关, expect: 超, fix: —}
+  - {id: F1, run: ts-f-ltpu48, long: ts-f-ltpu48-1k, change: "libtpu 0.0.46 → 0.0.48", plain: libtpu 0.0.46 → 0.0.48, scenario: 升版本, expect: 不逐位, fix: —}
+  - {id: F2, run: ts-f-ltpu45, long: ts-f-ltpu45-1k, change: "libtpu 0.0.46 → 0.0.45", plain: libtpu 0.0.46 → 0.0.45, scenario: 降版本, expect: 不逐位或装不上, fix: —}
+  - {id: F1b, run: ts-f-ltpu47, long: ts-f-ltpu47-1k, change: "libtpu 0.0.46 → 0.0.47", plain: libtpu 0.0.46 → 0.0.47, scenario: 升版本, expect: 不逐位, fix: —}
+  - {id: F1c, run: ts-f-ltpu48, vs: ts-f-ltpu47, change: "libtpu 0.0.47 → 0.0.48（对 F1b 比）", plain: libtpu 0.0.47 → 0.0.48, scenario: 升版本, expect: 不逐位, fix: —}
+  - {id: F2b, run: ts-f-sc45s2, vs: ts-c-scar, long: ts-f-sc45-1ks, long_vs: ts-c-scar-1k-1000, change: "两版都强制 all-reduce 走 SparseCore：libtpu 0.0.45 对 0.0.46（C6）", plain: all-reduce 走 SparseCore 时 libtpu 0.0.46 → 0.0.45, scenario: "实际排查中遇到的路径", expect: —, fix: —}
+  - {id: F3, run: null, change: "jax / jaxlib 0.11.1 → 0.11.2", plain: 升 jax, scenario: 升版本, expect: 不逐位或装不上, fix: —, note: "跑不起来：镜像里的库与 jax 0.11.2 不兼容（jax.experimental.hijax 没有 HiPrimitive）"}
+  - {id: F4, run: null, vs: ts-f-ltpu48, change: "在 F1 上 jax / jaxlib 0.11.1 → 0.11.2", plain: libtpu 已升时再升 jax, scenario: 升版本, expect: 不逐位, fix: —, note: "跑不起来：同 F3"}
+  - {id: G1, run: null, change: "在 D12 上上下文并行 2（all_gather，默认负载均衡）", plain: 加上下文并行, scenario: 长序列, expect: 不逐位, fix: —, note: "不支持：MTP 不支持上下文并行的负载均衡（MaxText 运行时报错）"}
+  - {id: G2b, run: ts-cp2c, vs: ts-cp2b, change: "G2 重跑（核 TPU 自己可复现）", plain: 上下文并行重跑, scenario: 重跑, expect: 与 G2 逐位相同, fix: —}
+  - {id: G3a, run: ts-dotattn-f32e, change: "attention=dot_product + float32_logits=true（旧代码里 MLA 没接这个开关，不生效）", plain: 注意力换普通实现、写了 float32_logits（旧代码不生效）, scenario: 上下文并行修法的对照, expect: —, fix: —, note: "前几次（ts-dotattn-f32、-f32b、-f32c、-f32d）都被 spot 抢占，ts-dotattn-f32e 跑成"}
+  - {id: G3c, group: 编译开关, run: ts-dotattn-f32e, vs: ts-d-dotattn, change: "G3a 对 D12（只差 float32_logits=true）", plain: softmax 走 FP32 这个开关本身, scenario: 核开关有没有生效, expect: 不逐位, fix: —, note: "逐位相同、训练步程序相同：MaxText 建混元 4 的注意力（MLA）时没把 float32_logits 传下去，开关不生效（56492817 起接上）"}
+  - {id: G3, issue: cp, run: ts-cp2-f32, vs: ts-dotattn-f32e, change: "在 G3a 上上下文并行 2（关负载均衡）", plain: 加上下文并行（写了 float32_logits，旧代码不生效）, scenario: "#10 sink 线索的修法（旧代码开关没生效）", expect: sink 梯度不再离 FP64 更远, fix: "MaxText 56492817 起打开 float32_logits（见 G4）"}
+  - {id: G2, issue: cp, run: ts-cp2b, vs: ts-d-dotattn, change: "在 D12 上上下文并行 2（all_gather，关负载均衡 context_parallel_load_balance=false）", plain: 加上下文并行（不做负载均衡）, scenario: 长序列, expect: 不逐位, fix: —}
+  - {id: G4a, run: ts-n2-dotf32w-300, change: "attention=dot_product + float32_logits=true（MaxText 56492817，开关接上之后）", plain: 注意力换普通实现且 softmax 真走 FP32, scenario: 上下文并行修法的底, expect: —, fix: —}
+  - {id: G4, run: ts-n2-cp2f32w-300, vs: ts-n2-dotf32w-300, change: "在 G4a 上上下文并行 2（关负载均衡）", plain: 加上下文并行（softmax 真走 FP32）, scenario: "#10 sink 线索的修法", expect: sink 梯度不再离 FP64 更远, fix: 不用管}
+  - {id: H1, run: ts-h-v7c, chips: 4, vs: ts-h-v7b, change: v7x 2x2x1（8 设备）同配置跑两次, plain: v7x 上重跑, scenario: 重跑, expect: 逐位相同, fix: —}
+  - {id: H2, run: ts-h-v7b, long: ts-h-v7-1k3, chips: 4, change: 同程序换到 v7x 2x2x1（4 片 8 设备）, plain: v5p 换 v7x, scenario: 换硬件, expect: 不逐位, fix: —}
+  - {id: H3, run: ts-h-v7f16c, chips: 8, change: "v7x 2x2x2（16 设备）FSDP 16、累积 1；运行目录取回时节点被回收，只判曲线（逐步指标来自运行中镜像）", plain: v7x 上卡数翻倍（只看曲线）, scenario: 换硬件 + 扩卡, expect: 不逐位, fix: —}
+  - {id: H3b, run: ts-h-v7f16c, chips: 8, vs: ts-f16, change: "H3 对 v5p 16 片 FSDP 16（B2）比：换硬件与换切分叠不叠加", plain: v7x 16 设备对 v5p 16 设备, scenario: 换硬件, expect: —, fix: —}
+  - {id: H4a, group: 编译开关, run: ts-h-v7-scar2, chips: 4, vs: ts-h-v7b, change: v7x 上 all-reduce 交给 SparseCore（对 v7x 的 FSDP 8 比）, plain: v7x 上 all-reduce 交给 SparseCore, scenario: 换硬件后重测开关, expect: 同 C6, fix: —}
+  - {id: H4b, issue: excess, run: ts-h-v7-noexcess3, chips: 4, vs: ts-h-v7b, change: v7x 上关 excess precision, plain: v7x 上关掉编译器的省舍入, scenario: 换硬件后重测开关, expect: 同 C1, fix: —}
+  - {id: H4c, issue: dp, run: ts-h-v7-dp8b, chips: 4, vs: ts-h-v7b, change: v7x 上纯数据并行 8, plain: v7x 上 FSDP 改纯数据并行, scenario: 换硬件后重测, expect: 同 B1, fix: —}
+  - {id: H5, run: null, change: 8 个设备落在 4 片 vs 8 片各用一个 TensorCore, plain: 片内 vs 片间归约, scenario: —, expect: —, fix: —, note: "没做：能否在 8 片的切片上每片只用一个 TensorCore 未核，v7x 2x2x2 的抢占式节点也一直没起稳"}
+  - {id: S0a, run: ts-s-lr1e-5, change: "学习率 × (1 + 1e-5)", plain: 学习率偏大 1e-5, scenario: 故意埋 bug，逐档加大, expect: —, fix: —}
+  - {id: S0b, run: ts-s-lr3e-5, change: "学习率 × (1 + 3e-5)", plain: 学习率偏大 3e-5, scenario: 故意埋 bug，逐档加大, expect: —, fix: —}
+  - {id: S1, run: ts-s-lr1e-4, change: "学习率 × (1 + 1e-4)", plain: 学习率偏大 1e-4, scenario: 故意埋 bug，逐档加大, expect: —, fix: —}
+  - {id: S2, run: ts-s-lr1e-3, change: "学习率 × (1 + 1e-3)", plain: 学习率偏大 1e-3, scenario: 故意埋 bug，逐档加大, expect: —, fix: —}
+  - {id: S3, run: ts-s-lr1e-2, change: "学习率 × (1 + 1e-2)", plain: 学习率偏大 1e-2, scenario: 故意埋 bug，逐档加大, expect: —, fix: —}
+  - {id: S4, run: ts-s-lr1e-1, change: "学习率 × (1 + 1e-1)", plain: 学习率偏大 1e-1, scenario: 故意埋 bug，逐档加大, expect: —, fix: —}
+  - {id: S5, run: ts-s-mtp1e-3, change: "MTP loss 权重 × (1 + 1e-3)", plain: 一部分梯度偏大 1e-3, scenario: 故意埋 bug，逐档加大, expect: —, fix: —}
+  - {id: S6, run: ts-s-mtp1e-2, change: "MTP loss 权重 × (1 + 1e-2)", plain: 一部分梯度偏大 1e-2, scenario: 故意埋 bug，逐档加大, expect: —, fix: —}
+  - {id: S7, run: ts-s-mtp1e-1, change: "MTP loss 权重 × (1 + 1e-1)", plain: 一部分梯度偏大 1e-1, scenario: 故意埋 bug，逐档加大, expect: —, fix: —}
+  - {id: S8, run: ts-s-loss101, change: "梯度累积路径的 loss 多乘 1.01（MaxText 提交）", plain: loss 多乘 1.01, scenario: 故意埋 bug（漏除常数）, expect: 只有梯度范数变, fix: —}
+  - {id: S9, run: ts-s-loss2, change: "梯度累积路径的 loss 多乘 2（MaxText 提交）", plain: loss 多乘 2, scenario: 故意埋 bug（漏除常数）, expect: 只有梯度范数变, fix: —}
+  - {id: L1, run: ts-e-bf16acc-1k, vs: ts-g-a-1000, change: "E3 跑 1000 步，对 golden 1000 步比（尺子 GPU g3 28 对）", plain: 少开投影 FP32 累加开关、跑 1000 步, scenario: 300 步在噪声内的改动，跑长了会不会显形, expect: —, fix: —}
+  - {id: L2, run: ts-e-approx-1k, vs: ts-g-a-1000, change: "E4 跑 1000 步", plain: 指数等函数回到默认近似、跑 1000 步, scenario: 同上, expect: —, fix: —}
+  - {id: L3, run: ts-mb2-1k, vs: ts-g-a-1000, change: "B4 跑 1000 步（只换顺序的对照）", plain: 微批 1×2 改成 2×1、跑 1000 步, scenario: 同上, expect: —, fix: —}
+  - {id: L4, run: ts-tp2-1k, vs: ts-g-a-1000, change: "B3（FSDP 4 × 张量并行 2）跑 1000 步", plain: 加张量并行、跑 1000 步, scenario: 只换加法顺序的改动，跑长了还分不分得开, expect: —, fix: —}
+  - {id: L5, run: ts-remat-full-1k, vs: ts-g-a-1000, change: "B10（全重算）跑 1000 步", plain: 全重算、跑 1000 步, scenario: 同上, expect: —, fix: —}
+  - {id: L6, run: ts-f-ltpu45-1k, vs: ts-g-a-1000, change: "F2（libtpu 0.0.45）跑 1000 步", plain: 降 libtpu、跑 1000 步, scenario: 同上, expect: —, fix: —}
+  - {id: L7, run: ts-h-v7-1k3, chips: 4, vs: ts-g-a-1000, change: "H2（同程序换 v7x）跑 1000 步", plain: v5p 换 v7x、跑 1000 步, scenario: 同上, expect: —, fix: —}
+  - {id: L8, run: ts-f16-1k, chips: 16, vs: ts-g-a-1000, change: "B2（16 设备 FSDP 16、累积 1）跑 1000 步", plain: 卡数翻倍、跑 1000 步, scenario: 扩卡跑长了还分不分得开, expect: —, fix: —}
+  - {id: L9, run: ts-f-ltpu47-1k, vs: ts-g-a-1000, change: "F1b（libtpu 0.0.47）跑 1000 步", plain: libtpu 0.0.47、跑 1000 步, scenario: 版本差跑长了还分不分得开, expect: —, fix: —}
+  - {id: L10, run: ts-f-ltpu48-1k, vs: ts-g-a-1000, change: "F1（libtpu 0.0.48）跑 1000 步", plain: libtpu 0.0.48、跑 1000 步, scenario: 同上, expect: —, fix: —}
+  - {id: L11, run: ts-c-scar-1k, vs: ts-g-a-1000, change: "C6（all-reduce 交给 SparseCore）跑 1000 步", plain: all-reduce 交给 SparseCore、跑 1000 步, scenario: 只换加法顺序的改动，跑长了还分不分得开, expect: —, fix: —}
+  - {id: L12, run: ts-d-square-1ks, vs: ts-g-a-1000, change: "D1（x*x 代替 lax.square）跑 1000 步", plain: 平方换写法、跑 1000 步, scenario: 同上, expect: —, fix: —}
+  - {id: L13, run: ts-dense-moe-1k, vs: ts-g-a-1000, change: "B14（MoE 稠密实现）跑 1000 步", plain: MoE 稠密实现、跑 1000 步, scenario: 同上, expect: —, fix: —}
+  - {id: L14, run: ts-e-ihcr-1k, vs: ts-g-a-1000, change: "E8（iHC 不强制舍成 BF16）跑 1000 步", plain: iHC 不强制舍成 BF16、跑 1000 步, scenario: 第 1 步抓到、曲线没抓到的改动跑长了怎样, expect: —, fix: —}
+  - {id: L15, run: ts-fx-dp8-embf32-1ks2, vs: ts-g-a-1000, change: "B1f（数据并行 8 + 累积 2 + FP32 词嵌入梯度，修复后）跑 1000 步", plain: 数据并行修法、跑 1000 步, scenario: DDP 的修法跑长了, expect: —, fix: —}
+  - {id: L16, run: ts-fx-dp16-embf32-1ks, chips: 16, vs: ts-g-a-1000, change: "B2g（16 设备纯数据并行 + FP32 词嵌入梯度）跑 1000 步", plain: 16 卡数据并行修法、跑 1000 步, scenario: 同上, expect: —, fix: —}
+  - {id: L17, run: ts-e-swiglu-1ks, vs: ts-g-a-1000, change: "E9（SwiGLU 少舍一次）跑 1000 步", plain: SwiGLU 少舍一次、跑 1000 步, scenario: 300 步抓不到的改动跑长了, expect: —, fix: —}
+  - {id: L18, run: ts-e-nsfp32-1ks, vs: ts-g-a-1000, change: "E10（Muon 正交化 FP32）跑 1000 步", plain: Muon 正交化 FP32、跑 1000 步, scenario: 同上, expect: —, fix: —}
+  - {id: L19, run: ts-e-idx32-1ks, vs: ts-g-a-1000, change: "E12（索引器打分不用真 FP32）跑 1000 步", plain: 索引器打分不用真 FP32、跑 1000 步, scenario: 同上, expect: —, fix: —}
+  - {id: L20, run: ts-dp2f4-1k, vs: ts-g-a-1000, change: "一半数据并行一半 FSDP、跑 1000 步", plain: 一半数据并行一半 FSDP、跑 1000 步, scenario: 只换加法顺序的改动，跑长了还分不分得开, expect: —, fix: —}
+  - {id: L21, run: ts-d-einsum-1k, vs: ts-g-a-1000, change: "einsum 换广播乘、跑 1000 步", plain: einsum 换广播乘、跑 1000 步, scenario: 只换加法顺序的改动，跑长了还分不分得开, expect: —, fix: —}
+  - {id: L22, run: ts-c-scag-1k, vs: ts-g-a-1000, change: "all-gather 交给 SparseCore、跑 1000 步", plain: all-gather 交给 SparseCore、跑 1000 步, scenario: 只换加法顺序的改动，跑长了还分不分得开, expect: —, fix: —}
+  - {id: L23, run: ts-c-autorp-1k, vs: ts-g-a-1000, change: "编译器自动降精度、跑 1000 步", plain: 编译器自动降精度、跑 1000 步, scenario: 只换加法顺序的改动，跑长了还分不分得开, expect: —, fix: —}
+  - {id: L24, run: ts-d-metrics-1k, vs: ts-g-a-1000, change: "每层多记统计量、跑 1000 步", plain: 每层多记统计量、跑 1000 步, scenario: 只换加法顺序的改动，跑长了还分不分得开, expect: —, fix: —}
+  - {id: L25, run: ts-d-dotattn-1k, vs: ts-g-a-1000, change: "注意力换普通实现、跑 1000 步", plain: 注意力换普通实现、跑 1000 步, scenario: 只换加法顺序的改动，跑长了还分不分得开, expect: —, fix: —}
+  - {id: L26, run: ts-remat-min-1k, chips: 8, vs: ts-g-a-1000, change: "重算策略少量保存、跑 1000 步", plain: 重算策略少量保存、跑 1000 步, scenario: 只换加法顺序的改动，跑长了还分不分得开, expect: —, fix: —}
+  - {id: L27, run: ts-remat-all-1k, chips: 8, vs: ts-g-a-1000, change: "不重算、跑 1000 步", plain: 不重算、跑 1000 步, scenario: 只换加法顺序的改动，跑长了还分不分得开, expect: —, fix: —}
+  - {id: L28, run: ts-c-nolhs-1k, chips: 8, vs: ts-g-a-1000, change: "关延迟隐藏调度、跑 1000 步", plain: 关延迟隐藏调度、跑 1000 步, scenario: 只换加法顺序的改动，跑长了还分不分得开, expect: —, fix: —}
+  - {id: L29, run: ts-c-nowe-1k, chips: 8, vs: ts-g-a-1000, change: "关 all-gather 与矩阵乘的重叠、跑 1000 步", plain: 关 all-gather 与矩阵乘的重叠、跑 1000 步, scenario: 只换加法顺序的改动，跑长了还分不分得开, expect: —, fix: —}
+  - {id: L30, run: ts-d-rsqrt-1k, chips: 8, vs: ts-g-a-1000, change: "乘倒数平方根换除以平方根、跑 1000 步", plain: 乘倒数平方根换除以平方根、跑 1000 步, scenario: 只换加法顺序的改动，跑长了还分不分得开, expect: —, fix: —}
+  - {id: L31, run: ts-c-nodd-1k, chips: 8, vs: ts-g-a-1000, change: "关矩阵乘之间的融合、跑 1000 步", plain: 关矩阵乘之间的融合、跑 1000 步, scenario: 只换加法顺序的改动，跑长了还分不分得开, expect: —, fix: —}
+  - {id: L32, run: ts-f16-dp2-1k, chips: 16, vs: ts-g-a-1000, change: "16 卡混合切分、跑 1000 步", plain: 16 卡混合切分、跑 1000 步, scenario: 只换加法顺序的改动，跑长了还分不分得开, expect: —, fix: —}
+  - {id: L33, run: ts-ebc-dp8-1k, vs: ts-g-a-1000, change: "B1h（数据并行 8 + 累积 2 + 本地 FP32 累加、BF16 跨卡）跑 1000 步", plain: 本地 FP32 累加的修法、跑 1000 步, scenario: DDP 的修法跑长了, expect: —, fix: —}
+issues:
+  dp:
+    title: 纯数据并行
+    file: impacts/01-data-parallel.md
+    verdict: 不能忍
+    fix: 开 `embedding_grad_fp32`、`embedding_grad_fp32_local_bf16_comm`，或只把词嵌入表沿数据并行轴切开的 `embedding_shard_over_data`
+    fix_arms: [{arm: B1f, vs: B1}, {arm: B1h, vs: B1}, {arm: B1j, vs: B1}, {arm: B2g, vs: B2e}]
+  excess:
+    title: 关掉编译器的省舍入（excess precision）
+    file: impacts/02-excess-precision.md
+    verdict: 不能忍
+    fix: 别关（默认开着）
+    fix_arms: [{arm: golden, vs: C1}]
+  smallmm:
+    title: 关小矩阵乘改写
+    file: impacts/03-small-matmul-rewrite.md
+    verdict: 能忍
+    fix: 别关（默认开着）
+    fix_arms: [{arm: golden, vs: C15}]
+  rms2:
+    title: RMSNorm 多舍一次
+    file: impacts/04-rmsnorm-double-rounding.md
+    verdict: 能忍
+    fix: 开着 `rmsnorm_single_rounding`（生产也建议开）
+    fix_arms: [{arm: golden, vs: E6}]
+  ihc:
+    title: iHC 不强制舍成 BF16
+    file: impacts/05-ihc-bf16-rounding.md
+    verdict: 能忍
+    fix: 对齐时开着 `ihc_force_bf16_rounding`；生产不开
+    fix_arms: [{arm: golden, vs: E8}]
+  cp:
+    title: 上下文并行
+    file: impacts/06-context-parallel.md
+    verdict: 能忍
+    fix: MaxText `56492817` 起打开 `float32_logits`（上下文并行目前只能配普通注意力）
+    fix_arms: [{arm: G4, vs: G2}]

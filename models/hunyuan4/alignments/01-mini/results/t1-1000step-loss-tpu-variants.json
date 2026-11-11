@@ -1,0 +1,37 @@
+{
+ "what": "T1 1000 步主 loss 的带符号均值：各 TPU 运行对 GPU g3-a 与对 GPU 8 份均值；GPU 28 对的带符号均值最大 |.| 作对照",
+ "gpu_pairs_max_abs_signed": 3.772069357285041e-06,
+ "runs": {
+  "t1u-a": {
+   "label": "t1u（无 M28）",
+   "signed_vs_g3a": 4.6949528400979017e-07,
+   "signed_vs_gpu_mean": 1.0716570962831227e-06
+  },
+  "t1w-a": {
+   "label": "t1w（t1v 设置）",
+   "signed_vs_g3a": 7.0734852112997725e-06,
+   "signed_vs_gpu_mean": 7.675647023573105e-06
+  },
+  "t1wp-1": {
+   "label": "t1wp-1（注意力块 256）",
+   "signed_vs_g3a": 5.992813153761677e-06,
+   "signed_vs_gpu_mean": 6.594974966035008e-06
+  },
+  "t1wp-2": {
+   "label": "t1wp-2（专家并行 4）",
+   "signed_vs_g3a": 5.742929072063383e-06,
+   "signed_vs_gpu_mean": 6.345090884336716e-06
+  },
+  "t1wp-3": {
+   "label": "t1wp-3（MoE 稠密实现）",
+   "signed_vs_g3a": 3.1030513656500187e-06,
+   "signed_vs_gpu_mean": 3.705213177923351e-06
+  },
+  "t1zk-a": {
+   "label": "t1zk（t1z 设置）",
+   "signed_vs_g3a": 7.97619930428593e-06,
+   "signed_vs_gpu_mean": 8.578361116559263e-06
+  }
+ },
+ "reading": "打开 M28（ihc_stream_sum_unrolled）之后的 5 个 TPU 运行（t1w、t1wp-1..3、t1zk），主 loss 都比 GPU 均值高 3.7e-6 至 8.6e-6，同一符号；没开 M28 的 t1u 只高 1.1e-6。GPU 28 对的带符号均值最大 3.8e-6。说明是系统性的，不是轨迹偶然分开；怀疑 iHC 输出的 BF16 舍入在 TPU 上被 XLA 省掉（excess precision），正用开关 ihc_force_bf16_rounding 核对（t1zr-a）"
+}

@@ -1,0 +1,221 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.0.1",
+  "commit": null
+ },
+ "catalog": {
+  "path": "catalogs/hunyuan3-4l/phase1-ga.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "dd1f23881b3d5023e70990f07998b978c2a802e13c8c39b626d3efdb91fc71b7",
+  "raw_sha256": "07f3cd7dff1c78981e8e5467b237bbfcbf70435defadf83f4c20c86c9b539b9b"
+ },
+ "runs": {
+  "p-mbs2": {
+   "path": "/data/janus-runs2/p-mbs2",
+   "meta_sha256": "a915b44dae860d835857d76c02ca33c7c3466388d780e7cbec6c9ed0857da827"
+  },
+  "d-a": {
+   "path": "/data/janus-runs2/d-a",
+   "meta_sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+  },
+  "s-b": {
+   "path": "/data/janus-runs2/s-b",
+   "meta_sha256": "cc8322b501c54e6b6c0fe763acf204789e7c2f8f8d20f80eacbf88947208de2d"
+  },
+  "s-c": {
+   "path": "/data/janus-runs2/s-c",
+   "meta_sha256": "606ea9de86bf113d08fd68eb5fadf011bcc9ebe241a41abff80830dd814de6bf"
+  },
+  "s-d": {
+   "path": "/data/janus-runs2/s-d",
+   "meta_sha256": "200560026ef5d6d13dae3632657bbed7e8640d36c737b33233e27dd7b8b19af4"
+  }
+ },
+ "started_at": "2026-11-03T23:52:49+00:00",
+ "finished_at": "2026-11-03T23:59:40+00:00",
+ "summary": {
+  "pass": 1,
+  "fail": 1,
+  "inconclusive": 1,
+  "error": 0,
+  "hard_fail": true
+ },
+ "checks": [
+  {
+   "id": "L3.ga.loss",
+   "type": "loss_series",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "d0": 0.0001,
+     "signed_mean": 0.001,
+     "max_step": 0.001
+    },
+    "source": "推断：只换累积方式时首步 loss 的宽松起点"
+   },
+   "metrics": {
+    "d0": -8.317587447163566e-08,
+    "signed_mean": -4.131281553629859e-06,
+    "mare": 4.131281553629859e-06,
+    "max_step": 6.395190528488637e-06,
+    "max_step_at": 3,
+    "window": "1:4",
+    "denominator": "golden",
+    "nonfinite_steps": [],
+    "signed_mean_se": 2.263908974858778e-06
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/p-mbs2",
+     "sha256": "a915b44dae860d835857d76c02ca33c7c3466388d780e7cbec6c9ed0857da827"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "在门槛内"
+  },
+  {
+   "id": "L3.ga.grads",
+   "type": "tensor_tolerance",
+   "level": "L3",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 0.0006636517323257505,
+      "cosine": 1.3026507994506886e-07,
+      "norm_ratio": 0.00046255435110209575
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.020649822725175723,
+    "cosine_min": 0.9998117522154355,
+    "norm_ratio_dev_max": 0.0072561361651154455,
+    "tensors": 50
+   },
+   "r1": 1445.1131849293834,
+   "worst": [
+    {
+     "name": "grad.embedding.word_embeddings.weight",
+     "metric": "rel_l2",
+     "value": 0.020649822725175723,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.3.mlp.router.weight",
+     "metric": "rel_l2",
+     "value": 0.0012032791492621025,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.3.pre_mlp_layernorm.weight",
+     "metric": "rel_l2",
+     "value": 0.0011179886361554802,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.2.mlp.router.weight",
+     "metric": "rel_l2",
+     "value": 0.00107243909745611,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.1.mlp.router.weight",
+     "metric": "rel_l2",
+     "value": 0.000922116148196083,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/p-mbs2",
+     "sha256": "a915b44dae860d835857d76c02ca33c7c3466388d780e7cbec6c9ed0857da827"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "超过噪声参照两倍",
+   "details": "details/L3.ga.grads.jsonl"
+  },
+  {
+   "id": "L3.ga.updated",
+   "type": "tensor_tolerance",
+   "level": "L3",
+   "hard": true,
+   "status": "inconclusive",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 4.538538632740886e-05,
+      "max_abs": 1.814216375350952e-05
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 3.6747265096912066e-05,
+    "max_abs_max": 1.9762141164392233e-05,
+    "tensors": 50
+   },
+   "r1": 1.0892935061601643,
+   "worst": [
+    {
+     "name": "main_param_after.decoder.layers.0.self_attention.linear_qkv.layer_norm_weight",
+     "metric": "rel_l2",
+     "value": 3.6747265096912066e-05,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.1.self_attention.linear_qkv.layer_norm_weight",
+     "metric": "rel_l2",
+     "value": 3.1381052424172056e-05,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.2.self_attention.linear_qkv.layer_norm_weight",
+     "metric": "rel_l2",
+     "value": 2.667160405157943e-05,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.3.pre_mlp_layernorm.weight",
+     "metric": "rel_l2",
+     "value": 3.2959685695262587e-06,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.1.pre_mlp_layernorm.weight",
+     "metric": "rel_l2",
+     "value": 9.150866228053197e-07,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/p-mbs2",
+     "sha256": "a915b44dae860d835857d76c02ca33c7c3466388d780e7cbec6c9ed0857da827"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "介于噪声参照一到两倍之间，或参照不足",
+   "details": "details/L3.ga.updated.jsonl"
+  }
+ ]
+}

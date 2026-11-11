@@ -1,0 +1,30 @@
+{
+ "schema_version": 1,
+ "kind": "hlo_inspection",
+ "what": "M28 ihc_stream_sum_unrolled 关 / 开时，iHC 四路流加权和（hc_pre：pre × 四路流 → 一路）在 StableHLO、优化前 HLO、优化后 HLO 里是什么算子",
+ "setup": {
+  "config": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml（sha256 前缀 8abf5076），阶段 mini（7 层 + 1 层 MTP），只改 ihc_stream_sum_unrolled",
+  "maxtext": "maxtext 混元 4 集成分支 3741e818",
+  "jax": "jax / jaxlib 0.11.1，libtpu 0.0.46（与 TPU 镜像同版）",
+  "compile": "CPU 上 AOT 编译训练步 jit_train_step，目标 v5p 2x2x2（compile_topology=v5p-16，8 个设备）；XLA_FLAGS=--xla_dump_to --xla_dump_hlo_as_text；StableHLO 用 JAX_DUMP_IR_TO（与 lowered.as_text() 同一份）；定位 pass 用 --xla_dump_hlo_pass_re=algsimp",
+  "snippets": "m28-ihc-stream-sum-hlo-snippets.txt"
+ },
+ "off": {
+  "stablehlo": "stablehlo.dot_general，batching [0,1]、contracting k，precision [HIGHEST, HIGHEST]，f32 × f32 → f32[8,4096,1024]",
+  "stablehlo_to_hlo": "按 op_name「bsk,bskd->bsd」逐个对应：StableHLO 56 个 dot_general、14 个 transpose、14 个 add；优化前 HLO 56 个 dot（operand_precision={highest,highest}）、14 个 transpose、14 个 add。56 个 dot = 14 处（前向）+ 14 处（反向里重算的前向）+ 反向 28 个（对 pre 的梯度 bsd·bskd→bsk 14 个、对流的梯度外积 bsk·bsd→bskd 14 个）",
+  "pass_that_rewrites": "algsimp（AlgebraicSimplifier）。simplification-1 流水线里第一次 algsimp：54 个 dot 里 40 个（前向与重算的 k 维缩并、对 pre 的梯度）改写成 broadcast → multiply → reduce；剩下 14 个外积 dot 在 Phase_1_pre-layout_assignment_passes 的 algsimp 里改写；之后再没有 dot。进 algsimp 之前 dot 的流操作数已是 BF16（FP32 convert 被折进 dot），algsimp 改写时插回 convert 到 FP32",
+  "after_optimizations": "这一处没有 dot、没有 convolution（按 op_name 查 0 个）。前向、重算、反向都是 kLoop 融合：broadcast(pre) × convert(BF16 流 → FP32) 的 FP32 multiply，接 FP32 reduce（沿 k 维，与大小为 1 的 batch 维），全部 f32",
+  "compile_temp_bytes": 24045289472
+ },
+ "on": {
+  "stablehlo": "slice / reshape / broadcast_in_dim / multiply / add，全部 f32[8,4096,1024]（224 个 multiply、84 个 add 等，含反向）",
+  "after_optimizations": "kLoop 融合（另有 2 条指令融在别的矩阵乘的 kOutput 融合里，是逐元素乘）：逐路 FP32 multiply，按 ((p0·x0 + p1·x1) + p2·x2) + p3·x3 顺序 FP32 add；没有 dot / convolution",
+  "compile_temp_bytes": 24439377216
+ },
+ "counterfactual_algsimp_off": {
+  "flags": "--xla_disable_hlo_passes=algsimp,fusion,tpu_fusion，ihc_stream_sum_unrolled=false",
+  "after_optimizations": "这一处 54 个 convolution，operand_precision={highest,highest}（MXU 多遍 BF16 近似 FP32），即 case 11 原来推断的形态；只在关掉 algsimp 时出现",
+  "compile_temp_bytes": 49291792288
+ },
+ "conclusion": "推断不成立。正常编译下，关 M28 时 HIGHEST einsum 被 algsimp 改写成逐元素 FP32 乘 + FP32 reduce（VPU，kLoop 融合），不走 MXU、不是多遍 BF16；开 M28 时是逐路 FP32 乘加（kLoop）。两者的运算精度相同（都是 FP32 乘、FP32 加），差别只在 4 项相加的方式：关时是一个沿 k 的 reduce（累加顺序由 TPU 代码生成决定，HLO 里看不出），开时是写死的从左到右顺序；融合边界也不同。M28 带来的第 1 步 R 变化用 HLO 解释不了「精度更高」，机制待查"
+}

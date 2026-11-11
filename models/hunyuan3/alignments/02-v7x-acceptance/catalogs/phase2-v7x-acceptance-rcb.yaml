@@ -1,0 +1,68 @@
+# 对齐实践 02 · 交叉核对（只报，不是正式验收）：TPU v7x 当前对齐配置对 rcb-a
+#
+#   rcb-a = rcc 的设置只把输出头 dgrad 换成 BF16 张量核分段（rr_arms.py `dgrad-chunk-bf16`），见 01 catalogs/phase2-rcb-vs-rcc.yaml。
+#   正式第一层仍对 rcc-a（phase2-acceptance-rcc-on / phase2-v7x-acceptance-rcc）；这里看把基线换成更便宜的 rcb-a，TPU 生产是否同样在噪声内。
+# 尺子：噪声 rcc-a..j 两两 45 对（rcb 只有 2 份，不够自己定噪声带）。判法同正式目录：
+#   L4.param_norm 被测读分组合成值 param_norm_from_groups；L4.grad_norm 用均值分母；另加路由偏置标准差曲线。
+# 被测：t-v7x-on-1000。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-v7x-acceptance-rcb
+description: 交叉核对（v7x t-v7x-on-1000 对 rcb-a，噪声 rcc-a..j 10 份两两 45 对）
+runs:
+  test: t-v7x-on-1000
+  golden: [rcb-a]
+  noise:
+    - [rcc-a, rcc-b]
+    - [rcc-a, rcc-c]
+    - [rcc-a, rcc-d]
+    - [rcc-a, rcc-e]
+    - [rcc-a, rcc-f]
+    - [rcc-a, rcc-g]
+    - [rcc-a, rcc-h]
+    - [rcc-a, rcc-i]
+    - [rcc-a, rcc-j]
+    - [rcc-b, rcc-c]
+    - [rcc-b, rcc-d]
+    - [rcc-b, rcc-e]
+    - [rcc-b, rcc-f]
+    - [rcc-b, rcc-g]
+    - [rcc-b, rcc-h]
+    - [rcc-b, rcc-i]
+    - [rcc-b, rcc-j]
+    - [rcc-c, rcc-d]
+    - [rcc-c, rcc-e]
+    - [rcc-c, rcc-f]
+    - [rcc-c, rcc-g]
+    - [rcc-c, rcc-h]
+    - [rcc-c, rcc-i]
+    - [rcc-c, rcc-j]
+    - [rcc-d, rcc-e]
+    - [rcc-d, rcc-f]
+    - [rcc-d, rcc-g]
+    - [rcc-d, rcc-h]
+    - [rcc-d, rcc-i]
+    - [rcc-d, rcc-j]
+    - [rcc-e, rcc-f]
+    - [rcc-e, rcc-g]
+    - [rcc-e, rcc-h]
+    - [rcc-e, rcc-i]
+    - [rcc-e, rcc-j]
+    - [rcc-f, rcc-g]
+    - [rcc-f, rcc-h]
+    - [rcc-f, rcc-i]
+    - [rcc-f, rcc-j]
+    - [rcc-g, rcc-h]
+    - [rcc-g, rcc-i]
+    - [rcc-g, rcc-j]
+    - [rcc-h, rcc-i]
+    - [rcc-h, rcc-j]
+    - [rcc-i, rcc-j]
+  root: /data/janus-runs
+checks:
+  - {id: L4.loss, type: multi_golden, level: L4, select: {kind: metrics, field: lm_loss, window: "1:1001"}, params: {baseline: rcb-a, signed_mean_se_k: 2}, threshold: calibrated}
+  - {id: L4.loss.tail, type: multi_golden, level: L4, select: {kind: metrics, field: lm_loss, window: "301:1001"}, params: {baseline: rcb-a, signed_mean_se_k: 2}, threshold: calibrated}
+  - {id: L4.grad_norm, type: loss_series, level: L4, select: {kind: metrics, field: grad_norm, window: "1:1001"}, params: {denominator: mean}, threshold: calibrated}
+  - {id: L4.param_norm, type: loss_series, level: L4, select: {kind: metrics, field: param_norm, test_field: param_norm_from_groups, window: "1:1001"}, threshold: calibrated}
+  - {id: L4.lr, type: scalar_series, level: L4, select: {kind: metrics, field: lr, window: "1:1001"}, params: {rtol: 0.0, abs_ulp: 0}}
+  - {id: L4.router.bias_std, type: router_stats, level: L4, select: {kind: metrics, prefix: "router.bias_std.", window: "1:1001"}, threshold: calibrated}

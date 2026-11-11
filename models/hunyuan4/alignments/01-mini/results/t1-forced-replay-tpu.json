@@ -1,0 +1,715 @@
+{
+ "what": "GPU 第 1 步的离散选择灌进 TPU（MaxText M45 路由回放：只灌专家下标、权重照算；M46 DSA 索引器 top-k 回放）后，第 1 步梯度对 GPU 同一次运行 g8-chg-a 的逐张量 rel_L2（205 个张量，HF 名字）；几种回放并列，外加同代码只开 M42b 的一份",
+ "runs": {
+  "tw-fr0": "不回放（对照）",
+  "tw-fr1": "只路由（M45）",
+  "tw-fri1": "路由 + 索引器（M45 + M46）",
+  "tw-fi1": "只索引器（M46）",
+  "tw-g42b": "不回放，开 M42b（splash_dsinks_gpu_order）",
+  "tw-fr1b": "只路由（M45），开 M42b（MaxText 2c28a4f4 + janus 14a53b0）"
+ },
+ "code": "tw-fr0 / fr1 / fri1 / fi1：MaxText e286fd63 + janus 19944c7；tw-g42b：MaxText 2c28a4f4 + janus 14a53b0；都是 hy4-mini-t1.yml（M42 开），v5p 2x2x2，golden g2s-a（与 g8-chg-a 同一批 token，train_hy4 逐行核对）",
+ "replay_file": "gs://<POC 桶>/janus/hunyuan4/analysis/g8chgrad/forced_replay_step1.safetensors（sha256 58bd15044473d6a245dde08336e1b069f73806681ff4c52666ab88194b89851c；build_forced_routing.py --indexer，16 行，TPU 行 i ↔ 文件 R = (i%2)·8 + i//2）",
+ "gpu_reference": "g8-chg-a.safetensors（main_grad FP32，归约并除以全局有效 token 数之后、裁剪之前；全部 16 个专家）；GPU 自身重跑的尺度：g2s-a / b / c 各自对 g8-chg-a 的中位数（g2s 只存了 rank 0 的路由专家，191 个张量）",
+ "four_elements": {
+  "object": "第 1 步参数梯度（逐张量）",
+  "metric": "rel_L2",
+  "reference": "GPU g8-chg-a（同一次运行的选择与梯度）",
+  "R": "不算：R 的分母要 CPU FP64 参照，由参照一侧给（运行目录已交 CPU FP64 参照比较）"
+ },
+ "audit": {
+  "tw-fr1": {
+   "routing": {
+    "natural_agree_frac": {
+     "1": 0.9837646484375,
+     "2": 0.98236083984375,
+     "3": 0.979217529296875,
+     "4": 0.97906494140625,
+     "5": 0.978912353515625,
+     "6": 0.9842529296875,
+     "7": 0.98345947265625
+    },
+    "missing_layers": [],
+    "mismatch_total": 0
+   }
+  },
+  "tw-fri1": {
+   "routing": {
+    "natural_agree_frac": {
+     "1": 0.988067626953125,
+     "2": 0.98394775390625,
+     "3": 0.98211669921875,
+     "4": 0.980621337890625,
+     "5": 0.978790283203125,
+     "6": 0.985809326171875,
+     "7": 0.98388671875
+    },
+    "missing_layers": [],
+    "mismatch_total": 0
+   },
+   "indexer": {
+    "natural_agree_frac": {
+     "0": 0.539398193359375,
+     "1": 0.5162353515625,
+     "5": 0.509552001953125,
+     "7": 0.511627197265625
+    },
+    "natural_overlap_frac": {
+     "0": 0.9991511106491089,
+     "1": 0.998350203037262,
+     "5": 0.997657299041748,
+     "7": 0.997871458530426
+    },
+    "query_mismatch_total": 0
+   }
+  },
+  "tw-fi1": {
+   "indexer": {
+    "natural_agree_frac": {
+     "0": 0.539398193359375,
+     "1": 0.5162353515625,
+     "5": 0.505340576171875,
+     "7": 0.506622314453125
+    },
+    "natural_overlap_frac": {
+     "0": 0.9991511106491089,
+     "1": 0.998350203037262,
+     "5": 0.9956443905830383,
+     "7": 0.9963176846504211
+    },
+    "query_mismatch_total": 0
+   }
+  },
+  "tw-fr1b": {
+   "routing": {
+    "natural_agree_frac": {
+     "1": 0.9837646484375,
+     "2": 0.98236083984375,
+     "3": 0.979217529296875,
+     "4": 0.97906494140625,
+     "5": 0.978912353515625,
+     "6": 0.9842529296875,
+     "7": 0.98345947265625
+    },
+    "missing_layers": [],
+    "mismatch_total": 0
+   }
+  }
+ },
+ "findings": [
+  "灌路由下标后，TPU 对 GPU 的逐张量 rel_L2 中位数 4.25e-03 → 2.23e-03（回放 ÷ 不回放的逐张量比值中位数 0.56）。路由专家 1.52e-2 → 3.39e-3，路由器 2.39e-2 → 3.33e-3，iHC 7.17e-3 → 2.74e-3。对「GPU 自身重跑」尺度的比值中位数 1.68 → 0.98，超过 1.2 的张量 171 → 55。",
+  "审计：路由 7 个槽位（第 1–6 层与 MTP）实际用的下标对文件 0 不符；TPU 自选与 GPU 同一组专家的 token 占 97.9–98.8%，即每层约 2% 的 token 选得不同，第 1 步 TPU 对 GPU 的梯度差主要来自这部分。",
+  "再灌索引器 top-k（tw-fri1）几乎不再变：中位数 2.23e-03。只灌索引器（tw-fi1）4.05e-03（对不回放的比值中位数 0.97）。索引器审计：4 个自带索引器的层逐 query 选中位置之和 0 不符；TPU 自选与 GPU 完全同一组位置的 query 51–54%（前一半 query 候选不超过 2048 个，必然相同），灌入的位置里 TPU 也会选的占 99.6–99.9%。",
+  "M42b 在第 1 步对 GPU 的整网梯度上看不出效果。不回放时 tw-g42b 对 tw-fr0 的逐张量比值中位数 1.00；灌路由后 tw-fr1b（M42b）对 tw-fr1（M42）中位数 2.22e-3 对 2.23e-3，8 个 sink 梯度对 GPU 的 rel_L2 互有高低（1.8e-3–7.4e-3 对 2.1e-3–6.6e-3），与 GPU 重跑尺度（g2s 对 g8-chg-a 中位数 2.7e-3–7.0e-3）同量级。单层探针里 M42b 对 FP64 的 R 是 1.000（t1-sink-probe-m42b-tpu），整网里 sink 梯度的差主要来自上游（do 等）不同，不是 sink 这一步的写法；推断，未拆分验证。注意 GPU 重跑之间路由选择也可能不同，这个尺度不是在固定路由下量的。",
+  "回放后仍超过 GPU 重跑尺度 1.2 倍的 55 个张量里，靠前的是 iHC 的 hc_pre（第 1、2 层 attn）、hc_head_base、sink 与索引器 k_norm.bias，留给 FP64 参照定 R。"
+ ],
+ "detail": {
+  "what": "GPU 第 1 步的离散选择灌进 TPU（MaxText M45 路由回放、M46 索引器 top-k 回放）后，第 1 步梯度对 GPU 同一次运行\n（g8-chg-a，选择与梯度出自同一次运行）的逐张量 rel_L2，几种回放并列（不回放 / 只路由 / 路由 + 索引器 / 只索引器）。",
+  "gpu": "g8-chg-a.safetensors",
+  "runs": {
+   "tw-fr0": {
+    "loss": 12.889263153076172,
+    "grad_norm": 6.3603107453233,
+    "replay": {},
+    "replay_sha256": {},
+    "audit": null,
+    "tpu_vs_gpu": {
+     "n_tensors": 205,
+     "median": 0.004251112878883381,
+     "max": 1.294940328680439,
+     "max_tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_scale",
+     "group_median": {
+      "attention": 0.003639661500664154,
+      "embedding": 0.003762521210850527,
+      "head": 0.001801568743374999,
+      "ihc": 0.00716865116645842,
+      "indexer": 0.0026359875684632845,
+      "other": 0.002906913775743119,
+      "routed_experts": 0.015166848882481529,
+      "router": 0.02394008751428327,
+      "shared_experts": 0.003611024746311449
+     }
+    },
+    "tpu_vs_gpu_over_gpu_rerun": {
+     "median": 1.6790140499961415,
+     "n_gt_1.2": 171,
+     "top": [
+      [
+       "model.layers.2.hc_attn_layer.hc_pre.hc_scale",
+       10.299401647513156
+      ],
+      [
+       "model.layers.1.hc_attn_layer.hc_pre.hc_base",
+       6.239756496533317
+      ],
+      [
+       "model.layers.4.hc_attn_layer.hc_pre.hc_base",
+       5.741758441967678
+      ],
+      [
+       "model.layers.5.self_attn.learnable_sink_param",
+       4.54537870613349
+      ],
+      [
+       "model.layers.3.hc_mlp_layer.hc_pre.hc_base",
+       4.455875954624773
+      ],
+      [
+       "model.layers.1.mlp.gate.weight",
+       4.419282550449562
+      ],
+      [
+       "model.layers.4.hc_mlp_layer.hc_pre.hc_scale",
+       4.208879685925307
+      ],
+      [
+       "model.layers.3.hc_attn_layer.hc_pre.hc_scale",
+       4.131628022170924
+      ],
+      [
+       "model.layers.2.hc_mlp_layer.hc_pre.hc_base",
+       4.035231759039079
+      ],
+      [
+       "model.layers.3.hc_mlp_layer.hc_pre.hc_scale",
+       3.656058688382157
+      ]
+     ]
+    }
+   },
+   "tw-fr1": {
+    "loss": 12.889275550842285,
+    "grad_norm": 6.360376492821661,
+    "replay": {
+     "routing": "只灌专家下标，权重照算（加偏置前的分数取下标处的值，归一后乘 routed_scaling_factor）"
+    },
+    "replay_sha256": {
+     "routing": "58bd15044473d6a245dde08336e1b069f73806681ff4c52666ab88194b89851c"
+    },
+    "audit": {
+     "routing": {
+      "natural_agree_frac": {
+       "1": 0.9837646484375,
+       "2": 0.98236083984375,
+       "3": 0.979217529296875,
+       "4": 0.97906494140625,
+       "5": 0.978912353515625,
+       "6": 0.9842529296875,
+       "7": 0.98345947265625
+      },
+      "missing_layers": [],
+      "mismatch_total": 0
+     }
+    },
+    "tpu_vs_gpu": {
+     "n_tensors": 205,
+     "median": 0.002228913334972118,
+     "max": 0.20867086805869053,
+     "max_tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_scale",
+     "group_median": {
+      "attention": 0.0020950783207581655,
+      "embedding": 0.0027110276301768013,
+      "head": 0.0008549313957339798,
+      "ihc": 0.002736432831434525,
+      "indexer": 0.0020083073548257087,
+      "other": 0.002011825993825608,
+      "routed_experts": 0.003389742896088295,
+      "router": 0.003328424088208626,
+      "shared_experts": 0.0018126949661585053
+     }
+    },
+    "tpu_vs_gpu_over_gpu_rerun": {
+     "median": 0.978694408683754,
+     "n_gt_1.2": 55,
+     "top": [
+      [
+       "model.layers.2.hc_attn_layer.hc_pre.hc_scale",
+       3.132004480824661
+      ],
+      [
+       "model.hc_head.hc_head_base",
+       2.576938185951584
+      ],
+      [
+       "model.layers.1.hc_attn_layer.hc_pre.hc_base",
+       2.2971738507030457
+      ],
+      [
+       "model.layers.5.self_attn.indexer.k_norm.bias",
+       2.2608788044188133
+      ],
+      [
+       "model.layers.1.self_attn.learnable_sink_param",
+       2.185068582926473
+      ],
+      [
+       "model.layers.4.self_attn.learnable_sink_param",
+       1.9490988117254255
+      ],
+      [
+       "model.mtp_layers.0.input_layernorm.weight",
+       1.8125158828771146
+      ],
+      [
+       "model.mtp_layers.0.self_attn.kv_a_layernorm.weight",
+       1.7974057981289535
+      ],
+      [
+       "model.layers.6.self_attn.q_a_layernorm.weight",
+       1.7231093252150205
+      ],
+      [
+       "model.layers.6.self_attn.kv_a_layernorm.weight",
+       1.7118801280245814
+      ]
+     ]
+    },
+    "vs_no_replay": {
+     "median_ratio": 0.5596137268432824,
+     "group_median_ratio": {
+      "attention": 0.6426649409571819,
+      "embedding": 0.7205348430617795,
+      "head": 0.4745483062346984,
+      "ihc": 0.37559779991631936,
+      "indexer": 0.8937244880503273,
+      "other": 0.6704417794417521,
+      "routed_experts": 0.21999930066398737,
+      "router": 0.14437958059792583,
+      "shared_experts": 0.5218162407053517
+     },
+     "note": "每个张量 rel_L2(回放, GPU) ÷ rel_L2(不回放, GPU) 的中位数；< 1 = 回放后更接近 GPU"
+    }
+   },
+   "tw-fri1": {
+    "loss": 12.889272689819336,
+    "grad_norm": 6.360322525146563,
+    "replay": {
+     "routing": "只灌专家下标，权重照算（加偏置前的分数取下标处的值，归一后乘 routed_scaling_factor）",
+     "indexer": "索引器照算分数与 KD，注意力与 KD 的掩码用灌入的 top-k 位置（自带索引器的层读自己的槽位，共享层沿用）"
+    },
+    "replay_sha256": {
+     "routing": "58bd15044473d6a245dde08336e1b069f73806681ff4c52666ab88194b89851c",
+     "indexer": "58bd15044473d6a245dde08336e1b069f73806681ff4c52666ab88194b89851c"
+    },
+    "audit": {
+     "routing": {
+      "natural_agree_frac": {
+       "1": 0.988067626953125,
+       "2": 0.98394775390625,
+       "3": 0.98211669921875,
+       "4": 0.980621337890625,
+       "5": 0.978790283203125,
+       "6": 0.985809326171875,
+       "7": 0.98388671875
+      },
+      "missing_layers": [],
+      "mismatch_total": 0
+     },
+     "indexer": {
+      "natural_agree_frac": {
+       "0": 0.539398193359375,
+       "1": 0.5162353515625,
+       "5": 0.509552001953125,
+       "7": 0.511627197265625
+      },
+      "natural_overlap_frac": {
+       "0": 0.9991511106491089,
+       "1": 0.998350203037262,
+       "5": 0.997657299041748,
+       "7": 0.997871458530426
+      },
+      "query_mismatch_total": 0
+     }
+    },
+    "tpu_vs_gpu": {
+     "n_tensors": 205,
+     "median": 0.002232908398268107,
+     "max": 0.1453904371489911,
+     "max_tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_scale",
+     "group_median": {
+      "attention": 0.0021571961997587145,
+      "embedding": 0.002697744095359918,
+      "head": 0.0008431934853827561,
+      "ihc": 0.0026377639475356402,
+      "indexer": 0.0021981339692482994,
+      "other": 0.0020062985447629536,
+      "routed_experts": 0.003360859867546949,
+      "router": 0.0033334854687944223,
+      "shared_experts": 0.0018157672795769786
+     }
+    },
+    "tpu_vs_gpu_over_gpu_rerun": {
+     "median": 0.9552976695044659,
+     "n_gt_1.2": 56,
+     "top": [
+      [
+       "model.layers.1.hc_attn_layer.hc_pre.hc_base",
+       2.795168437168227
+      ],
+      [
+       "model.layers.5.self_attn.indexer.k_norm.bias",
+       2.435969434916823
+      ],
+      [
+       "model.layers.2.hc_attn_layer.hc_pre.hc_scale",
+       2.4136989114103384
+      ],
+      [
+       "model.layers.4.self_attn.learnable_sink_param",
+       2.237479651049242
+      ],
+      [
+       "model.layers.2.self_attn.learnable_sink_param",
+       2.1735504596412625
+      ],
+      [
+       "model.layers.1.self_attn.learnable_sink_param",
+       2.0607710964627475
+      ],
+      [
+       "model.hc_head.hc_head_base",
+       1.9643892072572435
+      ],
+      [
+       "model.mtp_layers.0.self_attn.indexer.k_norm.weight",
+       1.853805035845685
+      ],
+      [
+       "model.layers.5.self_attn.indexer.k_norm.weight",
+       1.8388315250469862
+      ],
+      [
+       "model.mtp_layers.0.input_layernorm.weight",
+       1.834129655338906
+      ]
+     ]
+    },
+    "vs_no_replay": {
+     "median_ratio": 0.5642808479292022,
+     "group_median_ratio": {
+      "attention": 0.6347306010637933,
+      "embedding": 0.7170043553721486,
+      "head": 0.468032923241744,
+      "ihc": 0.3669187040474541,
+      "indexer": 0.8942397600609493,
+      "other": 0.6829220651245976,
+      "routed_experts": 0.21864608561868493,
+      "router": 0.14524225276219896,
+      "shared_experts": 0.5136626576415043
+     },
+     "note": "每个张量 rel_L2(回放, GPU) ÷ rel_L2(不回放, GPU) 的中位数；< 1 = 回放后更接近 GPU"
+    }
+   },
+   "tw-fi1": {
+    "loss": 12.889264106750488,
+    "grad_norm": 6.359608706333629,
+    "replay": {
+     "indexer": "索引器照算分数与 KD，注意力与 KD 的掩码用灌入的 top-k 位置（自带索引器的层读自己的槽位，共享层沿用）"
+    },
+    "replay_sha256": {
+     "indexer": "58bd15044473d6a245dde08336e1b069f73806681ff4c52666ab88194b89851c"
+    },
+    "audit": {
+     "indexer": {
+      "natural_agree_frac": {
+       "0": 0.539398193359375,
+       "1": 0.5162353515625,
+       "5": 0.505340576171875,
+       "7": 0.506622314453125
+      },
+      "natural_overlap_frac": {
+       "0": 0.9991511106491089,
+       "1": 0.998350203037262,
+       "5": 0.9956443905830383,
+       "7": 0.9963176846504211
+      },
+      "query_mismatch_total": 0
+     }
+    },
+    "tpu_vs_gpu": {
+     "n_tensors": 205,
+     "median": 0.004050137967160611,
+     "max": 1.4139149691707495,
+     "max_tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_scale",
+     "group_median": {
+      "attention": 0.0034588721309065013,
+      "embedding": 0.0037423340920064684,
+      "head": 0.0017100341100964042,
+      "ihc": 0.006769820657904346,
+      "indexer": 0.0028854408945851325,
+      "other": 0.002932858452324197,
+      "routed_experts": 0.014282234237016002,
+      "router": 0.022298189114448273,
+      "shared_experts": 0.003427678722636172
+     }
+    },
+    "tpu_vs_gpu_over_gpu_rerun": {
+     "median": 1.5911972982887856,
+     "n_gt_1.2": 167,
+     "top": [
+      [
+       "model.layers.2.hc_attn_layer.hc_pre.hc_scale",
+       12.672703675767227
+      ],
+      [
+       "model.layers.1.hc_attn_layer.hc_pre.hc_base",
+       4.885333407110953
+      ],
+      [
+       "model.layers.5.self_attn.learnable_sink_param",
+       4.545339074864522
+      ],
+      [
+       "model.layers.6.hc_mlp_layer.hc_pre.hc_base",
+       4.408919201893897
+      ],
+      [
+       "model.layers.1.mlp.gate.weight",
+       4.188390117890591
+      ],
+      [
+       "model.layers.3.hc_mlp_layer.hc_pre.hc_scale",
+       4.035769192321005
+      ],
+      [
+       "model.layers.2.hc_mlp_layer.hc_pre.hc_base",
+       3.58620698875086
+      ],
+      [
+       "model.layers.4.self_attn.learnable_sink_param",
+       3.573369335610303
+      ],
+      [
+       "model.layers.0.hc_attn_layer.hc_pre.hc_base",
+       3.319472085365458
+      ],
+      [
+       "model.layers.5.self_attn.indexer.k_norm.bias",
+       3.2301023032730556
+      ]
+     ]
+    },
+    "vs_no_replay": {
+     "median_ratio": 0.9718743905359047,
+     "group_median_ratio": {
+      "attention": 0.9808026193020216,
+      "embedding": 0.9946346830455487,
+      "head": 0.9491917066083657,
+      "ihc": 0.8977301278841769,
+      "indexer": 1.0799434793734353,
+      "other": 0.9738471216776982,
+      "routed_experts": 0.9413343150025165,
+      "router": 0.967467768824294,
+      "shared_experts": 0.9492260406516019
+     },
+     "note": "每个张量 rel_L2(回放, GPU) ÷ rel_L2(不回放, GPU) 的中位数；< 1 = 回放后更接近 GPU"
+    }
+   },
+   "tw-g42b": {
+    "loss": 12.889265060424805,
+    "grad_norm": 6.360285044078204,
+    "replay": {},
+    "replay_sha256": {},
+    "audit": null,
+    "tpu_vs_gpu": {
+     "n_tensors": 205,
+     "median": 0.0046181143604743175,
+     "max": 1.5820331168688455,
+     "max_tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_scale",
+     "group_median": {
+      "attention": 0.0036407538643285888,
+      "embedding": 0.0037695944833385127,
+      "head": 0.0018019210818860354,
+      "ihc": 0.008470434959234538,
+      "indexer": 0.0026384940442505133,
+      "other": 0.0028001715596026114,
+      "routed_experts": 0.015185297064254366,
+      "router": 0.024093968764892663,
+      "shared_experts": 0.003611997606643886
+     }
+    },
+    "tpu_vs_gpu_over_gpu_rerun": {
+     "median": 1.670801199848664,
+     "n_gt_1.2": 172,
+     "top": [
+      [
+       "model.layers.2.hc_attn_layer.hc_pre.hc_scale",
+       9.067937081672374
+      ],
+      [
+       "model.layers.4.hc_attn_layer.hc_pre.hc_base",
+       7.267111864955936
+      ],
+      [
+       "model.layers.1.hc_attn_layer.hc_pre.hc_base",
+       6.261089579650296
+      ],
+      [
+       "model.layers.5.self_attn.learnable_sink_param",
+       4.640813813800426
+      ],
+      [
+       "model.layers.1.mlp.gate.weight",
+       4.419753136920355
+      ],
+      [
+       "model.layers.3.hc_mlp_layer.hc_pre.hc_base",
+       4.271535019702507
+      ],
+      [
+       "model.layers.4.hc_mlp_layer.hc_pre.hc_scale",
+       4.1686856622306285
+      ],
+      [
+       "model.layers.3.hc_mlp_layer.hc_pre.hc_scale",
+       3.978155152070006
+      ],
+      [
+       "model.hc_head.hc_head_base",
+       3.8424153976686624
+      ],
+      [
+       "model.layers.2.hc_mlp_layer.hc_pre.hc_base",
+       3.8185439985013745
+      ]
+     ]
+    },
+    "vs_no_replay": {
+     "median_ratio": 1.0,
+     "group_median_ratio": {
+      "attention": 0.9992096475199226,
+      "embedding": 1.0018799289337126,
+      "head": 1.0001955731705117,
+      "ihc": 0.9959643647179224,
+      "indexer": 1.0,
+      "other": 0.9997893013010271,
+      "routed_experts": 1.000496013183104,
+      "router": 1.0051451425371942,
+      "shared_experts": 1.0002694139200876
+     },
+     "note": "每个张量 rel_L2(回放, GPU) ÷ rel_L2(不回放, GPU) 的中位数；< 1 = 回放后更接近 GPU"
+    }
+   },
+   "tw-fr1b": {
+    "loss": 12.889275550842285,
+    "grad_norm": 6.3604070429104125,
+    "replay": {
+     "routing": "只灌专家下标，权重照算（加偏置前的分数取下标处的值，归一后乘 routed_scaling_factor）"
+    },
+    "replay_sha256": {
+     "routing": "58bd15044473d6a245dde08336e1b069f73806681ff4c52666ab88194b89851c"
+    },
+    "audit": {
+     "routing": {
+      "natural_agree_frac": {
+       "1": 0.9837646484375,
+       "2": 0.98236083984375,
+       "3": 0.979217529296875,
+       "4": 0.97906494140625,
+       "5": 0.978912353515625,
+       "6": 0.9842529296875,
+       "7": 0.98345947265625
+      },
+      "missing_layers": [],
+      "mismatch_total": 0
+     }
+    },
+    "tpu_vs_gpu": {
+     "n_tensors": 205,
+     "median": 0.002219716860286959,
+     "max": 0.41070448986648483,
+     "max_tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_scale",
+     "group_median": {
+      "attention": 0.0020415009398415873,
+      "embedding": 0.002691462368240093,
+      "head": 0.0008549313957339798,
+      "ihc": 0.0026807793112282193,
+      "indexer": 0.0020083073548257087,
+      "other": 0.00200205732177079,
+      "routed_experts": 0.0033881618953597197,
+      "router": 0.003347089039874745,
+      "shared_experts": 0.001812503207851887
+     }
+    },
+    "tpu_vs_gpu_over_gpu_rerun": {
+     "median": 0.9612919029169879,
+     "n_gt_1.2": 55,
+     "top": [
+      [
+       "model.layers.1.hc_attn_layer.hc_pre.hc_base",
+       3.262605471144082
+      ],
+      [
+       "model.layers.2.hc_attn_layer.hc_pre.hc_scale",
+       2.6171846955850215
+      ],
+      [
+       "model.hc_head.hc_head_base",
+       2.576938185951584
+      ],
+      [
+       "model.layers.4.self_attn.learnable_sink_param",
+       2.5651319954657055
+      ],
+      [
+       "model.layers.5.self_attn.indexer.k_norm.bias",
+       2.2608788044188133
+      ],
+      [
+       "model.layers.0.hc_attn_layer.hc_pre.hc_scale",
+       2.110549787601031
+      ],
+      [
+       "model.layers.2.self_attn.learnable_sink_param",
+       2.059473151788313
+      ],
+      [
+       "model.layers.4.hc_attn_layer.hc_pre.hc_base",
+       1.8906212362702757
+      ],
+      [
+       "model.mtp_layers.0.input_layernorm.weight",
+       1.8125158828771146
+      ],
+      [
+       "model.mtp_layers.0.self_attn.kv_a_layernorm.weight",
+       1.7974057981289535
+      ]
+     ]
+    },
+    "vs_no_replay": {
+     "median_ratio": 0.5519442378777687,
+     "group_median_ratio": {
+      "attention": 0.6377563492451808,
+      "embedding": 0.7153348027589408,
+      "head": 0.4745483062346984,
+      "ihc": 0.40710886187599993,
+      "indexer": 0.8937244880503273,
+      "other": 0.6887226372096251,
+      "routed_experts": 0.22006120050715866,
+      "router": 0.1438349728777158,
+      "shared_experts": 0.5184319079031692
+     },
+     "note": "每个张量 rel_L2(回放, GPU) ÷ rel_L2(不回放, GPU) 的中位数；< 1 = 回放后更接近 GPU"
+    }
+   }
+  },
+  "gpu_rerun_vs_g8": {
+   "n_tensors": 191,
+   "median": 0.0023399929647060043,
+   "max": 1.1205865977097242,
+   "max_tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_scale",
+   "group_median": {
+    "attention": 0.002265973250010755,
+    "embedding": 0.002488535385655653,
+    "head": 0.0010089484175723718,
+    "ihc": 0.0037458855744728326,
+    "indexer": 0.0002819259292466763,
+    "other": 0.0018002067100882676,
+    "router": 0.014811907910558735,
+    "shared_experts": 0.002168881146736432
+   }
+  },
+  "rule": "只报 TPU 对 GPU；R = rel_L2(TPU, FP64) ÷ rel_L2(GPU, FP64) 等 CPU FP64 参照"
+ }
+}

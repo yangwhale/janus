@@ -1,0 +1,305 @@
+{
+ "note": "CPU 上用 libtpu 为 v5p 交叉编译（只编不跑），libtpu 与 golden 同一构建（dump 文件名里的 cl_963683785）。threshold：每组 (V, D) 二分出优化后 HLO 里出现 sort 的最小下标个数 N（上限 65536）；cells：单设备每格的 HLO 事实；sharded：8 个设备（v5p:2x2x2）上 FSDP / DP / DP 先在 JAX 里排序，各设备程序里的 sort 与 scatter；sort_pass：逐 pass dump（--xla_dump_hlo_pass_re=.*）里第一次出现 sort 的 dump 文件；llo：N=4096 的四格（标不标 indices_are_sorted × excess precision 开关）scatter 那颗 kernel 的 final_bundles 静态指令条数。脚本 models/hunyuan4/analysis/emb_scatter_sort_probe.py aot / aot-one / llo-count。",
+ "platform_version": null,
+ "threshold": [
+  {
+   "V": 1000,
+   "D": 1024,
+   "min_n_with_sort": null,
+   "checked_up_to": 65536
+  },
+  {
+   "V": 30000,
+   "D": 128,
+   "min_n_with_sort": null,
+   "checked_up_to": 65536
+  },
+  {
+   "V": 30000,
+   "D": 1024,
+   "min_n_with_sort": 3751,
+   "V_over_8": 3750.0
+  },
+  {
+   "V": 60000,
+   "D": 128,
+   "min_n_with_sort": 7501,
+   "V_over_8": 7500.0
+  },
+  {
+   "V": 120832,
+   "D": 128,
+   "min_n_with_sort": 15105,
+   "V_over_8": 15104.0
+  },
+  {
+   "V": 120832,
+   "D": 1024,
+   "min_n_with_sort": 15105,
+   "V_over_8": 15104.0
+  },
+  {
+   "V": 480000,
+   "D": 128,
+   "min_n_with_sort": 60001,
+   "V_over_8": 60000.0
+  }
+ ],
+ "cells": {
+  "n2048_noflag_excess_on": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 0,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n2048_noflag_excess_off": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 0,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n2048_flag_excess_on": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n2048_flag_excess_off": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n4096_noflag_excess_on": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 0,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n4096_noflag_excess_off": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 0,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n4096_flag_excess_on": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n4096_flag_excess_off": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n8192_noflag_excess_on": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 0,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n8192_noflag_excess_off": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 0,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n8192_flag_excess_on": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n8192_flag_excess_off": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n16384_noflag_excess_on": {
+   "n_sort": 1,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n16384_noflag_excess_off": {
+   "n_sort": 1,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n16384_flag_excess_on": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n16384_flag_excess_off": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n32768_noflag_excess_on": {
+   "n_sort": 1,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n32768_noflag_excess_off": {
+   "n_sort": 1,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n32768_flag_excess_on": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n32768_flag_excess_off": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  }
+ },
+ "sharded": {
+  "fsdp8": {
+   "n_sort": 1,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "dp8": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 0,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "dp8_jaxsort": {
+   "n_sort": 1,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  }
+ },
+ "sort_pass": {
+  "n16384": "0031.Pre_main_fusion.after_tpu_scatter_gather_optimizer.before_dce（前一个 dump 0030.layout_fixup 里还没有 sort）",
+  "n8192": "没有任何 pass 之后出现 sort；tpu_scatter_gather_optimizer 之后没有 dump 文件（没改动模块时不写）",
+  "what_it_inserts": "sort((下标, iota)) 稳定排序 → 按排序后的置换 gather 更新量 → scatter 标 indices_are_sorted=true；比较函数先比下标、相等再比 iota"
+ },
+ "llo": {
+  "llo-n4096-flag0-excess0": {
+   "kernel": "scatter_fusion",
+   "bundles": 4999,
+   "vld": 400,
+   "vst": 272,
+   "vadd.f32": 256,
+   "vunpack.c.l.bf16": 256,
+   "vunpack.i.l.bf16": 128,
+   "vpack.c.bf16": 256,
+   "vpack.i.bf16": 256
+  },
+  "llo-n4096-flag0-excess1": {
+   "kernel": "scatter_fusion",
+   "bundles": 4911,
+   "vld": 400,
+   "vst": 272,
+   "vadd.f32": 256,
+   "vunpack.c.l.bf16": 256,
+   "vunpack.i.l.bf16": 128,
+   "vpack.c.bf16": 256,
+   "vpack.i.bf16": 0
+  },
+  "llo-n4096-flag1-excess0": {
+   "kernel": "scatter_custom_fusion",
+   "bundles": 25708,
+   "vld": 17367,
+   "vst": 20930,
+   "vadd.f32": 4096,
+   "vunpack.c.l.bf16": 256,
+   "vunpack.i.l.bf16": 1,
+   "vpack.c.bf16": 7418,
+   "vpack.i.bf16": 12288
+  },
+  "llo-n4096-flag1-excess1": {
+   "kernel": "scatter_custom_fusion",
+   "bundles": 23660,
+   "vld": 17367,
+   "vst": 20930,
+   "vadd.f32": 4096,
+   "vunpack.c.l.bf16": 256,
+   "vunpack.i.l.bf16": 1,
+   "vpack.c.bf16": 7418,
+   "vpack.i.bf16": 0
+  }
+ },
+ "flags_tried_no_effect_at_n4096": [
+  "--xla_tpu_gather_scatter_flatten_min_index_count=1",
+  "--xla_tpu_enable_offloading_scatter_to_sparsecore=true"
+ ],
+ "threshold_other_chips": {
+  "tpu7x:2x2x1": {
+   "V": 120832,
+   "D": 1024,
+   "n15104_sort": 0,
+   "n15105_sort": 1
+  },
+  "v6e:2x2": {
+   "V": 120832,
+   "D": 1024,
+   "n15104_sort": 0,
+   "n15105_sort": 1
+  }
+ }
+}

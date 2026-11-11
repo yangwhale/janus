@@ -1,0 +1,1179 @@
+{
+ "note": "被测 tw-opmini-d：MaxText 2b005b3d，T1 yml（janus c9e5037）同 tw-opmini-c，再开 moe_mcore_prob_before_fc2（M40：路由权重在 fc2 之前乘、top-k 输出在 BF16 里逐个相加）。基线 tw-opmini-c（M40 关，t1-l1-op-tpu-r2.json）。只有前向。M40 只改路由专家：TPU 对 FP64 的误差从 4.12e-3 升到 4.66e-3（GPU 5.37e-3），R 0.77 → 0.87；TPU 对 GPU 的 rel_L2（MoE 整块）4.66e-3 → 5.20e-3 变大，是因为上游 GEMM 的累加值两边本就不逐位相同，多出的两步 BF16 舍入落在不同的值上、相互独立（推断）。其余算子与基线逐位相同",
+ "per_site_vs_base": {
+  "base_run": {
+   "run": "tw-opmini-c",
+   "platform": "tpu",
+   "device_kind": "TPU v5",
+   "tokens": 4096,
+   "seconds": 153.13889360427856,
+   "note": "TPU 一侧的逐算子隔离回放（hy4-mini）"
+  },
+  "rule": "R = rel_L2(TPU, FP64) ÷ rel_L2(GPU, FP64) ≤ 1.2 过（PROTOCOL.md 第 5 节）；逐算子取最差",
+  "sites": [
+   {
+    "site": "sigmoid_attn_gate",
+    "ops": "注意力整块（含输出门的 sigmoid）",
+    "n_ops": 8,
+    "metric": "输出 · rel_L2 对 FP64（同一算子、同一 GPU 输入；逐算子取最差）",
+    "base": {
+     "op": "2.self_attn",
+     "gpu": 0.003359980011127734,
+     "tpu": 0.0030893684444446264,
+     "R": 0.9194603641132137
+    },
+    "test": {
+     "op": "2.self_attn",
+     "gpu": 0.003359980011127734,
+     "tpu": 0.0030893684444446264,
+     "R": 0.9194603641132137
+    },
+    "tpu_vs_gpu_rel_l2_mean": {
+     "base": 0.004487289681938271,
+     "test": 0.004487289681938271
+    }
+   },
+   {
+    "site": "sigmoid_ihc",
+    "ops": "iHC 混合（pre 门 sigmoid）",
+    "n_ops": 14,
+    "metric": "输出 · rel_L2 对 FP64（同一算子、同一 GPU 输入；逐算子取最差）",
+    "base": {
+     "op": "0.ffn_hc.out",
+     "gpu": 0.0011653780185288422,
+     "tpu": 0.0011653780195652315,
+     "R": 1.000000000889316
+    },
+    "test": {
+     "op": "0.ffn_hc.out",
+     "gpu": 0.0011653780185288422,
+     "tpu": 0.0011653780195652315,
+     "R": 1.000000000889316
+    },
+    "tpu_vs_gpu_rel_l2_mean": {
+     "base": 6.491924028247768e-06,
+     "test": 6.491924028247768e-06
+    }
+   },
+   {
+    "site": "sigmoid_ihc_post",
+    "ops": "iHC 写回（post 门 sigmoid）",
+    "n_ops": 15,
+    "metric": "输出 · rel_L2 对 FP64（同一算子、同一 GPU 输入；逐算子取最差）",
+    "base": {
+     "op": "3.attn_residual",
+     "gpu": 0.0016537070334329694,
+     "tpu": 0.0016537070338181132,
+     "R": 1.0000000002328973
+    },
+    "test": {
+     "op": "3.attn_residual",
+     "gpu": 0.0016537070334329694,
+     "tpu": 0.0016537070338181132,
+     "R": 1.0000000002328973
+    },
+    "tpu_vs_gpu_rel_l2_mean": {
+     "base": 6.421700735615609e-06,
+     "test": 6.421700735615609e-06
+    }
+   },
+   {
+    "site": "sigmoid_hc_head",
+    "ops": "hc_head",
+    "n_ops": 1,
+    "metric": "输出 · rel_L2 对 FP64（同一算子、同一 GPU 输入；逐算子取最差）",
+    "base": {
+     "op": "hc_head",
+     "gpu": 0.0015609315541685216,
+     "tpu": 0.0015609315542673826,
+     "R": 1.0000000000633347
+    },
+    "test": {
+     "op": "hc_head",
+     "gpu": 0.0015609315541685216,
+     "tpu": 0.0015609315542673826,
+     "R": 1.0000000000633347
+    },
+    "tpu_vs_gpu_rel_l2_mean": {
+     "base": 4.170611753140841e-06,
+     "test": 4.170611753140841e-06
+    }
+   },
+   {
+    "site": "silu_dense",
+    "ops": "稠密 MLP（第 0 层）",
+    "n_ops": 1,
+    "metric": "输出 · rel_L2 对 FP64（同一算子、同一 GPU 输入；逐算子取最差）",
+    "base": {
+     "op": "0.mlp",
+     "gpu": 0.003726420473052019,
+     "tpu": 0.003307642518006028,
+     "R": 0.8876192426285693
+    },
+    "test": {
+     "op": "0.mlp",
+     "gpu": 0.003726420473052019,
+     "tpu": 0.003307642518006028,
+     "R": 0.8876192426285693
+    },
+    "tpu_vs_gpu_rel_l2_mean": {
+     "base": 0.0037968823703497462,
+     "test": 0.0037968823703497462
+    }
+   },
+   {
+    "site": "silu_shared",
+    "ops": "共享专家",
+    "n_ops": 7,
+    "metric": "输出 · rel_L2 对 FP64（同一算子、同一 GPU 输入；逐算子取最差）",
+    "base": {
+     "op": "1.mlp.shared_experts",
+     "gpu": 0.0037015420068959386,
+     "tpu": 0.003314022363514125,
+     "R": 0.8953085922948144
+    },
+    "test": {
+     "op": "1.mlp.shared_experts",
+     "gpu": 0.0037015420068959386,
+     "tpu": 0.003314022363514125,
+     "R": 0.8953085922948144
+    },
+    "tpu_vs_gpu_rel_l2_mean": {
+     "base": 0.003797373087810915,
+     "test": 0.003797373087810915
+    }
+   },
+   {
+    "site": "sigmoid_router+silu_routed",
+    "ops": "MoE 整块（自选路由）",
+    "n_ops": 7,
+    "metric": "输出 · rel_L2 对 FP64（同一算子、同一 GPU 输入；逐算子取最差）",
+    "base": {
+     "op": "mtp0.mlp(own routing)",
+     "gpu": 0.004836779060039157,
+     "tpu": 0.004202840195019339,
+     "R": 0.8689336731840122
+    },
+    "test": {
+     "op": "6.mlp(own routing)",
+     "gpu": 0.004928719745992975,
+     "tpu": 0.004649486598768041,
+     "R": 0.9433457040335984
+    },
+    "tpu_vs_gpu_rel_l2_mean": {
+     "base": 0.004658022750865148,
+     "test": 0.005200426102167009
+    }
+   },
+   {
+    "site": "silu_routed",
+    "ops": "路由专家（MoE 整块减共享专家）",
+    "n_ops": 7,
+    "metric": "输出 · rel_L2 对 FP64（同一算子、同一 GPU 输入；逐算子取最差）",
+    "base": {
+     "op": "6.mlp.routed_experts",
+     "gpu": 0.0053686766121088655,
+     "tpu": 0.004121653175769987,
+     "R": 0.7677223780761427
+    },
+    "test": {
+     "op": "6.mlp.routed_experts",
+     "gpu": 0.0053686766121088655,
+     "tpu": 0.004664446188311161,
+     "R": 0.8688260674503402
+    },
+    "tpu_vs_gpu_rel_l2_mean": {
+     "base": null,
+     "test": null
+    }
+   },
+   {
+    "site": "cross_entropy",
+    "ops": "交叉熵",
+    "n_ops": 1,
+    "metric": "输出 · rel_L2 对 FP64（同一算子、同一 GPU 输入；逐算子取最差）",
+    "base": {
+     "op": "cross_entropy",
+     "gpu": 3.326577020971728e-08,
+     "tpu": 3.824860742030769e-08,
+     "R": 1.1497887221362117
+    },
+    "test": {
+     "op": "cross_entropy",
+     "gpu": 3.326577020971728e-08,
+     "tpu": 3.824860742030769e-08,
+     "R": 1.1497887221362117
+    },
+    "tpu_vs_gpu_rel_l2_mean": {
+     "base": 3.666781722212374e-08,
+     "test": 3.666781722212374e-08
+    }
+   }
+  ]
+ },
+ "what": "L1 逐算子隔离回放（hy4-mini，第 1 步 rank 0 第 0 个 microbatch）：每个算子吃 GPU（Megatron-Core + TE）抓到的输入，TPU 输出对 FP64 参照，GPU 输出对同一个参照",
+ "gpu_run": "g7-l1-a（golden-t1/g7-l1-a，分析目录 mini-l1/gpu）",
+ "fp64": "mini-l1/fp64（GPU 一侧 fp64_l1_gpu.py，CPU FP64）",
+ "tpu": {
+  "run": "tw-opmini-d",
+  "platform": "tpu",
+  "device_kind": "TPU v5",
+  "tokens": 4096,
+  "seconds": 144.70539236068726,
+  "note": "TPU 一侧的逐算子隔离回放（hy4-mini）"
+ },
+ "routing_flip_rule": "MoE 整块 / 路由专家里 TPU 对 FP64 逐 token 相对差 > 0.1 的 token 记成路由翻转，另报去掉它们的 R（诊断，不改判定）",
+ "rule": "R = rel_L2(TPU, FP64) ÷ rel_L2(GPU, FP64) ≤ 1.2 过（PROTOCOL.md 第 5 节）；逐算子取最差",
+ "n_ops_with_R": 99,
+ "worst": {
+  "op": "cross_entropy",
+  "R": 1.1497887221362117
+ },
+ "verdict": "pass",
+ "fail_ops": [],
+ "no_fp64": [],
+ "ops": [
+  {
+   "op": "embed",
+   "maxtext": "token_embedder/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.0,
+   "fp64": "embed",
+   "rel_l2_tpu_vs_fp64": 0.0,
+   "rel_l2_gpu_vs_fp64": 0.0,
+   "R": 0.0
+  },
+  {
+   "op": "hc_head",
+   "maxtext": "decoder/hc_head/janus__out",
+   "rel_l2_tpu_vs_gpu": 4.170611753140841e-06,
+   "fp64": "hc_head",
+   "rel_l2_tpu_vs_fp64": 0.0015609315542673826,
+   "rel_l2_gpu_vs_fp64": 0.0015609315541685216,
+   "R": 1.0000000000633347
+  },
+  {
+   "op": "final_norm",
+   "maxtext": "decoder/decoder_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.5465823997830382e-05,
+   "fp64": "final_norm",
+   "rel_l2_tpu_vs_fp64": 0.0016634879271363884,
+   "rel_l2_gpu_vs_fp64": 0.0016634879266672693,
+   "R": 1.0000000002820093
+  },
+  {
+   "op": "lm_head",
+   "maxtext": "decoder/logits_dense/janus__out",
+   "rel_l2_tpu_vs_gpu": 2.680317984103131e-07,
+   "fp64": "lm_head",
+   "rel_l2_tpu_vs_fp64": 8.31716490810812e-08,
+   "rel_l2_gpu_vs_fp64": 2.5627139153126073e-07,
+   "R": 0.3245451963409489
+  },
+  {
+   "op": "cross_entropy",
+   "maxtext": "xent",
+   "rel_l2_tpu_vs_gpu": 3.666781722212374e-08,
+   "fp64": "cross_entropy(gpu logits)",
+   "rel_l2_tpu_vs_fp64": 3.824860742030769e-08,
+   "rel_l2_gpu_vs_fp64": 3.326577020971728e-08,
+   "R": 1.1497887221362117
+  },
+  {
+   "op": "mtp0.enorm",
+   "maxtext": "mtp_block/mtp_layer_1/mtp_1_embedding_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.482148254545177e-05,
+   "fp64": "hf.model.mtp_layers.0.enorm",
+   "rel_l2_tpu_vs_fp64": 0.00165806718467455,
+   "rel_l2_gpu_vs_fp64": 0.0016580671844046847,
+   "R": 1.000000000162759
+  },
+  {
+   "op": "mtp0.hnorm",
+   "maxtext": "mtp_block/mtp_layer_1/mtp_1_hidden_state_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.0609153618168304e-05,
+   "fp64": "hf.model.mtp_layers.0.hnorm",
+   "rel_l2_tpu_vs_fp64": 0.0016920189902542098,
+   "rel_l2_gpu_vs_fp64": 0.0016920189906373768,
+   "R": 0.9999999997735445
+  },
+  {
+   "op": "mtp0.eh_proj",
+   "maxtext": "mtp_block/mtp_layer_1/mtp_1_projection/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.00010331954190010585,
+   "fp64": "hf.model.mtp_layers.0.eh_proj",
+   "rel_l2_tpu_vs_fp64": 0.0016593242548586416,
+   "rel_l2_gpu_vs_fp64": 0.0016593255564812013,
+   "R": 0.9999992155713178
+  },
+  {
+   "op": "mtp0.final_layernorm",
+   "maxtext": "mtp_block/mtp_layer_1/mtp_1_final_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.5707647293801605e-05,
+   "fp64": "hf.model.mtp_layers.0.final_layernorm",
+   "rel_l2_tpu_vs_fp64": 0.0016603151967003094,
+   "rel_l2_gpu_vs_fp64": 0.0016603151970329968,
+   "R": 0.999999999799624
+  },
+  {
+   "op": "0.input_layernorm",
+   "maxtext": "decoder/dense_layers/pre_self_attention_layer_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 7.439595802069096e-06,
+   "fp64": "hf.model.layers.0.input_layernorm",
+   "rel_l2_tpu_vs_fp64": 0.001667318261160308,
+   "rel_l2_gpu_vs_fp64": 0.0016673182611099046,
+   "R": 1.0000000000302303
+  },
+  {
+   "op": "0.self_attn.gate_proj",
+   "maxtext": "decoder/dense_layers/self_attention/gate_proj/janus__out",
+   "rel_l2_tpu_vs_gpu": 6.573282873978283e-05,
+   "fp64": "hf.model.layers.0.self_attn.gate_proj",
+   "rel_l2_tpu_vs_fp64": 0.0016477158349131966,
+   "rel_l2_gpu_vs_fp64": 0.0016477161397743542,
+   "R": 0.9999998149795646
+  },
+  {
+   "op": "0.self_attn",
+   "maxtext": "decoder/dense_layers/self_attention/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.007864580629724475,
+   "fp64": "hf.model.layers.0.self_attn(own topk)",
+   "note": "自选 top-k",
+   "rel_l2_tpu_vs_fp64": 0.007946058340793318,
+   "rel_l2_gpu_vs_fp64": 0.00866830289072051,
+   "R": 0.9166798208331689
+  },
+  {
+   "op": "0.post_attention_layernorm",
+   "maxtext": "decoder/dense_layers/post_self_attention_layer_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.2651837088401636e-05,
+   "fp64": "hf.model.layers.0.post_attention_layernorm",
+   "rel_l2_tpu_vs_fp64": 0.0016588714811518978,
+   "rel_l2_gpu_vs_fp64": 0.0016588714816841944,
+   "R": 0.9999999996791212
+  },
+  {
+   "op": "0.mlp",
+   "maxtext": "decoder/dense_layers/mlp/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.0037968823703497462,
+   "fp64": "hf.model.layers.0.mlp(block)",
+   "rel_l2_tpu_vs_fp64": 0.003307642518006028,
+   "rel_l2_gpu_vs_fp64": 0.003726420473052019,
+   "R": 0.8876192426285693
+  },
+  {
+   "op": "0.attn_hc.out",
+   "maxtext": "decoder/dense_layers/pre_self_attention_layer_norm/janus__in",
+   "rel_l2_tpu_vs_gpu": 7.446646882659894e-06,
+   "fp64": "hf.model.layers.0.attn_hc.out",
+   "rel_l2_tpu_vs_fp64": 0.0017003058066802266,
+   "rel_l2_gpu_vs_fp64": 0.0017003058067588449,
+   "R": 0.9999999999537622
+  },
+  {
+   "op": "0.ffn_hc.out",
+   "maxtext": "decoder/dense_layers/post_self_attention_layer_norm/janus__in",
+   "rel_l2_tpu_vs_gpu": 1.2226037288056914e-05,
+   "fp64": "hf.model.layers.0.ffn_hc.out",
+   "rel_l2_tpu_vs_fp64": 0.0011653780195652315,
+   "rel_l2_gpu_vs_fp64": 0.0011653780185288422,
+   "R": 1.000000000889316
+  },
+  {
+   "op": "0.attn_residual",
+   "maxtext": "decoder/dense_layers/mhc_attention/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.4154939025590046e-06,
+   "fp64": "hf.model.layers.0.attn_residual",
+   "note": "4 路流 + post × 注意力输出；注意力的输出换成 GPU 的（只测写回）",
+   "rel_l2_tpu_vs_fp64": 0.0016650698900309707,
+   "rel_l2_gpu_vs_fp64": 0.0016650698900019674,
+   "R": 1.0000000000174187
+  },
+  {
+   "op": "0.ffn_residual",
+   "maxtext": "decoder/dense_layers/mhc_mlp/janus__out",
+   "rel_l2_tpu_vs_gpu": 5.796173863146031e-06,
+   "fp64": "hf.model.layers.0.ffn_residual",
+   "note": "4 路流 + post × FFN 输出；FFN 的输出换成 GPU 的（只测写回）",
+   "rel_l2_tpu_vs_fp64": 0.001660367698891136,
+   "rel_l2_gpu_vs_fp64": 0.001660367698629312,
+   "R": 1.0000000001576903
+  },
+  {
+   "op": "1.input_layernorm",
+   "maxtext": "decoder/moe_layers/layers_0/pre_self_attention_layer_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 2.154130194775805e-05,
+   "fp64": "hf.model.layers.1.input_layernorm",
+   "rel_l2_tpu_vs_fp64": 0.0016615298760813927,
+   "rel_l2_gpu_vs_fp64": 0.0016615298776472076,
+   "R": 0.9999999990576065
+  },
+  {
+   "op": "1.self_attn.gate_proj",
+   "maxtext": "decoder/moe_layers/layers_0/self_attention/gate_proj/janus__out",
+   "rel_l2_tpu_vs_gpu": 7.014064473629344e-05,
+   "fp64": "hf.model.layers.1.self_attn.gate_proj",
+   "rel_l2_tpu_vs_fp64": 0.0016545846299953178,
+   "rel_l2_gpu_vs_fp64": 0.0016545849302353945,
+   "R": 0.9999998185405468
+  },
+  {
+   "op": "1.self_attn",
+   "maxtext": "decoder/moe_layers/layers_0/self_attention/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.004802543385264773,
+   "fp64": "hf.model.layers.1.self_attn(own topk)",
+   "note": "自选 top-k",
+   "rel_l2_tpu_vs_fp64": 0.003953444758658572,
+   "rel_l2_gpu_vs_fp64": 0.004487911582330723,
+   "R": 0.8809096806237469
+  },
+  {
+   "op": "1.post_attention_layernorm",
+   "maxtext": "decoder/moe_layers/layers_0/post_self_attention_layer_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.738998462317014e-05,
+   "fp64": "hf.model.layers.1.post_attention_layernorm",
+   "rel_l2_tpu_vs_fp64": 0.0016628689401950183,
+   "rel_l2_gpu_vs_fp64": 0.0016628689397488396,
+   "R": 1.0000000002683187
+  },
+  {
+   "op": "1.mlp(own routing)",
+   "maxtext": "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.005141073516109994,
+   "fp64": "hf.model.layers.1.mlp(own routing)",
+   "routing_flip_tokens": [],
+   "routing_flip_gap_4th_5th_fp64": [],
+   "rel_l2_tpu_vs_fp64": 0.004563449801363951,
+   "rel_l2_gpu_vs_fp64": 0.004845593139707599,
+   "R": 0.9417732091389179
+  },
+  {
+   "op": "1.mlp.gate.logits",
+   "maxtext": "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/gate/janus__logits",
+   "rel_l2_tpu_vs_gpu": 9.897573162682358e-07,
+   "fp64": "hf.model.layers.1.mlp.gate.logits",
+   "rel_l2_tpu_vs_fp64": 7.977199496137501e-08,
+   "rel_l2_gpu_vs_fp64": 9.864764741849954e-07,
+   "R": 0.08086558275733928
+  },
+  {
+   "op": "1.mlp.shared_experts",
+   "maxtext": "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/shared_experts/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.0037411113489262404,
+   "fp64_local": "shared",
+   "rel_l2_tpu_vs_fp64": 0.003314022363514125,
+   "rel_l2_gpu_vs_fp64": 0.0037015420068959386,
+   "R": 0.8953085922948144
+  },
+  {
+   "op": "1.mlp.routed_experts",
+   "maxtext": "decoder/moe_layers/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/janus__out",
+   "fp64_local": "routed",
+   "gpu_note": "GPU 的路由专家输出没单独抓：用 mlp.out − shared_experts.out（含 mlp.out 的 BF16 舍入）",
+   "routing_flip_tokens": [],
+   "routing_flip_gap_4th_5th_fp64": [],
+   "rel_l2_tpu_vs_fp64": 0.004606190071447009,
+   "rel_l2_gpu_vs_fp64": 0.00536343008199416,
+   "R": 0.8588142291461356
+  },
+  {
+   "op": "1.attn_hc.out",
+   "maxtext": "decoder/moe_layers/layers_0/pre_self_attention_layer_norm/janus__in",
+   "rel_l2_tpu_vs_gpu": 1.1657444225856307e-05,
+   "fp64": "hf.model.layers.1.attn_hc.out",
+   "rel_l2_tpu_vs_fp64": 0.0017678589163575668,
+   "rel_l2_gpu_vs_fp64": 0.0017678589165263188,
+   "R": 0.9999999999045445
+  },
+  {
+   "op": "1.ffn_hc.out",
+   "maxtext": "decoder/moe_layers/layers_0/post_self_attention_layer_norm/janus__in",
+   "rel_l2_tpu_vs_gpu": 2.356919182627034e-08,
+   "fp64": "hf.model.layers.1.ffn_hc.out",
+   "rel_l2_tpu_vs_fp64": 0.0014545415930404654,
+   "rel_l2_gpu_vs_fp64": 0.0014545415930404544,
+   "R": 1.0000000000000075
+  },
+  {
+   "op": "1.attn_residual",
+   "maxtext": "decoder/moe_layers/layers_0/mhc_attention/janus__out",
+   "rel_l2_tpu_vs_gpu": 7.251348139072113e-06,
+   "fp64": "hf.model.layers.1.attn_residual",
+   "note": "4 路流 + post × 注意力输出；注意力的输出换成 GPU 的（只测写回）",
+   "rel_l2_tpu_vs_fp64": 0.001670937725063018,
+   "rel_l2_gpu_vs_fp64": 0.001670937724814977,
+   "R": 1.0000000001484441
+  },
+  {
+   "op": "1.ffn_residual",
+   "maxtext": "decoder/moe_layers/layers_0/mhc_mlp/janus__out",
+   "rel_l2_tpu_vs_gpu": 2.646538728314915e-06,
+   "fp64": "hf.model.layers.1.ffn_residual",
+   "note": "4 路流 + post × FFN 输出；FFN 的输出换成 GPU 的（只测写回）",
+   "rel_l2_tpu_vs_fp64": 0.0016509178210873448,
+   "rel_l2_gpu_vs_fp64": 0.0016509178210255993,
+   "R": 1.0000000000374007
+  },
+  {
+   "op": "2.input_layernorm",
+   "maxtext": "decoder/moe_layers/layers_1/pre_self_attention_layer_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.8181800985979357e-05,
+   "fp64": "hf.model.layers.2.input_layernorm",
+   "rel_l2_tpu_vs_fp64": 0.0016613363436346468,
+   "rel_l2_gpu_vs_fp64": 0.0016613363440475728,
+   "R": 0.9999999997514495
+  },
+  {
+   "op": "2.self_attn.gate_proj",
+   "maxtext": "decoder/moe_layers/layers_1/self_attention/gate_proj/janus__out",
+   "rel_l2_tpu_vs_gpu": 6.857081157050266e-05,
+   "fp64": "hf.model.layers.2.self_attn.gate_proj",
+   "rel_l2_tpu_vs_fp64": 0.00165558699645391,
+   "rel_l2_gpu_vs_fp64": 0.001655587278370889,
+   "R": 0.9999998297178392
+  },
+  {
+   "op": "2.self_attn",
+   "maxtext": "decoder/moe_layers/layers_1/self_attention/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.004043759709901379,
+   "fp64": "hf.model.layers.2.self_attn(gpu topk)",
+   "note": "共享层：top-k 掩码是块首层在 GPU 输入上自选的，FP64 用的是 GPU 的 top-k",
+   "rel_l2_tpu_vs_fp64": 0.0030893684444446264,
+   "rel_l2_gpu_vs_fp64": 0.003359980011127734,
+   "R": 0.9194603641132137
+  },
+  {
+   "op": "2.post_attention_layernorm",
+   "maxtext": "decoder/moe_layers/layers_1/post_self_attention_layer_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.271950378548101e-05,
+   "fp64": "hf.model.layers.2.post_attention_layernorm",
+   "rel_l2_tpu_vs_fp64": 0.0016654559009224186,
+   "rel_l2_gpu_vs_fp64": 0.001665455900329395,
+   "R": 1.000000000356073
+  },
+  {
+   "op": "2.mlp(own routing)",
+   "maxtext": "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.005203292100910342,
+   "fp64": "hf.model.layers.2.mlp(own routing)",
+   "routing_flip_tokens": [],
+   "routing_flip_gap_4th_5th_fp64": [],
+   "rel_l2_tpu_vs_fp64": 0.0045829160106467025,
+   "rel_l2_gpu_vs_fp64": 0.0048772498439405695,
+   "R": 0.9396516802067166
+  },
+  {
+   "op": "2.mlp.gate.logits",
+   "maxtext": "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/gate/janus__logits",
+   "rel_l2_tpu_vs_gpu": 1.0512920080508542e-06,
+   "fp64": "hf.model.layers.2.mlp.gate.logits",
+   "rel_l2_tpu_vs_fp64": 9.201895860552332e-08,
+   "rel_l2_gpu_vs_fp64": 1.0476417365756223e-06,
+   "R": 0.08783437638357307
+  },
+  {
+   "op": "2.mlp.shared_experts",
+   "maxtext": "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/shared_experts/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.003787990620210767,
+   "fp64_local": "shared",
+   "rel_l2_tpu_vs_fp64": 0.0032928139534641057,
+   "rel_l2_gpu_vs_fp64": 0.0037228099401621605,
+   "R": 0.8844969274259205
+  },
+  {
+   "op": "2.mlp.routed_experts",
+   "maxtext": "decoder/moe_layers/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/janus__out",
+   "fp64_local": "routed",
+   "gpu_note": "GPU 的路由专家输出没单独抓：用 mlp.out − shared_experts.out（含 mlp.out 的 BF16 舍入）",
+   "routing_flip_tokens": [],
+   "routing_flip_gap_4th_5th_fp64": [],
+   "rel_l2_tpu_vs_fp64": 0.004617735095892908,
+   "rel_l2_gpu_vs_fp64": 0.005371184318452788,
+   "R": 0.8597238192010292
+  },
+  {
+   "op": "2.attn_hc.out",
+   "maxtext": "decoder/moe_layers/layers_1/pre_self_attention_layer_norm/janus__in",
+   "rel_l2_tpu_vs_gpu": 0.0,
+   "fp64": "hf.model.layers.2.attn_hc.out",
+   "rel_l2_tpu_vs_fp64": 0.0014783491278561333,
+   "rel_l2_gpu_vs_fp64": 0.0014783491278561333,
+   "R": 1.0
+  },
+  {
+   "op": "2.ffn_hc.out",
+   "maxtext": "decoder/moe_layers/layers_1/post_self_attention_layer_norm/janus__in",
+   "rel_l2_tpu_vs_gpu": 1.0425543596101208e-05,
+   "fp64": "hf.model.layers.2.ffn_hc.out",
+   "rel_l2_tpu_vs_fp64": 0.0015806611277192884,
+   "rel_l2_gpu_vs_fp64": 0.00158066112808581,
+   "R": 0.9999999997681213
+  },
+  {
+   "op": "2.attn_residual",
+   "maxtext": "decoder/moe_layers/layers_1/mhc_attention/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.587459289216577e-05,
+   "fp64": "hf.model.layers.2.attn_residual",
+   "note": "4 路流 + post × 注意力输出；注意力的输出换成 GPU 的（只测写回）",
+   "rel_l2_tpu_vs_fp64": 0.0016711977288587127,
+   "rel_l2_gpu_vs_fp64": 0.0016711977291444706,
+   "R": 0.9999999998290101
+  },
+  {
+   "op": "2.ffn_residual",
+   "maxtext": "decoder/moe_layers/layers_1/mhc_mlp/janus__out",
+   "rel_l2_tpu_vs_gpu": 9.271369691733525e-06,
+   "fp64": "hf.model.layers.2.ffn_residual",
+   "note": "4 路流 + post × FFN 输出；FFN 的输出换成 GPU 的（只测写回）",
+   "rel_l2_tpu_vs_fp64": 0.0016652303844755234,
+   "rel_l2_gpu_vs_fp64": 0.001665230384310541,
+   "R": 1.0000000000990747
+  },
+  {
+   "op": "3.input_layernorm",
+   "maxtext": "decoder/moe_layers/layers_2/pre_self_attention_layer_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.7124271101919377e-05,
+   "fp64": "hf.model.layers.3.input_layernorm",
+   "rel_l2_tpu_vs_fp64": 0.001663477139213614,
+   "rel_l2_gpu_vs_fp64": 0.001663477138237794,
+   "R": 1.0000000005866145
+  },
+  {
+   "op": "3.self_attn.gate_proj",
+   "maxtext": "decoder/moe_layers/layers_2/self_attention/gate_proj/janus__out",
+   "rel_l2_tpu_vs_gpu": 7.219045057813429e-05,
+   "fp64": "hf.model.layers.3.self_attn.gate_proj",
+   "rel_l2_tpu_vs_fp64": 0.0016561958577196456,
+   "rel_l2_gpu_vs_fp64": 0.0016561961556745745,
+   "R": 0.9999998200968357
+  },
+  {
+   "op": "3.self_attn",
+   "maxtext": "decoder/moe_layers/layers_2/self_attention/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.0039072113758671315,
+   "fp64": "hf.model.layers.3.self_attn(gpu topk)",
+   "note": "共享层：top-k 掩码是块首层在 GPU 输入上自选的，FP64 用的是 GPU 的 top-k",
+   "rel_l2_tpu_vs_fp64": 0.0029679264998413242,
+   "rel_l2_gpu_vs_fp64": 0.0033997051275668675,
+   "R": 0.8729952712003106
+  },
+  {
+   "op": "3.post_attention_layernorm",
+   "maxtext": "decoder/moe_layers/layers_2/post_self_attention_layer_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.545618078132404e-05,
+   "fp64": "hf.model.layers.3.post_attention_layernorm",
+   "rel_l2_tpu_vs_fp64": 0.0016639044759189873,
+   "rel_l2_gpu_vs_fp64": 0.0016639044755882358,
+   "R": 1.0000000001987803
+  },
+  {
+   "op": "3.mlp(own routing)",
+   "maxtext": "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.005260770836853656,
+   "fp64": "hf.model.layers.3.mlp(own routing)",
+   "routing_flip_tokens": [],
+   "routing_flip_gap_4th_5th_fp64": [],
+   "rel_l2_tpu_vs_fp64": 0.0046520109123823076,
+   "rel_l2_gpu_vs_fp64": 0.004936345320551712,
+   "R": 0.9423998140920932
+  },
+  {
+   "op": "3.mlp.gate.logits",
+   "maxtext": "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/MoeBlock_0/gate/janus__logits",
+   "rel_l2_tpu_vs_gpu": 1.0598776630246328e-06,
+   "fp64": "hf.model.layers.3.mlp.gate.logits",
+   "rel_l2_tpu_vs_fp64": 8.551457106244674e-08,
+   "rel_l2_gpu_vs_fp64": 1.0562016928652962e-06,
+   "R": 0.08096424351532727
+  },
+  {
+   "op": "3.mlp.shared_experts",
+   "maxtext": "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/shared_experts/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.003804096438440555,
+   "fp64_local": "shared",
+   "rel_l2_tpu_vs_fp64": 0.0033356056290629725,
+   "rel_l2_gpu_vs_fp64": 0.0037527872516865974,
+   "R": 0.8888341931890402
+  },
+  {
+   "op": "3.mlp.routed_experts",
+   "maxtext": "decoder/moe_layers/layers_2/DeepSeekMoeBlock_0/MoeBlock_0/janus__out",
+   "fp64_local": "routed",
+   "gpu_note": "GPU 的路由专家输出没单独抓：用 mlp.out − shared_experts.out（含 mlp.out 的 BF16 舍入）",
+   "routing_flip_tokens": [],
+   "routing_flip_gap_4th_5th_fp64": [],
+   "rel_l2_tpu_vs_fp64": 0.004612047609792731,
+   "rel_l2_gpu_vs_fp64": 0.0053244875023782615,
+   "R": 0.8661955930467846
+  },
+  {
+   "op": "3.attn_hc.out",
+   "maxtext": "decoder/moe_layers/layers_2/pre_self_attention_layer_norm/janus__in",
+   "rel_l2_tpu_vs_gpu": 0.0,
+   "fp64": "hf.model.layers.3.attn_hc.out",
+   "rel_l2_tpu_vs_fp64": 0.0014601162648958518,
+   "rel_l2_gpu_vs_fp64": 0.0014601162648958518,
+   "R": 1.0
+  },
+  {
+   "op": "3.ffn_hc.out",
+   "maxtext": "decoder/moe_layers/layers_2/post_self_attention_layer_norm/janus__in",
+   "rel_l2_tpu_vs_gpu": 5.6583167835784025e-06,
+   "fp64": "hf.model.layers.3.ffn_hc.out",
+   "rel_l2_tpu_vs_fp64": 0.0015738327107533707,
+   "rel_l2_gpu_vs_fp64": 0.0015738327106115013,
+   "R": 1.0000000000901426
+  },
+  {
+   "op": "3.attn_residual",
+   "maxtext": "decoder/moe_layers/layers_2/mhc_attention/janus__out",
+   "rel_l2_tpu_vs_gpu": 9.536668349524675e-06,
+   "fp64": "hf.model.layers.3.attn_residual",
+   "note": "4 路流 + post × 注意力输出；注意力的输出换成 GPU 的（只测写回）",
+   "rel_l2_tpu_vs_fp64": 0.0016537070338181132,
+   "rel_l2_gpu_vs_fp64": 0.0016537070334329694,
+   "R": 1.0000000002328973
+  },
+  {
+   "op": "3.ffn_residual",
+   "maxtext": "decoder/moe_layers/layers_2/mhc_mlp/janus__out",
+   "rel_l2_tpu_vs_gpu": 9.32199783837907e-07,
+   "fp64": "hf.model.layers.3.ffn_residual",
+   "note": "4 路流 + post × FFN 输出；FFN 的输出换成 GPU 的（只测写回）",
+   "rel_l2_tpu_vs_fp64": 0.0016525086582463609,
+   "rel_l2_gpu_vs_fp64": 0.0016525086582417107,
+   "R": 1.000000000002814
+  },
+  {
+   "op": "4.input_layernorm",
+   "maxtext": "decoder/moe_layers/layers_3/pre_self_attention_layer_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.4449069634456779e-05,
+   "fp64": "hf.model.layers.4.input_layernorm",
+   "rel_l2_tpu_vs_fp64": 0.0016654859468660816,
+   "rel_l2_gpu_vs_fp64": 0.0016654859471405806,
+   "R": 0.9999999998351838
+  },
+  {
+   "op": "4.self_attn.gate_proj",
+   "maxtext": "decoder/moe_layers/layers_3/self_attention/gate_proj/janus__out",
+   "rel_l2_tpu_vs_gpu": 7.104586655081839e-05,
+   "fp64": "hf.model.layers.4.self_attn.gate_proj",
+   "rel_l2_tpu_vs_fp64": 0.0016537769501964224,
+   "rel_l2_gpu_vs_fp64": 0.0016537772482847367,
+   "R": 0.9999998197530444
+  },
+  {
+   "op": "4.self_attn",
+   "maxtext": "decoder/moe_layers/layers_3/self_attention/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.00380967019876728,
+   "fp64": "hf.model.layers.4.self_attn(gpu topk)",
+   "note": "共享层：top-k 掩码是块首层在 GPU 输入上自选的，FP64 用的是 GPU 的 top-k",
+   "rel_l2_tpu_vs_fp64": 0.0029114094329604732,
+   "rel_l2_gpu_vs_fp64": 0.003385303360458193,
+   "R": 0.8600143393253894
+  },
+  {
+   "op": "4.post_attention_layernorm",
+   "maxtext": "decoder/moe_layers/layers_3/post_self_attention_layer_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.725283397298056e-05,
+   "fp64": "hf.model.layers.4.post_attention_layernorm",
+   "rel_l2_tpu_vs_fp64": 0.0016574179404843024,
+   "rel_l2_gpu_vs_fp64": 0.0016574179397971206,
+   "R": 1.00000000041461
+  },
+  {
+   "op": "4.mlp(own routing)",
+   "maxtext": "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.005170860778710753,
+   "fp64": "hf.model.layers.4.mlp(own routing)",
+   "routing_flip_tokens": [],
+   "routing_flip_gap_4th_5th_fp64": [],
+   "rel_l2_tpu_vs_fp64": 0.004607046209927889,
+   "rel_l2_gpu_vs_fp64": 0.004886413256773986,
+   "R": 0.9428277895941747
+  },
+  {
+   "op": "4.mlp.gate.logits",
+   "maxtext": "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/MoeBlock_0/gate/janus__logits",
+   "rel_l2_tpu_vs_gpu": 1.136617906537339e-06,
+   "fp64": "hf.model.layers.4.mlp.gate.logits",
+   "rel_l2_tpu_vs_fp64": 1.2004139075975872e-07,
+   "rel_l2_gpu_vs_fp64": 1.1289045802040979e-06,
+   "R": 0.10633439961600305
+  },
+  {
+   "op": "4.mlp.shared_experts",
+   "maxtext": "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/shared_experts/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.003761581554333411,
+   "fp64_local": "shared",
+   "rel_l2_tpu_vs_fp64": 0.003297823331495431,
+   "rel_l2_gpu_vs_fp64": 0.0037004401329766975,
+   "R": 0.8911975908235017
+  },
+  {
+   "op": "4.mlp.routed_experts",
+   "maxtext": "decoder/moe_layers/layers_3/DeepSeekMoeBlock_0/MoeBlock_0/janus__out",
+   "fp64_local": "routed",
+   "gpu_note": "GPU 的路由专家输出没单独抓：用 mlp.out − shared_experts.out（含 mlp.out 的 BF16 舍入）",
+   "routing_flip_tokens": [],
+   "routing_flip_gap_4th_5th_fp64": [],
+   "rel_l2_tpu_vs_fp64": 0.004587785399859858,
+   "rel_l2_gpu_vs_fp64": 0.005309887603945209,
+   "R": 0.8640080058288175
+  },
+  {
+   "op": "4.attn_hc.out",
+   "maxtext": "decoder/moe_layers/layers_3/pre_self_attention_layer_norm/janus__in",
+   "rel_l2_tpu_vs_gpu": 1.043430126807903e-05,
+   "fp64": "hf.model.layers.4.attn_hc.out",
+   "rel_l2_tpu_vs_fp64": 0.0017429662958962425,
+   "rel_l2_gpu_vs_fp64": 0.0017429662964275516,
+   "R": 0.9999999996951696
+  },
+  {
+   "op": "4.ffn_hc.out",
+   "maxtext": "decoder/moe_layers/layers_3/post_self_attention_layer_norm/janus__in",
+   "rel_l2_tpu_vs_gpu": 6.053129461652029e-06,
+   "fp64": "hf.model.layers.4.ffn_hc.out",
+   "rel_l2_tpu_vs_fp64": 0.0015638798952145206,
+   "rel_l2_gpu_vs_fp64": 0.0015638798952427322,
+   "R": 0.9999999999819605
+  },
+  {
+   "op": "4.attn_residual",
+   "maxtext": "decoder/moe_layers/layers_3/mhc_attention/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.835034878266005e-05,
+   "fp64": "hf.model.layers.4.attn_residual",
+   "note": "4 路流 + post × 注意力输出；注意力的输出换成 GPU 的（只测写回）",
+   "rel_l2_tpu_vs_fp64": 0.001660929311361383,
+   "rel_l2_gpu_vs_fp64": 0.0016609293124492737,
+   "R": 0.9999999993450108
+  },
+  {
+   "op": "4.ffn_residual",
+   "maxtext": "decoder/moe_layers/layers_3/mhc_mlp/janus__out",
+   "rel_l2_tpu_vs_gpu": 3.6302718975201857e-07,
+   "fp64": "hf.model.layers.4.ffn_residual",
+   "note": "4 路流 + post × FFN 输出；FFN 的输出换成 GPU 的（只测写回）",
+   "rel_l2_tpu_vs_fp64": 0.0016575846662639985,
+   "rel_l2_gpu_vs_fp64": 0.0016575846662626578,
+   "R": 1.000000000000809
+  },
+  {
+   "op": "5.input_layernorm",
+   "maxtext": "decoder/moe_layers_remainder/layers_0/pre_self_attention_layer_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.633506523549191e-05,
+   "fp64": "hf.model.layers.5.input_layernorm",
+   "rel_l2_tpu_vs_fp64": 0.0016611418235462207,
+   "rel_l2_gpu_vs_fp64": 0.0016611418238277936,
+   "R": 0.9999999998304944
+  },
+  {
+   "op": "5.self_attn.gate_proj",
+   "maxtext": "decoder/moe_layers_remainder/layers_0/self_attention/gate_proj/janus__out",
+   "rel_l2_tpu_vs_gpu": 7.2636695125021e-05,
+   "fp64": "hf.model.layers.5.self_attn.gate_proj",
+   "rel_l2_tpu_vs_fp64": 0.001654436995853261,
+   "rel_l2_gpu_vs_fp64": 0.0016544373063966757,
+   "R": 0.999999812296656
+  },
+  {
+   "op": "5.self_attn",
+   "maxtext": "decoder/moe_layers_remainder/layers_0/self_attention/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.0037280299487176434,
+   "fp64": "hf.model.layers.5.self_attn(own topk)",
+   "note": "自选 top-k",
+   "rel_l2_tpu_vs_fp64": 0.0028644635781450564,
+   "rel_l2_gpu_vs_fp64": 0.0033453059102116945,
+   "R": 0.8562635690210436
+  },
+  {
+   "op": "5.post_attention_layernorm",
+   "maxtext": "decoder/moe_layers_remainder/layers_0/post_self_attention_layer_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.4007687871596985e-05,
+   "fp64": "hf.model.layers.5.post_attention_layernorm",
+   "rel_l2_tpu_vs_fp64": 0.0016518845133350697,
+   "rel_l2_gpu_vs_fp64": 0.0016518845137395099,
+   "R": 0.9999999997551644
+  },
+  {
+   "op": "5.mlp(own routing)",
+   "maxtext": "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.0051857316178215655,
+   "fp64": "hf.model.layers.5.mlp(own routing)",
+   "routing_flip_tokens": [],
+   "routing_flip_gap_4th_5th_fp64": [],
+   "rel_l2_tpu_vs_fp64": 0.004557748110058391,
+   "rel_l2_gpu_vs_fp64": 0.00487161326193013,
+   "R": 0.935572646062757
+  },
+  {
+   "op": "5.mlp.gate.logits",
+   "maxtext": "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/gate/janus__logits",
+   "rel_l2_tpu_vs_gpu": 1.1580657969665071e-06,
+   "fp64": "hf.model.layers.5.mlp.gate.logits",
+   "rel_l2_tpu_vs_fp64": 1.0160219118779593e-07,
+   "rel_l2_gpu_vs_fp64": 1.153958307545441e-06,
+   "R": 0.08804667423722758
+  },
+  {
+   "op": "5.mlp.shared_experts",
+   "maxtext": "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/shared_experts/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.003817712755266892,
+   "fp64_local": "shared",
+   "rel_l2_tpu_vs_fp64": 0.0032805780539056587,
+   "rel_l2_gpu_vs_fp64": 0.003733135354143068,
+   "R": 0.8787728658873413
+  },
+  {
+   "op": "5.mlp.routed_experts",
+   "maxtext": "decoder/moe_layers_remainder/layers_0/DeepSeekMoeBlock_0/MoeBlock_0/janus__out",
+   "fp64_local": "routed",
+   "gpu_note": "GPU 的路由专家输出没单独抓：用 mlp.out − shared_experts.out（含 mlp.out 的 BF16 舍入）",
+   "routing_flip_tokens": [],
+   "routing_flip_gap_4th_5th_fp64": [],
+   "rel_l2_tpu_vs_fp64": 0.004594862341027533,
+   "rel_l2_gpu_vs_fp64": 0.005374371224059598,
+   "R": 0.8549581243025387
+  },
+  {
+   "op": "5.attn_hc.out",
+   "maxtext": "decoder/moe_layers_remainder/layers_0/pre_self_attention_layer_norm/janus__in",
+   "rel_l2_tpu_vs_gpu": 7.1913396856488e-06,
+   "fp64": "hf.model.layers.5.attn_hc.out",
+   "rel_l2_tpu_vs_fp64": 0.0015423187718954978,
+   "rel_l2_gpu_vs_fp64": 0.0015423187720206373,
+   "R": 0.9999999999188628
+  },
+  {
+   "op": "5.ffn_hc.out",
+   "maxtext": "decoder/moe_layers_remainder/layers_0/post_self_attention_layer_norm/janus__in",
+   "rel_l2_tpu_vs_gpu": 1.1186009062721416e-05,
+   "fp64": "hf.model.layers.5.ffn_hc.out",
+   "rel_l2_tpu_vs_fp64": 0.0017040569487193164,
+   "rel_l2_gpu_vs_fp64": 0.0017040569485544897,
+   "R": 1.000000000096726
+  },
+  {
+   "op": "5.attn_residual",
+   "maxtext": "decoder/moe_layers_remainder/layers_0/mhc_attention/janus__out",
+   "rel_l2_tpu_vs_gpu": 9.194357273642842e-06,
+   "fp64": "hf.model.layers.5.attn_residual",
+   "note": "4 路流 + post × 注意力输出；注意力的输出换成 GPU 的（只测写回）",
+   "rel_l2_tpu_vs_fp64": 0.0016644526815330755,
+   "rel_l2_gpu_vs_fp64": 0.0016644526813246114,
+   "R": 1.000000000125245
+  },
+  {
+   "op": "5.ffn_residual",
+   "maxtext": "decoder/moe_layers_remainder/layers_0/mhc_mlp/janus__out",
+   "rel_l2_tpu_vs_gpu": 5.0842123044205156e-06,
+   "fp64": "hf.model.layers.5.ffn_residual",
+   "note": "4 路流 + post × FFN 输出；FFN 的输出换成 GPU 的（只测写回）",
+   "rel_l2_tpu_vs_fp64": 0.0016602054980445775,
+   "rel_l2_gpu_vs_fp64": 0.001660205497897999,
+   "R": 1.0000000000882894
+  },
+  {
+   "op": "6.input_layernorm",
+   "maxtext": "decoder/moe_layers_remainder/layers_1/pre_self_attention_layer_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.3317314802010405e-05,
+   "fp64": "hf.model.layers.6.input_layernorm",
+   "rel_l2_tpu_vs_fp64": 0.001659029040180554,
+   "rel_l2_gpu_vs_fp64": 0.0016590290400526173,
+   "R": 1.0000000000771154
+  },
+  {
+   "op": "6.self_attn.gate_proj",
+   "maxtext": "decoder/moe_layers_remainder/layers_1/self_attention/gate_proj/janus__out",
+   "rel_l2_tpu_vs_gpu": 7.485845167652566e-05,
+   "fp64": "hf.model.layers.6.self_attn.gate_proj",
+   "rel_l2_tpu_vs_fp64": 0.0016466399652224689,
+   "rel_l2_gpu_vs_fp64": 0.001646640308313201,
+   "R": 0.9999997916419692
+  },
+  {
+   "op": "6.self_attn",
+   "maxtext": "decoder/moe_layers_remainder/layers_1/self_attention/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.003843331825120905,
+   "fp64": "hf.model.layers.6.self_attn(gpu topk)",
+   "note": "共享层：top-k 掩码是块首层在 GPU 输入上自选的，FP64 用的是 GPU 的 top-k",
+   "rel_l2_tpu_vs_fp64": 0.002963360706104477,
+   "rel_l2_gpu_vs_fp64": 0.003451728939125402,
+   "R": 0.8585148945256786
+  },
+  {
+   "op": "6.post_attention_layernorm",
+   "maxtext": "decoder/moe_layers_remainder/layers_1/post_self_attention_layer_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.6217497563742345e-05,
+   "fp64": "hf.model.layers.6.post_attention_layernorm",
+   "rel_l2_tpu_vs_fp64": 0.0016574534999518335,
+   "rel_l2_gpu_vs_fp64": 0.0016574535001738877,
+   "R": 0.999999999866027
+  },
+  {
+   "op": "6.mlp(own routing)",
+   "maxtext": "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.005281852552031322,
+   "fp64": "hf.model.layers.6.mlp(own routing)",
+   "routing_flip_tokens": [],
+   "routing_flip_gap_4th_5th_fp64": [],
+   "rel_l2_tpu_vs_fp64": 0.004649486598768041,
+   "rel_l2_gpu_vs_fp64": 0.004928719745992975,
+   "R": 0.9433457040335984
+  },
+  {
+   "op": "6.mlp.gate.logits",
+   "maxtext": "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/gate/janus__logits",
+   "rel_l2_tpu_vs_gpu": 1.0306892752274585e-06,
+   "fp64": "hf.model.layers.6.mlp.gate.logits",
+   "rel_l2_tpu_vs_fp64": 7.949814323708671e-08,
+   "rel_l2_gpu_vs_fp64": 1.0277642259550676e-06,
+   "R": 0.07735056468151699
+  },
+  {
+   "op": "6.mlp.shared_experts",
+   "maxtext": "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/shared_experts/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.003894171472104565,
+   "fp64_local": "shared",
+   "rel_l2_tpu_vs_fp64": 0.0033668173336744997,
+   "rel_l2_gpu_vs_fp64": 0.003816096533161486,
+   "R": 0.8822673389986871
+  },
+  {
+   "op": "6.mlp.routed_experts",
+   "maxtext": "decoder/moe_layers_remainder/layers_1/DeepSeekMoeBlock_0/MoeBlock_0/janus__out",
+   "fp64_local": "routed",
+   "gpu_note": "GPU 的路由专家输出没单独抓：用 mlp.out − shared_experts.out（含 mlp.out 的 BF16 舍入）",
+   "routing_flip_tokens": [],
+   "routing_flip_gap_4th_5th_fp64": [],
+   "rel_l2_tpu_vs_fp64": 0.004664446188311161,
+   "rel_l2_gpu_vs_fp64": 0.0053686766121088655,
+   "R": 0.8688260674503402
+  },
+  {
+   "op": "6.attn_hc.out",
+   "maxtext": "decoder/moe_layers_remainder/layers_1/pre_self_attention_layer_norm/janus__in",
+   "rel_l2_tpu_vs_gpu": 1.838044504661098e-12,
+   "fp64": "hf.model.layers.6.attn_hc.out",
+   "rel_l2_tpu_vs_fp64": 0.001540550812648775,
+   "rel_l2_gpu_vs_fp64": 0.001540550812648775,
+   "R": 1.0
+  },
+  {
+   "op": "6.ffn_hc.out",
+   "maxtext": "decoder/moe_layers_remainder/layers_1/post_self_attention_layer_norm/janus__in",
+   "rel_l2_tpu_vs_gpu": 8.584597111243994e-06,
+   "fp64": "hf.model.layers.6.ffn_hc.out",
+   "rel_l2_tpu_vs_fp64": 0.001593673434759419,
+   "rel_l2_gpu_vs_fp64": 0.001593673435042976,
+   "R": 0.9999999998220734
+  },
+  {
+   "op": "6.attn_residual",
+   "maxtext": "decoder/moe_layers_remainder/layers_1/mhc_attention/janus__out",
+   "rel_l2_tpu_vs_gpu": 7.060904288516379e-06,
+   "fp64": "hf.model.layers.6.attn_residual",
+   "note": "4 路流 + post × 注意力输出；注意力的输出换成 GPU 的（只测写回）",
+   "rel_l2_tpu_vs_fp64": 0.0016426969924970439,
+   "rel_l2_gpu_vs_fp64": 0.0016426969921521982,
+   "R": 1.0000000002099265
+  },
+  {
+   "op": "6.ffn_residual",
+   "maxtext": "decoder/moe_layers_remainder/layers_1/mhc_mlp/janus__out",
+   "rel_l2_tpu_vs_gpu": 3.54827584488838e-06,
+   "fp64": "hf.model.layers.6.ffn_residual",
+   "note": "4 路流 + post × FFN 输出；FFN 的输出换成 GPU 的（只测写回）",
+   "rel_l2_tpu_vs_fp64": 0.0016655964362999659,
+   "rel_l2_gpu_vs_fp64": 0.0016655964362409853,
+   "R": 1.000000000035411
+  },
+  {
+   "op": "mtp0.input_layernorm",
+   "maxtext": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/pre_self_attention_layer_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 1.1222035390512722e-05,
+   "fp64": "hf.model.mtp_layers.0.input_layernorm",
+   "rel_l2_tpu_vs_fp64": 0.0016599630902106742,
+   "rel_l2_gpu_vs_fp64": 0.0016599630905284632,
+   "R": 0.9999999998085566
+  },
+  {
+   "op": "mtp0.self_attn.gate_proj",
+   "maxtext": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/gate_proj/janus__out",
+   "rel_l2_tpu_vs_gpu": 7.352245383079165e-05,
+   "fp64": "hf.model.mtp_layers.0.self_attn.gate_proj",
+   "rel_l2_tpu_vs_fp64": 0.0016546419226639642,
+   "rel_l2_gpu_vs_fp64": 0.0016546422388461518,
+   "R": 0.9999998089120535
+  },
+  {
+   "op": "mtp0.self_attn",
+   "maxtext": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.0038991903821425787,
+   "fp64": "hf.model.mtp_layers.0.self_attn(own topk)",
+   "note": "自选 top-k",
+   "rel_l2_tpu_vs_fp64": 0.0029579706254175167,
+   "rel_l2_gpu_vs_fp64": 0.0034563983971741736,
+   "R": 0.8557956246698432
+  },
+  {
+   "op": "mtp0.post_attention_layernorm",
+   "maxtext": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/post_self_attention_layer_norm/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.0006520682642974228,
+   "fp64": "hf.model.mtp_layers.0.post_attention_layernorm",
+   "rel_l2_tpu_vs_fp64": 0.0023517521463475087,
+   "rel_l2_gpu_vs_fp64": 0.0023492874205841095,
+   "R": 1.0010491375988326
+  },
+  {
+   "op": "mtp0.mlp(own routing)",
+   "maxtext": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.005159401312731431,
+   "fp64": "hf.model.mtp_layers.0.mlp(own routing)",
+   "routing_flip_tokens": [],
+   "routing_flip_gap_4th_5th_fp64": [],
+   "rel_l2_tpu_vs_fp64": 0.004560215476734386,
+   "rel_l2_gpu_vs_fp64": 0.004836779060039157,
+   "R": 0.9428207119093565
+  },
+  {
+   "op": "mtp0.mlp.gate.logits",
+   "maxtext": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/MoeBlock_0/gate/janus__logits",
+   "rel_l2_tpu_vs_gpu": 1.0008935445765778e-06,
+   "fp64": "hf.model.mtp_layers.0.mlp.gate.logits",
+   "rel_l2_tpu_vs_fp64": 8.353070837562123e-08,
+   "rel_l2_gpu_vs_fp64": 9.974448073529912e-07,
+   "R": 0.08374469219734991
+  },
+  {
+   "op": "mtp0.mlp.shared_experts",
+   "maxtext": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/shared_experts/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.0037749474253939725,
+   "fp64_local": "shared",
+   "rel_l2_tpu_vs_fp64": 0.003306412390729926,
+   "rel_l2_gpu_vs_fp64": 0.0037236193232295886,
+   "R": 0.8879566098776691
+  },
+  {
+   "op": "mtp0.mlp.routed_experts",
+   "maxtext": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/DeepSeekMoeBlock_0/MoeBlock_0/janus__out",
+   "fp64_local": "routed",
+   "gpu_note": "GPU 的路由专家输出没单独抓：用 mlp.out − shared_experts.out（含 mlp.out 的 BF16 舍入）",
+   "routing_flip_tokens": [],
+   "routing_flip_gap_4th_5th_fp64": [],
+   "rel_l2_tpu_vs_fp64": 0.004573906861114034,
+   "rel_l2_gpu_vs_fp64": 0.005302711540207803,
+   "R": 0.8625599990556514
+  },
+  {
+   "op": "mtp0.ffn_residual",
+   "maxtext": "mtp_block/mtp_layer_1/mtp_1_transformer_layer/janus__out",
+   "rel_l2_tpu_vs_gpu": 0.0,
+   "fp64": "hf.model.mtp_layers.0.ffn_residual",
+   "note": "层输入 + 注意力 + FFN；两个分支的输出换成 GPU 的（只测残差相加）",
+   "rel_l2_tpu_vs_fp64": 0.002351414173128288,
+   "rel_l2_gpu_vs_fp64": 0.002351414173128288,
+   "R": 1.0
+  }
+ ]
+}

@@ -1,0 +1,73 @@
+# 01 · mini（hy4-mini，T1）· 运行清单。数据位置写成占位，不写桶名。每一份的来历见 goldens.md。
+# 角色：语义以 TPU 一侧 MaxText 为准；判定时 GPU 是 golden / 基线、TPU 是被测（PROTOCOL.md 变更记录 2026-11-07 20:17 起）。
+# 前三代的比较目录（t1-l4、t1-l4-nozm、t1s-l4）是在角色改之前写的：目录里 test 是 GPU g1-a、golden 是 TPU。
+schema: 1
+alignment: 01-mini
+golden:   # GPU：判定时的基线与噪声参照
+  - {name: g2-a, stage: T1, steps: 300, role: "300 步比较的基线（t1zg 前 300 步是现行；t1zw 前 300 步是上一代；t1zu 前 300 步是再上一代；t1zr 前 300 步是更早一代；t1zs、t1zt、t1zu-b、t1zu-c 前 300 步是诊断；t1z 上一代、t1v 再上一代、t1t M28 之前）", results: [t1zga300-l4, t1mz300-l4-qkclip, t1zla300-l4, t1zz300-l4, t1zr300-l4, t1zs300-l4, t1zt300-l4, t1zub300-l4, t1zuc300-l4, t1zud300-l4, t1zu300-l4, t1zv300-l4, t1zw300-l4, t1z-l4, t1z-l0-settings, t1v-l4, t1v-l0-settings, t1t-l4, t1t-l0-settings], location: "gs://<POC 桶>/janus/hunyuan4/gpu/g2-a/"}
+  - {name: g2-b..g2-h, stage: T1, steps: 300, role: "同设置重跑：与 g2-a 一起 8 份，两两 28 对是 t1zga300-l4、t1zz300-l4、t1zw300-l4、t1zv300-l4、t1zud300-l4、t1zu300-l4、t1zr300-l4、t1zs300-l4、t1zt300-l4、t1zub300-l4、t1zuc300-l4、t1z-l4、t1v-l4、t1t-l4 的噪声尺子", location: "gs://<POC 桶>/janus/hunyuan4/gpu/g2-*/"}
+  - {name: g3-a, stage: T1, steps: 1000, role: "1000 步比较的基线（g2 的设置跑 1000 步）", results: [t1zga-l4, t1zgb-l4, t1mz-l4-qkclip, t1zla-l4, t1zz-l4, t1zg-l0-data, t1zr-l4, t1zs-l4, t1zt-l4, t1zub-l4, t1zuc-l4, t1zud-l4, t1zu-l4, t1zv-l4, t1zw-l4, t1zk-l4, t1w-l4, t1w-l0-settings, t1u-l4, t1u-l0-settings], location: "gs://<POC 桶>/janus/hunyuan4/gpu/g3-a/"}
+  - {name: g3-b..g3-h, stage: T1, steps: 1000, role: "同设置重跑：t1zga-l4、t1zgb-l4、t1zz-l4、t1zw-l4、t1zv-l4、t1zud-l4、t1zu-l4、t1zr-l4、t1zs-l4、t1zt-l4、t1zub-l4、t1zuc-l4、t1zk-l4、t1w-l4、t1u-l4 的噪声尺子", location: "gs://<POC 桶>/janus/hunyuan4/gpu/g3-*/"}
+  - {name: g2s-a..g2s-c, stage: T1, steps: 1, role: "第 1 步全量抓数参照（t1t、t1v、t1z 与现行 t1zg 第 1 步逐张量比较的 GPU 一侧）", results: [t1zg-step1-train-grad-vs-fp64, t1zg-step1-grad-vs-fp64, t1z-step1-grad-vs-ref, t1v-step1-grad-vs-ref, t1t-step1-grad-vs-ref, t1t-step1-ihc-experiments]}
+  - {name: g1-a, stage: T1, steps: 300, role: "前三代比较的 GPU 一侧（注意力 q·k 在 BF16 里算）", results: [t1-l4, t1-l4-nozm, t1-l0-settings, t1s-l4, t1s-l0-settings]}
+  - {name: g1-b..g1-h, stage: T1, steps: 300, role: "同设置重跑：前三代的噪声尺子"}
+  - {name: g1s-a..g1s-c, stage: T1, steps: 1, role: "第 1 步全量抓数参照（t1s 一代第 1 步逐张量比较的 GPU 一侧）", results: [t1-step1-grad-vs-ref, t1-step1-indexer-grad, t1-step1-grad-per-tensor]}
+  - {name: g7-l1-c, stage: T1, steps: 1, role: "GPU 诊断运行：同 g7-l1-a，另存第 0 个 microbatch 的参数梯度与 iHC 混合输出的梯度（--l1-grad-micro0），L3 iHC 单层定位；不进门槛", results: [t1zg-l2-param-grads]}
+  - {name: g3x-a, stage: T1, role: "g3 的设置重跑，给 grad_norm 尖峰段同一状态单步提供第 849、900 步状态；不进门槛", results: [t1-spike-same-state]}
+  - {name: g2d-a / g2o-a / g6-qk-a / g6-qk-b / g7-l1-a, stage: T1, role: "GPU 诊断运行（param_norm 定位、优化器回放、QK-Clip 逐层记录、L1 逐算子与 L2 逐层抓数；台账 G22、G20、G21），不进门槛"}
+test:     # TPU：被测
+  - {name: t1t-c, stage: T1, steps: 300, role: "M28 之前 300 步比较的被测（与 t1t-a 同设置，另记 param_norm_exact）", golden: g2-a, results: [t1t-l4], location: "gs://<POC 桶>/janus/hunyuan4/tpu/t1t-c/"}
+  - {name: t1t-a / t1t-b / t1tp-1..t1tp-4, stage: T1, steps: 300, role: "t1t 一代：设置核对、重跑核逐位与只改执行参数的诊断运行", results: [t1t-l0-settings], location: "gs://<POC 桶>/janus/hunyuan4/tpu/t1t*/"}
+  - {name: t1u-a, stage: T1, steps: 1000, role: "M28 之前 1000 步比较的被测（t1t 的设置）", golden: g3-a, results: [t1u-l4, t1u-l0-settings], location: "gs://<POC 桶>/janus/hunyuan4/tpu/t1u-a/"}
+  - {name: t1u-b, stage: T1, steps: 1000, role: "同设置重跑", location: "gs://<POC 桶>/janus/hunyuan4/tpu/t1u-b/"}
+  - {name: t1v-a, stage: T1, steps: 300, role: "上一代 300 步比较的被测（t1t + ihc_stream_sum_unrolled，台账 M28）", golden: g2-a, results: [t1v-l4, t1v-l0-settings]}
+  - {name: t1w-a, stage: T1, steps: 1000, role: "上一代 1000 步比较的被测（t1v 的设置）", golden: g3-a, results: [t1w-l4, t1w-l0-settings]}
+  - {name: t1z-a, stage: T1, steps: 300, role: "上一代 300 步比较的被测（t1v + muon_mcore_ns_bf16（M31）+ transcendental_accuracy_highest（M33））", golden: g2-a, results: [t1z-l4, t1z-l0-settings]}
+  - {name: t1zdiag2, stage: T1, steps: 1, role: "t1z 设置的第 1 步诊断，逐张量梯度对 g2s-*", results: [t1z-step1-grad-vs-ref]}
+  - {name: t1zr-a, stage: T1, steps: 1000, role: "上一代比较的被测（t1z + ihc_force_bf16_rounding，M36；2026-11-08 前是现行）；前 300 步另对 g2-a", golden: g3-a, results: [t1zr-l4, t1zr300-l4]}
+  - {name: t1zs-a, stage: T1, steps: 1000, role: "诊断代的被测（t1zr + M37：sigmoid / silu 的高精度写法；M34 没有包含）；前 300 步另对 g2-a；带符号偏差变大，后来查明在反向（M39）", golden: g3-a, results: [t1zs-l4, t1zs300-l4]}
+  - {name: t1zt-a, stage: T1, steps: 1000, role: "诊断代的被测（t1zs + M34，即打包时 T1 配置的全部开关；MaxText 469dbb85；之后 T1 配置又打开了 M40、M41）；前 300 步另对 g2-a；1000 步路由偏置均值不过，加 M39 后收拢（t1zu-b）", golden: g3-a, results: [t1zt-l4, t1zt300-l4]}
+  - {name: t1zu-b, stage: T1, steps: 1000, role: "诊断：t1zt + M39（MaxText 3741e818，janus 2679a837；M40、M41 用覆盖参数关掉）；只差 M39 的对照", golden: g3-a, results: [t1zub-l4, t1zub300-l4]}
+  - {name: t1zu-c, stage: T1, steps: 1000, role: "诊断：t1zu-b + M41（M40 用覆盖参数关掉）；只差 M41 的对照", golden: g3-a, results: [t1zuc-l4, t1zuc300-l4]}
+  - {name: t1zu-a, stage: T1, steps: 1000, role: "上一代比较的被测（t1zu-c + M40；2026-11-08 至 11-09 是现行）；前 300 步另对 g2-a", golden: g3-a, results: [t1zu-l4, t1zu300-l4]}
+  - {name: t1zu-d, stage: T1, steps: 1000, role: "诊断：t1zu-a 只关 M41（t1zt + M39 + M40），凑齐 M40 / M41 的 2×2", golden: g3-a, results: [t1zud-l4, t1zud300-l4]}
+  - {name: t1zv-b, stage: T1, steps: 1000, role: "诊断代：t1zu-a + M42（sink 梯度全程 FP32，MaxText 2306c7a5）；整网离 GPU 更远，M42 从对齐配置撤下；t1zv-a 未完成，同设置重跑", golden: g3-a, results: [t1zv-l4, t1zv300-l4]}
+  - {name: t1zw-a, stage: T1, steps: 1000, role: "上一代比较的被测（t1zu-a + M42b：sink 梯度照 GPU 的写法，MaxText 2c28a4f4；2026-11-09 上午是现行）；前 300 步另对 g2-a", golden: g3-a, results: [t1zw-l4, t1zw300-l4, t1zw-l0-settings]}
+  - {name: t1zz-a, stage: T1, steps: 1000, role: "验证：t1zw-a 再关 sa_use_base2_exp（MaxText 2c28a4f4）；整网离 GPU 更远，没有采用", golden: g3-a, results: [t1zz-l4, t1zz300-l4]}
+  - {name: tz-off-rep, stage: T1, steps: 1000, role: "**现行**（2026-11-11 起）：现行 yml 的全部开关、base2 关，MaxText b87a55aa，第 1 步全量抓数。t1zz-a 原样重跑（TPU 自比的代码包，MaxText b87a55aa）：主 loss、MTP、grad_norm 1000 步逐位相同", golden: g3-a, results: [t1zo-l4, t1zo300-l4, t1zo-step1-train-grad-vs-fp64]}
+  - {name: tz-off-qkc / tz-off-qkq, stage: T1, steps: 1000, role: "现行配置（base2 关）再开 qk_clip_log_per_head，不抓数；tz-off-qkq 由 analysis/derive_max_logit.py 派生每步全局最大 logit。L4 QK-Clip 曲线、健康信号、同设置重跑逐位（对 tz-off-rep）", golden: g3-a, results: [t1zo-l4-qkclip, t1zo300-l4-qkclip, t1zo-health, t1zo-determinism]}
+  - {name: tz-off-qk / tz-off-qkb, stage: T1, steps: 1000, role: "同 tz-off-qkc：tz-off-qk 约第 700 步 spot 节点被收回，没有运行目录；tz-off-qkb 排队时 tz-off-qkc 已跑完，撤掉"}
+  - {name: tz-off-qk01, stage: T1, steps: 30, role: "现行配置（base2 关）τ 0.1 低阈值 QK-Clip，记逐头最大 logit", golden: g6-qk-a, results: [t1zo-qkclip-maxlogit]}
+  - {name: tz-on-vm32b / tz-on-vm64, stage: T1, steps: 1000, role: "现行配置（base2 开），只改 vmem 上限（LIBTPU_INIT_ARGS=--xla_tpu_scoped_vmem_limit_kib=32768 / 65536）：开这一侧的轨迹偶然性对照，与 t1zw-a、ts-c-nolhs-1k 共 4 份", golden: g3-a, results: [mini-base2-loo]}
+  - {name: tz-off-vm32 / tz-off-vm64, stage: T1, steps: 1000, role: "关 base2（sa_use_base2_exp=false），只改 vmem 上限 32 / 64 MiB：关这一侧的对照，与 t1zz-a、tz-off-nolhs 共 4 份", golden: g3-a, results: [mini-base2-loo]}
+  - {name: tz-on-vm32, stage: T1, steps: 1000, role: "同 tz-on-vm32b，spot 节点中途被收回，没有运行目录；改名重跑"}
+  - {name: tz-off-nolhs, stage: T1, steps: 1000, role: "t1zz-a 再关延迟隐藏调度（只改执行方式）：关 base2 这一侧的轨迹偶然性对照；开这一侧的对照是 TPU 自比的 ts-c-nolhs-1k", golden: g3-a, results: [tzoffnolhs-l4-n16]}
+  - {name: tz-diag-on / tz-diag-off, stage: T1, steps: 1, role: "第 1 步诊断（--diag-step1），base2 开 / 关，对 CPU FP64（mini-fp64）", results: [t1-step1-base2-onoff-vs-fp64]}
+  - {name: t1zg-a, stage: T1, steps: 1000, role: "上一代现行比较的被测（2026-11-11 前；base2 开；t1zw-a + M50：KD 改记广义 KL，只改记录值；MaxText 47d31984，即现行 yml 的全部开关；PROTOCOL 变更记录 2026-11-09）；前 300 步另对 g2-a", golden: g3-a, results: [t1zga-l4, t1zga300-l4, t1zg-l0-data]}
+  - {name: t1zg-b, stage: T1, steps: 1000, role: "t1zg-a 的重跑（M50 修订版，MaxText fd30fbfb）；判定与 t1zga-l4 相同", golden: g3-a, results: [t1zgb-l4]}
+  - {name: mz-g1 / mz-g1q, stage: T1, steps: 1000, role: "base2 开那一代 yml 的另一份 TPU 运行（MaxText fd30fbfb；mz-g1q 多记全局最大 logit）：健康信号、QK-Clip 曲线、同设置重跑（对 t1zg-b）", golden: g3-a, results: [t1mz-health, t1mz-l4-qkclip, t1mz300-l4-qkclip, t1mz-determinism]}
+  - {name: mz-dump30, stage: T1, steps: 30, role: "现行 yml，第 1、30 步全量抓数（MaxText fd30fbfb）：抓数不改数值（对 t1zg-b）", results: [t1mz-dump-determinism]}
+  - {name: mz-diag1 / mz-opt2, stage: T1, role: "base2 开那一代 yml 的第 1 步：mz-opt2 的第 1 步动量反推训练步梯度（上一代 L3），mz-diag1 是诊断程序梯度（旁证）；优化器一步对 FP64", results: [t1zg-step1-train-grad-vs-fp64, t1zg-step1-grad-vs-fp64, t1-l3-optim-step1]}
+  - {name: mz-sp849 / mz-sp900, stage: T1, steps: 1, role: "从 GPU g3x-a 第 849、900 步的状态各走一步：grad_norm 尖峰段同一状态单步", results: [t1-spike-same-state]}
+  - {name: mz-l2pg2, stage: T1, role: "现行 yml 单层回放（layer_replay.py --param-grads）：第 2、3、4 层吃 GPU g7-l1-c 的同一份层输入与余切；L3 iHC 单层定位", results: [t1zg-l2-param-grads]}
+  - {name: t1zl-a, stage: T1, steps: 1000, role: "验证：t1zg-a 再开 M51（精确 log），不采用", golden: g3-a, results: [t1zla-l4, t1zla300-l4]}
+  - {name: t1zk-a, stage: T1, steps: 1000, role: "上一代 1000 步比较的被测（t1z 的设置）", golden: g3-a, results: [t1zk-l4, t1zk-l0-settings]}
+  - {name: t1s-a / t1s-b / t1sp-1..t1sp-4, stage: T1, steps: 300, role: "t1s 一代（再开五个舍入开关）", results: [t1s-l4, t1s-l0-settings], location: "gs://<POC 桶>/janus/hunyuan4/tpu/t1s*/"}
+  - {name: t1n-a / t1n-b / t1np-1..t1np-4, stage: T1, steps: 300, role: "t1n 一代（路由偏置零均值关）", results: [t1-l4-nozm, t1-l0-settings], location: "gs://<POC 桶>/janus/hunyuan4/tpu/t1n*/"}
+  - {name: t1-a / t1-b / t1p-1..t1p-4, stage: T1, steps: 300, role: "路由偏置零均值开的一代", results: [t1-l4], location: "gs://<POC 桶>/janus/hunyuan4/tpu/"}
+  - {name: tw-optim8 / tw-qk-a / tw-qk-ref, stage: T1, role: "TPU 诊断运行：优化器 8 步回放、低阈值 QK-Clip（τ 0.1）与同设置的 TPU FP32 版；不进 L4（goldens.md「诊断运行」）", results: [t1-optim-replay-tpu, t1-qk-clip-tpu]}
+  - {name: tw-optim8b / tw-optim8c, stage: T1, role: "TPU 诊断运行：优化器 8 步回放再开 muon_adam_accurate（M34；8b 第一版 MaxText 64652880，8c 最终版 7c95fabe）；不进 L4", results: [t1-optim-replay-adam-acc-tpu, t1-optim-replay-adam-acc-r2-tpu]}
+  - {name: t1vdiag, stage: T1, steps: 1, role: "t1v 设置的第 1 步诊断（train_hy4.py --diag-step1，不更新），第 1 步逐张量梯度对 g2s-*", results: [t1v-step1-grad-vs-ref]}
+  - {name: t1tdump3, stage: T1, steps: 300, role: "t1t 设置的训练运行，第 300 步全量抓数（更新之后的主权重），param_norm 定位；不进 L4", results: [t1-param-norm-locus]}
+  - {name: tw-l2-a / tw-l2-b / tw-l2-f, stage: T1, role: "L2 逐层隔离回放（layer_replay.py）；a、b 在多主机上失败（台账 J17、J22），f 跑通；对 CPU FP64 的判定用 tw-l2-g（t1-l2-layer-vs-fp64）", results: [t1-l2-layer-tpu]}
+  - {name: tw-tadiag / tw-taref, stage: T1, steps: 1, role: "t1v 设置 + transcendental_accuracy_highest（M32）的第 1 步诊断与同设置的 TPU FP32 版（也打开开关）；不进 L4", results: [t1-step1-transcendental-accuracy]}
+  - {name: tw-opmini-a, stage: T1, role: "hy4-mini 逐算子隔离回放（op_replay_mini.py），吃 GPU g7-l1-a 第 1 步的算子输入；不进 L4", results: [t1-l1-op-tpu]}
+  - {name: tw-opmini-c, stage: T1, role: "同 tw-opmini-a，开关全开（M33 + M37）；不进 L4", results: [t1-l1-op-tpu-r2]}
+  - {name: tw-opmini-d, stage: T1, role: "同 tw-opmini-c，再开 M40；不进 L4", results: [t1-l1-op-tpu-r3]}
+  - {name: tw-elem2 / tw-elem3 / tw-elem4, stage: T1, role: "TPU 逐元素函数的 ULP（合成输入与真实输入，单独编译；tw-elem3 加 HIGHEST 版与 sqrt / 除法 / 1 − β^t，tw-elem4 加 MaxText 开关的写法，结果文件里每条检查记来源运行）；不进 L4", results: [tpu-elementwise-ulp]}
+  - {name: t1v-fp32, stage: T1, steps: 30, role: "t1v 的设置改成 dtype float32、HIGHEST、MoE 稠密实现，回放同一批数据 30 步：TPU FP32 版的 grad_norm 轨迹，不作判定；不进 L4", results: [t1-early-grad-norm-vs-fp32]}
+  - {name: t1diag15..t1diag20, stage: T1, steps: 1, role: "第 1 步诊断（train_hy4.py --diag-step1，不更新）与同设置的 TPU FP32 版（不作判定）", results: [t1-step1-grad-vs-ref, t1-step1-indexer-grad, t1t-step1-grad-vs-ref, t1t-step1-ihc-experiments]}
+real_weights:   # 真实权重截层：L0 与阶段 A 单算子（不依赖优化器）
+  - {name: "hy4-{a,b,c,d}-maxtext-ckpt", role: "L0 本侧：MaxText 检查点还原成 HF 的逐张量清单（CPU，model/verify_ckpt.py maxtext）", results: [hy4-a-l0-ckpt-convert, hy4-b-l0-ckpt-convert, hy4-c-l0-ckpt-convert, hy4-d-l0-ckpt-convert]}
+  - {name: "hy4-{a,b}-maxtext-gpunames", role: "L0 跨侧：TPU 初始权重按 GPU 清单写法（model/verify_ckpt.py gpu-manifest）", results: [hy4-a-l0-init-vs-gpu, hy4-b-l0-init-vs-gpu]}
+  - {name: l1op-fix, role: "L1 逐算子隔离回放（frameworks/maxtext/op_replay.py，janus 8cacde9 起注入覆盖关键字输入；输入 = ga1-a 第 1 步，FP64 参照 = analysis/fp64_ops.py 的输出）", results: hy4-a-l1-op-tpu-fix}

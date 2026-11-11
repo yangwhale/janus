@@ -1,0 +1,28 @@
+# 第一阶段 · 激活重算：r-remat 开整层重算，确定性。比两件事：
+# ① 重算那次前向与首次前向逐位相同（层输出、路由选中的专家）；② 重算那次前向与不开重算的基线 d-a 逐位相同；③ 开重算不改第 1 步前向（首次前向对 d-a）。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase1-remat
+runs:
+  test: r-remat
+  golden: [d-a]
+  root: /data/janus-runs2
+checks:
+  - id: DET.remat.vs_first
+    type: bitwise_equal
+    level: L2
+    compare: self
+    select: {kind: tensor, step: 1, name: "*.recompute", ref_rename: {from: .recompute, to: ""}}
+  - id: DET.remat.recompute_vs_baseline
+    type: bitwise_equal
+    level: L2
+    select: {kind: tensor, step: 1, name: "*.recompute", ref_rename: {from: .recompute, to: ""}}
+  - id: DET.remat.fwd_vs_baseline
+    type: bitwise_equal
+    level: L2
+    select: {kind: tensor, step: 1, name: "*.out", exclude: "*.recompute"}
+  - id: DET.remat.loss
+    type: loss_series
+    level: L4
+    select: {kind: metrics, field: lm_loss, window: "1:4"}
+    threshold: exact

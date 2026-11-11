@@ -1,0 +1,729 @@
+{
+ "note": "案例 01 逐步拆分 TPU 侧与同状态互换（2026-11-05）。量 per_step_frac_of_dd = −lr·c·⟨Δg/(√v̂+ε), d⟩/|d|²（v̂ 与 c 取 GPU g-sd-300 同一步；负 = 远离 d），d = t-l0f-100 第 100 步主权重 − g-sd-300 第 100 步（TPU − GPU）。TPU 自己状态：t-sd-300c 的独立梯度探针，gp_bf16（生产精度）对 gp_f32（全程 FP32，权重先舍到 BF16）。同状态：t-sw-g99b 把 g-sd-300 第 99 步导出的整套 FP32 主权重导入 TPU（逐张量 sha256 核过），在第 100 步 batch 上跑探针；GPU 一侧是 g-sd-300 第 100 步（BF16）、g-sdr-100（FP32，权重舍 BF16）、g-sdx-100（BF16 + dgrad-exact）。",
+ "tpu_own_state": {
+  "1": {
+   "clip_coef": 0.05702750654326659,
+   "groups": {
+    "all": {
+     "per_step_frac_of_dd": 0.0003570672081753407,
+     "per_step_update_frac_of_dd": -0.02610078636397451,
+     "rel_l2": 0.0024445086279739113
+    },
+    "layer0": {
+     "per_step_frac_of_dd": 0.00030660626515924326,
+     "per_step_update_frac_of_dd": -0.036119455301357,
+     "rel_l2": 0.0024281855295094443
+    },
+    "attn_proj": {
+     "per_step_frac_of_dd": 0.0005236800966280867,
+     "per_step_update_frac_of_dd": -0.04049888328067308,
+     "rel_l2": 0.0025674339213071513
+    },
+    "l0_proj": {
+     "per_step_frac_of_dd": -0.00026443313066841284,
+     "per_step_update_frac_of_dd": -0.02046220005845881,
+     "rel_l2": 0.0025569604752408905
+    },
+    "layer1": {
+     "per_step_frac_of_dd": -0.00011434739148826963,
+     "per_step_update_frac_of_dd": -0.02186195412005356,
+     "rel_l2": 0.0026731662640428876
+    },
+    "router": {
+     "per_step_frac_of_dd": 0.00020904815856119668,
+     "per_step_update_frac_of_dd": -0.0029810230892544087,
+     "rel_l2": 0.027390898916291602
+    },
+    "layer2": {
+     "per_step_frac_of_dd": 0.00038953278198058846,
+     "per_step_update_frac_of_dd": -0.021966018588087357,
+     "rel_l2": 0.002724918753278156
+    },
+    "layer3": {
+     "per_step_frac_of_dd": 0.0009447650325056962,
+     "per_step_update_frac_of_dd": -0.011141347361436564,
+     "rel_l2": 0.0027166610518185104
+    }
+   }
+  },
+  "25": {
+   "clip_coef": 0.3035497140274659,
+   "groups": {
+    "all": {
+     "per_step_frac_of_dd": -0.0002967049452883091,
+     "per_step_update_frac_of_dd": 0.08671956742630153,
+     "rel_l2": 0.003060275659046815
+    },
+    "layer0": {
+     "per_step_frac_of_dd": -0.000469849993660387,
+     "per_step_update_frac_of_dd": 0.14712646415110103,
+     "rel_l2": 0.0030700372284840315
+    },
+    "attn_proj": {
+     "per_step_frac_of_dd": -0.0007991814306244579,
+     "per_step_update_frac_of_dd": 0.0461060205399312,
+     "rel_l2": 0.00286122269788317
+    },
+    "l0_proj": {
+     "per_step_frac_of_dd": -0.0015013972322551249,
+     "per_step_update_frac_of_dd": -0.27428377181219377,
+     "rel_l2": 0.002841279157573246
+    },
+    "layer1": {
+     "per_step_frac_of_dd": -0.00016175188611259692,
+     "per_step_update_frac_of_dd": 0.03905878094289541,
+     "rel_l2": 0.0029607182971689533
+    },
+    "router": {
+     "per_step_frac_of_dd": 0.00011651675463295555,
+     "per_step_update_frac_of_dd": -0.0020678143306000103,
+     "rel_l2": 0.020068602435780573
+    },
+    "layer2": {
+     "per_step_frac_of_dd": -0.00015295622892958974,
+     "per_step_update_frac_of_dd": 0.023877160346737283,
+     "rel_l2": 0.0029768343620105425
+    },
+    "layer3": {
+     "per_step_frac_of_dd": -0.0002056026555184874,
+     "per_step_update_frac_of_dd": 0.07329659158371062,
+     "rel_l2": 0.002932283563762673
+    }
+   }
+  },
+  "50": {
+   "clip_coef": 0.5564039714719007,
+   "groups": {
+    "all": {
+     "per_step_frac_of_dd": -0.0007102093178323373,
+     "per_step_update_frac_of_dd": 0.008669703538557562,
+     "rel_l2": 0.005017930938187126
+    },
+    "layer0": {
+     "per_step_frac_of_dd": -0.0007354109663122301,
+     "per_step_update_frac_of_dd": 0.09818502021623002,
+     "rel_l2": 0.004745490299335422
+    },
+    "attn_proj": {
+     "per_step_frac_of_dd": -0.0020012116425086597,
+     "per_step_update_frac_of_dd": -0.1399989011735748,
+     "rel_l2": 0.005758309113833771
+    },
+    "l0_proj": {
+     "per_step_frac_of_dd": -0.002716559816896368,
+     "per_step_update_frac_of_dd": -0.1692135552773486,
+     "rel_l2": 0.0056490002829516234
+    },
+    "layer1": {
+     "per_step_frac_of_dd": -0.0011964438558211472,
+     "per_step_update_frac_of_dd": -0.013339604544617797,
+     "rel_l2": 0.006165782384089237
+    },
+    "router": {
+     "per_step_frac_of_dd": 6.950287821190895e-06,
+     "per_step_update_frac_of_dd": -0.009587842367003862,
+     "rel_l2": 0.04155927360019507
+    },
+    "layer2": {
+     "per_step_frac_of_dd": -0.0002645945679004103,
+     "per_step_update_frac_of_dd": -0.028279348616625438,
+     "rel_l2": 0.0061825506669597845
+    },
+    "layer3": {
+     "per_step_frac_of_dd": -0.0007474870362242185,
+     "per_step_update_frac_of_dd": -0.14204083230973363,
+     "rel_l2": 0.005544387055997776
+    }
+   }
+  },
+  "100": {
+   "clip_coef": 0.5102927931412163,
+   "groups": {
+    "all": {
+     "per_step_frac_of_dd": -0.0015900528458127814,
+     "per_step_update_frac_of_dd": 0.1284373307024857,
+     "rel_l2": 0.008196806150007485
+    },
+    "layer0": {
+     "per_step_frac_of_dd": -0.00239629162521688,
+     "per_step_update_frac_of_dd": 0.20379394561149583,
+     "rel_l2": 0.008223066318546893
+    },
+    "attn_proj": {
+     "per_step_frac_of_dd": -0.002607066510446145,
+     "per_step_update_frac_of_dd": 0.13182852039245677,
+     "rel_l2": 0.008086480627224878
+    },
+    "l0_proj": {
+     "per_step_frac_of_dd": -0.004685549999079369,
+     "per_step_update_frac_of_dd": -0.11331224811768666,
+     "rel_l2": 0.008007118984778839
+    },
+    "layer1": {
+     "per_step_frac_of_dd": -0.000853199323725879,
+     "per_step_update_frac_of_dd": 0.010066827877874399,
+     "rel_l2": 0.009173674499376136
+    },
+    "router": {
+     "per_step_frac_of_dd": -0.0003091552531811214,
+     "per_step_update_frac_of_dd": 0.005555793092115681,
+     "rel_l2": 0.054648895813519824
+    },
+    "layer2": {
+     "per_step_frac_of_dd": -0.000464625896292268,
+     "per_step_update_frac_of_dd": 0.07093889406279867,
+     "rel_l2": 0.008402126896209549
+    },
+    "layer3": {
+     "per_step_frac_of_dd": -0.0019204624604483446,
+     "per_step_update_frac_of_dd": 0.14578217361709417,
+     "rel_l2": 0.0070913056512975844
+    }
+   }
+  },
+  "200": {
+   "clip_coef": 0.5701316290461622,
+   "groups": {
+    "all": {
+     "per_step_frac_of_dd": -0.0006233245015060079,
+     "per_step_update_frac_of_dd": 0.08781947331699134,
+     "rel_l2": 0.013818929904210343
+    },
+    "layer0": {
+     "per_step_frac_of_dd": -0.0011364045465490948,
+     "per_step_update_frac_of_dd": 0.12088801464133987,
+     "rel_l2": 0.01454242878980989
+    },
+    "attn_proj": {
+     "per_step_frac_of_dd": -0.0018125532655227919,
+     "per_step_update_frac_of_dd": 0.1360663382016978,
+     "rel_l2": 0.013015136745003559
+    },
+    "l0_proj": {
+     "per_step_frac_of_dd": -0.0029374585617954188,
+     "per_step_update_frac_of_dd": -0.007389763102327737,
+     "rel_l2": 0.012956821911576686
+    },
+    "layer1": {
+     "per_step_frac_of_dd": -0.000842925153210662,
+     "per_step_update_frac_of_dd": 0.013571587949910572,
+     "rel_l2": 0.01473424280043835
+    },
+    "router": {
+     "per_step_frac_of_dd": 0.0005471783525586135,
+     "per_step_update_frac_of_dd": 0.0007200536743448622,
+     "rel_l2": 0.0756647666409865
+    },
+    "layer2": {
+     "per_step_frac_of_dd": 0.0006955343204855499,
+     "per_step_update_frac_of_dd": 0.04557652451406817,
+     "rel_l2": 0.013985045742688555
+    },
+    "layer3": {
+     "per_step_frac_of_dd": -0.0009369183122474455,
+     "per_step_update_frac_of_dd": 0.143198474700075,
+     "rel_l2": 0.010948031078445384
+    }
+   }
+  },
+  "300": {
+   "clip_coef": 0.7713652322876366,
+   "groups": {
+    "all": {
+     "per_step_frac_of_dd": -0.0012655911368122858,
+     "per_step_update_frac_of_dd": 0.11650623558841185,
+     "rel_l2": 0.01594325174689521
+    },
+    "layer0": {
+     "per_step_frac_of_dd": -0.002138142653500588,
+     "per_step_update_frac_of_dd": 0.17209880057789,
+     "rel_l2": 0.01490855086770647
+    },
+    "attn_proj": {
+     "per_step_frac_of_dd": -0.002567965394553626,
+     "per_step_update_frac_of_dd": 0.19955171937720168,
+     "rel_l2": 0.01635038406423555
+    },
+    "l0_proj": {
+     "per_step_frac_of_dd": -0.004649130615762729,
+     "per_step_update_frac_of_dd": 0.20476731210167193,
+     "rel_l2": 0.015493432811419393
+    },
+    "layer1": {
+     "per_step_frac_of_dd": -0.00031123167616943016,
+     "per_step_update_frac_of_dd": 0.07365516211932678,
+     "rel_l2": 0.017559789804084968
+    },
+    "router": {
+     "per_step_frac_of_dd": 0.00026551065016063735,
+     "per_step_update_frac_of_dd": 0.0018709443838561713,
+     "rel_l2": 0.09147680126811662
+    },
+    "layer2": {
+     "per_step_frac_of_dd": -0.000868716580693518,
+     "per_step_update_frac_of_dd": 0.04465901706981567,
+     "rel_l2": 0.017503096470513024
+    },
+    "layer3": {
+     "per_step_frac_of_dd": -0.000642997054831104,
+     "per_step_update_frac_of_dd": 0.1226883244235187,
+     "rel_l2": 0.015417076926655124
+    }
+   }
+  }
+ },
+ "same_state_gpu_theta99": {
+  "GPU_bf16-GPU_f32": {
+   "clip_coef": 0.5102927931412163,
+   "groups": {
+    "all": {
+     "per_step_frac_of_dd": -0.0035962240842944207,
+     "per_step_update_frac_of_dd": 0.1312008691912802,
+     "rel_l2": 0.010308503197344492
+    },
+    "layer0": {
+     "per_step_frac_of_dd": -0.005550819308985837,
+     "per_step_update_frac_of_dd": 0.20917272992057898,
+     "rel_l2": 0.011371393396663728
+    },
+    "attn_proj": {
+     "per_step_frac_of_dd": -0.007951782358231319,
+     "per_step_update_frac_of_dd": 0.14121730417054473,
+     "rel_l2": 0.009100587593193135
+    },
+    "l0_proj": {
+     "per_step_frac_of_dd": -0.013015094360489064,
+     "per_step_update_frac_of_dd": -0.10102291646171523,
+     "rel_l2": 0.009239422427658829
+    },
+    "layer1": {
+     "per_step_frac_of_dd": -0.0015062959460266803,
+     "per_step_update_frac_of_dd": 0.017278755143795697,
+     "rel_l2": 0.010236831373704137
+    },
+    "router": {
+     "per_step_frac_of_dd": 0.0006526283338609016,
+     "per_step_update_frac_of_dd": 0.0016321736487998984,
+     "rel_l2": 0.060844498349121444
+    },
+    "layer2": {
+     "per_step_frac_of_dd": -0.0013654178829045427,
+     "per_step_update_frac_of_dd": 0.06910212865418999,
+     "rel_l2": 0.009449521172094326
+    },
+    "layer3": {
+     "per_step_frac_of_dd": -0.004027356317843839,
+     "per_step_update_frac_of_dd": 0.14359737386960553,
+     "rel_l2": 0.007643683655907763
+    }
+   }
+  },
+  "GPUdgx-GPU_f32": {
+   "clip_coef": 0.5102927931412163,
+   "groups": {
+    "all": {
+     "per_step_frac_of_dd": -0.0010026650278864239,
+     "per_step_update_frac_of_dd": 0.1312008691912802,
+     "rel_l2": 0.00955143718269305
+    },
+    "layer0": {
+     "per_step_frac_of_dd": -0.002118952923667568,
+     "per_step_update_frac_of_dd": 0.20917272992057898,
+     "rel_l2": 0.010507884217007041
+    },
+    "attn_proj": {
+     "per_step_frac_of_dd": -0.002015859415166035,
+     "per_step_update_frac_of_dd": 0.14121730417054473,
+     "rel_l2": 0.008299224224402288
+    },
+    "l0_proj": {
+     "per_step_frac_of_dd": -0.004054529554354893,
+     "per_step_update_frac_of_dd": -0.10102291646171523,
+     "rel_l2": 0.008158705234784078
+    },
+    "layer1": {
+     "per_step_frac_of_dd": 0.000368996569330395,
+     "per_step_update_frac_of_dd": 0.017278755143795697,
+     "rel_l2": 0.009452438210128176
+    },
+    "router": {
+     "per_step_frac_of_dd": 0.000643362030555623,
+     "per_step_update_frac_of_dd": 0.0016321736487998984,
+     "rel_l2": 0.060866556322753874
+    },
+    "layer2": {
+     "per_step_frac_of_dd": 0.0001117017425437769,
+     "per_step_update_frac_of_dd": 0.06910212865418999,
+     "rel_l2": 0.00882912758334061
+    },
+    "layer3": {
+     "per_step_frac_of_dd": -0.001216909899347004,
+     "per_step_update_frac_of_dd": 0.14359737386960553,
+     "rel_l2": 0.007150211571305146
+    }
+   }
+  },
+  "TPU_bf16-GPU_bf16": {
+   "clip_coef": 0.5102927931412163,
+   "groups": {
+    "all": {
+     "per_step_frac_of_dd": 0.0036353115523604885,
+     "per_step_update_frac_of_dd": 0.12760464510698552,
+     "rel_l2": 0.010797372005972276
+    },
+    "layer0": {
+     "per_step_frac_of_dd": 0.004761446232788533,
+     "per_step_update_frac_of_dd": 0.20362191061159224,
+     "rel_l2": 0.01169849620309023
+    },
+    "attn_proj": {
+     "per_step_frac_of_dd": 0.008317928408348026,
+     "per_step_update_frac_of_dd": 0.13326552181231385,
+     "rel_l2": 0.009705352773376951
+    },
+    "l0_proj": {
+     "per_step_frac_of_dd": 0.01319815551527545,
+     "per_step_update_frac_of_dd": -0.11403801082220438,
+     "rel_l2": 0.00967172412183982
+    },
+    "layer1": {
+     "per_step_frac_of_dd": 0.0015842842186026872,
+     "per_step_update_frac_of_dd": 0.015772459197769123,
+     "rel_l2": 0.01062290915598245
+    },
+    "router": {
+     "per_step_frac_of_dd": 0.00013122291443025915,
+     "per_step_update_frac_of_dd": 0.0022848019826607973,
+     "rel_l2": 0.06312094913624784
+    },
+    "layer2": {
+     "per_step_frac_of_dd": 0.0022560856819155858,
+     "per_step_update_frac_of_dd": 0.06773671077128551,
+     "rel_l2": 0.010221546996887985
+    },
+    "layer3": {
+     "per_step_frac_of_dd": 0.004925275580161119,
+     "per_step_update_frac_of_dd": 0.13957001755176218,
+     "rel_l2": 0.008611731788353496
+    }
+   }
+  },
+  "TPU_bf16-TPU_f32": {
+   "clip_coef": 0.5102927931412163,
+   "groups": {
+    "all": {
+     "per_step_frac_of_dd": -0.001252388469442094,
+     "per_step_update_frac_of_dd": 0.13249234512878802,
+     "rel_l2": 0.008166758806511121
+    },
+    "layer0": {
+     "per_step_frac_of_dd": -0.0024811639934662743,
+     "per_step_update_frac_of_dd": 0.21086452083784676,
+     "rel_l2": 0.008307319580714255
+    },
+    "attn_proj": {
+     "per_step_frac_of_dd": -0.0025716322483342047,
+     "per_step_update_frac_of_dd": 0.14415508246899617,
+     "rel_l2": 0.0080074122742609
+    },
+    "l0_proj": {
+     "per_step_frac_of_dd": -0.0044235306616409635,
+     "per_step_update_frac_of_dd": -0.09641632464528792,
+     "rel_l2": 0.008047489342514546
+    },
+    "layer1": {
+     "per_step_frac_of_dd": -0.0008647730143137213,
+     "per_step_update_frac_of_dd": 0.01822151643068552,
+     "rel_l2": 0.008706905095452822
+    },
+    "router": {
+     "per_step_frac_of_dd": 0.0007357463970028141,
+     "per_step_update_frac_of_dd": 0.0016802785000882441,
+     "rel_l2": 0.05403474144435203
+    },
+    "layer2": {
+     "per_step_frac_of_dd": 0.0001959460691692947,
+     "per_step_update_frac_of_dd": 0.06979685038403181,
+     "rel_l2": 0.008396338320068777
+    },
+    "layer3": {
+     "per_step_frac_of_dd": -0.0005923053482244802,
+     "per_step_update_frac_of_dd": 0.145087598480148,
+     "rel_l2": 0.007078770375330428
+    }
+   }
+  },
+  "TPU_f32-GPU_f32": {
+   "clip_coef": 0.5102927931412163,
+   "groups": {
+    "all": {
+     "per_step_frac_of_dd": 0.0012914759375081573,
+     "per_step_update_frac_of_dd": 0.1312008691912802,
+     "rel_l2": 0.0022944335219661563
+    },
+    "layer0": {
+     "per_step_frac_of_dd": 0.0016917909172689627,
+     "per_step_update_frac_of_dd": 0.20917272992057898,
+     "rel_l2": 0.002205467712596208
+    },
+    "attn_proj": {
+     "per_step_frac_of_dd": 0.0029377782984509136,
+     "per_step_update_frac_of_dd": 0.14121730417054473,
+     "rel_l2": 0.002353099966057031
+    },
+    "l0_proj": {
+     "per_step_frac_of_dd": 0.004606591816427387,
+     "per_step_update_frac_of_dd": -0.10102291646171523,
+     "rel_l2": 0.0023182706161228015
+    },
+    "layer1": {
+     "per_step_frac_of_dd": 0.0009427612868897239,
+     "per_step_update_frac_of_dd": 0.017278755143795697,
+     "rel_l2": 0.0024507107588902914
+    },
+    "router": {
+     "per_step_frac_of_dd": 4.81048512883464e-05,
+     "per_step_update_frac_of_dd": 0.0016321736487998984,
+     "rel_l2": 0.016822342049619608
+    },
+    "layer2": {
+     "per_step_frac_of_dd": 0.0006947217298417485,
+     "per_step_update_frac_of_dd": 0.06910212865418999,
+     "rel_l2": 0.002456548089814893
+    },
+    "layer3": {
+     "per_step_frac_of_dd": 0.0014902246105417576,
+     "per_step_update_frac_of_dd": 0.14359737386960553,
+     "rel_l2": 0.002268165470137641
+    }
+   }
+  }
+ },
+ "same_state_gpu_theta299": {
+  "GPU_bf16-GPU_f32": {
+   "clip_coef": 0.7713652322876366,
+   "groups": {
+    "all": {
+     "per_step_frac_of_dd": -0.0046710154826429115,
+     "per_step_update_frac_of_dd": 0.12137957597366338,
+     "rel_l2": 0.025676287969520747
+    },
+    "layer0": {
+     "per_step_frac_of_dd": -0.0061515607161371924,
+     "per_step_update_frac_of_dd": 0.18057679347455888,
+     "rel_l2": 0.0324197416957025
+    },
+    "attn_proj": {
+     "per_step_frac_of_dd": -0.009565766952349794,
+     "per_step_update_frac_of_dd": 0.2068938432952862,
+     "rel_l2": 0.018316969618312202
+    },
+    "l0_proj": {
+     "per_step_frac_of_dd": -0.014036694658227614,
+     "per_step_update_frac_of_dd": 0.21691820584391114,
+     "rel_l2": 0.018443309943486037
+    },
+    "layer1": {
+     "per_step_frac_of_dd": -0.003268757840738493,
+     "per_step_update_frac_of_dd": 0.07205115197730688,
+     "rel_l2": 0.019145865421560094
+    },
+    "router": {
+     "per_step_frac_of_dd": -0.0005693820484557966,
+     "per_step_update_frac_of_dd": 0.0016788207421355203,
+     "rel_l2": 0.10405406785300371
+    },
+    "layer2": {
+     "per_step_frac_of_dd": -0.002190964705870549,
+     "per_step_update_frac_of_dd": 0.050631334123519896,
+     "rel_l2": 0.01920427675561453
+    },
+    "layer3": {
+     "per_step_frac_of_dd": -0.005908870305266174,
+     "per_step_update_frac_of_dd": 0.12388154987418014,
+     "rel_l2": 0.016841073007838776
+    }
+   }
+  },
+  "GPUdgx-GPU_f32": {
+   "clip_coef": 0.7713652322876366,
+   "groups": {
+    "all": {
+     "per_step_frac_of_dd": -0.0022382579425451023,
+     "per_step_update_frac_of_dd": 0.12137957597366338,
+     "rel_l2": 0.023907087230101636
+    },
+    "layer0": {
+     "per_step_frac_of_dd": -0.002823007361193979,
+     "per_step_update_frac_of_dd": 0.18057679347455888,
+     "rel_l2": 0.02956189413391038
+    },
+    "attn_proj": {
+     "per_step_frac_of_dd": -0.004015140047036077,
+     "per_step_update_frac_of_dd": 0.2068938432952862,
+     "rel_l2": 0.01775016981866997
+    },
+    "l0_proj": {
+     "per_step_frac_of_dd": -0.004577549897436115,
+     "per_step_update_frac_of_dd": 0.21691820584391114,
+     "rel_l2": 0.017469378502799688
+    },
+    "layer1": {
+     "per_step_frac_of_dd": -0.001635150340042111,
+     "per_step_update_frac_of_dd": 0.07205115197730688,
+     "rel_l2": 0.018578317044630643
+    },
+    "router": {
+     "per_step_frac_of_dd": -0.0005521475606998955,
+     "per_step_update_frac_of_dd": 0.0016788207421355203,
+     "rel_l2": 0.10411301902597325
+    },
+    "layer2": {
+     "per_step_frac_of_dd": -0.0008475722127235843,
+     "per_step_update_frac_of_dd": 0.050631334123519896,
+     "rel_l2": 0.018836797177335253
+    },
+    "layer3": {
+     "per_step_frac_of_dd": -0.003355398679311748,
+     "per_step_update_frac_of_dd": 0.12388154987418014,
+     "rel_l2": 0.016606983866056326
+    }
+   }
+  },
+  "TPU_bf16-GPU_bf16": {
+   "clip_coef": 0.7713652322876366,
+   "groups": {
+    "all": {
+     "per_step_frac_of_dd": 0.005697454520562934,
+     "per_step_update_frac_of_dd": 0.11670856049102032,
+     "rel_l2": 0.019001344118913077
+    },
+    "layer0": {
+     "per_step_frac_of_dd": 0.006696980364479695,
+     "per_step_update_frac_of_dd": 0.1744252327584213,
+     "rel_l2": 0.019193789607043994
+    },
+    "attn_proj": {
+     "per_step_frac_of_dd": 0.011056589727197415,
+     "per_step_update_frac_of_dd": 0.19732807634293667,
+     "rel_l2": 0.018384752176206172
+    },
+    "l0_proj": {
+     "per_step_frac_of_dd": 0.016597210590171843,
+     "per_step_update_frac_of_dd": 0.20288151118568393,
+     "rel_l2": 0.017536089295214007
+    },
+    "layer1": {
+     "per_step_frac_of_dd": 0.0040257522979347295,
+     "per_step_update_frac_of_dd": 0.06878239413656831,
+     "rel_l2": 0.018777593601386304
+    },
+    "router": {
+     "per_step_frac_of_dd": 0.002018988092940038,
+     "per_step_update_frac_of_dd": 0.0011094386936797238,
+     "rel_l2": 0.1057638442439465
+    },
+    "layer2": {
+     "per_step_frac_of_dd": 0.003758269453227052,
+     "per_step_update_frac_of_dd": 0.048440369417649475,
+     "rel_l2": 0.020182482535118482
+    },
+    "layer3": {
+     "per_step_frac_of_dd": 0.00768280825955722,
+     "per_step_update_frac_of_dd": 0.11797267956891422,
+     "rel_l2": 0.01768213988519348
+    }
+   }
+  },
+  "TPU_bf16-TPU_f32": {
+   "clip_coef": 0.7713652322876366,
+   "groups": {
+    "all": {
+     "per_step_frac_of_dd": -0.000984972307904243,
+     "per_step_update_frac_of_dd": 0.12339098731948757,
+     "rel_l2": 0.020719689383659756
+    },
+    "layer0": {
+     "per_step_frac_of_dd": -0.0021669073039975485,
+     "per_step_update_frac_of_dd": 0.18328912042689843,
+     "rel_l2": 0.02408875884500326
+    },
+    "attn_proj": {
+     "per_step_frac_of_dd": -0.0033796133848013176,
+     "per_step_update_frac_of_dd": 0.21176427945493562,
+     "rel_l2": 0.01729932901733992
+    },
+    "l0_proj": {
+     "per_step_frac_of_dd": -0.00637589897705538,
+     "per_step_update_frac_of_dd": 0.22585462075291057,
+     "rel_l2": 0.0170841798020247
+    },
+    "layer1": {
+     "per_step_frac_of_dd": -0.0006380131728702818,
+     "per_step_update_frac_of_dd": 0.07344615960737327,
+     "rel_l2": 0.01841737737043753
+    },
+    "router": {
+     "per_step_frac_of_dd": 0.001447887010210535,
+     "per_step_update_frac_of_dd": 0.0016805397764092255,
+     "rel_l2": 0.0923882061001479
+    },
+    "layer2": {
+     "per_step_frac_of_dd": 0.0004743012590108808,
+     "per_step_update_frac_of_dd": 0.051724337611865796,
+     "rel_l2": 0.018526507735290812
+    },
+    "layer3": {
+     "per_step_frac_of_dd": -0.00041486213733290666,
+     "per_step_update_frac_of_dd": 0.1260703499658046,
+     "rel_l2": 0.015560590379420302
+    }
+   }
+  },
+  "TPU_f32-GPU_f32": {
+   "clip_coef": 0.7713652322876366,
+   "groups": {
+    "all": {
+     "per_step_frac_of_dd": 0.0020114113458242822,
+     "per_step_update_frac_of_dd": 0.12137957597366338,
+     "rel_l2": 0.005145129725097626
+    },
+    "layer0": {
+     "per_step_frac_of_dd": 0.002712326952340076,
+     "per_step_update_frac_of_dd": 0.18057679347455888,
+     "rel_l2": 0.0048444712634391485
+    },
+    "attn_proj": {
+     "per_step_frac_of_dd": 0.004870436159648971,
+     "per_step_update_frac_of_dd": 0.2068938432952862,
+     "rel_l2": 0.005280611120295824
+    },
+    "l0_proj": {
+     "per_step_frac_of_dd": 0.008936414908999699,
+     "per_step_update_frac_of_dd": 0.21691820584391114,
+     "rel_l2": 0.005118582695164908
+    },
+    "layer1": {
+     "per_step_frac_of_dd": 0.0013950076300665304,
+     "per_step_update_frac_of_dd": 0.07205115197730688,
+     "rel_l2": 0.0051693468032315915
+    },
+    "router": {
+     "per_step_frac_of_dd": 1.7190342737053878e-06,
+     "per_step_update_frac_of_dd": 0.0016788207421355203,
+     "rel_l2": 0.031087690673111575
+    },
+    "layer2": {
+     "per_step_frac_of_dd": 0.0010930034883456256,
+     "per_step_update_frac_of_dd": 0.050631334123519896,
+     "rel_l2": 0.005834200313692804
+    },
+    "layer3": {
+     "per_step_frac_of_dd": 0.0021888000916239618,
+     "per_step_update_frac_of_dd": 0.12388154987418014,
+     "rel_l2": 0.005164074078497779
+    }
+   }
+  }
+ }
+}

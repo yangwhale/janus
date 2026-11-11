@@ -1,0 +1,539 @@
+{
+ "what": "TPU 索引器 KD 偏高拆到原语：教师分布行和偏 +1.4e-8 至 +1.9e-8、学生 log q 偏 −1.1e-8 至 −2.1e-8 各来自哪一步",
+ "runs": {
+  "tw-kdp1": "TPU v5p 上的逐步探针（frameworks/maxtext/kd_norm_probe.py，janus 6fade8d9d1，MaxText 1e880fdc 的镜像）；输入 t1zdiag2 第 0 行四个产出层",
+  "host_emulation": "analysis/kd_norm_emulate.py，输入 tw-kd1s（现行一代 + debug_sow_indexer）第 0 行四个产出层"
+ },
+ "probe": {
+  "what": "索引器 KD 在 TPU 上偏高：拆到原语。在 TPU 上照 MaxText `calculate_indexer_loss`（`indexer_kd_mcore_log` +",
+  "platform": "tpu",
+  "device_kind": "TPU v5",
+  "jax": "0.11.1",
+  "inputs": "gs://<POC 桶>/janus/hunyuan4/analysis/kd-probe/kdp_t1zdiag2.npz（t1zdiag2 的 diag_kd_inputs 第 0 行，kd_norm_probe.py --make-inputs）",
+  "finished_at": "2026-11-09T02:51:09+00:00",
+  "layers": {
+   "decoder/dense_layers/self_attention": {
+    "teacher_exp": {
+     "rel_signed_mean": -9.277676526428137e-12,
+     "rel_rms": 2.6246489307597655e-08,
+     "ulp_signed_mean": -0.00018951077798964124,
+     "ulp_abs_mean": 0.3361582535096305,
+     "n": 50339840
+    },
+    "teacher_head_sum": {
+     "rel_signed_mean": -8.043678627520247e-10,
+     "rel_rms": 7.578971398941092e-08,
+     "ulp_signed_mean": -0.013041064143180847,
+     "ulp_abs_mean": 0.8413824290037155,
+     "n": 32768
+    },
+    "teacher_head_div": {
+     "rel_signed_mean": 1.236624288555186e-09,
+     "rel_rms": 4.6441479683982635e-08,
+     "ulp_signed_mean": 0.014721087954808447,
+     "ulp_abs_mean": 0.44477644117051784,
+     "n": 50339840
+    },
+    "teacher_head_rowsum_minus1_mean": 1.9024186670435483e-09,
+    "teacher_cross_head_sum": {
+     "rel_signed_mean": 1.4182225463919614e-11,
+     "rel_rms": 4.6305269687447235e-08,
+     "ulp_signed_mean": 0.00024127013514544345,
+     "ulp_abs_mean": 0.4341810482512459,
+     "n": 6292480
+    },
+    "teacher_row_total": {
+     "rel_signed_mean": -3.753314078455967e-09,
+     "rel_rms": 6.815947549861155e-08,
+     "ulp_signed_mean": -0.030853569507598877,
+     "ulp_abs_mean": 0.4861496090888977,
+     "n": 4096
+    },
+    "teacher_norm_div": {
+     "rel_signed_mean": 1.100071544011997e-08,
+     "rel_rms": 2.626094461891161e-08,
+     "ulp_signed_mean": 0.1343414206454356,
+     "ulp_abs_mean": 0.15583599339595858,
+     "n": 6292480
+    },
+    "target_rowsum_minus1": {
+     "mean": 1.4281248184033757e-08,
+     "frac_pos": 0.592041015625
+    },
+    "target_rowsum_minus1_refined_div": {
+     "mean": 1.5134446584852412e-08,
+     "frac_pos": 0.574462890625
+    },
+    "rowsum_first_order": {
+     "from_row_total_sum": 3.753314078455967e-09,
+     "from_norm_div": 1.100071544011997e-08
+    },
+    "student_exp": {
+     "rel_signed_mean": -7.554715345832496e-11,
+     "rel_rms": 2.5597881330642197e-08,
+     "ulp_signed_mean": -0.0012116987319781027,
+     "ulp_abs_mean": 0.3345117609106209,
+     "n": 6292480
+    },
+    "student_sum": {
+     "rel_signed_mean": 4.3940431330345545e-10,
+     "rel_rms": 4.579832010847532e-08,
+     "ulp_signed_mean": 0.007047176361083984,
+     "ulp_abs_mean": 0.5184392929077148,
+     "n": 4096
+    },
+    "student_log": {
+     "rel_signed_mean": 1.4402647935119692e-09,
+     "rel_rms": 3.282008950189788e-08,
+     "ulp_signed_mean": 0.022057087994174933,
+     "ulp_abs_mean": 0.3994510272974933,
+     "n": 4095
+    },
+    "student_lse_total": {
+     "abs_signed_mean": 1.0940720740503819e-08,
+     "ulp_signed_mean": 0.022421698547532287
+    },
+    "lse_first_order": {
+     "from_exp": -8.991694116796119e-11,
+     "from_sum": 4.3940431330345545e-10,
+     "from_log_abs": 1.0591234415180525e-08
+    },
+    "kl_row_mean_tpu": 0.0001097911850083122,
+    "kl_row_mean_tpu_refined_div": 0.00010979203211025634,
+    "kl_row_mean_sow": 0.00010979638804631264,
+    "probe_vs_sow_kl_rel": -4.73880616023159e-05,
+    "probe_target_equals_sow_frac": 0.7794240117073059,
+    "kl_row_mean_fp64": 0.0001097857677245896,
+    "kl_rel_tpu_vs_fp64": 4.93441348079493e-05,
+    "kl_rel_tpu_refined_div_vs_fp64": 5.706008890382641e-05,
+    "kl_rel_sow_vs_fp64": 9.673678057886548e-05
+   },
+   "decoder/moe_layers/layers_0/self_attention": {
+    "teacher_exp": {
+     "rel_signed_mean": -1.2583136243904635e-11,
+     "rel_rms": 2.622469915947322e-08,
+     "ulp_signed_mean": -0.00023725136669440778,
+     "ulp_abs_mean": 0.33609183703421397,
+     "n": 50339840
+    },
+    "teacher_head_sum": {
+     "rel_signed_mean": 2.0778033937600043e-10,
+     "rel_rms": 7.609298663765765e-08,
+     "ulp_signed_mean": 0.0020103901624679565,
+     "ulp_abs_mean": 0.8485988229513168,
+     "n": 32768
+    },
+    "teacher_head_div": {
+     "rel_signed_mean": 1.6649060055198006e-09,
+     "rel_rms": 4.6532934868455465e-08,
+     "ulp_signed_mean": 0.020203634785665125,
+     "ulp_abs_mean": 0.4453492817684775,
+     "n": 50339840
+    },
+    "teacher_head_rowsum_minus1_mean": 1.465238597120333e-09,
+    "teacher_cross_head_sum": {
+     "rel_signed_mean": 3.5966951312790733e-12,
+     "rel_rms": 4.630740562761941e-08,
+     "ulp_signed_mean": 0.00012117638832384052,
+     "ulp_abs_mean": 0.4340599612553397,
+     "n": 6292480
+    },
+    "teacher_row_total": {
+     "rel_signed_mean": -5.517698234964613e-09,
+     "rel_rms": 6.719058129550428e-08,
+     "ulp_signed_mean": -0.04966610670089722,
+     "ulp_abs_mean": 0.48128896951675415,
+     "n": 4096
+    },
+    "teacher_norm_div": {
+     "rel_signed_mean": 1.132610214492515e-08,
+     "rel_rms": 2.6636149471211465e-08,
+     "ulp_signed_mean": 0.1381037108096287,
+     "ulp_abs_mean": 0.15936865076522969,
+     "n": 6292480
+    },
+    "target_rowsum_minus1": {
+     "mean": 1.6362591281904315e-08,
+     "frac_pos": 0.587890625
+    },
+    "target_rowsum_minus1_refined_div": {
+     "mean": 1.6416471737557004e-08,
+     "frac_pos": 0.57373046875
+    },
+    "rowsum_first_order": {
+     "from_row_total_sum": 5.517698234964613e-09,
+     "from_norm_div": 1.132610214492515e-08
+    },
+    "student_exp": {
+     "rel_signed_mean": -9.457543679429013e-11,
+     "rel_rms": 2.560912240504193e-08,
+     "ulp_signed_mean": -0.0015105801644377268,
+     "ulp_abs_mean": 0.3346329071444864,
+     "n": 6292480
+    },
+    "student_sum": {
+     "rel_signed_mean": 4.027041189894831e-10,
+     "rel_rms": 4.714584677030624e-08,
+     "ulp_signed_mean": 0.0070427656173706055,
+     "ulp_abs_mean": 0.5342665910720825,
+     "n": 4096
+    },
+    "student_log": {
+     "rel_signed_mean": 2.0922530016327902e-09,
+     "rel_rms": 3.2434514858147114e-08,
+     "ulp_signed_mean": 0.03191236954805542,
+     "ulp_abs_mean": 0.3946813209457675,
+     "n": 4095
+    },
+    "student_lse_total": {
+     "abs_signed_mean": 1.523344885827273e-08,
+     "ulp_signed_mean": 0.032658590816026845
+    },
+    "lse_first_order": {
+     "from_exp": -7.610444985960721e-11,
+     "from_sum": 4.027041189894831e-10,
+     "from_log_abs": 1.4906850293619446e-08
+    },
+    "kl_row_mean_tpu": 0.00010783201355391014,
+    "kl_row_mean_tpu_refined_div": 0.00010783207307163423,
+    "kl_row_mean_sow": 0.00010783788323909249,
+    "probe_vs_sow_kl_rel": -5.443064168209055e-05,
+    "probe_target_equals_sow_frac": 0.7868863940238953,
+    "kl_row_mean_fp64": 0.00010781986761604901,
+    "kl_rel_tpu_vs_fp64": 0.00011265027614748568,
+    "kl_rel_tpu_refined_div_vs_fp64": 0.00011320228687972111,
+    "kl_rel_sow_vs_fp64": 0.00016709001264625378
+   },
+   "decoder/moe_layers_remainder/layers_0/self_attention": {
+    "teacher_exp": {
+     "rel_signed_mean": -8.062387026581346e-11,
+     "rel_rms": 2.5544269361754408e-08,
+     "ulp_signed_mean": -0.001294900932114606,
+     "ulp_abs_mean": 0.3346088521826569,
+     "n": 50339840
+    },
+    "teacher_head_sum": {
+     "rel_signed_mean": 4.069501379269338e-10,
+     "rel_rms": 7.52759972554352e-08,
+     "ulp_signed_mean": 0.0071540772914886475,
+     "ulp_abs_mean": 0.8528004884719849,
+     "n": 32768
+    },
+    "teacher_head_div": {
+     "rel_signed_mean": -1.4036972797328146e-09,
+     "rel_rms": 4.639959550975452e-08,
+     "ulp_signed_mean": -0.018616022590738548,
+     "ulp_abs_mean": 0.44489356867913554,
+     "n": 50339840
+    },
+    "teacher_head_rowsum_minus1_mean": -1.1808927169454364e-09,
+    "teacher_cross_head_sum": {
+     "rel_signed_mean": -3.4428332671054234e-12,
+     "rel_rms": 4.633839485888437e-08,
+     "ulp_signed_mean": 6.27832746389341e-05,
+     "ulp_abs_mean": 0.43475125268574555,
+     "n": 6292480
+    },
+    "teacher_row_total": {
+     "rel_signed_mean": -6.826880418388641e-09,
+     "rel_rms": 7.006120550754559e-08,
+     "ulp_signed_mean": -0.07121700048446655,
+     "ulp_abs_mean": 0.512424886226654,
+     "n": 4096
+    },
+    "teacher_norm_div": {
+     "rel_signed_mean": 1.2796044129331552e-08,
+     "rel_rms": 2.843179564865751e-08,
+     "ulp_signed_mean": 0.15758459381848,
+     "ulp_abs_mean": 0.17993025129482534,
+     "n": 6292480
+    },
+    "target_rowsum_minus1": {
+     "mean": 1.8877457819144183e-08,
+     "frac_pos": 0.58984375
+    },
+    "target_rowsum_minus1_refined_div": {
+     "mean": 1.9746309476431634e-08,
+     "frac_pos": 0.57177734375
+    },
+    "rowsum_first_order": {
+     "from_row_total_sum": 6.826880418388641e-09,
+     "from_norm_div": 1.2796044129331552e-08
+    },
+    "student_exp": {
+     "rel_signed_mean": -3.5974117866887755e-11,
+     "rel_rms": 2.5007754061808086e-08,
+     "ulp_signed_mean": -0.0005869985403041878,
+     "ulp_abs_mean": 0.3337519676684757,
+     "n": 6292480
+    },
+    "student_sum": {
+     "rel_signed_mean": 7.21441761477093e-10,
+     "rel_rms": 4.625368014840987e-08,
+     "ulp_signed_mean": 0.008418798446655273,
+     "ulp_abs_mean": 0.5351319313049316,
+     "n": 4096
+    },
+    "student_log": {
+     "rel_signed_mean": 2.2859551480028894e-09,
+     "rel_rms": 3.307714530238509e-08,
+     "ulp_signed_mean": 0.03423758122537817,
+     "ulp_abs_mean": 0.4038964078471665,
+     "n": 4095
+    },
+    "student_lse_total": {
+     "abs_signed_mean": 1.7039162491442987e-08,
+     "ulp_signed_mean": 0.03569936540634444
+    },
+    "lse_first_order": {
+     "from_exp": -3.3661846155140305e-11,
+     "from_sum": 7.21441761477093e-10,
+     "from_log_abs": 1.6351383647501523e-08
+    },
+    "kl_row_mean_tpu": 3.865391738866464e-05,
+    "kl_row_mean_tpu_refined_div": 3.865475881115188e-05,
+    "kl_row_mean_sow": 3.865137731962065e-05,
+    "probe_vs_sow_kl_rel": 6.571742639294165e-05,
+    "probe_target_equals_sow_frac": 0.7807837724685669,
+    "kl_row_mean_fp64": 3.863771199991015e-05,
+    "kl_rel_tpu_vs_fp64": 0.00041941895406560903,
+    "kl_rel_tpu_refined_div_vs_fp64": 0.00044119618785321,
+    "kl_rel_sow_vs_fp64": 0.00035367828484589303
+   },
+   "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention": {
+    "teacher_exp": {
+     "rel_signed_mean": -7.785558536760737e-11,
+     "rel_rms": 2.580784087580497e-08,
+     "ulp_signed_mean": -0.00124686439347545,
+     "ulp_abs_mean": 0.33518803719705176,
+     "n": 50339840
+    },
+    "teacher_head_sum": {
+     "rel_signed_mean": 8.340259376735292e-11,
+     "rel_rms": 7.511204344915457e-08,
+     "ulp_signed_mean": 0.0017101317644119263,
+     "ulp_abs_mean": 0.8427763730287552,
+     "n": 32768
+    },
+    "teacher_head_div": {
+     "rel_signed_mean": -8.25707963045182e-12,
+     "rel_rms": 4.5751335974943023e-08,
+     "ulp_signed_mean": -0.0010016907927505403,
+     "ulp_abs_mean": 0.43757567272278064,
+     "n": 50339840
+    },
+    "teacher_head_rowsum_minus1_mean": 1.6039169992154712e-10,
+    "teacher_cross_head_sum": {
+     "rel_signed_mean": 6.843752368226458e-12,
+     "rel_rms": 4.635467428081225e-08,
+     "ulp_signed_mean": 4.675223441314076e-05,
+     "ulp_abs_mean": 0.4338874835517952,
+     "n": 6292480
+    },
+    "teacher_row_total": {
+     "rel_signed_mean": -5.4001105620295595e-09,
+     "rel_rms": 6.841500744907685e-08,
+     "ulp_signed_mean": -0.04989415407180786,
+     "ulp_abs_mean": 0.48981720209121704,
+     "n": 4096
+    },
+    "teacher_norm_div": {
+     "rel_signed_mean": 1.1373967230983965e-08,
+     "rel_rms": 2.6728068785074897e-08,
+     "ulp_signed_mean": 0.1386955522442551,
+     "ulp_abs_mean": 0.15819016497906294,
+     "n": 6292480
+    },
+    "target_rowsum_minus1": {
+     "mean": 1.6271457070615725e-08,
+     "frac_pos": 0.590087890625
+    },
+    "target_rowsum_minus1_refined_div": {
+     "mean": 1.6585055107043445e-08,
+     "frac_pos": 0.5703125
+    },
+    "rowsum_first_order": {
+     "from_row_total_sum": 5.4001105620295595e-09,
+     "from_norm_div": 1.1373967230983965e-08
+    },
+    "student_exp": {
+     "rel_signed_mean": -8.366516571877901e-11,
+     "rel_rms": 2.5417213587803103e-08,
+     "ulp_signed_mean": -0.0013445418328733546,
+     "ulp_abs_mean": 0.33426570501399977,
+     "n": 6292480
+    },
+    "student_sum": {
+     "rel_signed_mean": 4.248420888076806e-10,
+     "rel_rms": 4.650356253027905e-08,
+     "ulp_signed_mean": 0.00792992115020752,
+     "ulp_abs_mean": 0.5328150987625122,
+     "n": 4096
+    },
+    "student_log": {
+     "rel_signed_mean": 2.7626918450983004e-09,
+     "rel_rms": 3.326926592656409e-08,
+     "ulp_signed_mean": 0.04218901842923537,
+     "ulp_abs_mean": 0.4071370375407484,
+     "n": 4095
+    },
+    "student_lse_total": {
+     "abs_signed_mean": 2.0711626048740923e-08,
+     "ulp_signed_mean": 0.04267033444421031
+    },
+    "lse_first_order": {
+     "from_exp": -7.010179907666457e-11,
+     "from_sum": 4.248420888076806e-10,
+     "from_log_abs": 2.0356886828808542e-08
+    },
+    "kl_row_mean_tpu": 7.992031874248795e-05,
+    "kl_row_mean_tpu_refined_div": 7.992062536565925e-05,
+    "kl_row_mean_sow": 7.992136156032004e-05,
+    "probe_vs_sow_kl_rel": -1.3048048878694374e-05,
+    "probe_target_equals_sow_frac": 0.7883663177490234,
+    "kl_row_mean_fp64": 7.990305826630702e-05,
+    "kl_rel_tpu_vs_fp64": 0.00021601771641077683,
+    "kl_rel_tpu_refined_div_vs_fp64": 0.00021985515615274842,
+    "kl_rel_sow_vs_fp64": 0.00022906875418970962
+   }
+  },
+  "note": "TPU 一侧"
+ },
+ "host_emulation": {
+  "decoder/dense_layers/self_attention": {
+   "rowsum_minus1_tpu_sow": 1.715729069928784e-08,
+   "emulate": {
+    "exact_sum_then_round": {
+     "frac_S_below_8": 0.0,
+     "rowsum_minus1_ieee_div": -2.914646302087931e-11,
+     "rowsum_minus1_shared_reciprocal": -2.914646302087931e-11,
+     "reciprocal_rel_err_mean": 0.0
+    },
+    "fp32_pairwise_sum": {
+     "frac_S_below_8": 0.096923828125,
+     "rowsum_minus1_ieee_div": 8.361062953099463e-09,
+     "rowsum_minus1_shared_reciprocal": 1.0899768199124082e-08,
+     "reciprocal_rel_err_mean": 5.6315904491816005e-09
+    },
+    "fp32_sequential_sum": {
+     "frac_S_below_8": 0.482666015625,
+     "rowsum_minus1_ieee_div": 2.1462682298079017e-08,
+     "rowsum_minus1_shared_reciprocal": 3.0553053420590004e-08,
+     "reciprocal_rel_err_mean": 1.4915444556534707e-08
+    },
+    "sum_one_ulp_below_8": {
+     "frac_S_below_8": 1.0,
+     "rowsum_minus1_ieee_div": 8.927194272700945e-08,
+     "rowsum_minus1_shared_reciprocal": 1.1586990922296536e-07,
+     "reciprocal_rel_err_mean": 5.960463766996327e-08
+    }
+   },
+   "kl_fp64": 0.00010981679594495851,
+   "kl_tpu_p_logq_mcore_formula_rel": 0.00030559350370262806,
+   "kl_tpu_p_logq_generalized_rel": 2.334993509656158e-08
+  },
+  "decoder/moe_layers/layers_0/self_attention": {
+   "rowsum_minus1_tpu_sow": 1.7497278292921692e-08,
+   "emulate": {
+    "exact_sum_then_round": {
+     "frac_S_below_8": 0.0,
+     "rowsum_minus1_ieee_div": -5.049827223047032e-11,
+     "rowsum_minus1_shared_reciprocal": -5.049827223047032e-11,
+     "reciprocal_rel_err_mean": 0.0
+    },
+    "fp32_pairwise_sum": {
+     "frac_S_below_8": 0.09423828125,
+     "rowsum_minus1_ieee_div": 7.941835633573646e-09,
+     "rowsum_minus1_shared_reciprocal": 1.034155872048359e-08,
+     "reciprocal_rel_err_mean": 5.52972705125665e-09
+    },
+    "fp32_sequential_sum": {
+     "frac_S_below_8": 0.462890625,
+     "rowsum_minus1_ieee_div": 3.5569769352150615e-11,
+     "rowsum_minus1_shared_reciprocal": 9.23131437957636e-09,
+     "reciprocal_rel_err_mean": 1.4988206061689047e-08
+    },
+    "sum_one_ulp_below_8": {
+     "frac_S_below_8": 1.0,
+     "rowsum_minus1_ieee_div": 8.925641026280573e-08,
+     "rowsum_minus1_shared_reciprocal": 1.158513001087158e-07,
+     "reciprocal_rel_err_mean": 5.960463766996327e-08
+    }
+   },
+   "kl_fp64": 0.00010775803389433719,
+   "kl_tpu_p_logq_mcore_formula_rel": 0.00031248231731373366,
+   "kl_tpu_p_logq_generalized_rel": 5.17199461036455e-09
+  },
+  "decoder/moe_layers_remainder/layers_0/self_attention": {
+   "rowsum_minus1_tpu_sow": 1.4617675958561449e-08,
+   "emulate": {
+    "exact_sum_then_round": {
+     "frac_S_below_8": 0.0,
+     "rowsum_minus1_ieee_div": -1.517719283583574e-11,
+     "rowsum_minus1_shared_reciprocal": -1.517719283583574e-11,
+     "reciprocal_rel_err_mean": 0.0
+    },
+    "fp32_pairwise_sum": {
+     "frac_S_below_8": 0.097412109375,
+     "rowsum_minus1_ieee_div": 8.130008666284994e-09,
+     "rowsum_minus1_shared_reciprocal": 1.0478466094809846e-08,
+     "reciprocal_rel_err_mean": 5.718901902387885e-09
+    },
+    "fp32_sequential_sum": {
+     "frac_S_below_8": 0.473388671875,
+     "rowsum_minus1_ieee_div": 1.8219772357497277e-08,
+     "rowsum_minus1_shared_reciprocal": 2.7655737255827262e-08,
+     "reciprocal_rel_err_mean": 1.5395661192088572e-08
+    },
+    "sum_one_ulp_below_8": {
+     "frac_S_below_8": 1.0,
+     "rowsum_minus1_ieee_div": 8.921662697503052e-08,
+     "rowsum_minus1_shared_reciprocal": 1.1588554826857944e-07,
+     "reciprocal_rel_err_mean": 5.960463766996327e-08
+    }
+   },
+   "kl_fp64": 3.864941709180397e-05,
+   "kl_tpu_p_logq_mcore_formula_rel": 0.0007272698718296944,
+   "kl_tpu_p_logq_generalized_rel": -1.4923154934010086e-09
+  },
+  "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention": {
+   "rowsum_minus1_tpu_sow": 1.904756885551251e-08,
+   "emulate": {
+    "exact_sum_then_round": {
+     "frac_S_below_8": 0.0,
+     "rowsum_minus1_ieee_div": -7.204903340607416e-12,
+     "rowsum_minus1_shared_reciprocal": -7.204903340607416e-12,
+     "reciprocal_rel_err_mean": 0.0
+    },
+    "fp32_pairwise_sum": {
+     "frac_S_below_8": 0.09130859375,
+     "rowsum_minus1_ieee_div": 7.64928387297914e-09,
+     "rowsum_minus1_shared_reciprocal": 1.004786298608451e-08,
+     "reciprocal_rel_err_mean": 5.3987598298138595e-09
+    },
+    "fp32_sequential_sum": {
+     "frac_S_below_8": 0.459228515625,
+     "rowsum_minus1_ieee_div": -2.2326887005874596e-09,
+     "rowsum_minus1_shared_reciprocal": 6.616595271680126e-09,
+     "reciprocal_rel_err_mean": 1.4813581243611207e-08
+    },
+    "sum_one_ulp_below_8": {
+     "frac_S_below_8": 1.0,
+     "rowsum_minus1_ieee_div": 8.93761722409181e-08,
+     "rowsum_minus1_shared_reciprocal": 1.1588219450686665e-07,
+     "reciprocal_rel_err_mean": 5.960463766996327e-08
+    }
+   },
+   "kl_fp64": 7.98637324084724e-05,
+   "kl_tpu_p_logq_mcore_formula_rel": 0.0005056681269166585,
+   "kl_tpu_p_logq_generalized_rel": 2.5113512380769976e-08
+  }
+ },
+ "reading": [
+  "教师分布 p 的行和偏高（四层 +1.43e-8 至 +1.89e-8，59% 的行偏正）一阶拆成两步：最后一次归一化除法 p = a / S 平均偏高 +1.10e-8 至 +1.28e-8（+0.13 至 +0.16 ulp），行总和 S 的 FP32 归约平均偏低 −3.8e-9 至 −6.8e-9（使 Σp 偏 +3.8e-9 至 +6.8e-9）。exp（−1.9e-4 至 −1.3e-3 ulp）、逐头求和与逐头除法、跨头求和都不偏（|带符号均值| ≤ 0.05 ulp）。",
+  "机制（主机侧仿真）：8 个头的分布相加，每行总和在数学上恰好是 8（2 的幂）。精确求和再舍入一次时 S = 8，行和无偏（−3e-11）；FP32 求和落到 8 以下时，用 S 归一化后 Σp > 1（numpy FP32 两两求和：10% 的行 S < 8，Σp − 1 = +8.4e-9）；整行共用一个舍入后的倒数时再加一份：S 比 8 小奇数个格的行，1/S 恰在两格中点稍上，总是向上舍（S 比 8 小 1 格时倒数相对误差恒为 +5.96e-8）。TPU 的除法经倒数实现，探针里换成一步牛顿修正的倒数也不变（+1.51e-8 对 +1.43e-8），因为正确舍入的倒数本身就有这个偏差。",
+  "学生 log q 整体偏低（log-sum-exp 偏高 +1.09e-8 至 +2.07e-8，+0.022 至 +0.043 ulp）几乎全部来自 log（accuracy=HIGHEST）本身：一阶拆分 log 贡献 +1.06e-8 至 +2.04e-8，exp 求和 +4.0e-10 至 +7.2e-10，exp −3e-11 至 −9e-11。",
+  "两项同向推高 KL：KL ≈ 真 KL + (Σp − 1) − ε。改用广义 KL（Σ p log(p/q) − Σp + Σq，归一化时与 KL 相同，对两种整体偏差一阶不变）后，TPU 图里的 p 与 log q 算出的 KL 对 FP64：−1.5e-9 至 +2.5e-8（原写法 +3.06e-4 至 +7.27e-4）。这是候选改法，MaxText 尚未加开关；对索引器梯度的影响解析上为零（Σ softmax 恒为 1）。",
+  "探针图里的 KL 与模型里 sow 的 KL 不逐位相同（相对差 −5.4e-5 至 +6.6e-5，XLA 融合不同），但四层都偏高（+4.9e-5 至 +4.2e-4，模型里 +9.7e-5 至 +3.5e-4），机制一致。"
+ ]
+}

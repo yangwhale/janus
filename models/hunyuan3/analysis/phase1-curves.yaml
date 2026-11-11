@@ -1,0 +1,34 @@
+# 混元 3 · 第一阶段 9 次 1000 步 GPU 运行的分组（janus curves groups 的配置，格式见 janus/analysis/curves.py 的 GroupSpec）。
+# 同一种设置的运行放一组：组内两两的差才是 GPU 自己的噪声。分布式优化器开关也算设置
+# （见 alignments/00-gpu-noise-and-drills/README.md 第 6 条）。
+groups:
+  分布式优化器关、默认设置: [g1k-a, g1k-b, g1k-c]
+  分布式优化器开、默认设置: [rd-golden-2, rd-golden-3, rd-golden-4, rd-golden-5]
+  确定性: [g1k-det, rd-golden-1]
+noise_groups: [分布式优化器关、默认设置, 分布式优化器开、默认设置]
+contrast: [分布式优化器关、默认设置, 分布式优化器开、默认设置]
+contrast_label: 分布式优化器 关 − 开
+highlight: [确定性]
+base_label: 默认设置
+highlight_label: 确定性
+fields:
+  - [lm_loss, lm_loss]
+  - [grad_norm, grad_norm（裁剪前）]
+  - [param_norm, param_norm]
+ref_line: 2.0e-4               # 0.02%，示意；正式门槛按噪声参照标定，不用这条线判定
+ref_label: 参考线 ±2e-4（0.02%，示意）
+window: 50
+# 按设置分组的持续偏移（offsets.json）：每个运行的两项设置
+setting_keys: [dist_opt, det]
+settings:
+  g1k-a: {dist_opt: 关, det: 否}
+  g1k-b: {dist_opt: 关, det: 否}
+  g1k-c: {dist_opt: 关, det: 否}
+  g1k-det: {dist_opt: 关, det: 是}
+  rd-golden-2: {dist_opt: 开, det: 否}
+  rd-golden-3: {dist_opt: 开, det: 否}
+  rd-golden-4: {dist_opt: 开, det: 否}
+  rd-golden-5: {dist_opt: 开, det: 否}
+  rd-golden-1: {dist_opt: 开, det: 是}
+offset_from: 2
+offset_batches: 20

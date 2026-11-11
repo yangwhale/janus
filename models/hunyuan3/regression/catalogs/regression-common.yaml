@@ -1,0 +1,252 @@
+# 混元 3 · 日常回归 · 各档共用的检查（T0 全部行；T1 在此之上加 R12、R13、R16①、R25）。不单独跑：
+# 由 regression-t0.yaml / regression-t1.yaml 用 include 引入，{steps}、{window}、{units} 由各档的 vars 给。
+# 行号 R01–R28 见 docs/reference/regression.md 第四节，混元 3 的取值见 ../README.md 第四节。
+# 这里写的是「数学不变」时的判法；PR 声明了别的类型时，../regress.py report 按标准第三节的表改判，不改这个文件。
+# 每条检查的 row 是它对应的清单行；../regress.py report 按 row 汇总、核对覆盖（R23）。
+checks:
+  # ---------------------------------------------------------------- R01 运行完整
+  - id: R01.run_complete
+    row: R01
+    type: run_complete
+    level: regress
+    select: {kind: metrics}
+    params: {steps: "{steps}", first: 1}
+
+  # ---------------------------------------------------------------- R02 固定输入
+  # 钉死的值：权重清单（HF 目录 tensor_sha256.json）与数据清单（golden g1k-a 的 data/batches 逐 rank 拼接）的 sha256
+  # 出自 v5p 运行 t-a 的 meta.json，与 ../README.md 第一节一致；训练配置 hy3-4layers.yml 的 sha256 是本仓库当前文件的。
+  # 改了这几样就是改档位定义：在同一个 PR 里改这里的值并写明原因（标准 R02），旧 LKG 作废、重建。
+  # 档位配置（步数、命令行覆盖）对 LKG 比；档位配置文件的 sha256、本目录文件的内容指纹由 regress.py 对 lkg.yaml 核。
+  - id: R02.inputs
+    row: R02
+    type: config_diff
+    level: regress
+    compare: lkg
+    select: {kind: config}
+    params:
+      mapping:
+        - {test: checkpoint.manifest_sha256, equals: "183274dbf17e54560812f0b91d3dc8f3ffbf959e94e43905588ea913f2837014"}
+        - {test: data.manifest_sha256, equals: "e4db6392d89accd7ea3a631a2766d5f1a519d7f937e4d9f0a39cd88028e8220a"}
+        - {test: config.sha256, equals: "a238883b7f914d5c99f313d2d5ef68fa472164ef81e95d48d1046cb7e593ee6b"}   # 打开 dense_fp32_accumulation 等 4 个开关
+        - {test: config.overrides, ref: config.overrides, must_equal: true}
+        - {test: config.args.steps, ref: config.args.steps, must_equal: true}
+        - {test: checkpoint.path, ref: checkpoint.path, must_equal: true}
+        - {test: data.replay_of, ref: data.replay_of, must_equal: true}
+
+  # ---------------------------------------------------------------- R03 数据指纹（全部步，每步 65 项）
+  - id: R03.data_fingerprint
+    row: R03
+    type: data_fingerprint
+    level: regress
+    compare: lkg
+    select: {kind: tokens, steps: "{window}"}
+    expect: {units: "{units}"}    # 步数 × 65（8 rank × 2 microbatch × 4 字段 + 1 个非 padding 总数）；regress.py 核
+    params: {first_loss: false}
+
+  # ---------------------------------------------------------------- R04 版本
+  - id: R04.versions
+    row: R04
+    type: config_diff
+    level: regress
+    compare: lkg
+    select: {kind: config}
+    params:
+      mapping:
+        - {test: image, ref: image, must_equal: true}
+        - {test: versions, ref: versions, must_equal: true}
+        - {test: hardware.accelerator, ref: hardware.accelerator, must_equal: true}
+        - {test: hardware.count, ref: hardware.count, must_equal: true}
+        - {test: hardware.topology, ref: hardware.topology, must_equal: true}
+        - {test: hardware.processes, ref: hardware.processes, must_equal: true}
+        - {test: code, ref: code}          # 训练代码与 janus 的提交：只列出（变了才有东西可测）
+
+  # ---------------------------------------------------------------- R05 编译与运行开关
+  # 运行进程：进程启动时、第一步编译执行完各取一份（环境变量全量 + jax.config），对 LKG 逐子键比。
+  # 编译进程：本档位不做提前编译，编译与运行是同一个进程；编译器实际生效的开关取 XLA dump 的 flagfile 与 debug_options，
+  # 整份对 LKG 逐字节比（R05.compiler_*）。主机相关的变量（主机名、地址、本机序号）不比。
+  - id: R05.process_flags
+    row: R05
+    type: config_diff
+    level: regress
+    compare: lkg
+    select: {kind: config}
+    params:
+      mapping:
+        - {test: flags.at_start.env, ref: flags.at_start.env, must_equal: true,
+           ignore: ["TPU_WORKER_ID", "TPU_WORKER_HOSTNAMES", "TPU_PROCESS_*", "TPU_HOST*", "*HOSTNAME*", "*ADDRESS*", "*_IP", "*_PORT"]}
+        - {test: flags.after_compile.env, ref: flags.after_compile.env, must_equal: true,
+           ignore: ["TPU_WORKER_ID", "TPU_WORKER_HOSTNAMES", "TPU_PROCESS_*", "TPU_HOST*", "*HOSTNAME*", "*ADDRESS*", "*_IP", "*_PORT"]}
+        - {test: flags.at_start.jax_config, ref: flags.at_start.jax_config, must_equal: true}
+        - {test: flags.after_compile.jax_config, ref: flags.after_compile.jax_config, must_equal: true}
+        - {test: determinism, ref: determinism, must_equal: true}
+        # 展开后的完整 MaxText 配置：运行名、各种输出目录与路径每次不同，不比（载入路径在 R02 比）
+        - {test: maxtext_config_full, ref: maxtext_config_full, must_equal: true,
+           ignore: ["run_name", "*dir*", "*_path", "*_paths", "*directory*", "tensorboard*", "*file*", "*url*", "*project*"]}
+  - id: R05.compiler_flagfile
+    row: R05
+    type: artifact_check
+    level: regress
+    compare: lkg
+    select: {kind: artifact, file: hlo/train_step.flagfile}
+    params: {fingerprint: true}
+  - id: R05.compiler_debug_options
+    row: R05
+    type: artifact_check
+    level: regress
+    compare: lkg
+    select: {kind: artifact, file: hlo/train_step.debug_options}
+    # xla_gpu_* 是 GPU 编译器的选项，TPU 编译不读。v5p 上同一提交双跑（reg-t0-lkg1-a / -b）只差一行
+    # xla_gpu_experimental_autotune_cache_mode（a 有、b 没有），TPU 编译器的 flagfile 与 HLO 指纹都相同，所以这类行不比
+    params: {fingerprint: true, ignore_lines: ['^xla_gpu_']}
+
+  # ---------------------------------------------------------------- R06「必须等于」断言（两边都必须等于给定值）
+  - id: R06.must_equal
+    row: R06
+    type: config_diff
+    level: regress
+    compare: lkg
+    select: {kind: config}
+    params:
+      mapping:
+        - {test: maxtext_config_full.dropout_rate, equals: 0.0, transform: float}
+        - {test: maxtext_config_full.enable_dropout, equals: false}
+        - {test: maxtext_config_full.use_random_routing, equals: false}
+        - {test: maxtext_config_full.load_balance_loss_weight, equals: 0.0, transform: float}
+        - {test: maxtext_config_full.z_loss_multiplier, equals: 0.0, transform: float}
+        - {test: maxtext_config_full.mtp_num_layers, equals: 0}
+        - {test: maxtext_config_full.adam_weight_decay, equals: 0.033, transform: float}
+        - {test: maxtext_config_full.adamw_mask, equals: ["norm/scale"]}
+        - {test: maxtext_config_full.learning_rate, equals: 1.0e-5, transform: float}
+        - {test: scheduler_config.lr_decay_style, equals: constant}
+        - {test: maxtext_config_full.gradient_clipping_threshold, equals: 1.0, transform: float}
+        - {test: maxtext_config_full.skip_step_on_spikes, equals: false}
+        - {test: maxtext_config_full.routed_bias_update_rate, equals: 0.001, transform: float}
+        - {test: maxtext_config_full.matmul_precision, equals: default}
+        - {test: maxtext_config_full.float32_gate_logits, equals: true}
+        - {test: maxtext_config_full.capacity_factor, equals: -1.0, transform: float}
+        - {test: maxtext_config_full.remat_policy, equals: custom}
+        - {test: maxtext_config_full.moe_routing_maps, equals: device}
+        - {test: maxtext_config_full.weight_dtype, equals: float32}
+        - {test: maxtext_config_full.mu_dtype, equals: float32}
+        - {test: maxtext_config_full.grad_dtype, equals: float32}
+        - {test: maxtext_config_full.per_device_batch_size, equals: 2, transform: float}
+        - {test: maxtext_config_full.gradient_accumulation_steps, equals: 1}
+        - {test: maxtext_config_full.shard_optimizer_over_data, equals: false}   # 打开后 GA 的累加器是 BF16
+        - {test: maxtext_config_full.use_tokamax_splash, equals: false}
+        # 舍入位置与累加精度（hy3-4layers.yml a238883b）
+        - {test: maxtext_config_full.routed_gate_bf16_rounding, equals: true}
+        - {test: maxtext_config_full.rmsnorm_single_rounding, equals: true}
+        - {test: maxtext_config_full.mlp_activation_round_per_op, equals: true}
+        - {test: maxtext_config_full.dense_fp32_accumulation, equals: true}
+
+  # ---------------------------------------------------------------- R07 加载后状态（FP32 全量清单，训练前）
+  - id: R07.state_init
+    row: R07
+    type: checkpoint_equal
+    level: regress
+    compare: lkg
+    select: {kind: checkpoint, which: init, source: state}
+
+  # ---------------------------------------------------------------- R08 / R09 第 1 步 loss 与范数
+  - id: R08.step1_loss
+    row: R08
+    type: determinism
+    level: regress
+    compare: lkg
+    select: {kind: metrics, fields: [lm_loss, loss], window: "1:2"}
+  - id: R09.step1_norms
+    row: R09
+    type: determinism
+    level: regress
+    compare: lkg
+    select: {kind: metrics, fields: [raw_grad_norm, param_norm], window: "1:2"}
+
+  # ---------------------------------------------------------------- R14 学习率与权重衰减序列
+  - id: R14.lr_wd
+    row: R14
+    type: determinism
+    level: regress
+    compare: lkg
+    select: {kind: metrics, fields: [lr, wd]}
+
+  # ---------------------------------------------------------------- R15 K 步后状态（FP32 全量清单，训练后）
+  - id: R15.state_final
+    row: R15
+    type: checkpoint_equal
+    level: regress
+    compare: lkg
+    select: {kind: checkpoint, which: final, source: state}
+
+  # ---------------------------------------------------------------- R17 非有限值与突跳
+  # 跳步：skip_step_on_spikes 由 R06 断言为 false，训练循环里没有跳步路径（skipped_iter 恒为 0），这里不另数
+  - id: R17.health
+    row: R17
+    type: health_signals
+    level: regress
+    select: {kind: metrics, fields: [lm_loss, raw_grad_norm, param_norm]}
+    params: {window: 20, spike_ratio: 10}
+
+  # ---------------------------------------------------------------- R18 dtype 清单（训练后的全量状态）
+  # 规则出处：README 第四节 R18；二阶动量 FP32 与计数器 int32 / uint32 来自 v5p 运行的 modules.txt（state 叶子 dtype）。
+  # 每种 dtype 的个数与 LKG 相等由 R15 保证（两边状态路径集合必须相同，sha256 覆盖字节）。
+  - id: R18.dtypes
+    row: R18
+    type: dtype_manifest
+    level: regress
+    select: {kind: checkpoint, which: [init, final], source: state}
+    params:
+      rules:
+        - {pattern: "params/*", dtype: float32}
+        - {pattern: "MoEBiasVar/*", dtype: float32}
+        - {pattern: "*/opt_state/*/mu/*", dtype: float32}
+        - {pattern: "*/opt_state/*/nu/*", dtype: float32}
+        - {pattern: "*/opt_state/*/count", dtype: int32}
+        - {pattern: "OptState/optimizer/step", dtype: uint32}
+
+  # ---------------------------------------------------------------- R20 编译产物计数（实际执行的 jit_train_step）
+  # 规则对着 v5p 上 jit_train_step 的优化后 HLO 核过（../README.md「R20 规则」）；个数与 LKG 相等。
+  # 路由 GEMM 的操作数 dtype 与精度、moe_routing_maps 是否作为保存点：还没有可靠的正则，暂缓（README 写明）。
+  - id: R20.artifact_counts
+    row: R20
+    type: artifact_check
+    level: regress
+    compare: lkg
+    select: {kind: artifact, file: hlo/train_step.after_optimizations.txt}
+    params:
+      rules:
+        - {name: fp8_types, regex: '\bf8e[45]m[23]\w*\[', max: 0}
+        - {name: rng_ops, regex: '\b(rng-bit-generator|rng-get-and-update-state|rng)\(', max: 0}
+        - {name: tpu_custom_calls, regex: 'custom_call_target="tpu_custom_call"', min: 1, match_ref: true}
+        - {name: megablox_gmm, regex: '\\"tile_m\\"', min: 1, match_ref: true}
+        - {name: splash_attention, regex: '(?m)^\s*(?:ROOT )?%splash_mha_\w+(?:\.\d+)? = ', min: 1, match_ref: true}
+        - {name: all_reduce, regex: '(?m)^\s*(?:ROOT )?%\S+ = .*\ball-reduce(?:-start)?\(', match_ref: true}
+        - {name: reduce_precision, regex: '\breduce-precision\(', match_ref: true}
+
+  # ---------------------------------------------------------------- R21 编译产物指纹（只报）
+  - id: R21.hlo_fingerprint
+    row: R21
+    type: artifact_check
+    level: regress
+    hard: false
+    compare: lkg
+    select: {kind: artifact, file: hlo/train_step.after_optimizations.txt}
+    params: {fingerprint: true}
+
+  # ---------------------------------------------------------------- R23 覆盖
+  # 「每一行都出了结论、单元数对得上（expect）」由 ../regress.py report 汇总；状态叶子集合齐不齐在 R07 / R15 的 only_one_side
+
+  # ---------------------------------------------------------------- 容差门（role: tolerance，只在 PR 声明「会改数值 · 执行级」
+  # 或「升级依赖」不逐位时由 regress.py 采用）。门槛 calibrated：TPU 执行噪声，参照对在各档目录的 runs.noise（来自
+  # ../calibration.yaml，../README.md 第五节）；被测 ≤ 1 倍上限 pass、1–2 倍 inconclusive、> 2 倍 fail（docs/reference/judging.md）。
+  # 标定绑定的档位配置、镜像、依赖和被测不同时，regress.py 把 pass 降为 inconclusive（参照作废，标准第五节）。
+  # 非有限值照样判 fail。数学不变时 regress.py 不看这几条。
+  - id: R08.loss_tolerance
+    row: R08
+    role: tolerance
+    type: loss_series
+    level: regress
+    hard: false
+    compare: lkg
+    select: {kind: metrics, field: lm_loss, window: "{window}"}
+    threshold: calibrated
+    params: {denominator: golden}

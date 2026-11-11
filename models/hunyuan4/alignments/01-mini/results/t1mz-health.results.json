@@ -1,0 +1,113 @@
+{
+ "schema_version": 1,
+ "stage": "t1mz-health",
+ "model": "hunyuan4-mini",
+ "inputs": {
+  "tpu_run": "mz-g1",
+  "gpu_run": "g3-a",
+  "steps": 1000
+ },
+ "checks": [
+  {
+   "id": "L4.health.nonfinite",
+   "type": "health_signals",
+   "level": "L4",
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "steps": 1000,
+    "tpu_bad": 0,
+    "gpu_bad": 0
+   },
+   "message": "1000 步：TPU 非有限值 0 处、GPU 0 处"
+  },
+  {
+   "id": "L4.health.skipped",
+   "type": "health_signals",
+   "level": "L4",
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tpu_skipped": 0,
+    "gpu_skipped_or_not_ok": 0
+   },
+   "message": "跳步：TPU 0 步、GPU 0 步"
+  },
+  {
+   "id": "L4.health.grad_clip_trigger",
+   "type": "health_signals",
+   "level": "L4",
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "steps": 1000,
+    "tpu_triggered": 1000,
+    "gpu_triggered": 1000,
+    "differ_steps": []
+   },
+   "message": "梯度裁剪（阈值 1.0）：TPU 1000 步触发、GPU 1000 步触发，逐步不同 0 步"
+  },
+  {
+   "id": "L4.health.qk_clip_trigger",
+   "type": "health_signals",
+   "level": "L4",
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tau": 100.0,
+    "tpu_clipped_heads_total": 0,
+    "tpu_max_logit_max": 0.1493261754512787,
+    "gpu_max_logit_max": 0.14890162646770477
+   },
+   "message": "QK-Clip（τ 100）：TPU 1000 步被裁头数合计 0（最大 logit 最高 0.1493）；GPU 最大 logit 最高 0.1489 < τ，没有头被裁"
+  },
+  {
+   "id": "L4.health.dropped_tokens",
+   "type": "health_signals",
+   "level": "L4",
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tpu_capacity_factor": -1.0,
+    "gpu_moe_expert_capacity_factor": null
+   },
+   "message": "不丢 token 的设置：TPU capacity_factor -1.0（< 0 = 不丢）；GPU 不设 moe_expert_capacity_factor（Megatron-Core 默认 None = 不丢）"
+  },
+  {
+   "id": "L4.health.spikes",
+   "type": "health_signals",
+   "level": "L4",
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tpu": {
+     "status": "pass",
+     "message": "健康"
+    },
+    "gpu": {
+     "status": "pass",
+     "message": "健康"
+    }
+   },
+   "message": "尖峰（某步超过前 20 步中位数 10 倍）：TPU 健康；GPU 健康"
+  }
+ ],
+ "summary": {
+  "pass": 6,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0
+ }
+}

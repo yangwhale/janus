@@ -1,0 +1,35 @@
+# 对齐实践 02 · v7x 存档 / 续训：连续训练 20 步（第 10 步存档）对 从第 10 步存档续训到 20 步。照 01 的 phase2-resume.yaml 复制。
+# golden r-v7x-cont20：--save-state-at 10 --state-dir <桶>/…/tpu/ckpt/r-v7x-cont20-step10；被测 r-v7x-res20：--resume-state 同一个存档 --first-step 11。
+# 代码包同 01（maxtext 237a3270、janus c8143c65），生产配置，--no-hooks，第 11 步全量状态读；存档在 POC 桶。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-v7x-resume
+description: 02 · v7x 存档续训（第 10 步存档，续训 11–20）对连续训练逐位
+runs:
+  test: r-v7x-res20
+  golden: [r-v7x-cont20]
+  root: /data/janus-runs
+checks:
+  - id: L0.resume.data
+    type: data_fingerprint
+    level: L0
+    select: {kind: tokens, steps: "11:21"}
+    params: {first_loss: false}
+  # 逐步标量里 step_time 是墙钟时间，不比；其余训练标量全比
+  - id: L4.resume.overlap
+    type: overlap_replay
+    level: L4
+    select: {kind: metrics, fields: [lm_loss, loss, grad_norm, raw_grad_norm, grad_norm_clipped, param_norm, lr, wd, total_weights,
+                                     router.bias_mean.1, router.bias_mean.2, router.bias_mean.3, router.bias_std.1, router.bias_std.2, router.bias_std.3]}
+  - id: L3.resume.state
+    type: checkpoint_equal
+    level: L3
+    select: {kind: checkpoint, which: step10, source: state}
+  - id: L3.resume.step11
+    type: bitwise_equal
+    level: L3
+    select: {kind: tensor, step: 11, name: "*"}
+  - id: L3.resume.coverage
+    type: coverage
+    level: L3
+    select: {kind: tensor, step: 11, name: "*"}

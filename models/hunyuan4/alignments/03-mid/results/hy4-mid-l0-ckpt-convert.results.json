@@ -1,0 +1,123 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "fd796f617d1753817c3d834325bb471fc59ee791"
+ },
+ "catalog": {
+  "path": "models/hunyuan4/alignments/03-hy4-mid/catalogs/l0-ckpt-convert-mid.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "f34681583dfefebeb4f333f146ad8c6424bdfadab5d15989fe9c29ba3c53adaf",
+  "raw_sha256": "691329178122cb16c9cb159b10e3ba8231e737f08681ee0666e24743282b6f20"
+ },
+ "runs": {
+  "hy4-mid-maxtext-ckpt": {
+   "path": "/tmp/t2w/mid-l0/janus-runs/hy4-mid-maxtext-ckpt",
+   "meta_sha256": "6675a3c6df0b2027414df544a6a822ce61b508002631b63c500e381ec0bc5ca0"
+  },
+  "hy4-mid-hf": {
+   "path": "/tmp/t2w/mid-l0/janus-runs/hy4-mid-hf",
+   "meta_sha256": "a62e9d3c94dc9006ff7d253ae5b2cdd058caee802198cd71ef7c68a221d27bb4"
+  }
+ },
+ "started_at": "2026-11-07T23:43:27+00:00",
+ "finished_at": "2026-11-07T23:43:27+00:00",
+ "summary": {
+  "pass": 3,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L0.ckpt.convert.bitwise",
+   "type": "checkpoint_equal",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "params": 212,
+    "differ": 0,
+    "only_one_side": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/t2w/mid-l0/janus-runs/hy4-mid-maxtext-ckpt",
+     "sha256": "6675a3c6df0b2027414df544a6a822ce61b508002631b63c500e381ec0bc5ca0"
+    },
+    {
+     "path": "/tmp/t2w/mid-l0/janus-runs/hy4-mid-hf",
+     "sha256": "a62e9d3c94dc9006ff7d253ae5b2cdd058caee802198cd71ef7c68a221d27bb4"
+    }
+   ],
+   "message": "全部参数逐位相同"
+  },
+  {
+   "id": "L0.ckpt.convert.dtype",
+   "type": "dtype_manifest",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "entries": 212,
+    "wrong_dtype": 0,
+    "unmatched": 0,
+    "rule_hits": {
+     "model.hc_head.*": 3,
+     "model.layers.*.hc_attn_layer.*": 21,
+     "model.layers.*.hc_mlp_layer.*": 21,
+     "model.layers.*.mlp.gate.e_score_correction_bias": 6,
+     "model.layers.*.self_attn.learnable_sink_param": 7,
+     "*": 154
+    }
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/t2w/mid-l0/janus-runs/hy4-mid-maxtext-ckpt",
+     "sha256": "6675a3c6df0b2027414df544a6a822ce61b508002631b63c500e381ec0bc5ca0"
+    }
+   ],
+   "message": "212 项 dtype 全部符合规则"
+  },
+  {
+   "id": "L0.ckpt.source.dtype",
+   "type": "dtype_manifest",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "entries": 212,
+    "wrong_dtype": 0,
+    "unmatched": 0,
+    "rule_hits": {
+     "model.hc_head.*": 3,
+     "model.layers.*.hc_attn_layer.*": 21,
+     "model.layers.*.hc_mlp_layer.*": 21,
+     "model.layers.*.mlp.gate.e_score_correction_bias": 6,
+     "model.layers.*.self_attn.learnable_sink_param": 7,
+     "*": 154
+    }
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/t2w/mid-l0/janus-runs/hy4-mid-hf",
+     "sha256": "a62e9d3c94dc9006ff7d253ae5b2cdd058caee802198cd71ef7c68a221d27bb4"
+    }
+   ],
+   "message": "212 项 dtype 全部符合规则"
+  }
+ ]
+}

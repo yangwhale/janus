@@ -1,0 +1,322 @@
+{
+ "schema_version": 1,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": null
+ },
+ "catalog": {
+  "path": "models/hunyuan3/frameworks/megatron/ckpt_special.py",
+  "sha256": "4722bc237d734277e1694639f9f7b568cae6393ae82dc2914644bc9132a6c4fe"
+ },
+ "runs": {
+  "g61-sv-save": {
+   "path": "/data/janus-runs2/g61-sv-save",
+   "meta_sha256": "7087bd6763279a10e343a576a2561291a1a55098a271958e9009ed6e6ea06f9f"
+  },
+  "g61-sv-load": {
+   "path": "/data/janus-runs2/g61-sv-load",
+   "meta_sha256": "3d1a959976fe9c072c514ca42000f59a99d8b60a2cda7f3738d9129ebd0cd9ad"
+  }
+ },
+ "started_at": "2026-11-06T10:28:58+00:00",
+ "finished_at": "2026-11-06T10:29:01+00:00",
+ "environment": {
+  "save_run_args": {
+   "hf": "/data/hy3-4l",
+   "out": "/data/runs/g61-sv-save",
+   "load": "/data/hy3-4l-mcore",
+   "steps": 2,
+   "gbs": 16,
+   "mbs": 1,
+   "seq": 4096,
+   "ep": 8,
+   "lr": 1e-05,
+   "seed": 1234,
+   "deterministic": true,
+   "data": "/data/ds/fw_hy3_text_document",
+   "janus_run": "/data/janus-runs2/g61-sv-save",
+   "side": "golden-g61-sv-save",
+   "dump_steps": "",
+   "dump_grads": false,
+   "no_dist_opt": true,
+   "full": false,
+   "inject_from": null,
+   "fault": null,
+   "tp": 1,
+   "cp": 1,
+   "recompute": false,
+   "routing_replay": false,
+   "full_steps": null,
+   "full_only": null,
+   "save_batches": false,
+   "save": "/data/ckpt-g61-sv",
+   "save_interval": null,
+   "resume": null,
+   "observe": null,
+   "special": "^decoder\\.layers\\.(0\\.self_attention\\.q_layernorm\\.weight|1\\.mlp\\.experts\\.linear_fc2\\.weight0|1\\.mlp\\.router\\.expert_bias)$",
+   "no_tf32": false,
+   "ce_fusion": null,
+   "bias_act_fusion": false,
+   "attention_backend": null,
+   "row_stats_every": 0,
+   "group_norms": false,
+   "grad_reduce_bf16": false,
+   "router_true_fp32": false,
+   "resid_probe_every": 0,
+   "resid_probe_seq": null,
+   "rr_arm": null,
+   "export_params_at": null,
+   "export_dir": null,
+   "import_params": null,
+   "import_round_bf16": false,
+   "skip_steps": 0,
+   "fp32": false,
+   "bf16_weights": false
+  },
+  "load_run_args": {
+   "hf": "/data/hy3-4l",
+   "out": "/data/runs/g61-sv-load",
+   "load": "/data/hy3-4l-mcore",
+   "steps": 3,
+   "gbs": 16,
+   "mbs": 1,
+   "seq": 4096,
+   "ep": 8,
+   "lr": 1e-05,
+   "seed": 1234,
+   "deterministic": true,
+   "data": "/data/ds/fw_hy3_text_document",
+   "janus_run": "/data/janus-runs2/g61-sv-load",
+   "side": "golden-g61-sv-load",
+   "dump_steps": "",
+   "dump_grads": false,
+   "no_dist_opt": true,
+   "full": false,
+   "inject_from": null,
+   "fault": null,
+   "tp": 1,
+   "cp": 1,
+   "recompute": false,
+   "routing_replay": false,
+   "full_steps": null,
+   "full_only": null,
+   "save_batches": false,
+   "save": null,
+   "save_interval": null,
+   "resume": "/data/ckpt-g61-sv",
+   "observe": null,
+   "special": "^decoder\\.layers\\.(0\\.self_attention\\.q_layernorm\\.weight|1\\.mlp\\.experts\\.linear_fc2\\.weight0|1\\.mlp\\.router\\.expert_bias)$",
+   "no_tf32": false,
+   "ce_fusion": null,
+   "bias_act_fusion": false,
+   "attention_backend": null,
+   "row_stats_every": 0,
+   "group_norms": false,
+   "grad_reduce_bf16": false,
+   "router_true_fp32": false,
+   "resid_probe_every": 0,
+   "resid_probe_seq": null,
+   "rr_arm": null,
+   "export_params_at": null,
+   "export_dir": null,
+   "import_params": null,
+   "import_round_bf16": false,
+   "skip_steps": 0,
+   "fp32": false,
+   "bf16_weights": false
+  },
+  "special_bits_fp32": [
+   "0x80000000",
+   "0x00000000",
+   "0x000116c2",
+   "0x800116c2",
+   "0x00000001",
+   "0x80000001",
+   "0x007fffff",
+   "0x00800000"
+  ]
+ },
+ "summary": {
+  "pass": 3,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "CKPT.special.poked",
+   "type": "op_replay",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "bit_match_frac": 1.0,
+    "cases": 72
+   },
+   "worst": [
+    {
+     "name": "rank0.buffer.decoder.layers.1.mlp.router.expert_bias[:8]",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "rank0.exp_avg.decoder.layers.0.self_attention.q_layernorm.weight[:8]",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "rank0.exp_avg.decoder.layers.1.mlp.experts.linear_fc2.weight0[:8]",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "rank0.exp_avg_sq.decoder.layers.0.self_attention.q_layernorm.weight[:8]",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "rank0.exp_avg_sq.decoder.layers.1.mlp.experts.linear_fc2.weight0[:8]",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-sv-save",
+     "sha256": "7087bd6763279a10e343a576a2561291a1a55098a271958e9009ed6e6ea06f9f"
+    },
+    {
+     "path": "/data/janus-runs2/g61-sv-load",
+     "sha256": "3d1a959976fe9c072c514ca42000f59a99d8b60a2cda7f3738d9129ebd0cd9ad"
+    }
+   ],
+   "message": "逐位全中（bit_match_frac）",
+   "details": "details/CKPT.special.poked.jsonl"
+  },
+  {
+   "id": "CKPT.special.full",
+   "type": "op_replay",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "bit_match_frac": 1.0,
+    "cases": 72
+   },
+   "worst": [
+    {
+     "name": "rank0.buffer.decoder.layers.1.mlp.router.expert_bias",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "rank0.exp_avg.decoder.layers.0.self_attention.q_layernorm.weight",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "rank0.exp_avg.decoder.layers.1.mlp.experts.linear_fc2.weight0",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "rank0.exp_avg_sq.decoder.layers.0.self_attention.q_layernorm.weight",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "rank0.exp_avg_sq.decoder.layers.1.mlp.experts.linear_fc2.weight0",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-sv-save",
+     "sha256": "7087bd6763279a10e343a576a2561291a1a55098a271958e9009ed6e6ea06f9f"
+    },
+    {
+     "path": "/data/janus-runs2/g61-sv-load",
+     "sha256": "3d1a959976fe9c072c514ca42000f59a99d8b60a2cda7f3738d9129ebd0cd9ad"
+    }
+   ],
+   "message": "逐位全中（bit_match_frac）",
+   "details": "details/CKPT.special.full.jsonl"
+  },
+  {
+   "id": "CKPT.special.values",
+   "type": "op_replay",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "bit_match_frac": 1.0,
+    "cases": 72
+   },
+   "worst": [
+    {
+     "name": "rank0.buffer.decoder.layers.1.mlp.router.expert_bias[:8]",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "rank0.exp_avg.decoder.layers.0.self_attention.q_layernorm.weight[:8]",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "rank0.exp_avg.decoder.layers.1.mlp.experts.linear_fc2.weight0[:8]",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "rank0.exp_avg_sq.decoder.layers.0.self_attention.q_layernorm.weight[:8]",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "rank0.exp_avg_sq.decoder.layers.1.mlp.experts.linear_fc2.weight0[:8]",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-sv-save",
+     "sha256": "7087bd6763279a10e343a576a2561291a1a55098a271958e9009ed6e6ea06f9f"
+    },
+    {
+     "path": "/data/janus-runs2/g61-sv-load",
+     "sha256": "3d1a959976fe9c072c514ca42000f59a99d8b60a2cda7f3738d9129ebd0cd9ad"
+    }
+   ],
+   "message": "逐位全中（bit_match_frac）",
+   "details": "details/CKPT.special.values.jsonl"
+  }
+ ]
+}

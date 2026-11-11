@@ -1,0 +1,247 @@
+{
+ "what": "TPU 精确配置逐层隔离回放（t-v7x-rpx-bwd1-f：ragged_dot + 默认精度 highest；t-v7x-rpx-bwd1-mbf：megablox，各观测点的 rel_l2 与前者相差 ≤ 2e-8）对 GPU 精确轨迹第 1 步（g-bw-d1，--fp32 --bf16-weights、关 TF32）。每层输入取 GPU 的，参数舍 BF16（--round-weights-bf16）。u_signed_rel = Σ_t (tpu − gpu)_t·û / Σ_t |gpu_t·û|",
+ "routing_flips": {
+  "layer1": 1,
+  "layer2": 3,
+  "layer3": 0,
+  "tokens": 4096,
+  "flipped_margin_max": {
+   "layer1": 1.594e-08,
+   "layer2": 5.995e-07
+  }
+ },
+ "rows": [
+  {
+   "name": "layers.0.attn.core.out",
+   "rel_l2": 7.040571606821332e-07
+  },
+  {
+   "name": "layers.0.attn.k_norm.out",
+   "rel_l2": 1.04831476684776e-06
+  },
+  {
+   "name": "layers.0.attn.out",
+   "rel_l2": 1.3090665927625571e-06,
+   "u_signed_rel": 1.658449651144922e-07
+  },
+  {
+   "name": "layers.0.attn.proj.out",
+   "rel_l2": 1.3090665927625571e-06,
+   "u_signed_rel": 1.658449651144922e-07
+  },
+  {
+   "name": "layers.0.attn.q_norm.out",
+   "rel_l2": 9.262572164799956e-07
+  },
+  {
+   "name": "layers.0.attn.qkv.out",
+   "rel_l2": 1.0514078636372248e-06
+  },
+  {
+   "name": "layers.0.in",
+   "rel_l2": 0.0,
+   "u_signed_rel": 0.0
+  },
+  {
+   "name": "layers.0.mlp.fc1.out",
+   "rel_l2": 1.4532777392137095e-06
+  },
+  {
+   "name": "layers.0.mlp.fc2.out",
+   "rel_l2": 2.3771671571002384e-06,
+   "u_signed_rel": -1.4496759897976532e-07
+  },
+  {
+   "name": "layers.0.mlp.out",
+   "rel_l2": 2.3771671571002384e-06,
+   "u_signed_rel": -1.4496759897976532e-07
+  },
+  {
+   "name": "layers.0.mlp_norm.out",
+   "rel_l2": 8.657895510569056e-07,
+   "u_signed_rel": 7.611507099469192e-08
+  },
+  {
+   "name": "layers.0.out",
+   "rel_l2": 8.189304380107787e-07,
+   "u_signed_rel": 5.1260911945610145e-08
+  },
+  {
+   "name": "layers.1.attn.core.out",
+   "rel_l2": 6.175265180740643e-06
+  },
+  {
+   "name": "layers.1.attn.k_norm.out",
+   "rel_l2": 1.0272309224033633e-06
+  },
+  {
+   "name": "layers.1.attn.out",
+   "rel_l2": 7.452714054085213e-06,
+   "u_signed_rel": -6.764947517542691e-07
+  },
+  {
+   "name": "layers.1.attn.proj.out",
+   "rel_l2": 7.452714054085213e-06,
+   "u_signed_rel": -6.764947517542691e-07
+  },
+  {
+   "name": "layers.1.attn.q_norm.out",
+   "rel_l2": 1.0349868355352876e-06
+  },
+  {
+   "name": "layers.1.attn.qkv.out",
+   "rel_l2": 1.0309307276897795e-06
+  },
+  {
+   "name": "layers.1.in",
+   "rel_l2": 0.0,
+   "u_signed_rel": 0.0
+  },
+  {
+   "name": "layers.1.mlp.out",
+   "rel_l2": 0.0008620366055999949,
+   "u_signed_rel": 2.6144277476356185e-06
+  },
+  {
+   "name": "layers.1.mlp.router.logits",
+   "rel_l2": 2.719585845477822e-06
+  },
+  {
+   "name": "layers.1.mlp.router.probs",
+   "rel_l2": 0.0070165898207711535
+  },
+  {
+   "name": "layers.1.mlp.shared.out",
+   "rel_l2": 7.394793002038867e-06,
+   "u_signed_rel": -2.5633038218925993e-08
+  },
+  {
+   "name": "layers.1.mlp_norm.out",
+   "rel_l2": 4.8228238242577765e-06,
+   "u_signed_rel": -3.9868053990172657e-07
+  },
+  {
+   "name": "layers.1.out",
+   "rel_l2": 7.743910455979197e-05,
+   "u_signed_rel": 1.864088324832257e-07
+  },
+  {
+   "name": "layers.2.attn.core.out",
+   "rel_l2": 7.193966356088401e-06
+  },
+  {
+   "name": "layers.2.attn.k_norm.out",
+   "rel_l2": 9.053341096576225e-07
+  },
+  {
+   "name": "layers.2.attn.out",
+   "rel_l2": 7.60712839721693e-06,
+   "u_signed_rel": -9.56057572944061e-08
+  },
+  {
+   "name": "layers.2.attn.proj.out",
+   "rel_l2": 7.60712839721693e-06,
+   "u_signed_rel": -9.56057572944061e-08
+  },
+  {
+   "name": "layers.2.attn.q_norm.out",
+   "rel_l2": 9.062771632116459e-07
+  },
+  {
+   "name": "layers.2.attn.qkv.out",
+   "rel_l2": 9.318524250995709e-07
+  },
+  {
+   "name": "layers.2.in",
+   "rel_l2": 0.0,
+   "u_signed_rel": 0.0
+  },
+  {
+   "name": "layers.2.mlp.out",
+   "rel_l2": 0.002394523346620252,
+   "u_signed_rel": 6.678857934297611e-05
+  },
+  {
+   "name": "layers.2.mlp.router.logits",
+   "rel_l2": 1.1916597595540735e-06
+  },
+  {
+   "name": "layers.2.mlp.router.probs",
+   "rel_l2": 0.010776521245694138
+  },
+  {
+   "name": "layers.2.mlp.shared.out",
+   "rel_l2": 2.6352160380502093e-06,
+   "u_signed_rel": -1.4470198246490267e-08
+  },
+  {
+   "name": "layers.2.mlp_norm.out",
+   "rel_l2": 2.9108711923025856e-06,
+   "u_signed_rel": -1.0846762823553125e-07
+  },
+  {
+   "name": "layers.2.out",
+   "rel_l2": 0.0002221406027993884,
+   "u_signed_rel": 8.698100597586795e-06
+  },
+  {
+   "name": "layers.3.attn.core.out",
+   "rel_l2": 7.158758856469667e-06
+  },
+  {
+   "name": "layers.3.attn.k_norm.out",
+   "rel_l2": 8.898630246698798e-07
+  },
+  {
+   "name": "layers.3.attn.out",
+   "rel_l2": 7.645917603710933e-06,
+   "u_signed_rel": 3.3514716230350785e-07
+  },
+  {
+   "name": "layers.3.attn.proj.out",
+   "rel_l2": 7.645917603710933e-06,
+   "u_signed_rel": 3.3514716230350785e-07
+  },
+  {
+   "name": "layers.3.attn.q_norm.out",
+   "rel_l2": 8.784297205918153e-07
+  },
+  {
+   "name": "layers.3.attn.qkv.out",
+   "rel_l2": 9.025805440439913e-07
+  },
+  {
+   "name": "layers.3.in",
+   "rel_l2": 0.0,
+   "u_signed_rel": 0.0
+  },
+  {
+   "name": "layers.3.mlp.out",
+   "rel_l2": 5.095145126827768e-06,
+   "u_signed_rel": 9.776935403065155e-08
+  },
+  {
+   "name": "layers.3.mlp.router.logits",
+   "rel_l2": 1.0978875504279628e-06
+  },
+  {
+   "name": "layers.3.mlp.router.probs",
+   "rel_l2": 1.4824735790158096e-06
+  },
+  {
+   "name": "layers.3.mlp.shared.out",
+   "rel_l2": 2.8059063325450727e-06,
+   "u_signed_rel": -8.95895400629711e-08
+  },
+  {
+   "name": "layers.3.mlp_norm.out",
+   "rel_l2": 2.7918697119816776e-06,
+   "u_signed_rel": 8.728780915071325e-08
+  },
+  {
+   "name": "layers.3.out",
+   "rel_l2": 1.2766163672624737e-06,
+   "u_signed_rel": 1.1145666537534816e-07
+  }
+ ]
+}

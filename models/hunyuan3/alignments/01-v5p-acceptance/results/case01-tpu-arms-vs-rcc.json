@@ -1,0 +1,225 @@
+{
+ "what": "TPU 各诊断臂与开关打开前的配置，按正式第一层同一把尺子（对 rcc-a，噪声 rcc-a..j 两两 45 对；grad_norm 均值分母、param_norm 读分组合成值）判 L4。r_worst = 三个判定量对 N 最差的比值。目录同 02 catalogs/phase2-v7x-acceptance-rcc.yaml，只换被测",
+ "rows": {
+  "t-v7x-attn32-1000": {
+   "config": "当前配置 + attention=dot_product float32_qk_product=True",
+   "L4.loss": {
+    "status": "pass",
+    "r_worst": 0.7563710431176959
+   },
+   "L4.loss.tail": {
+    "status": "pass",
+    "r_worst": 0.7765768665927902
+   },
+   "L4.grad_norm": {
+    "status": "pass",
+    "r_worst": 0.7645045129426308
+   },
+   "L4.param_norm": {
+    "status": "pass",
+    "r_worst": 0.4407112333621697
+   },
+   "L4.lr": {
+    "status": "pass"
+   }
+  },
+  "t-v7x-logit32-1000": {
+   "config": "当前配置 + logits_dot_in_fp32=True",
+   "L4.loss": {
+    "status": "pass",
+    "r_worst": 0.8213016333977834
+   },
+   "L4.loss.tail": {
+    "status": "pass",
+    "r_worst": 0.8355603788340161
+   },
+   "L4.grad_norm": {
+    "status": "pass",
+    "r_worst": 0.8770253943677343
+   },
+   "L4.param_norm": {
+    "status": "pass",
+    "r_worst": 0.4824535864872442
+   },
+   "L4.lr": {
+    "status": "pass"
+   }
+  },
+  "t-v7x-mmhi-1000": {
+   "config": "当前配置 + matmul_precision=highest",
+   "L4.loss": {
+    "status": "pass",
+    "r_worst": 0.8955238785715686
+   },
+   "L4.loss.tail": {
+    "status": "pass",
+    "r_worst": 0.9282778514304163
+   },
+   "L4.grad_norm": {
+    "status": "pass",
+    "r_worst": 0.785248880738358
+   },
+   "L4.param_norm": {
+    "status": "pass",
+    "r_worst": 0.9226168988005475
+   },
+   "L4.lr": {
+    "status": "pass"
+   }
+  },
+  "t-v7x-attnmm-1000": {
+   "config": "attn32 + mmhi",
+   "L4.loss": {
+    "status": "inconclusive",
+    "r_worst": 1.1071984784503757
+   },
+   "L4.loss.tail": {
+    "status": "pass",
+    "r_worst": 0.9813831791086605
+   },
+   "L4.grad_norm": {
+    "status": "inconclusive",
+    "r_worst": 1.027492100264362
+   },
+   "L4.param_norm": {
+    "status": "pass",
+    "r_worst": 0.6111496081974617
+   },
+   "L4.lr": {
+    "status": "pass"
+   }
+  },
+  "t-v7x-attnlog-1000": {
+   "config": "attn32 + logit32",
+   "L4.loss": {
+    "status": "pass",
+    "r_worst": 0.7777316549801724
+   },
+   "L4.loss.tail": {
+    "status": "pass",
+    "r_worst": 0.7941842482711671
+   },
+   "L4.grad_norm": {
+    "status": "pass",
+    "r_worst": 0.900584888932974
+   },
+   "L4.param_norm": {
+    "status": "pass",
+    "r_worst": 0.4846963745143562
+   },
+   "L4.lr": {
+    "status": "pass"
+   }
+  },
+  "t-v7x-logmm-1000": {
+   "config": "logit32 + mmhi（输出头 dlogits 留 FP32，输出头用 FP32 主权重）",
+   "L4.loss": {
+    "status": "fail",
+    "r_worst": 3.1596314168358033
+   },
+   "L4.loss.tail": {
+    "status": "pass",
+    "r_worst": 0.7577882164364916
+   },
+   "L4.grad_norm": {
+    "status": "pass",
+    "r_worst": 0.7326091730232848
+   },
+   "L4.param_norm": {
+    "status": "fail",
+    "r_worst": 4.799765068346185
+   },
+   "L4.lr": {
+    "status": "pass"
+   }
+  },
+  "t-v7x-all3-1000": {
+   "config": "三项合并",
+   "L4.loss": {
+    "status": "fail",
+    "r_worst": 3.1636008030378586
+   },
+   "L4.loss.tail": {
+    "status": "pass",
+    "r_worst": 0.8066501451846885
+   },
+   "L4.grad_norm": {
+    "status": "pass",
+    "r_worst": 0.8300225009774459
+   },
+   "L4.param_norm": {
+    "status": "fail",
+    "r_worst": 4.763910867356418
+   },
+   "L4.lr": {
+    "status": "pass"
+   }
+  },
+  "t-v7x-gate32-1000b": {
+   "config": "当前配置 + float32_gate_logits=True",
+   "L4.loss": {
+    "status": "pass",
+    "r_worst": 0.817466245465996
+   },
+   "L4.loss.tail": {
+    "status": "pass",
+    "r_worst": 0.8311389447270846
+   },
+   "L4.grad_norm": {
+    "status": "pass",
+    "r_worst": 0.851145689132736
+   },
+   "L4.param_norm": {
+    "status": "pass",
+    "r_worst": 0.5314257793497559
+   },
+   "L4.lr": {
+    "status": "pass"
+   }
+  },
+  "t-v7x-rmap-1000-a": {
+   "config": "dense_fp32_accumulation 打开之前的配置（v7x）",
+   "L4.loss": {
+    "status": "pass",
+    "r_worst": 0.730485648397387
+   },
+   "L4.loss.tail": {
+    "status": "pass",
+    "r_worst": 0.7764741747116335
+   },
+   "L4.grad_norm": {
+    "status": "pass",
+    "r_worst": 0.6741068299431278
+   },
+   "L4.param_norm": {
+    "status": "pass",
+    "r_worst": 0.3649949772116296
+   },
+   "L4.lr": {
+    "status": "pass"
+   }
+  },
+  "t-rmap-1000": {
+   "config": "dense_fp32_accumulation 打开之前的配置（v5p）",
+   "L4.loss": {
+    "status": "pass",
+    "r_worst": 0.7926658618437628
+   },
+   "L4.loss.tail": {
+    "status": "pass",
+    "r_worst": 0.7857272113210133
+   },
+   "L4.grad_norm": {
+    "status": "pass",
+    "r_worst": 0.768986559676982
+   },
+   "L4.param_norm": {
+    "status": "pass",
+    "r_worst": 0.4756907573922192
+   },
+   "L4.lr": {
+    "status": "pass"
+   }
+  }
+ }
+}

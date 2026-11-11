@@ -1,0 +1,194 @@
+{
+ "test": "t1zg-b",
+ "golden": "ts-g-a",
+ "code": {
+  "test": [
+   {
+    "repo": "maxtext",
+    "commit": "fd30fbfbe2aae390c63d1abce9457fac7f715e82"
+   },
+   {
+    "repo": "janus",
+    "commit": "d2ae3a75de0f734badd7add17c860d530b75a561"
+   }
+  ],
+  "golden": [
+   {
+    "repo": "maxtext",
+    "commit": "b87a55aad08b9f223cb4e248f2877fde9c51ac33"
+   },
+   {
+    "repo": "janus",
+    "commit": "57be82b8cd3af337f13448cd5905f296da2173b0"
+   }
+  ]
+ },
+ "overrides_only_in_test": [
+  "indexer_kd_generalized_kl=true",
+  "sa_use_base2_exp=true",
+  "splash_dsinks_gpu_order=true"
+ ],
+ "bitwise": {
+  "metrics": {
+   "steps": 1000,
+   "steps_missing_in_golden": [],
+   "fields": 47,
+   "fields_differ": 0,
+   "first_differ_step": null,
+   "first_differ_fields": [],
+   "equal": true
+  },
+  "step1_dump": {
+   "available": false
+  }
+ },
+ "hlo": {
+  "test": {
+   "fingerprint": null,
+   "sha256": null,
+   "compiled_modules": 0
+  },
+  "golden": {
+   "fingerprint": "6eeadbb9aa0821a2b52eff2496bedc71cde5fc6be772cd50a2bad41fe0eccdab",
+   "sha256": "fe30e8eb6849a7d9b542e288ec2a85a3373f951a22f390b7c7d3b6e3c927e17d",
+   "compiled_modules": 1
+  },
+  "equal": null
+ },
+ "step_time_median_from_11": {
+  "test": 0.49445199966430664,
+  "golden": 0.49374961853027344
+ },
+ "peak_hbm_bytes_max_local_device": {
+  "test": 1815624192,
+  "golden": 1815854080
+ },
+ "curves": {
+  "janus_rc": 0,
+  "results": "t1zg-b-vs-golden.curves.results.json",
+  "checks": [
+   {
+    "id": "C.loss",
+    "status": "pass",
+    "worst_key": "signed_mean",
+    "value": 0.0,
+    "scale": 3.0091502109958786e-06,
+    "r": 0.0,
+    "r_all": {
+     "signed_mean": 0.0,
+     "mare": 0.0,
+     "max_step": 0.0
+    },
+    "first_differ_step": null
+   },
+   {
+    "id": "C.loss.tail",
+    "status": "pass",
+    "worst_key": "signed_mean",
+    "value": 0.0,
+    "scale": 4.541231247798865e-06,
+    "r": 0.0,
+    "r_all": {
+     "signed_mean": 0.0,
+     "mare": 0.0,
+     "max_step": 0.0
+    },
+    "first_differ_step": null
+   },
+   {
+    "id": "C.mtp_loss",
+    "status": "pass",
+    "worst_key": "signed_mean",
+    "value": 0.0,
+    "scale": 1.9563909552655522e-05,
+    "r": 0.0,
+    "r_all": {
+     "signed_mean": 0.0,
+     "mare": 0.0,
+     "max_step": 0.0
+    },
+    "first_differ_step": null
+   },
+   {
+    "id": "C.indexer_loss",
+    "status": "pass",
+    "worst_key": "signed_mean",
+    "value": 0.0,
+    "scale": 0.000137724032956922,
+    "r": 0.0,
+    "r_all": {
+     "signed_mean": 0.0,
+     "mare": 0.0,
+     "max_step": 0.0
+    },
+    "first_differ_step": null
+   },
+   {
+    "id": "C.grad_norm",
+    "status": "pass",
+    "worst_key": "signed_mean",
+    "value": 0.0,
+    "scale": 9.92384994170004e-05,
+    "r": 0.0,
+    "r_all": {
+     "signed_mean": 0.0,
+     "mare": 0.0,
+     "max_step": 0.0
+    },
+    "first_differ_step": null
+   },
+   {
+    "id": "C.param_norm",
+    "status": "pass",
+    "worst_key": "signed_mean",
+    "value": 0.0,
+    "scale": 1.9041494098814752e-07,
+    "r": 0.0,
+    "r_all": {
+     "signed_mean": 0.0,
+     "mare": 0.0,
+     "max_step": 0.0
+    },
+    "first_differ_step": null
+   },
+   {
+    "id": "C.router.bias_mean",
+    "status": "pass",
+    "worst_key": "signed_mean",
+    "value": 0.0,
+    "scale": 1.5183056019642278,
+    "r": 0.0,
+    "r_all": {
+     "signed_mean": 0.0,
+     "mare": 0.0,
+     "max_step": 0.0
+    },
+    "first_differ_step": null
+   },
+   {
+    "id": "C.router.bias_std",
+    "status": "pass",
+    "worst_key": "signed_mean",
+    "value": 0.0,
+    "scale": 0.003081809982063373,
+    "r": 0.0,
+    "r_all": {
+     "signed_mean": 0.0,
+     "mare": 0.0,
+     "max_step": 0.0
+    },
+    "first_differ_step": null
+   }
+  ],
+  "within": true,
+  "r_max": 0.0
+ },
+ "verdict": {
+  "tier": 1,
+  "label": "逐位相同",
+  "band": "逐位相同",
+  "curves_r_max": 0.0,
+  "why": "逐位相同"
+ },
+ "step1_rows": []
+}

@@ -1,0 +1,519 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.0.1",
+  "commit": null
+ },
+ "catalog": {
+  "path": "catalogs/hunyuan3-4l/phase1-tf32.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "98d89d8299defeebd5276e4311a2e9345fdc4170936d8169315e94547037d4bf",
+  "raw_sha256": "5020c4662c483367143b0ba3152336bb7764d061b74439b8c268158c4e9a7189"
+ },
+ "runs": {
+  "g61-notf32": {
+   "path": "/data/janus-runs2/g61-notf32",
+   "meta_sha256": "874690f270da0bd259d39e0e245cedab254ca44c6974c2d7f32f2124d84731fe"
+  },
+  "d-a": {
+   "path": "/data/janus-runs2/d-a",
+   "meta_sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+  },
+  "s-b": {
+   "path": "/data/janus-runs2/s-b",
+   "meta_sha256": "cc8322b501c54e6b6c0fe763acf204789e7c2f8f8d20f80eacbf88947208de2d"
+  },
+  "s-c": {
+   "path": "/data/janus-runs2/s-c",
+   "meta_sha256": "606ea9de86bf113d08fd68eb5fadf011bcc9ebe241a41abff80830dd814de6bf"
+  },
+  "s-d": {
+   "path": "/data/janus-runs2/s-d",
+   "meta_sha256": "200560026ef5d6d13dae3632657bbed7e8640d36c737b33233e27dd7b8b19af4"
+  }
+ },
+ "started_at": "2026-11-04T09:27:28+00:00",
+ "finished_at": "2026-11-04T09:34:48+00:00",
+ "summary": {
+  "pass": 4,
+  "fail": 3,
+  "inconclusive": 2,
+  "error": 0,
+  "hard_fail": true
+ },
+ "checks": [
+  {
+   "id": "TF32.step1.bitwise",
+   "type": "bitwise_equal",
+   "level": "L3",
+   "hard": false,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 425,
+    "differ": 234
+   },
+   "worst": [
+    {
+     "name": "embed.out.grad",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "exp_avg.decoder.final_layernorm.weight",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "exp_avg.decoder.layers.0.mlp.linear_fc1.layer_norm_weight",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "exp_avg.decoder.layers.0.mlp.linear_fc1.weight",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    },
+    {
+     "name": "exp_avg.decoder.layers.0.mlp.linear_fc2.weight",
+     "metric": "equal",
+     "value": false,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-notf32",
+     "sha256": "874690f270da0bd259d39e0e245cedab254ca44c6974c2d7f32f2124d84731fe"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "234 / 425 个张量不同",
+   "details": "details/TF32.step1.bitwise.jsonl"
+  },
+  {
+   "id": "TF32.step1.coverage",
+   "type": "coverage",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {},
+   "worst": [],
+   "coverage": {
+    "expected": 425,
+    "compared": 425,
+    "missing": []
+   },
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-notf32",
+     "sha256": "874690f270da0bd259d39e0e245cedab254ca44c6974c2d7f32f2124d84731fe"
+    }
+   ],
+   "message": "全部比到"
+  },
+  {
+   "id": "TF32.step1.fwd.bitwise",
+   "type": "bitwise_equal",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 46,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-notf32",
+     "sha256": "874690f270da0bd259d39e0e245cedab254ca44c6974c2d7f32f2124d84731fe"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/TF32.step1.fwd.bitwise.jsonl"
+  },
+  {
+   "id": "TF32.step1.bwd.tol",
+   "type": "tensor_tolerance",
+   "level": "L3",
+   "hard": true,
+   "status": "inconclusive",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 0.004500023762347284,
+      "cosine": 1.0124648552878313e-05
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.0056566855427352585,
+    "cosine_min": 0.999984005534094,
+    "tensors": 51
+   },
+   "r1": 1.579755171008687,
+   "worst": [
+    {
+     "name": "layers.0.attn.q_norm.out.grad",
+     "metric": "rel_l2",
+     "value": 0.0056566855427352585,
+     "location": null
+    },
+    {
+     "name": "layers.0.attn.core.out.grad",
+     "metric": "rel_l2",
+     "value": 0.00495028028386953,
+     "location": null
+    },
+    {
+     "name": "layers.1.attn.q_norm.out.grad",
+     "metric": "rel_l2",
+     "value": 0.004855957522435851,
+     "location": null
+    },
+    {
+     "name": "layers.1.attn.k_norm.out.grad",
+     "metric": "rel_l2",
+     "value": 0.00476373452084293,
+     "location": null
+    },
+    {
+     "name": "layers.1.mlp_norm.out.grad",
+     "metric": "rel_l2",
+     "value": 0.004646242590761902,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-notf32",
+     "sha256": "874690f270da0bd259d39e0e245cedab254ca44c6974c2d7f32f2124d84731fe"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "介于噪声参照一到两倍之间，或参照不足",
+   "details": "details/TF32.step1.bwd.tol.jsonl"
+  },
+  {
+   "id": "TF32.step1.grads.tol",
+   "type": "tensor_tolerance",
+   "level": "L3",
+   "hard": true,
+   "status": "fail",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 0.0006636517323257505,
+      "cosine": 1.3026507994506886e-07,
+      "norm_ratio": 0.00046255435110209575
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 0.0011353473586642121,
+    "cosine_min": 0.9999993554949627,
+    "norm_ratio_dev_max": 0.0002655806239242331,
+    "tensors": 50
+   },
+   "r1": 4.9476424350344,
+   "worst": [
+    {
+     "name": "grad.embedding.word_embeddings.weight",
+     "metric": "rel_l2",
+     "value": 0.0011353473586642121,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.2.mlp.router.weight",
+     "metric": "rel_l2",
+     "value": 0.000920356155838382,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.1.mlp.router.weight",
+     "metric": "rel_l2",
+     "value": 0.0008828830974601219,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.1.mlp.experts.linear_fc1.weight0",
+     "metric": "rel_l2",
+     "value": 0.0007987174302654442,
+     "location": null
+    },
+    {
+     "name": "grad.decoder.layers.1.mlp.experts.linear_fc1.weight1",
+     "metric": "rel_l2",
+     "value": 0.000722942657046063,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-notf32",
+     "sha256": "874690f270da0bd259d39e0e245cedab254ca44c6974c2d7f32f2124d84731fe"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "超过噪声参照两倍",
+   "details": "details/TF32.step1.grads.tol.jsonl"
+  },
+  {
+   "id": "TF32.step1.updated",
+   "type": "tensor_tolerance",
+   "level": "L3",
+   "hard": true,
+   "status": "inconclusive",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "rel_l2": 4.538538632740886e-05,
+      "max_abs": 1.814216375350952e-05
+     }
+    }
+   },
+   "metrics": {
+    "rel_l2_max": 4.203363632666519e-05,
+    "max_abs_max": 1.9567087292671204e-05,
+    "tensors": 50
+   },
+   "r1": 1.0785420944558521,
+   "worst": [
+    {
+     "name": "main_param_after.decoder.layers.0.self_attention.linear_qkv.layer_norm_weight",
+     "metric": "rel_l2",
+     "value": 4.203363632666519e-05,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.1.self_attention.linear_qkv.layer_norm_weight",
+     "metric": "rel_l2",
+     "value": 3.106076616887501e-05,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.0.self_attention.linear_proj.weight",
+     "metric": "rel_l2",
+     "value": 2.8559436360138112e-06,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.1.self_attention.linear_qkv.weight",
+     "metric": "rel_l2",
+     "value": 1.3676473251686295e-06,
+     "location": null
+    },
+    {
+     "name": "main_param_after.decoder.layers.0.self_attention.linear_qkv.weight",
+     "metric": "rel_l2",
+     "value": 1.15434061334593e-06,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-notf32",
+     "sha256": "874690f270da0bd259d39e0e245cedab254ca44c6974c2d7f32f2124d84731fe"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "介于噪声参照一到两倍之间，或参照不足",
+   "details": "details/TF32.step1.updated.jsonl"
+  },
+  {
+   "id": "TF32.loss.exact",
+   "type": "loss_series",
+   "level": "L4",
+   "hard": false,
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "d0": 0.0,
+    "signed_mean": -1.81868044156481e-06,
+    "mare": 8.425864723146623e-06,
+    "max_step": 1.8756772276913444e-05,
+    "max_step_at": 30,
+    "window": "1:31",
+    "denominator": "golden",
+    "nonfinite_steps": [],
+    "signed_mean_se": 1.871985357743798e-06
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-notf32",
+     "sha256": "874690f270da0bd259d39e0e245cedab254ca44c6974c2d7f32f2124d84731fe"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": ""
+  },
+  {
+   "id": "TF32.loss",
+   "type": "loss_series",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "signed_mean": 1.188811244786299e-05,
+      "mare": 1.3753560665684286e-05,
+      "max_step": 3.896204337215706e-05
+     }
+    }
+   },
+   "metrics": {
+    "d0": 0.0,
+    "signed_mean": -1.81868044156481e-06,
+    "mare": 8.425864723146623e-06,
+    "max_step": 1.8756772276913444e-05,
+    "max_step_at": 30,
+    "window": "1:31",
+    "denominator": "golden",
+    "nonfinite_steps": [],
+    "signed_mean_se": 1.871985357743798e-06,
+    "noise_dropped": [],
+    "noise_loo": [
+     {
+      "pair": "s-b~s-c",
+      "signed_mean": 0.3192508146742279,
+      "mare": 0.6393709325102376,
+      "max_step": 0.5931293459345159
+     },
+     {
+      "pair": "s-b~s-d",
+      "signed_mean": 0.680741514090456,
+      "mare": 0.8335089789232704,
+      "max_step": 1.1363636363636362
+     },
+     {
+      "pair": "s-c~s-d",
+      "signed_mean": 1.4689863616384666,
+      "mare": 1.1997471236504296,
+      "max_step": 0.8800000000000001
+     }
+    ]
+   },
+   "r1": 0.6126315161549046,
+   "r2": 0.1529831122931325,
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-notf32",
+     "sha256": "874690f270da0bd259d39e0e245cedab254ca44c6974c2d7f32f2124d84731fe"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "在噪声参照内"
+  },
+  {
+   "id": "TF32.grad_norm",
+   "type": "loss_series",
+   "level": "L4",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "calibrated",
+    "noise": {
+     "refs": 3,
+     "upper": {
+      "signed_mean": 0.0002899464189426083,
+      "mare": 0.00040235921990717144,
+      "max_step": 0.0029668117068432165
+     }
+    }
+   },
+   "metrics": {
+    "d0": 4.068172122404555e-05,
+    "signed_mean": 1.6001284891102105e-05,
+    "mare": 0.00024535367224772913,
+    "max_step": 0.0010168901629512923,
+    "max_step_at": 28,
+    "window": "1:31",
+    "denominator": "golden",
+    "nonfinite_steps": [],
+    "signed_mean_se": 6.899373901082542e-05,
+    "noise_dropped": [],
+    "noise_loo": [
+     {
+      "pair": "s-b~s-c",
+      "signed_mean": 0.6425966237362227,
+      "mare": 1.163175720946629,
+      "max_step": 1.045611952423696
+     },
+     {
+      "pair": "s-b~s-d",
+      "signed_mean": 1.5561862030736198,
+      "mare": 0.8597153310474608,
+      "max_step": 0.9563777438485004
+     },
+     {
+      "pair": "s-c~s-d",
+      "signed_mean": 0.35781857764590297,
+      "mare": 0.5849038611985136,
+      "max_step": 0.3074479789634204
+     }
+    ]
+   },
+   "r1": 0.6097876228717584,
+   "r2": 0.05518704093486108,
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-notf32",
+     "sha256": "874690f270da0bd259d39e0e245cedab254ca44c6974c2d7f32f2124d84731fe"
+    },
+    {
+     "path": "/data/janus-runs2/d-a",
+     "sha256": "cd06e206da5d4579ae60451632dd317823d835a51ffa0f94fb292d518a9b27e0"
+    }
+   ],
+   "message": "在噪声参照内"
+  }
+ ]
+}

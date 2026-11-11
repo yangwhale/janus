@@ -1,0 +1,95 @@
+{
+ "stage": "A",
+ "tokens": 4096,
+ "platform": "tpu",
+ "device_kind": "TPU v5",
+ "seconds": 73.39311718940735,
+ "fp64_reference": "/data/fp64_ops.npz",
+ "ops": [
+  {
+   "op": "attn_hc.out",
+   "maxtext": "decoder/dense_layers/pre_self_attention_layer_norm/janus__in",
+   "rel_l2_vs_gpu": 0.0,
+   "rel_l2_gpu_vs_fp64": 0.001008274287215408,
+   "rel_l2_maxtext_vs_fp64": 0.001008274287215408,
+   "R": 1.0
+  },
+  {
+   "op": "ffn_hc.out",
+   "maxtext": "decoder/dense_layers/post_self_attention_layer_norm/janus__in",
+   "rel_l2_vs_gpu": 0.0004633622544280409,
+   "rel_l2_gpu_vs_fp64": 0.0020824691224713508,
+   "rel_l2_maxtext_vs_fp64": 0.0020826433286464338,
+   "R": 1.0000836536653548
+  },
+  {
+   "op": "input_layernorm",
+   "maxtext": "decoder/dense_layers/pre_self_attention_layer_norm",
+   "rel_l2_vs_gpu": 0.0027838709680718873,
+   "rel_l2_gpu_vs_fp64": 0.002322997878265492,
+   "rel_l2_maxtext_vs_fp64": 0.00165650499373929,
+   "R": 0.7130893270449946
+  },
+  {
+   "op": "self_attn.gate_proj",
+   "maxtext": "decoder/dense_layers/self_attention/gate_proj",
+   "rel_l2_vs_gpu": 0.00019428676301936796,
+   "rel_l2_gpu_vs_fp64": 0.0016604402654702853,
+   "rel_l2_maxtext_vs_fp64": 0.001660427688891621,
+   "R": 0.9999924257566346
+  },
+  {
+   "op": "self_attn(own topk)",
+   "maxtext": "decoder/dense_layers/self_attention",
+   "rel_l2_vs_gpu": 0.0038846022635040003,
+   "rel_l2_gpu_vs_fp64": 0.0034655937150820776,
+   "rel_l2_maxtext_vs_fp64": 0.0031552110482181983,
+   "R": 0.9104388187475322
+  },
+  {
+   "op": "post_attention_layernorm",
+   "maxtext": "decoder/dense_layers/post_self_attention_layer_norm",
+   "rel_l2_vs_gpu": 0.00280661497435197,
+   "rel_l2_gpu_vs_fp64": 0.0023332773536942405,
+   "rel_l2_maxtext_vs_fp64": 0.0016552356724992983,
+   "R": 0.7094037362847543
+  },
+  {
+   "op": "mlp",
+   "maxtext": "decoder/dense_layers/mlp",
+   "rel_l2_vs_gpu": 0.002293944062906661,
+   "rel_l2_gpu_vs_fp64": 0.002334193968405857,
+   "rel_l2_maxtext_vs_fp64": 0.0022185451407217252,
+   "R": 0.950454491250736
+  },
+  {
+   "op": "hc_head",
+   "maxtext": "decoder/hc_head",
+   "rel_l2_vs_gpu": 5.6203817440014756e-05,
+   "rel_l2_gpu_vs_fp64": 0.0016592779892685232,
+   "rel_l2_maxtext_vs_fp64": 0.001659278144737228,
+   "R": 1.0000000936965991
+  },
+  {
+   "op": "final_norm",
+   "maxtext": "decoder/decoder_norm",
+   "rel_l2_vs_gpu": 0.0027988281788475814,
+   "rel_l2_gpu_vs_fp64": 0.0023501692100329607,
+   "rel_l2_maxtext_vs_fp64": 0.0016571714088749272,
+   "R": 0.7051285506594165
+  },
+  {
+   "op": "lm_head",
+   "maxtext": "decoder/logits_dense",
+   "rel_l2_vs_gpu": 8.042311575450978e-07,
+   "rel_l2_gpu_vs_fp64": 7.91831840133215e-07,
+   "rel_l2_maxtext_vs_fp64": 1.4428070736260987e-07,
+   "R": 0.18221129796742777
+  }
+ ],
+ "note": "TPU 一侧的逐算子隔离回放，janus 8cacde9 修好注入之后（关键字传的输入也换成 GPU 的同一个输入）；与 hy4-a-l1-op-tpu.json 同一份检查点与 FP64 参照",
+ "code": {
+  "janus": "8cacde9df7a38197ce1b47c944d52a55ca65bb02",
+  "maxtext": "d723fa2ddc5dcfc488bba61f2f891480f63428a4"
+ }
+}

@@ -1,0 +1,1029 @@
+{
+ "layers": {
+  "0": {
+   "seconds": 10.190829277038574,
+   "rows": [
+    {
+     "name": "layers.0.attn.core.out",
+     "shape": [
+      4096,
+      1,
+      8192
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.0016199580932610592,
+     "cosine": 0.9999986892035392,
+     "max_abs": 0.000732421875,
+     "ulp_le0": 0.8085343359258047,
+     "ulp_le1": 0.9665699513462674,
+     "ulp_le4": 0.9895898866047766,
+     "ulp_p99": 5.0,
+     "ulp_max": 13958,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.0.attn.k_norm.out",
+     "shape": [
+      4096,
+      1,
+      8,
+      128
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.0028301871720366294,
+     "cosine": 0.9999959950437907,
+     "max_abs": 0.03125,
+     "ulp_le0": 0.6207520533605422,
+     "ulp_le1": 0.8800162947518354,
+     "ulp_le4": 0.9694919409906742,
+     "ulp_p99": 13.0,
+     "ulp_max": 1500,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.0.attn.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.001109964528366049,
+     "cosine": 0.9999993862872362,
+     "max_abs": 0.015625,
+     "ulp_le0": 0.6976397301771964,
+     "ulp_le1": 0.9200847656102804,
+     "ulp_le4": 0.9740539173388626,
+     "ulp_p99": 11.0,
+     "ulp_max": 14084,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.0.attn.proj.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.001109964528366049,
+     "cosine": 0.9999993862872362,
+     "max_abs": 0.015625,
+     "ulp_le0": 0.6976397301771964,
+     "ulp_le1": 0.9200847656102804,
+     "ulp_le4": 0.9740539173388626,
+     "ulp_p99": 11.0,
+     "ulp_max": 14084,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.0.attn.q_norm.out",
+     "shape": [
+      4096,
+      1,
+      64,
+      128
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.002578088198691966,
+     "cosine": 0.9999966767727699,
+     "max_abs": 0.03125,
+     "ulp_le0": 0.6491227583799885,
+     "ulp_le1": 0.9044072495694749,
+     "ulp_le4": 0.9778859328483646,
+     "ulp_p99": 10.0,
+     "ulp_max": 1805,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.0.attn.qkv.out",
+     "shape": [
+      4096,
+      1,
+      10240
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.002357191991549981,
+     "cosine": 0.999997221868248,
+     "max_abs": 0.0009765625,
+     "ulp_le0": 0.6755028265709763,
+     "ulp_le1": 0.9299008680812793,
+     "ulp_le4": 0.977840547804377,
+     "ulp_p99": 10.0,
+     "ulp_max": 1804,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.0.in",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.0,
+     "cosine": 0.9999999999999998,
+     "max_abs": 0.0,
+     "ulp_le0": 1.0,
+     "ulp_le1": 1.0,
+     "ulp_le4": 1.0,
+     "ulp_p99": 0.0,
+     "ulp_max": 0,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.0.in.grad",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.0020200703947253103,
+     "cosine": 0.9999979596579064,
+     "max_abs": 3.0517578125e-05,
+     "ulp_le0": 0.7694945275794579,
+     "ulp_le1": 0.9427761503296663,
+     "ulp_le4": 0.9831644518515044,
+     "ulp_p99": 8.0,
+     "ulp_max": 13961,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.0.mlp.fc1.out",
+     "shape": [
+      4096,
+      1,
+      26624
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.003225393244510484,
+     "cosine": 0.9999947988540168,
+     "max_abs": 0.0078125,
+     "ulp_le0": 0.5393495699956042,
+     "ulp_le1": 0.8667894884982472,
+     "ulp_le4": 0.9587811247014353,
+     "ulp_p99": 18.0,
+     "ulp_max": 2089,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.0.mlp.fc2.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.004078253224392367,
+     "cosine": 0.9999916940737421,
+     "max_abs": 0.0078125,
+     "ulp_le0": 0.32928236685706797,
+     "ulp_le1": 0.671539624307303,
+     "ulp_le4": 0.889695195983297,
+     "ulp_p99": 44.0,
+     "ulp_max": 2025,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.0.mlp.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.004078253224392367,
+     "cosine": 0.9999916940737421,
+     "max_abs": 0.0078125,
+     "ulp_le0": 0.32928236685706797,
+     "ulp_le1": 0.671539624307303,
+     "ulp_le4": 0.889695195983297,
+     "ulp_p99": 44.0,
+     "ulp_max": 2025,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.0.mlp_norm.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.000984285979665807,
+     "cosine": 0.9999995161045581,
+     "max_abs": 0.03125,
+     "ulp_le0": 0.8802044707715398,
+     "ulp_le1": 0.9570892717814957,
+     "ulp_le4": 0.9890726394575421,
+     "ulp_p99": 8.0,
+     "ulp_max": 14976,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.0.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.0016541768687109164,
+     "cosine": 0.9999986343311431,
+     "max_abs": 0.03125,
+     "ulp_le0": 0.7064156695728222,
+     "ulp_le1": 0.9003034726318716,
+     "ulp_le4": 0.9741370136754943,
+     "ulp_p99": 15.0,
+     "ulp_max": 14976,
+     "bf16_level": true
+    }
+   ],
+   "first_beyond_bf16": "layers.0.mlp.fc2.out"
+  },
+  "1": {
+   "seconds": 18.163946866989136,
+   "rows": [
+    {
+     "name": "layers.1.attn.core.out",
+     "shape": [
+      4096,
+      1,
+      8192
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.004312926302041763,
+     "cosine": 0.9999907068096958,
+     "max_abs": 0.000732421875,
+     "ulp_le0": 0.5009804832374214,
+     "ulp_le1": 0.8163153209993649,
+     "ulp_le4": 0.940322837277003,
+     "ulp_p99": 25.0,
+     "ulp_max": 14177,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.1.attn.k_norm.out",
+     "shape": [
+      4096,
+      1,
+      8,
+      128
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.002615000769189259,
+     "cosine": 0.9999965808866759,
+     "max_abs": 0.0625,
+     "ulp_le0": 0.6727859530432593,
+     "ulp_le1": 0.9043398544669192,
+     "ulp_le4": 0.9767918331291902,
+     "ulp_p99": 10.0,
+     "ulp_max": 1309,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.1.attn.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.004580013773086945,
+     "cosine": 0.9999895286723065,
+     "max_abs": 0.00390625,
+     "ulp_le0": 0.32986352394792223,
+     "ulp_le1": 0.6764842007926434,
+     "ulp_le4": 0.8863669707970162,
+     "ulp_p99": 46.0,
+     "ulp_max": 1896,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.1.attn.proj.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.004580013773086945,
+     "cosine": 0.9999895286723065,
+     "max_abs": 0.00390625,
+     "ulp_le0": 0.32986352394792223,
+     "ulp_le1": 0.6764842007926434,
+     "ulp_le4": 0.8863669707970162,
+     "ulp_p99": 46.0,
+     "ulp_max": 1896,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.1.attn.q_norm.out",
+     "shape": [
+      4096,
+      1,
+      64,
+      128
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.0027899570413902806,
+     "cosine": 0.9999961080723041,
+     "max_abs": 0.0625,
+     "ulp_le0": 0.6621087651120579,
+     "ulp_le1": 0.9040623981513337,
+     "ulp_le4": 0.977624676182166,
+     "ulp_p99": 10.0,
+     "ulp_max": 1698,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.1.attn.qkv.out",
+     "shape": [
+      4096,
+      1,
+      10240
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.002359400033281181,
+     "cosine": 0.9999972166277251,
+     "max_abs": 0.0009765625,
+     "ulp_le0": 0.6733483431239274,
+     "ulp_le1": 0.9287525664924676,
+     "ulp_le4": 0.9777870187219981,
+     "ulp_p99": 10.0,
+     "ulp_max": 1696,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.1.in",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.0,
+     "cosine": 0.9999999999999999,
+     "max_abs": 0.0,
+     "ulp_le0": 1.0,
+     "ulp_le1": 1.0,
+     "ulp_le4": 1.0,
+     "ulp_p99": 0.0,
+     "ulp_max": 0,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.1.in.grad",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.004770607214132863,
+     "cosine": 0.9999886205976495,
+     "max_abs": 9.5367431640625e-05,
+     "ulp_le0": 0.6685365690198543,
+     "ulp_le1": 0.8960593422255804,
+     "ulp_le4": 0.9660052932767229,
+     "ulp_p99": 15.0,
+     "ulp_max": 14211,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.1.mlp.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.016839118721878366,
+     "cosine": 0.99985824348092,
+     "max_abs": 0.011474609375,
+     "ulp_le0": 0.24759572236814853,
+     "ulp_le1": 0.5220693490875977,
+     "ulp_le4": 0.8155269919191455,
+     "ulp_p99": 96.0,
+     "ulp_max": 15267,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.1.mlp.router.logits",
+     "shape": [
+      4096,
+      1,
+      192
+     ],
+     "dtype": "float32",
+     "rel_l2": 0.0016804870123183974,
+     "cosine": 0.9999985892527828,
+     "max_abs": 0.027085304260253906,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.1.mlp.router.probs",
+     "shape": [
+      4096,
+      192
+     ],
+     "dtype": "float32",
+     "rel_l2": 0.10611603548283888,
+     "cosine": 0.9943697207461458,
+     "max_abs": 0.3560728132724762,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.1.mlp.router.topk_idx",
+     "tokens": 4096,
+     "set_frac": 0.9462890625,
+     "flipped": 220,
+     "margin_all_p50": 0.00031164735021979584,
+     "margin_all_p01": 3.880862951352593e-06,
+     "margin_flipped_max": 0.0006667099193187198,
+     "margin_flipped_p50": 3.0096223761044705e-05,
+     "margin_flipped_pctile_max": 73.9013671875,
+     "experts_swapped_per_flip_max": 2
+    },
+    {
+     "name": "layers.1.mlp.shared.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.006514067127113631,
+     "cosine": 0.9999787890302378,
+     "max_abs": 0.00390625,
+     "ulp_le0": 0.22447286747845846,
+     "ulp_le1": 0.5384841462252696,
+     "ulp_le4": 0.8239784329286122,
+     "ulp_p99": 68.0,
+     "ulp_max": 2628,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.1.mlp_norm.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.003856580187636284,
+     "cosine": 0.9999925640735362,
+     "max_abs": 0.00390625,
+     "ulp_le0": 0.5983573237047944,
+     "ulp_le1": 0.8659951306074662,
+     "ulp_le4": 0.9640539967118098,
+     "ulp_p99": 16.0,
+     "ulp_max": 15057,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.1.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.0022528564765663542,
+     "cosine": 0.9999974624193707,
+     "max_abs": 0.03125,
+     "ulp_le0": 0.5367265057645498,
+     "ulp_le1": 0.8091715351687998,
+     "ulp_le4": 0.9395890037099144,
+     "ulp_p99": 28.0,
+     "ulp_max": 15110,
+     "bf16_level": true
+    }
+   ],
+   "first_beyond_bf16": "layers.1.attn.core.out"
+  },
+  "2": {
+   "seconds": 17.78070044517517,
+   "rows": [
+    {
+     "name": "layers.2.attn.core.out",
+     "shape": [
+      4096,
+      1,
+      8192
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.00527498647444902,
+     "cosine": 0.9999860935864323,
+     "max_abs": 0.000732421875,
+     "ulp_le0": 0.4694010483661719,
+     "ulp_le1": 0.7905364519749785,
+     "ulp_le4": 0.9318143212084209,
+     "ulp_p99": 29.0,
+     "ulp_max": 14329,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.2.attn.k_norm.out",
+     "shape": [
+      4096,
+      1,
+      8,
+      128
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.002730944404751958,
+     "cosine": 0.999996270964469,
+     "max_abs": 0.0625,
+     "ulp_le0": 0.6694792721185043,
+     "ulp_le1": 0.9081448465575155,
+     "ulp_le4": 0.9787363784544979,
+     "ulp_p99": 9.0,
+     "ulp_max": 1442,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.2.attn.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.005413609422628029,
+     "cosine": 0.9999853570345097,
+     "max_abs": 0.001953125,
+     "ulp_le0": 0.3044695430522061,
+     "ulp_le1": 0.6476748393385505,
+     "ulp_le4": 0.8743136117942749,
+     "ulp_p99": 51.0,
+     "ulp_max": 1902,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.2.attn.proj.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.005413609422628029,
+     "cosine": 0.9999853570345097,
+     "max_abs": 0.001953125,
+     "ulp_le0": 0.3044695430522061,
+     "ulp_le1": 0.6476748393385505,
+     "ulp_le4": 0.8743136117942749,
+     "ulp_p99": 51.0,
+     "ulp_max": 1902,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.2.attn.q_norm.out",
+     "shape": [
+      4096,
+      1,
+      64,
+      128
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.002882266776768667,
+     "cosine": 0.9999958462743426,
+     "max_abs": 0.0625,
+     "ulp_le0": 0.6526394586059813,
+     "ulp_le1": 0.90361072435501,
+     "ulp_le4": 0.977779637280841,
+     "ulp_p99": 10.0,
+     "ulp_max": 1870,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.2.attn.qkv.out",
+     "shape": [
+      4096,
+      1,
+      10240
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.002441438553903486,
+     "cosine": 0.9999970196918962,
+     "max_abs": 0.0009765625,
+     "ulp_le0": 0.6634282184873505,
+     "ulp_le1": 0.9286031008180468,
+     "ulp_le4": 0.9778454772735353,
+     "ulp_p99": 10.0,
+     "ulp_max": 1858,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.2.in",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.0,
+     "cosine": 1.0000000000000002,
+     "max_abs": 0.0,
+     "ulp_le0": 1.0,
+     "ulp_le1": 1.0,
+     "ulp_le4": 1.0,
+     "ulp_p99": 0.0,
+     "ulp_max": 0,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.2.in.grad",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.00572320826574333,
+     "cosine": 0.9999836223281827,
+     "max_abs": 8.821487426757812e-05,
+     "ulp_le0": 0.5898810599351778,
+     "ulp_le1": 0.8586500049198071,
+     "ulp_le4": 0.9515254682016465,
+     "ulp_p99": 22.0,
+     "ulp_max": 14177,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.2.mlp.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.02030725880335104,
+     "cosine": 0.9997938263863368,
+     "max_abs": 0.0176849365234375,
+     "ulp_le0": 0.2986969739839279,
+     "ulp_le1": 0.5910375530152625,
+     "ulp_le4": 0.8588684007528478,
+     "ulp_p99": 86.0,
+     "ulp_max": 15223,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.2.mlp.router.logits",
+     "shape": [
+      4096,
+      1,
+      192
+     ],
+     "dtype": "float32",
+     "rel_l2": 0.0012381667031373573,
+     "cosine": 0.999999233753559,
+     "max_abs": 0.028797507286071777,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.2.mlp.router.probs",
+     "shape": [
+      4096,
+      192
+     ],
+     "dtype": "float32",
+     "rel_l2": 0.0781951868842367,
+     "cosine": 0.9969427789673597,
+     "max_abs": 0.3566861152648926,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.2.mlp.router.topk_idx",
+     "tokens": 4096,
+     "set_frac": 0.96533203125,
+     "flipped": 142,
+     "margin_all_p50": 0.0004164766957187316,
+     "margin_all_p01": 5.244568874335221e-06,
+     "margin_flipped_max": 0.0006958503201843214,
+     "margin_flipped_p50": 2.678579026527128e-05,
+     "margin_flipped_pctile_max": 65.4052734375,
+     "experts_swapped_per_flip_max": 1
+    },
+    {
+     "name": "layers.2.mlp.shared.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.0049335879336012715,
+     "cosine": 0.9999878299286301,
+     "max_abs": 0.00390625,
+     "ulp_le0": 0.28843723293423656,
+     "ulp_le1": 0.6356846900562649,
+     "ulp_le4": 0.8742969879936666,
+     "ulp_p99": 50.0,
+     "ulp_max": 1844,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.2.mlp_norm.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.003428661712992651,
+     "cosine": 0.9999941221928468,
+     "max_abs": 0.00390625,
+     "ulp_le0": 0.5670326621405933,
+     "ulp_le1": 0.8482404597238751,
+     "ulp_le4": 0.9589573644892007,
+     "ulp_p99": 18.0,
+     "ulp_max": 15006,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.2.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.002559538563632472,
+     "cosine": 0.9999967243951033,
+     "max_abs": 0.03125,
+     "ulp_le0": 0.5345333767850471,
+     "ulp_le1": 0.8066614841114164,
+     "ulp_le4": 0.938807159799085,
+     "ulp_p99": 28.0,
+     "ulp_max": 15161,
+     "bf16_level": true
+    }
+   ],
+   "first_beyond_bf16": "layers.2.attn.core.out"
+  },
+  "3": {
+   "seconds": 17.362008333206177,
+   "rows": [
+    {
+     "name": "layers.3.attn.core.out",
+     "shape": [
+      4096,
+      1,
+      8192
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.006168207999605234,
+     "cosine": 0.9999810112142328,
+     "max_abs": 0.0009765625,
+     "ulp_le0": 0.4207999577589513,
+     "ulp_le1": 0.7532815492680232,
+     "ulp_le4": 0.919900888657995,
+     "ulp_p99": 33.0,
+     "ulp_max": 1798,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.3.attn.k_norm.out",
+     "shape": [
+      4096,
+      1,
+      8,
+      128
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.0025913570735472437,
+     "cosine": 0.9999966424294685,
+     "max_abs": 0.0625,
+     "ulp_le0": 0.6514640742133718,
+     "ulp_le1": 0.8964612611856311,
+     "ulp_le4": 0.9748134446269978,
+     "ulp_p99": 11.0,
+     "ulp_max": 2006,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.3.attn.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.006260329316176068,
+     "cosine": 0.9999804459848385,
+     "max_abs": 0.00390625,
+     "ulp_le0": 0.26175521801235413,
+     "ulp_le1": 0.5932274523105441,
+     "ulp_le4": 0.849522866574624,
+     "ulp_p99": 59.0,
+     "ulp_max": 2113,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.3.attn.proj.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.006260329316176068,
+     "cosine": 0.9999804459848385,
+     "max_abs": 0.00390625,
+     "ulp_le0": 0.26175521801235413,
+     "ulp_le1": 0.5932274523105441,
+     "ulp_le4": 0.849522866574624,
+     "ulp_p99": 59.0,
+     "ulp_max": 2113,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.3.attn.q_norm.out",
+     "shape": [
+      4096,
+      1,
+      64,
+      128
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.0028558299194975205,
+     "cosine": 0.9999959221131943,
+     "max_abs": 0.0625,
+     "ulp_le0": 0.6501055183851324,
+     "ulp_le1": 0.9029600803855343,
+     "ulp_le4": 0.9776170394343011,
+     "ulp_p99": 10.0,
+     "ulp_max": 1849,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.3.attn.qkv.out",
+     "shape": [
+      4096,
+      1,
+      10240
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.002399828854045285,
+     "cosine": 0.9999971204154056,
+     "max_abs": 0.0009765625,
+     "ulp_le0": 0.6625140649695527,
+     "ulp_le1": 0.9266797170600685,
+     "ulp_le4": 0.977144759846838,
+     "ulp_p99": 10.0,
+     "ulp_max": 1997,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.3.in",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.0,
+     "cosine": 0.9999999999999998,
+     "max_abs": 0.0,
+     "ulp_le0": 1.0,
+     "ulp_le1": 1.0,
+     "ulp_le4": 1.0,
+     "ulp_p99": 0.0,
+     "ulp_max": 0,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.3.in.grad",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.006879516902189622,
+     "cosine": 0.9999763362423355,
+     "max_abs": 4.57763671875e-05,
+     "ulp_le0": 0.5206207804417015,
+     "ulp_le1": 0.8214495767983543,
+     "ulp_le4": 0.9364352672869294,
+     "ulp_p99": 30.0,
+     "ulp_max": 14243,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.3.mlp.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.02754470604360778,
+     "cosine": 0.9996206637868057,
+     "max_abs": 0.00927734375,
+     "ulp_le0": 0.28154354429774203,
+     "ulp_le1": 0.5760459122655951,
+     "ulp_le4": 0.8515891695369306,
+     "ulp_p99": 103.0,
+     "ulp_max": 15269,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.3.mlp.router.logits",
+     "shape": [
+      4096,
+      1,
+      192
+     ],
+     "dtype": "float32",
+     "rel_l2": 0.0011713530878322137,
+     "cosine": 0.9999993140606227,
+     "max_abs": 0.021198034286499023,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.3.mlp.router.probs",
+     "shape": [
+      4096,
+      192
+     ],
+     "dtype": "float32",
+     "rel_l2": 0.07531589462936356,
+     "cosine": 0.9971637730481008,
+     "max_abs": 0.35153108835220337,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.3.mlp.router.topk_idx",
+     "tokens": 4096,
+     "set_frac": 0.964111328125,
+     "flipped": 147,
+     "margin_all_p50": 0.000794972812835637,
+     "margin_all_p01": 8.036633039443242e-06,
+     "margin_flipped_max": 0.0003849522229670277,
+     "margin_flipped_p50": 6.28858462942139e-05,
+     "margin_flipped_pctile_max": 31.103515625,
+     "experts_swapped_per_flip_max": 1
+    },
+    {
+     "name": "layers.3.mlp.shared.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.0050051552710292276,
+     "cosine": 0.9999874752320856,
+     "max_abs": 0.00390625,
+     "ulp_le0": 0.274085543781029,
+     "ulp_le1": 0.6170011704872433,
+     "ulp_le4": 0.8658501018094044,
+     "ulp_p99": 53.0,
+     "ulp_max": 2480,
+     "bf16_level": false
+    },
+    {
+     "name": "layers.3.mlp_norm.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.0035972700237011917,
+     "cosine": 0.9999935298384395,
+     "max_abs": 0.00390625,
+     "ulp_le0": 0.5198990314356087,
+     "ulp_le1": 0.8155982206189485,
+     "ulp_le4": 0.9489149075063964,
+     "ulp_p99": 22.0,
+     "ulp_max": 15004,
+     "bf16_level": true
+    },
+    {
+     "name": "layers.3.out",
+     "shape": [
+      4096,
+      1,
+      4096
+     ],
+     "dtype": "bfloat16",
+     "rel_l2": 0.0032106391859803335,
+     "cosine": 0.9999948459210262,
+     "max_abs": 0.03125,
+     "ulp_le0": 0.49075525371832096,
+     "ulp_le1": 0.7780117330522132,
+     "ulp_le4": 0.926269668354529,
+     "ulp_p99": 34.0,
+     "ulp_max": 15210,
+     "bf16_level": true
+    }
+   ],
+   "first_beyond_bf16": "layers.3.attn.core.out"
+  }
+ }
+}

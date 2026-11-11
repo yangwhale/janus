@@ -1,0 +1,50 @@
+# 混元 4 · TPU 自比：被测（只改一样东西的 TPU 运行）对 TPU golden 的前 300 步曲线。
+# 尺子 = GPU 同设置 8 份（g2-a … g2-h，300 步）两两 28 对的波动上限，只当尺子，不是门槛；判档在 analysis/tpu_self_compare.py。
+# 被测用 `janus run … --test <运行名>` 换；默认的 ts-g-b 是 golden 在另一个切片上的重跑（负对照）。
+# 前 300 步：golden 跑 1000 步、学习率恒定，前 300 步与 300 步的运行同一个学习率、同一批数据（回放 GPU g3-a）。
+schema_version: 1
+model: hunyuan4-mini
+stage: tpu-self-vs-golden
+description: TPU 自比，被测对 TPU golden ts-g-a 的前 300 步，尺子 GPU 28 对
+runs:
+  test: ts-g-b
+  golden: [ts-g-a]
+  noise:
+    - [g2-a, g2-b]
+    - [g2-a, g2-c]
+    - [g2-a, g2-d]
+    - [g2-a, g2-e]
+    - [g2-a, g2-f]
+    - [g2-a, g2-g]
+    - [g2-a, g2-h]
+    - [g2-b, g2-c]
+    - [g2-b, g2-d]
+    - [g2-b, g2-e]
+    - [g2-b, g2-f]
+    - [g2-b, g2-g]
+    - [g2-b, g2-h]
+    - [g2-c, g2-d]
+    - [g2-c, g2-e]
+    - [g2-c, g2-f]
+    - [g2-c, g2-g]
+    - [g2-c, g2-h]
+    - [g2-d, g2-e]
+    - [g2-d, g2-f]
+    - [g2-d, g2-g]
+    - [g2-d, g2-h]
+    - [g2-e, g2-f]
+    - [g2-e, g2-g]
+    - [g2-e, g2-h]
+    - [g2-f, g2-g]
+    - [g2-f, g2-h]
+    - [g2-g, g2-h]
+  root: /data/janus-runs
+checks:
+  - {id: C.loss, type: loss_series, level: L4, select: {kind: metrics, field: lm_loss, window: "1:301"}, threshold: calibrated}
+  - {id: C.loss.tail, type: loss_series, level: L4, select: {kind: metrics, field: lm_loss, window: "101:301"}, threshold: calibrated}
+  - {id: C.mtp_loss, type: loss_series, level: L4, select: {kind: metrics, field: mtp_loss_mt, window: "1:301"}, threshold: calibrated}
+  - {id: C.indexer_loss, type: loss_series, level: L4, select: {kind: metrics, field: indexer_loss, window: "1:301"}, threshold: calibrated}
+  - {id: C.grad_norm, type: loss_series, level: L4, select: {kind: metrics, field: grad_norm, window: "1:301"}, threshold: calibrated}
+  - {id: C.param_norm, type: loss_series, level: L4, select: {kind: metrics, field: param_norm_fp64, window: "1:301"}, threshold: calibrated}
+  - {id: C.router.bias_mean, type: router_stats, level: L4, select: {kind: metrics, prefix: "router.bias_mean.", window: "1:301"}, threshold: calibrated}
+  - {id: C.router.bias_std, type: router_stats, level: L4, select: {kind: metrics, prefix: "router.bias_std.", window: "1:301"}, threshold: calibrated}

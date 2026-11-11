@@ -1,0 +1,123 @@
+{
+ "schema_version": 1,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": null
+ },
+ "catalog": {
+  "path": "models/hunyuan3/analysis/fwd_rratio.py",
+  "sha256": "c02387df92a012b6e0f1c6d2670c16d24c7e493b70a15ab5d776ab22d122fec6"
+ },
+ "runs": {
+  "r-ff-prod": {
+   "path": "/tmp/fill-runs/r-ff-prod",
+   "meta_sha256": "89d7ebdb4bca86e43130fc309b624344fba90ff37d3326602f5fefc13d0363f6"
+  },
+  "g1k-a": {
+   "path": "/tmp/fill-runs/g1k-a",
+   "meta_sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+  }
+ },
+ "started_at": "2026-11-06T08:14:56+00:00",
+ "finished_at": "2026-11-06T08:29:14+00:00",
+ "environment": {
+  "hf_config_sha256": "ce080ff3da244dc3dc203af51ac614ec0c5c78298d907a4f04af895d79ddbed7",
+  "numpy": "2.4.6",
+  "reference": "models/hunyuan3/analysis/fp64_forward.py（FP64，中间不舍入）",
+  "mode": "chain"
+ },
+ "summary": {
+  "pass": 2,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L3.step1.logits",
+   "type": "op_replay",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "r_ratio": 1.2
+    },
+    "source": "推断：同 GPU 侧 phase1-l1 的 L1.rratio 起点。只差舍入顺序时 R≈1；多一次同量级的独立舍入误差方差约翻倍、R≈√2≈1.41，取两者之间"
+   },
+   "metrics": {
+    "rel_l2": 0.010469414832464304,
+    "cr_match_frac": 0.20635686486454333,
+    "ulp_max": 15676,
+    "ulp_p999": 342.0,
+    "nonfinite_mismatch": 0,
+    "r_ratio": 0.9570206614625055,
+    "vs_ref_rel_l2": 0.011121444569968011,
+    "vs_ref_cosine": 0.9999381629166133,
+    "vs_ref_oot_frac": 0.032941058530645856,
+    "vs_ref_mean_diff": 0.009007322216568029,
+    "vs_ref_norm_max": 0.038461538461538464,
+    "cases": 1,
+    "vs_ref_cases": 1,
+    "vs_ref_worst": "logits",
+    "kl_test_vs_fp64": 9.253022058460607e-05,
+    "kl_golden_vs_fp64": 9.864689925928702e-05,
+    "kl_test_vs_golden": 0.00010789220005457695
+   },
+   "worst": [
+    {
+     "name": "logits",
+     "metric": "r_ratio",
+     "value": 0.9570206614625055,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "全部在门槛内",
+   "details": "details/L3.step1.logits.jsonl"
+  },
+  {
+   "id": "L3.step1.loss.per_token",
+   "type": "op_replay",
+   "level": "L3",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": {
+     "r_ratio": 1.2
+    },
+    "source": "推断：同 GPU 侧 phase1-l1 的 L1.rratio 起点。只差舍入顺序时 R≈1；多一次同量级的独立舍入误差方差约翻倍、R≈√2≈1.41，取两者之间"
+   },
+   "metrics": {
+    "rel_l2": 0.0011556167908955012,
+    "cr_match_frac": 0.0,
+    "ulp_max": 171713,
+    "ulp_p999": 130713.86500000578,
+    "nonfinite_mismatch": 0,
+    "r_ratio": 0.9811177963643186,
+    "vs_ref_rel_l2": 0.0011944528542713597,
+    "vs_ref_cosine": 0.9999992867534203,
+    "vs_ref_oot_frac": 0.0,
+    "vs_ref_mean_diff": 0.0007439897115525753,
+    "vs_ref_norm_max": 0.009296168280216547,
+    "cases": 1,
+    "vs_ref_cases": 1,
+    "vs_ref_worst": "loss.per_token"
+   },
+   "worst": [
+    {
+     "name": "loss.per_token",
+     "metric": "r_ratio",
+     "value": 0.9811177963643186,
+     "location": null
+    }
+   ],
+   "evidence": [],
+   "message": "全部在门槛内",
+   "details": "details/L3.step1.loss.per_token.jsonl"
+  }
+ ]
+}

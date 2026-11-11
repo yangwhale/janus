@@ -1,0 +1,87 @@
+{
+ "kind": "step1_groups_vs_fp32",
+ "tpu": "tmdiag",
+ "ref": "tmdiag-f32",
+ "gpu": [
+  "gm-a",
+  "gm-b",
+  "gm-c",
+  "gm-d",
+  "gm-e",
+  "gm-f",
+  "gm-g",
+  "gm-h"
+ ],
+ "rows": [
+  {
+   "quantity": "grad_norm",
+   "ref": 9.685237931767517,
+   "tpu_rel": -0.00022253635149598202,
+   "gpu_rel_min": 0.0006680900380802644,
+   "gpu_rel_max": 0.0007739505999805474,
+   "gpu_abs_rel_median": 0.000719965134267863,
+   "R": 0.3090932336914906
+  },
+  {
+   "quantity": "norm.embed_head",
+   "ref": 4.360573743881748,
+   "tpu_rel": -0.000675568908202166,
+   "gpu_rel_min": 0.0003117352581695418,
+   "gpu_rel_max": 0.000491483169591128,
+   "gpu_abs_rel_median": 0.000439166450053027,
+   "R": 1.5382980829264044
+  },
+  {
+   "quantity": "norm.experts",
+   "ref": 0.738245251268497,
+   "tpu_rel": -0.0004920074409513824,
+   "gpu_rel_min": -0.00030828381033137363,
+   "gpu_rel_max": -0.0002305805613039081,
+   "gpu_abs_rel_median": 0.0002560117500481123,
+   "R": 1.9218158575101314
+  },
+  {
+   "quantity": "norm.hc",
+   "ref": 0.006602808927782844,
+   "tpu_rel": 0.00041779135590647187,
+   "gpu_rel_min": 0.002426601276718769,
+   "gpu_rel_max": 0.006743518918463057,
+   "gpu_abs_rel_median": 0.004063832784358617,
+   "R": 0.10280722118157001
+  },
+  {
+   "quantity": "norm.indexer",
+   "ref": 0.0006903511749847797,
+   "tpu_rel": 9.311985196853911e-05,
+   "gpu_rel_min": 0.10432197848452282,
+   "gpu_rel_max": 0.10436351966133886,
+   "gpu_abs_rel_median": 0.1043346322630936,
+   "R": 0.0008925114312352687
+  },
+  {
+   "quantity": "norm.mtp",
+   "ref": 0.20355750481391244,
+   "tpu_rel": -0.00024679589031923014,
+   "gpu_rel_min": -0.0002579593271479875,
+   "gpu_rel_max": -0.00023303572638647954,
+   "gpu_abs_rel_median": 0.0002447047491377761,
+   "R": 1.0085455684404254
+  },
+  {
+   "quantity": "norm.rest",
+   "ref": 8.61410149909208,
+   "tpu_rel": -0.00010448699518630174,
+   "gpu_rel_min": 0.0007616933183491617,
+   "gpu_rel_max": 0.0008543306658757352,
+   "gpu_abs_rel_median": 0.0007973544768685372,
+   "R": 0.13104208757522146
+  }
+ ],
+ "what": "hy4-mid 第 1 步：TPU tmdiag（hy4-mid-t1.yml，MaxText 469dbb85）与 GPU gm-a…h 第 1 步，对 TPU FP32 参照 tmdiag-f32（同一程序 dtype float32、matmul_precision highest、MoE 稠密实现）",
+ "caveats": [
+  "参照是 TPU 自己的程序改成 FP32，和 TPU 共用写法，R 会偏向 TPU；参照对 FP64 的误差没有测",
+  "分组口径两边不完全相同：GPU 的 grad_sq.experts 只算本 EP rank 的专家（GPU meta 注明），experts 一组不可比；indexer 一组在 T1 上也有同样的偏移（g2-a 2.85e-9 对 TPU 2.17e-9、FP32 参照 2.17e-9），而 T1 逐张量的索引器梯度 R 0.78–1.03（t1-step1-indexer-grad.json），所以这一组的差是口径不同，不判",
+  "只比分组范数，不是逐张量（逐张量要 GPU gms-* 导出的 HF 布局梯度）"
+ ],
+ "conclusion": "可比的几项：grad_norm TPU −2.2e-4、GPU +6.7e-4 至 +7.7e-4（R 0.31）；rest 组 TPU −1.0e-4、GPU +7.6e-4 至 +8.5e-4（R 0.13）；hc 组 R 0.10；mtp 组两边相同（R 1.01）；embed_head 组 TPU −6.8e-4、GPU +3.1e-4 至 +4.9e-4（R 1.54，超过 1.2，待逐张量查）。诊断，不进门槛"
+}

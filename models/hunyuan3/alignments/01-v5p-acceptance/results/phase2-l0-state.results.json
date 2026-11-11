@@ -1,0 +1,351 @@
+{
+ "schema_version": 2,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "9a3a2dc0c423c36cc71f028e5bd1a6dda1607f05"
+ },
+ "catalog": {
+  "path": "models/hunyuan3/alignments/01-b200x8-to-v5p8-4layers/catalogs/phase2-l0-state.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "d0ba68ee8642ce736730cb90af083cbc739afbf62059b4dd232dc1974d261c39",
+  "raw_sha256": "213e71122f0e17de7da0f3835683f0da7945c0093d59bf70b9805378788ddf76"
+ },
+ "runs": {
+  "t-a": {
+   "path": "/tmp/fill-runs/t-a",
+   "meta_sha256": "00888ef3ea60b95cfd8ecc0b3ce8bdad08e22355028d8a35555986ea78bda750"
+  },
+  "g1k-a": {
+   "path": "/tmp/fill-runs/g1k-a",
+   "meta_sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+  },
+  "t-rmap-1000": {
+   "path": "/tmp/fill-runs/t-rmap-1000",
+   "meta_sha256": "505892749aa19a1af063d21351e3ef8d7d47721e2ff7b383dabeafc6ec244b7c"
+  },
+  "reg-t1-lkg2-a": {
+   "path": "/tmp/fill-runs/reg-t1-lkg2-a",
+   "meta_sha256": "79310836f9a92ef90dd3c9bc8f30f2acf0a2d66ecb5f361c2d1582fe634703e5"
+  }
+ },
+ "started_at": "2026-11-06T02:57:31+00:00",
+ "finished_at": "2026-11-06T02:59:47+00:00",
+ "summary": {
+  "pass": 8,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L0.weights.init",
+   "type": "checkpoint_equal",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "params": 1480,
+    "differ": 0,
+    "only_one_side": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/t-a",
+     "sha256": "00888ef3ea60b95cfd8ecc0b3ce8bdad08e22355028d8a35555986ea78bda750"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "全部参数逐位相同"
+  },
+  {
+   "id": "L0.weights.init.prod",
+   "type": "checkpoint_equal",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "params": 1480,
+    "differ": 0,
+    "only_one_side": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/t-rmap-1000",
+     "sha256": "505892749aa19a1af063d21351e3ef8d7d47721e2ff7b383dabeafc6ec244b7c"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "全部参数逐位相同"
+  },
+  {
+   "id": "L0.weights.loaded",
+   "type": "bitwise_equal",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 50,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/t-a",
+     "sha256": "00888ef3ea60b95cfd8ecc0b3ce8bdad08e22355028d8a35555986ea78bda750"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/L0.weights.loaded.jsonl"
+  },
+  {
+   "id": "L0.main_params.loaded",
+   "type": "bitwise_equal",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 50,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/t-a",
+     "sha256": "00888ef3ea60b95cfd8ecc0b3ce8bdad08e22355028d8a35555986ea78bda750"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/L0.main_params.loaded.jsonl"
+  },
+  {
+   "id": "L0.buffers.loaded",
+   "type": "bitwise_equal",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "tensors": 3,
+    "differ": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/t-a",
+     "sha256": "00888ef3ea60b95cfd8ecc0b3ce8bdad08e22355028d8a35555986ea78bda750"
+    },
+    {
+     "path": "/tmp/fill-runs/g1k-a",
+     "sha256": "d3bff6f3a287049ead7f7ccfad9b2a4c81a26144f270da9ff58048282856e0ce"
+    }
+   ],
+   "message": "全部逐位相同",
+   "details": "details/L0.buffers.loaded.jsonl"
+  },
+  {
+   "id": "L0.dtype.manifest",
+   "type": "dtype_manifest",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "entries": 2960,
+    "wrong_dtype": 0,
+    "unmatched": 0,
+    "rule_hits": {
+     "buffer.*expert_bias": 48,
+     "* !buffer.*": 2912
+    }
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/t-a",
+     "sha256": "00888ef3ea60b95cfd8ecc0b3ce8bdad08e22355028d8a35555986ea78bda750"
+    }
+   ],
+   "message": "2960 项 dtype 全部符合规则"
+  },
+  {
+   "id": "L0.dtype.state",
+   "type": "dtype_manifest",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "entries": 182,
+    "wrong_dtype": 0,
+    "unmatched": 0,
+    "rule_hits": {
+     "MoEBiasVar/*/gate/bias": 2,
+     "params/*": 58,
+     "OptVariable/optimizer/opt_state/0/mu/*": 58,
+     "OptVariable/optimizer/opt_state/0/nu/*": 58,
+     "OptArray/optimizer/opt_state/*/count": 4,
+     "OptState/optimizer/step": 2
+    }
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/reg-t1-lkg2-a",
+     "sha256": "79310836f9a92ef90dd3c9bc8f30f2acf0a2d66ecb5f361c2d1582fe634703e5"
+    }
+   ],
+   "message": "182 项 dtype 全部符合规则"
+  },
+  {
+   "id": "L0.model.structure",
+   "type": "artifact_check",
+   "level": "L0",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "numeric",
+    "values": [
+     {
+      "name": "路由（3 层 × 192 专家）",
+      "regex": "params/model/decoder/moe_layers/Hunyuan3MoeBlock_0/MoeBlock_0/gate/kernel\\t\\(4096, 3, 192\\)\\tfloat32",
+      "min": 1,
+      "max": 1
+     },
+     {
+      "name": "路由偏置（3 层 × 192，FP32）",
+      "regex": "MoEBiasVar/model/decoder/moe_layers/Hunyuan3MoeBlock_0/MoeBlock_0/gate/bias\\t\\(3, 192\\)\\tfloat32",
+      "min": 1,
+      "max": 1
+     },
+     {
+      "name": "分组专家 gate",
+      "regex": "params/model/decoder/moe_layers/Hunyuan3MoeBlock_0/MoeBlock_0/wi_0\\t\\(192, 3, 4096, 1536\\)",
+      "min": 1,
+      "max": 1
+     },
+     {
+      "name": "分组专家 up",
+      "regex": "params/model/decoder/moe_layers/Hunyuan3MoeBlock_0/MoeBlock_0/wi_1\\t\\(192, 3, 4096, 1536\\)",
+      "min": 1,
+      "max": 1
+     },
+     {
+      "name": "分组专家 down",
+      "regex": "params/model/decoder/moe_layers/Hunyuan3MoeBlock_0/MoeBlock_0/wo\\t\\(192, 3, 1536, 4096\\)",
+      "min": 1,
+      "max": 1
+     },
+     {
+      "name": "共享专家（3 层，中间维 1536）",
+      "regex": "params/model/decoder/moe_layers/Hunyuan3MoeBlock_0/shared_experts/wi_0/kernel\\t\\(4096, 3, 1536\\)",
+      "min": 1,
+      "max": 1
+     },
+     {
+      "name": "稠密层 MLP（1 层，13312）",
+      "regex": "params/model/decoder/dense_layers/mlp/wi_0/kernel\\t\\(4096, 1, 13312\\)",
+      "min": 1,
+      "max": 1
+     },
+     {
+      "name": "q 投影（64 头 × 128，1 + 3 层）",
+      "regex": "params/model/decoder/(dense|moe)_layers/self_attention/query/kernel\\t\\(4096, [13], 64, 128\\)",
+      "min": 2,
+      "max": 2
+     },
+     {
+      "name": "k 投影（8 头 × 128）",
+      "regex": "params/model/decoder/(dense|moe)_layers/self_attention/key/kernel\\t\\(4096, [13], 8, 128\\)",
+      "min": 2,
+      "max": 2
+     },
+     {
+      "name": "q 归一化（1 + 3 层）",
+      "regex": "params/model/decoder/(dense|moe)_layers/self_attention/query_norm/scale\\t\\(128, [13]\\)",
+      "min": 2,
+      "max": 2
+     },
+     {
+      "name": "k 归一化（1 + 3 层）",
+      "regex": "params/model/decoder/(dense|moe)_layers/self_attention/key_norm/scale\\t\\(128, [13]\\)",
+      "min": 2,
+      "max": 2
+     },
+     {
+      "name": "词表 120832",
+      "regex": "params/model/token_embedder/embedding\\t\\(120832, 4096\\)",
+      "min": 1,
+      "max": 1
+     },
+     {
+      "name": "输出层不和词表共享",
+      "regex": "params/model/decoder/logits_dense/kernel\\t\\(4096, 120832\\)",
+      "min": 1,
+      "max": 1
+     },
+     {
+      "name": "主权重 FP32（全部 29 个参数叶子）",
+      "regex": "(?m)^param\\tparams/[^\\t]+\\t[^\\t]+\\tfloat32$",
+      "min": 29,
+      "max": 29
+     },
+     {
+      "name": "没有 MTP",
+      "regex": "(?i)mtp",
+      "min": 0,
+      "max": 0
+     }
+    ],
+    "source": "目录文件里的规则"
+   },
+   "metrics": {
+    "rules": 15,
+    "bad": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/tmp/fill-runs/t-a",
+     "sha256": "00888ef3ea60b95cfd8ecc0b3ce8bdad08e22355028d8a35555986ea78bda750"
+    }
+   ],
+   "message": "全部规则满足",
+   "details": "details/L0.model.structure.jsonl"
+  }
+ ]
+}

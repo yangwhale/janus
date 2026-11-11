@@ -1,0 +1,58 @@
+{
+ "what": "tokamax splash（MaxText 分支内核源码，Pallas interpret，CPU）base2 开 / 关对三种 FP64 参照",
+ "impl": "tokamax",
+ "tokamax_version": "0.0.17",
+ "shape": {
+  "heads": 2,
+  "seq": 512,
+  "head_dim": 256,
+  "q_std": 0.35,
+  "k_std": 1.4
+ },
+ "log2e_after_bf16": 1.4453125,
+ "kappa": 1.001814284403046,
+ "rows": [
+  {
+   "base2": true,
+   "ref": "exact",
+   "lse_max_abs": 0.0012703478084303832,
+   "lse_mean_signed": 0.0004118601701358251,
+   "o_rel_l2": 0.0019787366734810526
+  },
+  {
+   "base2": true,
+   "ref": "kappa",
+   "lse_max_abs": 0.0006532509339862713,
+   "lse_mean_signed": -1.8324670792575412e-05,
+   "o_rel_l2": 0.0018095612240411154
+  },
+  {
+   "base2": true,
+   "ref": "full",
+   "lse_max_abs": 8.147201588926123e-07,
+   "lse_mean_signed": -5.5360409371508004e-08,
+   "o_rel_l2": 0.0016554319552475238
+  },
+  {
+   "base2": false,
+   "ref": "exact",
+   "lse_max_abs": 5.40548242611294e-07,
+   "lse_mean_signed": -5.073086739376068e-09,
+   "o_rel_l2": 0.0016605798057571682
+  },
+  {
+   "base2": false,
+   "ref": "kappa",
+   "lse_max_abs": 0.0014915974624503114,
+   "lse_mean_signed": -0.00043018991401513987,
+   "o_rel_l2": 0.001866824473131554
+  },
+  {
+   "base2": false,
+   "ref": "full",
+   "lse_max_abs": 0.0012703756385810117,
+   "lse_mean_signed": -0.00041192060363193597,
+   "o_rel_l2": 0.0019731336922970996
+  }
+ ]
+}

@@ -1,0 +1,253 @@
+# 第一阶段 · GPU 对 GPU 全覆盖演练
+# 被测 s-a、golden s-b：默认设置（非确定性）两次 100 步；噪声参照：s-b / s-c / s-d 两两（同一种设置）。
+# 第 1 步两边权重相同，逐层、逐参数比较有意义；第 100 步只比 loss 与统计量（权重已分叉）。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase1-full
+description: L0–L4 全部 GPU 可测检查，默认设置两次运行互为被测 / golden
+runs:
+  test: s-a
+  golden: [s-b, s-c, s-d]
+  noise:
+    - [s-b, s-c]
+    - [s-b, s-d]
+    - [s-c, s-d]
+  root: /data/janus-runs2
+checks:
+  # ---------------- L0 地基：配置、数据、权重，必须逐位
+  - id: L0.config.diff
+    type: config_diff
+    level: L0
+    select: {kind: config}
+    params:
+      mapping:
+        - {test: model_config, ref: model_config, must_equal: true}
+        - {test: optimizer_config, ref: optimizer_config, must_equal: true}
+        - {test: config.args.gbs, ref: config.args.gbs, must_equal: true}
+        - {test: config.args.seq, ref: config.args.seq, must_equal: true}
+        - {test: config.args.lr, ref: config.args.lr, must_equal: true}
+        - {test: config.args.seed, ref: config.args.seed, must_equal: true}
+        - {test: config.args.load, ref: config.args.load, must_equal: true}
+        - {test: config.args.data, ref: config.args.data, must_equal: true}
+        - {test: checkpoint.manifest_sha256, ref: checkpoint.manifest_sha256, must_equal: true}
+        - {test: data.manifest_sha256, ref: data.manifest_sha256, must_equal: true}
+        - {test: versions, ref: versions, must_equal: true}
+        - {test: parallelism, ref: parallelism, must_equal: true}
+        - {test: fault, ref: fault, must_equal: true}
+        # RNG 消费者必须关掉：两边相同还不够，必须等于 0（两边都查）
+        - {test: model_config.hidden_dropout, equals: 0.0}
+        - {test: model_config.attention_dropout, equals: 0.0}
+        # 随机路由类开关（路由输入抖动等）：meta.json 的 model_config 目前没有记录，等抓数补上再加 equals 断言
+        - {test: model_config.moe_router_dtype, ref: model_config.moe_router_dtype, must_equal: true}
+        - {test: determinism, ref: determinism, must_equal: false}
+  - id: L0.data.fingerprint
+    type: data_fingerprint
+    level: L0
+    select: {kind: tokens, steps: "1:101"}
+  - id: L0.weights.init
+    type: checkpoint_equal
+    level: L0
+    select: {kind: checkpoint, which: init, manifest: true}
+  - id: L0.weights.loaded
+    type: bitwise_equal
+    level: L0
+    select: {kind: tensor, step: 1, name: "param.*"}
+  - id: L0.main_params.loaded
+    type: bitwise_equal
+    level: L0
+    select: {kind: tensor, step: 1, name: "main_param.*"}
+  - id: L0.buffers.loaded
+    type: bitwise_equal
+    level: L0
+    select: {kind: tensor, step: 1, name: "buffer.*"}
+  # 参数 / buffer 的 dtype 清单：expert_bias 必须 FP32（BF16 存会让偏置更新被舍入吃掉），其余参数 BF16
+  - id: L0.dtype.manifest
+    type: dtype_manifest
+    level: L0
+    select: {kind: checkpoint, which: [init, final]}
+    params:
+      rules:
+        - {pattern: "buffer.*expert_bias", dtype: float32}
+        - {pattern: "*", exclude: "buffer.*", dtype: bfloat16}
+  - id: L0.model.structure
+    type: artifact_check
+    level: L0
+    select: {kind: artifact, file: modules.txt}
+    params:
+      rules:
+        - {name: 路由层数, regex: "\\.mlp\\.router\\tTopKRouter", min: 3, max: 3}
+        - {name: 分组专家, regex: "\\.mlp\\.experts\\tTEGroupedMLP", min: 3, max: 3}
+        - {name: 共享专家, regex: "\\.mlp\\.shared_experts\\tSharedExpertMLP", min: 3, max: 3}
+        - {name: q 归一化, regex: "\\.q_layernorm\\tRMSNorm", min: 4, max: 4}
+        - {name: k 归一化, regex: "\\.k_layernorm\\tRMSNorm", min: 4, max: 4}
+        - {name: dropout 模块存在但概率为 0 由 config_diff 管, regex: "attention_dropout\\tDropout", min: 0}
+  # ---------------- L1 算子 / 优化器：FP64 重放
+  - id: L1.optim.adamw.replay
+    type: optimizer_step
+    level: L1
+    select: {kind: tensor, step: 1, name: "decoder.layers.*"}
+    # 实际生效的权重衰减是 0.033（Bridge 默认 scheduler.start/end_weight_decay 覆盖了 optimizer.weight_decay=0.1）；
+    # 新运行每步记录 wd，这里的值只给没记 wd 的旧运行用
+    params: {replay_from: test, weight_decay: 0.033}
+    metrics: [rel_l2, max_abs]
+    threshold: {rel_l2: 5.0e-3}
+    source: "实测：FP64 重放的更新量舍入到 FP32 后自身误差最大 1.79e-3（第 2 层 q_layernorm，t-full 第 1 步），门槛取约 3 倍；更新量逐元素误差 p99.9 ≤ 1.2 个 FP32 ULP"
+  - id: L1.router.topk.fp64
+    type: discrete_agreement
+    level: L1
+    select: {kind: tensor, step: 1, name: "layers.*.mlp.router.topk_idx"}
+    params: {mode: topk, reference: fp64_replay}
+    threshold: {set_frac: 0.97}
+    source: "推断：GPU FP32 路由对 FP64 的选中集合翻转率，先给宽松下限，量完地板后收紧"
+  # ---------------- L2 逐层（第 1 步，同一份权重）
+  - id: L2.layer{i}.fwd
+    foreach: {i: [0, 1, 2, 3]}
+    type: tensor_tolerance
+    level: L2
+    select: {kind: tensor, step: 1, name: "layers.{i}.*.out"}
+    metrics: [rel_l2, cosine, mean_shift, max_abs]
+    threshold: calibrated
+  - id: L2.layer{i}.bwd
+    foreach: {i: [0, 1, 2, 3]}
+    type: tensor_tolerance
+    level: L2
+    select: {kind: tensor, step: 1, name: "layers.{i}.*.grad"}
+    metrics: [rel_l2, cosine, norm_ratio]
+    threshold: calibrated
+  - id: L2.layer{i}.grads
+    foreach: {i: [0, 1, 2, 3]}
+    type: tensor_tolerance
+    level: L2
+    select: {kind: tensor, step: 1, name: "grad.decoder.layers.{i}.*"}
+    metrics: [rel_l2, cosine, norm_ratio]
+    threshold: calibrated
+  - id: L2.layer{i}.router
+    foreach: {i: [1, 2, 3]}
+    type: discrete_agreement
+    level: L2
+    select: {kind: tensor, step: 1, name: "layers.{i}.mlp.router.topk_idx"}
+    params: {mode: topk}
+    threshold: calibrated
+  # ---------------- L3 第 1 步整网
+  - id: L3.step1.act.bitwise
+    type: bitwise_equal
+    level: L3
+    hard: false
+    select: {kind: tensor, step: 1, name: "*.out"}
+  - id: L3.step1.loss.per_token
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "loss.per_token"}
+    metrics: [rel_l2, max_abs, mean_shift]
+    threshold: calibrated
+  - id: L3.step1.logits
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "logits"}
+    # kl = KL(参照 ‖ 被测)，每行 softmax 后取行平均，见 docs/reference/metrics.md
+    metrics: [rel_l2, cosine, max_abs, kl]
+    threshold: calibrated
+  - id: L3.step1.grads.all
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "grad.*"}
+    metrics: [rel_l2, cosine, norm_ratio]
+    threshold: calibrated
+  # 分布统计找系统偏移：std 比（整体缩放）、零比例差（多出 / 少掉的稀疏）、逐元素相对误差 p99
+  - id: L3.step1.grads.dist
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "grad.*"}
+    metrics: [std_ratio, zero_frac_diff, rel_err_p99]
+    threshold: calibrated
+  - id: L3.step1.grads.ulp
+    type: ulp_distribution
+    level: L3
+    hard: false
+    select: {kind: tensor, step: 1, name: "grad.decoder.layers.*.self_attention.*"}
+    threshold: calibrated
+  - id: L3.step1.updated
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "main_param_after.*"}
+    metrics: [rel_l2, max_abs]
+    threshold: calibrated
+  - id: L3.step1.optim_state
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "exp_avg*"}
+    metrics: [rel_l2, cosine]
+    threshold: calibrated
+  # 假 FP32：标 float32 但低 16 位全 0。只查更新后的主权重与动量——更新前的 main_param.* 是从 BF16 检查点载入的，
+  # 本来就落在 BF16 网格上（实测 s-a 第 1 步 50 个全部 100%），查它只会恒红
+  - id: L3.step1.fake_fp32.main_param
+    type: fake_fp32
+    level: L3
+    select: {kind: tensor, step: 1, name: "main_param_after.*"}
+  - id: L3.step1.fake_fp32.optim_state
+    type: fake_fp32
+    level: L3
+    select: {kind: tensor, step: 1, name: "exp_avg*"}
+  - id: L3.step1.bias_after
+    type: tensor_tolerance
+    level: L3
+    select: {kind: tensor, step: 1, name: "buffer_after.*"}
+    metrics: [rel_l2, max_abs]
+    threshold: calibrated
+  - id: L3.step1.coverage
+    type: coverage
+    level: L3
+    select: {kind: tensor, step: 1, name: "*"}
+  # ---------------- L4 多步：loss、学习率、统计量
+  - id: L4.loss
+    type: multi_golden
+    level: L4
+    select: {kind: metrics, field: lm_loss, window: "1:101"}
+    # auto_offset：首步在 golden 第 1±2 步里找 |Δ| 最小的，偏移与 meta.steps.convention 不一致即 fail
+    params: {signed_mean_se_k: 2, first_step_tol: 0.0, first_step_source: "GPU 自比：首步前向确定，首步差必须为 0（第一阶段实测）",
+             auto_offset: [-2, 2]}
+    threshold: calibrated
+  - id: L4.lr
+    type: scalar_series
+    level: L4
+    select: {kind: metrics, field: lr, window: "1:101"}
+    params: {rtol: 0.0, abs_ulp: 0}
+  - id: L4.grad_norm
+    type: loss_series
+    level: L4
+    select: {kind: metrics, field: grad_norm, window: "1:101"}
+    threshold: calibrated
+  - id: L4.param_norm
+    type: loss_series
+    level: L4
+    select: {kind: metrics, field: param_norm, window: "1:101"}
+    threshold: calibrated
+  - id: L4.router.bias_std
+    type: router_stats
+    level: L4
+    select: {kind: metrics, prefix: "router.bias_std.", window: "1:101"}
+    threshold: calibrated
+  - id: L4.router.load_cv
+    type: router_stats
+    level: L4
+    select: {kind: metrics, prefix: "router.load_cv.", window: "1:101"}
+    threshold: calibrated
+  - id: L4.health
+    type: health_signals
+    level: L4
+    select: {kind: metrics, fields: [lm_loss, grad_norm, param_norm]}
+    params: {window: 10, spike_ratio: 3, source: "推断：100 步常数学习率下单步超前 10 步中位数 3 倍即异常"}
+  # ---------------- 副本与自证
+  # 只比数据并行副本：专家参数按专家并行切开，各 rank 上同名的 weight0 是不同的专家，不是副本（EP=8 时专家没有副本）
+  - id: L2.dp.replica
+    type: replica_consistency
+    level: L2
+    select: {kind: checkpoint, which: final, name: "*", exclude: "*.experts.*"}
+  - id: SELF.poison.tensor_tolerance
+    type: poison_selftest
+    level: L3
+    select: {kind: tensor, step: 1, name: "layers.1.*.out"}
+    params:
+      target: tensor_tolerance
+      target_kwargs: {metrics: [rel_l2, max_abs], threshold: {rel_l2: 1.0e-3, max_abs: 1.0e-2}}
+      source: "自证用的固定门槛"

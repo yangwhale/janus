@@ -1,0 +1,20 @@
+{
+ "a": "ck-a",
+ "b": "ck-b",
+ "steps": [
+  1,
+  20
+ ],
+ "metrics": {
+  "values": 1620,
+  "differ": 0,
+  "first_differ": []
+ },
+ "params_sha": {
+  "files": 8,
+  "entries": 1968,
+  "differ": 0,
+  "first_differ": []
+ },
+ "bitwise_identical": true
+}

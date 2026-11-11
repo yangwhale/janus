@@ -1,0 +1,317 @@
+{
+ "what": "CPU FP64 前向只加 TPU splash base2 那一处差（step1_ref.py --emulate-base2）的 loss 移动，对 TPU / GPU 第 1 步实测",
+ "kappa": 1.001814284403046,
+ "stages": {
+  "D3": {
+   "fp64": {
+    "rows": 16,
+    "lm_loss": 12.014492588897129,
+    "mtp_loss_mt": 0.9499259739375474
+   },
+   "emulated": {
+    "kappa": {
+     "rows": 16,
+     "lm_loss": 12.013328636119082,
+     "lm_loss.shift_rel": -9.687906246846762e-05,
+     "mtp_loss_mt": 0.9498018625652321,
+     "mtp_loss_mt.shift_rel": -0.00013065373062788962,
+     "lm_loss.shift_rel_per_row": {
+      "min": -0.00012244891308774774,
+      "median": -9.525569425208213e-05,
+      "max": -7.220862823704175e-05
+     },
+     "mtp.shift_rel_per_row": {
+      "min": -0.0005685105128052673,
+      "median": -0.00011539273888694332,
+      "max": 0.0001889186552399539
+     }
+    },
+    "kappa-L0": {
+     "rows": 16,
+     "lm_loss": 12.014093805217916,
+     "lm_loss.shift_rel": -3.3191886903428657e-05,
+     "mtp_loss_mt": 0.9498987952140568,
+     "mtp_loss_mt.shift_rel": -2.8611412084989146e-05,
+     "lm_loss.shift_rel_per_row": {
+      "min": -4.6445344456324493e-05,
+      "median": -3.064289697622288e-05,
+      "max": -2.0810026543645238e-05
+     },
+     "mtp.shift_rel_per_row": {
+      "min": -0.0002270768377296709,
+      "median": -2.5284393515396887e-05,
+      "max": 8.32381622956164e-05
+     }
+    },
+    "kappa-L1": {
+     "rows": 16,
+     "lm_loss": 12.01379889112941,
+     "lm_loss.shift_rel": -5.773841571638879e-05,
+     "mtp_loss_mt": 0.9498678959138243,
+     "mtp_loss_mt.shift_rel": -6.11395259384389e-05,
+     "lm_loss.shift_rel_per_row": {
+      "min": -8.024404608288272e-05,
+      "median": -5.665544641306077e-05,
+      "max": -4.299734556512167e-05
+     },
+     "mtp.shift_rel_per_row": {
+      "min": -0.0004035234283449739,
+      "median": -3.561853928058223e-05,
+      "max": 8.794697107610898e-05
+     }
+    },
+    "kappa-L2": {
+     "rows": 16,
+     "lm_loss": 12.014391617550697,
+     "lm_loss.shift_rel": -8.404129070394366e-06,
+     "mtp_loss_mt": 0.9499076693711545,
+     "mtp_loss_mt.shift_rel": -1.9269466142801257e-05,
+     "lm_loss.shift_rel_per_row": {
+      "min": -1.30961272128651e-05,
+      "median": -8.131457761658717e-06,
+      "max": -4.763443600242203e-06
+     },
+     "mtp.shift_rel_per_row": {
+      "min": -0.00015670908042202092,
+      "median": -1.3146621595120193e-05,
+      "max": 5.849228046619484e-05
+     }
+    },
+    "kappa-mtp0": {
+     "rows": 16,
+     "lm_loss": 12.014492588897129,
+     "lm_loss.shift_rel": 0.0,
+     "mtp_loss_mt": 0.9498835127417024,
+     "mtp_loss_mt.shift_rel": -4.4699478706798296e-05,
+     "lm_loss.shift_rel_per_row": {
+      "min": 0.0,
+      "median": 0.0,
+      "max": 0.0
+     },
+     "mtp.shift_rel_per_row": {
+      "min": -0.00016245449455046948,
+      "median": -4.837427917965646e-05,
+      "max": 0.0002067323683941217
+     }
+    },
+    "full": {
+     "rows": 16,
+     "lm_loss": 12.013304978168387,
+     "lm_loss.shift_rel": -9.884818022523655e-05,
+     "mtp_loss_mt": 0.9498262884572028,
+     "mtp_loss_mt.shift_rel": -0.00010494026174623974,
+     "lm_loss.shift_rel_per_row": {
+      "min": -0.0001350987604232836,
+      "median": -9.550760184178441e-05,
+      "max": -6.452439234565464e-05
+     },
+     "mtp.shift_rel_per_row": {
+      "min": -0.0003049549133682407,
+      "median": -0.00010551395980666789,
+      "max": 0.00010083417476351845
+     }
+    },
+    "q16": {
+     "rows": 16,
+     "lm_loss": 12.01449232600165,
+     "lm_loss.shift_rel": -2.1881529965814203e-08,
+     "mtp_loss_mt": 0.9498515034893453,
+     "mtp_loss_mt.shift_rel": -7.839605426661988e-05,
+     "lm_loss.shift_rel_per_row": {
+      "min": -2.3995051650969387e-05,
+      "median": -2.9611675716095557e-06,
+      "max": 1.7973221911230428e-05
+     },
+     "mtp.shift_rel_per_row": {
+      "min": -0.0005078952977074323,
+      "median": -4.8596928363639286e-05,
+      "max": 0.00012093207515124197
+     }
+    }
+   },
+   "observed": {
+    "rw1k-a": {
+     "side": "gpu",
+     "lm_loss": 12.01518440246582,
+     "lm_loss.rel_vs_fp64": 5.7581588533386986e-05,
+     "mtp_loss_mt": 0.949964702129364,
+     "mtp_loss_mt.rel_vs_fp64": 4.0769694564802166e-05,
+     "note": "metrics.jsonl 第 1 步"
+    },
+    "rw1k-b": {
+     "side": "gpu",
+     "lm_loss": 12.015106201171875,
+     "lm_loss.rel_vs_fp64": 5.1072674955332085e-05,
+     "mtp_loss_mt": 0.9499197006225586,
+     "mtp_loss_mt.rel_vs_fp64": -6.604004060243047e-06,
+     "note": "metrics.jsonl 第 1 步"
+    },
+    "rw1k-c": {
+     "side": "gpu",
+     "lm_loss": 12.015121459960938,
+     "lm_loss.rel_vs_fp64": 5.234270687300134e-05,
+     "mtp_loss_mt": 0.9498499035835266,
+     "mtp_loss_mt.rel_vs_fp64": -8.008029689458469e-05,
+     "note": "metrics.jsonl 第 1 步"
+    },
+    "rw1k-d": {
+     "side": "gpu",
+     "lm_loss": 12.015144348144531,
+     "lm_loss.rel_vs_fp64": 5.424775474950521e-05,
+     "mtp_loss_mt": 0.9498271942138672,
+     "mtp_loss_mt.rel_vs_fp64": -0.00010398675937954128,
+     "note": "metrics.jsonl 第 1 步"
+    },
+    "trw-e": {
+     "side": "tpu",
+     "lm_loss": 12.013306617736816,
+     "lm_loss.rel_vs_fp64": -9.871171433478497e-05,
+     "mtp_loss_mt": 0.9498320817947388,
+     "mtp_loss_mt.rel_vs_fp64": -9.88415364825165e-05,
+     "note": "metrics.jsonl 第 1 步（Pod 镜像）；sa_use_base2_exp 开；trw-a 的 Pod 日志 lm_loss 逐位相同"
+    }
+   },
+   "gpu_lm_rel_median": 5.329523081125327e-05,
+   "R_lm": {
+    "trw-e": {
+     "R": 1.8521678737892249,
+     "minus_kappa_rel": -1.832651866317346e-06,
+     "R_minus_kappa": 0.0343867891820891,
+     "minus_full_minus_q16_rel": 1.1458436048577398e-07,
+     "R_minus_base2": 0.002149992761858525
+    }
+   }
+  },
+  "B": {
+   "fp64": {
+    "rows": 16,
+    "lm_loss": 11.702070551776643
+   },
+   "emulated": {
+    "kappa": {
+     "rows": 16,
+     "lm_loss": 11.70108630351413,
+     "lm_loss.shift_rel": -8.410889834911313e-05,
+     "lm_loss.shift_rel_per_row": {
+      "min": -0.0001052919025555626,
+      "median": -8.522325171906908e-05,
+      "max": -5.482006342769929e-05
+     }
+    },
+    "full": {
+     "rows": 16,
+     "lm_loss": 11.701041091146458,
+     "lm_loss.shift_rel": -8.79725195323832e-05,
+     "lm_loss.shift_rel_per_row": {
+      "min": -0.0001250189030057594,
+      "median": -8.525523374832077e-05,
+      "max": -5.38092207291835e-05
+     }
+    },
+    "q16": {
+     "rows": 16,
+     "lm_loss": 11.702010298973535,
+     "lm_loss.shift_rel": -5.148901029192828e-06,
+     "lm_loss.shift_rel_per_row": {
+      "min": -1.6040658222997102e-05,
+      "median": -9.454169009790952e-06,
+      "max": 1.4803294968869353e-05
+     }
+    }
+   },
+   "observed": {
+    "gb2-a": {
+     "side": "gpu",
+     "lm_loss": 11.702826499938965,
+     "lm_loss.rel_vs_fp64": 6.459952185188788e-05,
+     "note": "metrics.jsonl 第 1 步"
+    },
+    "gb2-b": {
+     "side": "gpu",
+     "lm_loss": 11.702827453613281,
+     "lm_loss.rel_vs_fp64": 6.468101805481937e-05,
+     "note": "metrics.jsonl 第 1 步"
+    },
+    "gb2-c": {
+     "side": "gpu",
+     "lm_loss": 11.702828407287598,
+     "lm_loss.rel_vs_fp64": 6.476251425775087e-05,
+     "note": "metrics.jsonl 第 1 步"
+    },
+    "gb2-d": {
+     "side": "gpu",
+     "lm_loss": 11.702840805053711,
+     "lm_loss.rel_vs_fp64": 6.582196489586029e-05,
+     "note": "metrics.jsonl 第 1 步"
+    },
+    "gb2-e": {
+     "side": "gpu",
+     "lm_loss": 11.702834129333496,
+     "lm_loss.rel_vs_fp64": 6.525149147533984e-05,
+     "note": "metrics.jsonl 第 1 步"
+    },
+    "gb2-f": {
+     "side": "gpu",
+     "lm_loss": 11.702836036682129,
+     "lm_loss.rel_vs_fp64": 6.541448388120283e-05,
+     "note": "metrics.jsonl 第 1 步"
+    },
+    "gb2-g": {
+     "side": "gpu",
+     "lm_loss": 11.70283317565918,
+     "lm_loss.rel_vs_fp64": 6.516999527240834e-05,
+     "note": "metrics.jsonl 第 1 步"
+    },
+    "gb2-h": {
+     "side": "gpu",
+     "lm_loss": 11.702834129333496,
+     "lm_loss.rel_vs_fp64": 6.525149147533984e-05,
+     "note": "metrics.jsonl 第 1 步"
+    },
+    "tnorm-sg": {
+     "side": "tpu",
+     "lm_loss": 11.701127448038331,
+     "lm_loss.rel_vs_fp64": -8.059289457697295e-05,
+     "note": "现行 T2 yml + rmsnorm_scale_grad_fp32（只改反向）；sa_use_base2_exp 开。lm_loss = diag_step1.json 的 loss − KD 项；KD 项 = Σ indexer_loss_raw ÷ 2（累积 2 份）× 32768 ÷ 65453（indexer_kd_mcore_weight：每个 microbatch 的 token 位置数 targets.size ÷ 全局有效 token 数）"
+    },
+    "tqa-nb2": {
+     "side": "tpu",
+     "lm_loss": 11.702156140882861,
+     "lm_loss.rel_vs_fp64": 7.314013861023088e-06,
+     "note": "同 tnorm-sg，只差 sa_use_base2_exp 关。lm_loss = diag_step1.json 的 loss − KD 项；KD 项 = Σ indexer_loss_raw ÷ 2（累积 2 份）× 32768 ÷ 65453（indexer_kd_mcore_weight：每个 microbatch 的 token 位置数 targets.size ÷ 全局有效 token 数）"
+    },
+    "tqa-dot": {
+     "side": "tpu",
+     "lm_loss": 11.702344569883367,
+     "lm_loss.rel_vs_fp64": 2.3416207030355435e-05,
+     "note": "注意力换 dot_product（不走 splash）。lm_loss = diag_step1.json 的 loss − KD 项；KD 项 = Σ indexer_loss_raw ÷ 2（累积 2 份）× 32768 ÷ 65453（indexer_kd_mcore_weight：每个 microbatch 的 token 位置数 targets.size ÷ 全局有效 token 数）"
+    },
+    "tnorm-f32": {
+     "side": "tpu",
+     "lm_loss": 11.702039647349688,
+     "lm_loss.rel_vs_fp64": -2.6409366460887307e-06,
+     "note": "dtype float32 + matmul_precision highest。lm_loss = diag_step1.json 的 loss − KD 项；KD 项 = Σ indexer_loss_raw ÷ 2（累积 2 份）× 32768 ÷ 65453（indexer_kd_mcore_weight：每个 microbatch 的 token 位置数 targets.size ÷ 全局有效 token 数）"
+    }
+   },
+   "gpu_lm_rel_median": 6.521074337387409e-05,
+   "R_lm": {
+    "tnorm-sg": {
+     "R": 1.2358836965698745,
+     "minus_kappa_rel": 3.5160037721401776e-06,
+     "R_minus_kappa": 0.053917553921779444,
+     "minus_full_minus_q16_rel": 2.2307239262174175e-06,
+     "R_minus_base2": 0.034207920517451584
+    },
+    "tqa-nb2": {
+     "R": 0.1121596455217433
+    },
+    "tqa-dot": {
+     "R": 0.3590851111158604
+    },
+    "tnorm-f32": {
+     "R": 0.040498490117608296
+    }
+   }
+  }
+ }
+}

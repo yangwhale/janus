@@ -1,0 +1,148 @@
+{
+ "schema_version": 1,
+ "kind": "determinism",
+ "what": "hy4-mini，T1 的 TPU 配置（v5p 2x2x2），同设置两份 100 步，metrics.jsonl 逐步逐字段比较",
+ "runs": {
+  "t1det-a": {
+   "metrics_sha256": "e16db3cd9d0c4bcbbf6081368e4cf506acfe74e107e95972a88b5133ec48b736",
+   "steps": 100,
+   "lm_loss_step1": 11.718061447143555,
+   "lm_loss_step100": 10.626752853393555,
+   "peak_bytes_in_use_max_local_devices": 1734696448,
+   "config": "/janus/models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+   "code": [
+    {
+     "repo": "maxtext",
+     "commit": "6ba40afaab33a5225ff4027f8e9b8d54e4d395f0"
+    },
+    {
+     "repo": "janus",
+     "commit": "32097a56c0bc6430ee893fbdf1adfb695b265c5e"
+    }
+   ],
+   "image": "us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf",
+   "hardware": {
+    "accelerator": "TPU v5",
+    "count": 8,
+    "topology": "2x2x2",
+    "processes": 2
+   }
+  },
+  "t1det-b": {
+   "metrics_sha256": "caf2fa4a10cb5f0bdd5898967cbcd169fc40db0578ab8e41c5dab9f41e2e15ca",
+   "steps": 100,
+   "lm_loss_step1": 11.718061447143555,
+   "lm_loss_step100": 10.626752853393555,
+   "peak_bytes_in_use_max_local_devices": 1734696448,
+   "config": "/janus/models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+   "code": [
+    {
+     "repo": "maxtext",
+     "commit": "6ba40afaab33a5225ff4027f8e9b8d54e4d395f0"
+    },
+    {
+     "repo": "janus",
+     "commit": "32097a56c0bc6430ee893fbdf1adfb695b265c5e"
+    }
+   ],
+   "image": "us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf",
+   "hardware": {
+    "accelerator": "TPU v5",
+    "count": 8,
+    "topology": "2x2x2",
+    "processes": 2
+   }
+  }
+ },
+ "compared_fields": [
+  "grad_norm",
+  "grad_norm_clipped",
+  "group_sq.attn",
+  "group_sq.attn_gate",
+  "group_sq.dense_mlp",
+  "group_sq.embedding",
+  "group_sq.experts",
+  "group_sq.final_norm",
+  "group_sq.hc_head",
+  "group_sq.ihc",
+  "group_sq.indexer",
+  "group_sq.mtp_norms",
+  "group_sq.mtp_proj",
+  "group_sq.norms",
+  "group_sq.output",
+  "group_sq.router",
+  "group_sq.shared",
+  "group_sq.sinks",
+  "indexer_loss",
+  "lm_loss",
+  "loss",
+  "lr",
+  "moe_lb_loss",
+  "mtp_loss",
+  "param_norm",
+  "param_norm_grouped",
+  "raw_grad_norm",
+  "router.bias_mean.1",
+  "router.bias_mean.2",
+  "router.bias_mean.3",
+  "router.bias_mean.4",
+  "router.bias_mean.5",
+  "router.bias_mean.6",
+  "router.bias_mean.mtp0",
+  "router.bias_std.1",
+  "router.bias_std.2",
+  "router.bias_std.3",
+  "router.bias_std.4",
+  "router.bias_std.5",
+  "router.bias_std.6",
+  "router.bias_std.mtp0",
+  "skipped_iter",
+  "step",
+  "total_weights",
+  "wd"
+ ],
+ "fields_differing": [],
+ "bitwise_identical": true,
+ "note": "GPU 一侧的 golden 数据（AdamW 时期 ga-a 的 data/batches，真实 token、8 rank × 2 microbatch）只作输入；QK-Clip 梯度累积求和的 bug（台账 M19）与 M15–M18、M20 开关在这两份里都还没有",
+ "with_mcore_switches": {
+  "note": "MaxText 27d82457：M15–M18、M20 开关打开、M19 已修，其余同上",
+  "runs": {
+   "t1det2-a": {
+    "metrics_sha256": "4f453f2e22ac262d57fbf99a793e7d903a4bb39f127025a32ea4da0012ad4ae3",
+    "steps": 100,
+    "lm_loss_step1": 11.718061447143555,
+    "lm_loss_step100": 10.642715454101562,
+    "peak_bytes_in_use_max_local_devices": 1733830144,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "27d82457f70e26e7a66ac00c1c684f68b56d7170"
+     },
+     {
+      "repo": "janus",
+      "commit": "8b269600991f74aa5a12136f5d4e1455bd2141f6"
+     }
+    ]
+   },
+   "t1det2-b": {
+    "metrics_sha256": "a51735cae42aab644927a4d8dfc412a0627ac2e34269cc844bcd26c83fc0e746",
+    "steps": 100,
+    "lm_loss_step1": 11.718061447143555,
+    "lm_loss_step100": 10.642715454101562,
+    "peak_bytes_in_use_max_local_devices": 1733830144,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "27d82457f70e26e7a66ac00c1c684f68b56d7170"
+     },
+     {
+      "repo": "janus",
+      "commit": "8b269600991f74aa5a12136f5d4e1455bd2141f6"
+     }
+    ]
+   }
+  },
+  "fields_differing": [],
+  "bitwise_identical": true
+ }
+}

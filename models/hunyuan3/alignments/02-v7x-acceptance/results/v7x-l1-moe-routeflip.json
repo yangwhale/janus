@@ -1,0 +1,91 @@
+{
+ "what": "L1.ops.kernel.moe（MoE 块对 FP64）的 R 比里路由翻转占多少：每侧用自己的 mlp_norm.out 在 FP64 里重算 MoE 输出与 top-8（fp64_forward.moe_forward，第 1 步初始 expert_bias），只在「本侧选中的专家集合 = FP64 选中的集合」的 token 上再算一次 rel_L2 与 R。gpu = g1k-a，v7x_on = r-v7x-l2-on，v5p_on = r-l2-on（对齐配置 yml a238883，dense_fp32_accumulation 开）",
+ "rows": {
+  "gpu.L1": {
+   "tokens": 4096,
+   "route_diff_tokens": 0,
+   "rel_l2_all": 0.0033143609548607514,
+   "rel_l2_same_route": 0.0033143609548607514
+  },
+  "v7x_on.L1": {
+   "tokens": 4096,
+   "route_diff_tokens": 0,
+   "rel_l2_all": 0.0030428358047705846,
+   "rel_l2_same_route": 0.0030428358047705846
+  },
+  "v5p_on.L1": {
+   "tokens": 4096,
+   "route_diff_tokens": 1,
+   "rel_l2_all": 0.0029758748712289916,
+   "rel_l2_same_route": 0.002966749958736595
+  },
+  "gpu.L2": {
+   "tokens": 4096,
+   "route_diff_tokens": 0,
+   "rel_l2_all": 0.0036401361790036535,
+   "rel_l2_same_route": 0.0036401361790036535
+  },
+  "v7x_on.L2": {
+   "tokens": 4096,
+   "route_diff_tokens": 1,
+   "rel_l2_all": 0.004618056209377541,
+   "rel_l2_same_route": 0.0034613721574989053
+  },
+  "v5p_on.L2": {
+   "tokens": 4096,
+   "route_diff_tokens": 2,
+   "rel_l2_all": 0.0034259857586589333,
+   "rel_l2_same_route": 0.0033294377386159104
+  },
+  "gpu.L3": {
+   "tokens": 4096,
+   "route_diff_tokens": 0,
+   "rel_l2_all": 0.004032972420885573,
+   "rel_l2_same_route": 0.004032972420885573
+  },
+  "v7x_on.L3": {
+   "tokens": 4096,
+   "route_diff_tokens": 0,
+   "rel_l2_all": 0.0038895875876732533,
+   "rel_l2_same_route": 0.0038895875876732533
+  },
+  "v5p_on.L3": {
+   "tokens": 4096,
+   "route_diff_tokens": 0,
+   "rel_l2_all": 0.003677290196926787,
+   "rel_l2_same_route": 0.003677290196926787
+  }
+ },
+ "r": {
+  "L1.v7x_on": {
+   "R_all": 0.9180761679888984,
+   "R_same_route": 0.9180761679888984,
+   "route_diff_tokens": 0
+  },
+  "L1.v5p_on": {
+   "R_all": 0.8978728966936008,
+   "R_same_route": 0.8951197528397263,
+   "route_diff_tokens": 1
+  },
+  "L2.v7x_on": {
+   "R_all": 1.2686492983461832,
+   "R_same_route": 0.9508908423437944,
+   "route_diff_tokens": 1
+  },
+  "L2.v5p_on": {
+   "R_all": 0.9411696678877175,
+   "R_same_route": 0.9146464788378371,
+   "route_diff_tokens": 2
+  },
+  "L3.v7x_on": {
+   "R_all": 0.964446859971129,
+   "R_same_route": 0.964446859971129,
+   "route_diff_tokens": 0
+  },
+  "L3.v5p_on": {
+   "R_all": 0.9118064328640552,
+   "R_same_route": 0.9118064328640552,
+   "route_diff_tokens": 0
+  }
+ }
+}

@@ -1,0 +1,4 @@
+golden <golden 根>/ga-a：8 个 rank × 2 个 microbatch，共 300 步；核对 300 步、4800 个单元（每单元 2 个字段：tokens、labels）
+  loss_mask 取值 [1.0]；每个 microbatch 的 nonpad [4096]；token / label 最大值 120025
+  batches/*.bin 的 sha256 与索引一致；拼成全局 batch → MaxText 字段 → 还原，再算的指纹与 golden data/rank*.jsonl 不同 0 处 []
+OK

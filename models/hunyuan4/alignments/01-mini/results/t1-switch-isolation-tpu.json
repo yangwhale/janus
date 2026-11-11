@@ -1,0 +1,1209 @@
+{
+ "what": "逐个开关单独量：以 T1 现行全开配置（MaxText 3741e818，hy4-mini-t1.yml，同 t1zu-a）为底，每次只关一个开关",
+ "findings": [
+  "第 1 步的权重都能用 BF16 精确表示（检查点存的就是 BF16 值），只作用在权重一侧的开关（M13 输出头精度、M27 weights_proj 权重舍 BF16、M8 路由权重舍 BF16）第 1 步必然逐位不变；它们的效果要等 FP32 主权重离开 BF16 网格之后才出现。这三个另用 GPU g2o-a 第 8 步的FP32 主权重重放（forward_with_trained_weights）。",
+  "M13 的输入一侧也在 BF16 网格上：最后那个 norm 的输出是 BF16，转成 FP32 进输出头。",
+  "反向不报对 TPU 自己的 FP32 参照的 R（项目负责人 2026-11-08 15:03 的规矩），只报 TPU 对 GPU 与开关前后是否逐位相同。"
+ ],
+ "reference": {
+  "forward": "GPU 一侧在 CPU 上的 FP64 重算（mini-l1/fp64）",
+  "backward": "等 CPU FP64 第 1 步参照（不用 TPU 自己的 FP32 参照）；现在只报 TPU 对 GPU"
+ },
+ "gpu": {
+  "forward": "g7-l1-a 第 1 步 rank 0 micro 0",
+  "backward": "g2s-a / b / c 第 1 步梯度（三份中位数）"
+ },
+ "rule": "前向 R = rel_L2(TPU, FP64) ÷ rel_L2(GPU, FP64) ≤ 1.2 过（PROTOCOL.md 第 5 节）；本文件只报，不另判",
+ "tpu_on_run": {
+  "forward": "tw-sw-fwd（base 组）",
+  "backward": "tw-sw-base"
+ },
+ "sections": [
+  {
+   "switch": "M13",
+   "key": "logits_matmul_precision",
+   "on_value_in_T1": "（T1 yml 现行值）",
+   "off_value": "default",
+   "what": "highest ↔ default（只开 logits_dot_in_fp32 时 TPU 默认精度只做一遍 BF16）",
+   "tpu_off_run": "tw-sw-m13",
+   "backward": {
+    "输出头权重梯度（wgrad）": {
+     "metric": "第 1 步参数梯度 · TPU 对 GPU 的 rel_L2（GPU 三份取中位数）；gpu_vs_gpu 是 GPU 三份两两之间的中位数（噪声尺子）",
+     "n_tensors": 1,
+     "n_bit_identical_on_off": 0,
+     "worst": {
+      "tensor": "lm_head.weight",
+      "tpu_vs_gpu_on": 0.0018099012931932044,
+      "tpu_vs_gpu_off": 0.001812147731691603,
+      "gpu_vs_gpu": 0.001011493480756427,
+      "tpu_on_vs_off": 5.68714088358051e-05,
+      "bit_identical_on_off": false,
+      "R": "等 CPU FP64 参照"
+     },
+     "median": {
+      "tpu_vs_gpu_on": 0.0018099012931932044,
+      "tpu_vs_gpu_off": 0.001812147731691603,
+      "gpu_vs_gpu": 0.001011493480756427,
+      "tpu_on_vs_off": 5.68714088358051e-05
+     }
+    },
+    "输出头的 dgrad 流到的第一处参数（最后的 norm、hc_head）": {
+     "metric": "第 1 步参数梯度 · TPU 对 GPU 的 rel_L2（GPU 三份取中位数）；gpu_vs_gpu 是 GPU 三份两两之间的中位数（噪声尺子）",
+     "n_tensors": 4,
+     "n_bit_identical_on_off": 0,
+     "worst": {
+      "tensor": "model.hc_head.hc_head_fn",
+      "tpu_vs_gpu_on": 0.08446992012350972,
+      "tpu_vs_gpu_off": 0.08446957853207479,
+      "gpu_vs_gpu": 0.0638301544095883,
+      "tpu_on_vs_off": 2.7845770571051586e-05,
+      "bit_identical_on_off": false,
+      "R": "等 CPU FP64 参照"
+     },
+     "median": {
+      "tpu_vs_gpu_on": 0.03994961037042999,
+      "tpu_vs_gpu_off": 0.039943140494437465,
+      "gpu_vs_gpu": 0.04636989522151881,
+      "tpu_on_vs_off": 2.423847262363517e-05
+     }
+    }
+   },
+   "loss": {
+    "on": 12.889265060424805,
+    "off": 12.889265060424805
+   },
+   "all_grads_bit_identical": {
+    "n_identical": 20,
+    "n_tensors": 205
+   },
+   "forward": {
+    "输出头 logits": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 1,
+     "worst_op": "lm_head",
+     "gpu": 2.5627139153126073e-07,
+     "tpu_on": 8.31716490810812e-08,
+     "tpu_off": 8.31716490810812e-08,
+     "R_on": 0.3245451963409489,
+     "R_off": 0.3245451963409489,
+     "tpu_vs_gpu_on": 2.680317984103131e-07,
+     "tpu_vs_gpu_off": 2.680317984103131e-07,
+     "R_max_over_ops": {
+      "on": 0.3245451963409489,
+      "off": 0.3245451963409489
+     }
+    }
+   },
+   "forward_with_trained_weights": {
+    "metric": "算子输出 · rel_L2 对 FP64；两种参照：权重取 FP32 主权重 / 同一份权重舍成 BF16",
+    "weights": "GPU g2o-a 第 8 步的 FP32 主权重（main_param_after）",
+    "inputs": "GPU g7-l1-a 第 1 步抓到的算子输入（BF16 网格上）",
+    "gpu": "无（GPU 的这几个算子用的是第 1 步权重）",
+    "ops": {
+     "lm_head": {
+      "on": {
+       "overrides": [],
+       "vs_fp64_fp32_weights": 8.268099431784675e-08,
+       "vs_fp64_bf16_weights": 0.0027303364542712693
+      },
+      "off": {
+       "overrides": [
+        "logits_matmul_precision=default"
+       ],
+       "vs_fp64_fp32_weights": 0.002729489282260787,
+       "vs_fp64_bf16_weights": 8.227974536142445e-08
+      }
+     }
+    }
+   },
+   "note": "第 1 步的输出头权重与输入都在 BF16 网格上（检查点存的是 BF16 值；输入是最后那个 norm 的 BF16 输出转成 FP32），highest 与 default 的乘积在 FP32 累加里没有差别，所以第 1 步单算子逐位相同；换上离开网格的 FP32 主权重后才看得到（见 forward_with_trained_weights）。"
+  },
+  {
+   "switch": "M26",
+   "key": "remat_policy",
+   "on_value_in_T1": "（T1 yml 现行值）",
+   "off_value": "full",
+   "what": "custom（存路由索引）↔ full（反向重算，重选路由）",
+   "tpu_off_run": "tw-sw-m26",
+   "backward": {
+    "MoE 层参数梯度（第 1–6 层与 MTP 的路由、专家、共享专家）": {
+     "metric": "第 1 步参数梯度 · TPU 对 GPU 的 rel_L2（GPU 三份取中位数）；gpu_vs_gpu 是 GPU 三份两两之间的中位数（噪声尺子）",
+     "n_tensors": 45,
+     "n_bit_identical_on_off": 0,
+     "worst": {
+      "tensor": "model.mtp_layers.0.mlp.experts.gate_up_proj",
+      "tpu_vs_gpu_on": 0.047463083962511955,
+      "tpu_vs_gpu_off": 0.04787463055543174,
+      "gpu_vs_gpu": 0.03527331576196464,
+      "tpu_on_vs_off": 0.026980107688507,
+      "bit_identical_on_off": false,
+      "R": "等 CPU FP64 参照"
+     },
+     "median": {
+      "tpu_vs_gpu_on": 0.0042432158369058275,
+      "tpu_vs_gpu_off": 0.004213585429535287,
+      "gpu_vs_gpu": 0.0027678772295326327,
+      "tpu_on_vs_off": 0.0022014640877325723
+     }
+    },
+    "全部参数": {
+     "metric": "第 1 步参数梯度 · TPU 对 GPU 的 rel_L2（GPU 三份取中位数）；gpu_vs_gpu 是 GPU 三份两两之间的中位数（噪声尺子）",
+     "n_tensors": 205,
+     "n_bit_identical_on_off": 5,
+     "worst": {
+      "tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_scale",
+      "tpu_vs_gpu_on": 1.616255005817485,
+      "tpu_vs_gpu_off": 1.2984374730274435,
+      "gpu_vs_gpu": 0.586867983696394,
+      "tpu_on_vs_off": 0.452768147587657,
+      "bit_identical_on_off": false,
+      "R": "等 CPU FP64 参照"
+     },
+     "median": {
+      "tpu_vs_gpu_on": 0.004278536154985268,
+      "tpu_vs_gpu_off": 0.004231399372838913,
+      "gpu_vs_gpu": 0.0025006280010543415,
+      "tpu_on_vs_off": 0.0018890436711170326
+     }
+    }
+   },
+   "loss": {
+    "on": 12.889265060424805,
+    "off": 12.889266967773438
+   },
+   "all_grads_bit_identical": {
+    "n_identical": 5,
+    "n_tensors": 205
+   },
+   "routing_reselection_direct": {
+    "how": "MaxText debug_routing_digest：每次 top-k 记到主机，反向重算的那次配上它重复的前向，数选得不同的 (token, 专家) 槽位；只有 JAX 进程 0 的 4 个设备（一半的 token）",
+    "custom": {
+     "process": 0,
+     "local_devices": 4,
+     "calls": 56,
+     "repeats": 0,
+     "slots_compared": 0,
+     "slots_differ": 0,
+     "fraction": null
+    },
+    "full": {
+     "process": 0,
+     "local_devices": 4,
+     "calls": 104,
+     "repeats": 48,
+     "slots_compared": 786432,
+     "slots_differ": 922,
+     "fraction": 0.0011723836263020833
+    }
+   },
+   "reselected_slots": {
+    "count": "待查",
+    "how": "梯度不逐位相同；没有直接计数的工具"
+   },
+   "forward": {}
+  },
+  {
+   "switch": "M27",
+   "key": "indexer_weights_proj_bf16_weight",
+   "on_value_in_T1": "（T1 yml 现行值）",
+   "off_value": "false",
+   "what": "weights_proj 乘 BF16 舍入后的权重（FP32 输出）↔ 直接乘 FP32 权重",
+   "tpu_off_run": "tw-sw-m27",
+   "backward": {
+    "索引器 weights_proj 权重梯度": {
+     "metric": "第 1 步参数梯度 · TPU 对 GPU 的 rel_L2（GPU 三份取中位数）；gpu_vs_gpu 是 GPU 三份两两之间的中位数（噪声尺子）",
+     "n_tensors": 4,
+     "n_bit_identical_on_off": 4,
+     "worst": {
+      "tensor": "model.mtp_layers.0.self_attn.indexer.weights_proj.weight",
+      "tpu_vs_gpu_on": 0.0028246455377256793,
+      "tpu_vs_gpu_off": 0.0028246455377256793,
+      "gpu_vs_gpu": 0.0014834931954456068,
+      "tpu_on_vs_off": 0.0,
+      "bit_identical_on_off": true,
+      "R": "等 CPU FP64 参照"
+     },
+     "median": {
+      "tpu_vs_gpu_on": 0.002399981459045812,
+      "tpu_vs_gpu_off": 0.002399981459045812,
+      "gpu_vs_gpu": 0.000727977829566641,
+      "tpu_on_vs_off": 0.0
+     }
+    }
+   },
+   "loss": {
+    "on": 12.889265060424805,
+    "off": 12.889265060424805
+   },
+   "all_grads_bit_identical": {
+    "n_identical": 205,
+    "n_tensors": 205
+   },
+   "forward": {
+    "注意力整块（含索引器 weights_proj）": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 8,
+     "worst_op": "2.self_attn",
+     "gpu": 0.003359980011127734,
+     "tpu_on": 0.0030893684444446264,
+     "tpu_off": 0.0030893684444446264,
+     "R_on": 0.9194603641132137,
+     "R_off": 0.9194603641132137,
+     "tpu_vs_gpu_on": 0.004043759709901379,
+     "tpu_vs_gpu_off": 0.004043759709901379,
+     "R_max_over_ops": {
+      "on": 0.9194603641132137,
+      "off": 0.9194603641132137
+     }
+    }
+   },
+   "forward_with_trained_weights": {
+    "metric": "算子输出 · rel_L2 对 FP64；两种参照：权重取 FP32 主权重 / 同一份权重舍成 BF16",
+    "weights": "GPU g2o-a 第 8 步的 FP32 主权重（main_param_after）",
+    "inputs": "GPU g7-l1-a 第 1 步抓到的算子输入（BF16 网格上）",
+    "gpu": "无（GPU 的这几个算子用的是第 1 步权重）",
+    "ops": {
+     "0.self_attn.indexer.weights_proj": {
+      "on": {
+       "overrides": [],
+       "vs_fp64_fp32_weights": 0.0009598233993617311,
+       "vs_fp64_bf16_weights": 8.463751783610399e-08
+      },
+      "off": {
+       "overrides": [
+        "indexer_weights_proj_bf16_weight=false"
+       ],
+       "vs_fp64_fp32_weights": 8.206666324019036e-08,
+       "vs_fp64_bf16_weights": 0.0009592242344904575
+      }
+     },
+     "1.self_attn.indexer.weights_proj": {
+      "on": {
+       "overrides": [],
+       "vs_fp64_fp32_weights": 0.0009566650101755546,
+       "vs_fp64_bf16_weights": 8.269999880921373e-08
+      },
+      "off": {
+       "overrides": [
+        "indexer_weights_proj_bf16_weight=false"
+       ],
+       "vs_fp64_fp32_weights": 8.359231742587773e-08,
+       "vs_fp64_bf16_weights": 0.0009560663478998701
+      }
+     },
+     "5.self_attn.indexer.weights_proj": {
+      "on": {
+       "overrides": [],
+       "vs_fp64_fp32_weights": 0.0012457786094896982,
+       "vs_fp64_bf16_weights": 7.994470217114324e-08
+      },
+      "off": {
+       "overrides": [
+        "indexer_weights_proj_bf16_weight=false"
+       ],
+       "vs_fp64_fp32_weights": 8.024398709211661e-08,
+       "vs_fp64_bf16_weights": 0.0012447435530652596
+      }
+     },
+     "mtp0.self_attn.indexer.weights_proj": {
+      "on": {
+       "overrides": [],
+       "vs_fp64_fp32_weights": 0.0010748852508181204,
+       "vs_fp64_bf16_weights": 8.261238493798032e-08
+      },
+      "off": {
+       "overrides": [
+        "indexer_weights_proj_bf16_weight=false"
+       ],
+       "vs_fp64_fp32_weights": 8.312981580413309e-08,
+       "vs_fp64_bf16_weights": 0.001073995383321437
+      }
+     }
+    }
+   },
+   "note": "同 M13：第 1 步 weights_proj 的权重在 BF16 网格上，权重先舍成 BF16 是恒等变换，第 1 步逐位相同；换上训练后的权重才看得到。"
+  },
+  {
+   "switch": "M23",
+   "key": "indexer_fp32_scores",
+   "on_value_in_T1": "（T1 yml 现行值）",
+   "off_value": "false",
+   "what": "索引器打分与 KD 教师 q·k 真 FP32 ↔ 一遍 BF16",
+   "tpu_off_run": "tw-sw-m23",
+   "backward": {
+    "索引器参数梯度": {
+     "metric": "第 1 步参数梯度 · TPU 对 GPU 的 rel_L2（GPU 三份取中位数）；gpu_vs_gpu 是 GPU 三份两两之间的中位数（噪声尺子）",
+     "n_tensors": 20,
+     "n_bit_identical_on_off": 0,
+     "worst": {
+      "tensor": "model.layers.5.self_attn.indexer.wq_b.weight",
+      "tpu_vs_gpu_on": 0.005913325571474552,
+      "tpu_vs_gpu_off": 0.0059013812544679205,
+      "gpu_vs_gpu": 0.002668307923221642,
+      "tpu_on_vs_off": 0.0019122169577136016,
+      "bit_identical_on_off": false,
+      "R": "等 CPU FP64 参照"
+     },
+     "median": {
+      "tpu_vs_gpu_on": 0.002690726304735193,
+      "tpu_vs_gpu_off": 0.0026702035670542667,
+      "gpu_vs_gpu": 0.0003025010231502908,
+      "tpu_on_vs_off": 0.00045350310969607586
+     }
+    }
+   },
+   "loss": {
+    "on": 12.889265060424805,
+    "off": 12.889263153076172
+   },
+   "all_grads_bit_identical": {
+    "n_identical": 0,
+    "n_tensors": 205
+   },
+   "forward": {
+    "注意力整块（含索引器打分）": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 8,
+     "worst_op": "0.self_attn",
+     "gpu": 0.00866830289072051,
+     "tpu_on": 0.007946058340793318,
+     "tpu_off": 0.008117457083712882,
+     "R_on": 0.9166798208331689,
+     "R_off": 0.9364528658086794,
+     "tpu_vs_gpu_on": 0.007864580629724475,
+     "tpu_vs_gpu_off": 0.00770535329820251,
+     "R_max_over_ops": {
+      "on": 0.9194603641132137,
+      "off": 0.9364528658086794
+     }
+    }
+   }
+  },
+  {
+   "switch": "M9",
+   "key": "rmsnorm_single_rounding",
+   "on_value_in_T1": "（T1 yml 现行值）",
+   "off_value": "false",
+   "what": "FP32 里乘完 scale 只舍一次 ↔ 两次",
+   "tpu_off_run": "tw-sw-m9",
+   "backward": {
+    "RMSNorm scale 梯度": {
+     "metric": "第 1 步参数梯度 · TPU 对 GPU 的 rel_L2（GPU 三份取中位数）；gpu_vs_gpu 是 GPU 三份两两之间的中位数（噪声尺子）",
+     "n_tensors": 40,
+     "n_bit_identical_on_off": 1,
+     "worst": {
+      "tensor": "model.mtp_layers.0.post_attention_layernorm.weight",
+      "tpu_vs_gpu_on": 0.02084693510433065,
+      "tpu_vs_gpu_off": 0.02076302742994851,
+      "gpu_vs_gpu": 0.015670995168572836,
+      "tpu_on_vs_off": 0.004306483194097554,
+      "bit_identical_on_off": false,
+      "R": "等 CPU FP64 参照"
+     },
+     "median": {
+      "tpu_vs_gpu_on": 0.0028319975018975116,
+      "tpu_vs_gpu_off": 0.0032427089097543417,
+      "gpu_vs_gpu": 0.0017918763950501896,
+      "tpu_on_vs_off": 0.0024249948252432693
+     }
+    }
+   },
+   "loss": {
+    "on": 12.889265060424805,
+    "off": 12.889263153076172
+   },
+   "all_grads_bit_identical": {
+    "n_identical": 8,
+    "n_tensors": 205
+   },
+   "forward": {
+    "RMSNorm 输出": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 20,
+     "worst_op": "mtp0.post_attention_layernorm",
+     "gpu": 0.0023492874205841095,
+     "tpu_on": 0.0023517521463475087,
+     "tpu_off": 0.0023517521463475087,
+     "R_on": 1.0010491375988326,
+     "R_off": 1.0010491375988326,
+     "tpu_vs_gpu_on": 0.0006520682642974228,
+     "tpu_vs_gpu_off": 0.0006520682642974228,
+     "R_max_over_ops": {
+      "on": 1.0010491375988326,
+      "off": 1.0010491375988326
+     }
+    }
+   },
+   "note": "已核实（results/t1-hlo-probe-tpu.json，TPU tw-hlo-a / tw-hlo-b）：默认写法的优化后 HLO 里有 FP32→BF16→FP32 的往返，但 TPU 后端在 excess precision 下把它省掉了，结果 99.9997% 逐位等于单次舍入；--xla_allow_excess_precision=false 时默认写法 99.9987% 逐位等于两次舍入（对 FP64 的 rel_L2 2.33e-3 对单次舍入的 1.67e-3），开关才起作用。整网编译里 y 跨融合边界以 BF16 落盘时往返不会被省（推断），所以第 1 步的 RMSNorm scale 梯度开关前后不同。"
+  },
+  {
+   "switch": "M8",
+   "key": "routed_gate_bf16_rounding",
+   "on_value_in_T1": "（T1 yml 现行值）",
+   "off_value": "false",
+   "what": "路由 GateLogit 权重先舍成 BF16 ↔ FP32 权重",
+   "tpu_off_run": "tw-sw-m8",
+   "backward": {
+    "路由权重梯度": {
+     "metric": "第 1 步参数梯度 · TPU 对 GPU 的 rel_L2（GPU 三份取中位数）；gpu_vs_gpu 是 GPU 三份两两之间的中位数（噪声尺子）",
+     "n_tensors": 7,
+     "n_bit_identical_on_off": 7,
+     "worst": {
+      "tensor": "model.mtp_layers.0.mlp.gate.weight",
+      "tpu_vs_gpu_on": 0.04731431816233962,
+      "tpu_vs_gpu_off": 0.04731431816233962,
+      "gpu_vs_gpu": 0.040392845133195604,
+      "tpu_on_vs_off": 0.0,
+      "bit_identical_on_off": true,
+      "R": "等 CPU FP64 参照"
+     },
+     "median": {
+      "tpu_vs_gpu_on": 0.02322738995283742,
+      "tpu_vs_gpu_off": 0.02322738995283742,
+      "gpu_vs_gpu": 0.015746568322448876,
+      "tpu_on_vs_off": 0.0
+     }
+    }
+   },
+   "loss": {
+    "on": 12.889265060424805,
+    "off": 12.889265060424805
+   },
+   "all_grads_bit_identical": {
+    "n_identical": 205,
+    "n_tensors": 205
+   },
+   "forward": {
+    "路由 logits": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 7,
+     "worst_op": "4.mlp.gate.logits",
+     "gpu": 1.1289045802040979e-06,
+     "tpu_on": 1.2004139075975872e-07,
+     "tpu_off": 1.2004139075975872e-07,
+     "R_on": 0.10633439961600305,
+     "R_off": 0.10633439961600305,
+     "tpu_vs_gpu_on": 1.136617906537339e-06,
+     "tpu_vs_gpu_off": 1.136617906537339e-06,
+     "R_max_over_ops": {
+      "on": 0.10633439961600305,
+      "off": 0.10633439961600305
+     }
+    },
+    "MoE 整块（自选路由）": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 7,
+     "worst_op": "6.mlp(own routing)",
+     "gpu": 0.004928719745992975,
+     "tpu_on": 0.004649486598768041,
+     "tpu_off": 0.004649486598768041,
+     "R_on": 0.9433457040335984,
+     "R_off": 0.9433457040335984,
+     "tpu_vs_gpu_on": 0.005281852552031322,
+     "tpu_vs_gpu_off": 0.005281852552031322,
+     "R_max_over_ops": {
+      "on": 0.9433457040335984,
+      "off": 0.9433457040335984
+     }
+    }
+   },
+   "forward_with_trained_weights": {
+    "metric": "算子输出 · rel_L2 对 FP64；两种参照：权重取 FP32 主权重 / 同一份权重舍成 BF16",
+    "weights": "GPU g2o-a 第 8 步的 FP32 主权重（main_param_after）",
+    "inputs": "GPU g7-l1-a 第 1 步抓到的算子输入（BF16 网格上）",
+    "gpu": "无（GPU 的这几个算子用的是第 1 步权重）",
+    "ops": {
+     "1.mlp.gate.logits": {
+      "on": {
+       "overrides": [],
+       "vs_fp64_fp32_weights": 0.0014108857419697018,
+       "vs_fp64_bf16_weights": 7.980873615426607e-08
+      },
+      "off": {
+       "overrides": [
+        "routed_gate_bf16_rounding=false"
+       ],
+       "vs_fp64_fp32_weights": 7.996111117742054e-08,
+       "vs_fp64_bf16_weights": 0.0014106290066753931
+      }
+     },
+     "2.mlp.gate.logits": {
+      "on": {
+       "overrides": [],
+       "vs_fp64_fp32_weights": 0.0016643504037235357,
+       "vs_fp64_bf16_weights": 9.146258105854414e-08
+      },
+      "off": {
+       "overrides": [
+        "routed_gate_bf16_rounding=false"
+       ],
+       "vs_fp64_fp32_weights": 9.176762409400602e-08,
+       "vs_fp64_bf16_weights": 0.0016647543216515744
+      }
+     },
+     "3.mlp.gate.logits": {
+      "on": {
+       "overrides": [],
+       "vs_fp64_fp32_weights": 0.0015499384704268755,
+       "vs_fp64_bf16_weights": 8.513502489239444e-08
+      },
+      "off": {
+       "overrides": [
+        "routed_gate_bf16_rounding=false"
+       ],
+       "vs_fp64_fp32_weights": 8.616684232952201e-08,
+       "vs_fp64_bf16_weights": 0.0015497461070026087
+      }
+     },
+     "4.mlp.gate.logits": {
+      "on": {
+       "overrides": [],
+       "vs_fp64_fp32_weights": 0.002460486257642388,
+       "vs_fp64_bf16_weights": 1.19954032358243e-07
+      },
+      "off": {
+       "overrides": [
+        "routed_gate_bf16_rounding=false"
+       ],
+       "vs_fp64_fp32_weights": 1.2071394687361376e-07,
+       "vs_fp64_bf16_weights": 0.0024600985810698615
+      }
+     },
+     "5.mlp.gate.logits": {
+      "on": {
+       "overrides": [],
+       "vs_fp64_fp32_weights": 0.0019259970821862828,
+       "vs_fp64_bf16_weights": 1.018697889600726e-07
+      },
+      "off": {
+       "overrides": [
+        "routed_gate_bf16_rounding=false"
+       ],
+       "vs_fp64_fp32_weights": 1.0271690310554576e-07,
+       "vs_fp64_bf16_weights": 0.001926485682565551
+      }
+     },
+     "6.mlp.gate.logits": {
+      "on": {
+       "overrides": [],
+       "vs_fp64_fp32_weights": 0.001631845166214493,
+       "vs_fp64_bf16_weights": 7.970843981733475e-08
+      },
+      "off": {
+       "overrides": [
+        "routed_gate_bf16_rounding=false"
+       ],
+       "vs_fp64_fp32_weights": 7.984452673442909e-08,
+       "vs_fp64_bf16_weights": 0.0016326902056727087
+      }
+     },
+     "mtp0.mlp.gate.logits": {
+      "on": {
+       "overrides": [],
+       "vs_fp64_fp32_weights": 0.00158248394114451,
+       "vs_fp64_bf16_weights": 8.33105819676855e-08
+      },
+      "off": {
+       "overrides": [
+        "routed_gate_bf16_rounding=false"
+       ],
+       "vs_fp64_fp32_weights": 8.356655829192843e-08,
+       "vs_fp64_bf16_weights": 0.0015822971776582903
+      }
+     }
+    }
+   },
+   "note": "同 M13：第 1 步路由权重在 BF16 网格上，第 1 步逐位相同；换上训练后的权重才看得到。"
+  },
+  {
+   "switch": "M10",
+   "key": "mlp_activation_round_per_op",
+   "on_value_in_T1": "（T1 yml 现行值）",
+   "off_value": "false",
+   "what": "SwiGLU：silu 舍一次、乘积再舍一次 ↔ 不按算子舍",
+   "tpu_off_run": "tw-sw-m10",
+   "backward": {
+    "MLP / 专家权重梯度": {
+     "metric": "第 1 步参数梯度 · TPU 对 GPU 的 rel_L2（GPU 三份取中位数）；gpu_vs_gpu 是 GPU 三份两两之间的中位数（噪声尺子）",
+     "n_tensors": 38,
+     "n_bit_identical_on_off": 0,
+     "worst": {
+      "tensor": "model.mtp_layers.0.mlp.experts.gate_up_proj",
+      "tpu_vs_gpu_on": 0.047463083962511955,
+      "tpu_vs_gpu_off": 0.047631954556952114,
+      "gpu_vs_gpu": 0.03527331576196464,
+      "tpu_on_vs_off": 0.04408996807179622,
+      "bit_identical_on_off": false,
+      "R": "等 CPU FP64 参照"
+     },
+     "median": {
+      "tpu_vs_gpu_on": 0.004083685777573398,
+      "tpu_vs_gpu_off": 0.0042193960211970045,
+      "gpu_vs_gpu": 0.0025281388950414846,
+      "tpu_on_vs_off": 0.003428031903928262
+     }
+    }
+   },
+   "loss": {
+    "on": 12.889265060424805,
+    "off": 12.889264106750488
+   },
+   "all_grads_bit_identical": {
+    "n_identical": 5,
+    "n_tensors": 205
+   },
+   "forward": {
+    "稠密 MLP": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 1,
+     "worst_op": "0.mlp",
+     "gpu": 0.003726420473052019,
+     "tpu_on": 0.003307642518006028,
+     "tpu_off": 0.0028660575066773316,
+     "R_on": 0.8876192426285693,
+     "R_off": 0.7691181194938983,
+     "tpu_vs_gpu_on": 0.0037968823703497462,
+     "tpu_vs_gpu_off": 0.0040116095407531525,
+     "R_max_over_ops": {
+      "on": 0.8876192426285693,
+      "off": 0.7691181194938983
+     }
+    },
+    "共享专家": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 7,
+     "worst_op": "1.mlp.shared_experts",
+     "gpu": 0.0037015420068959386,
+     "tpu_on": 0.003314022363514125,
+     "tpu_off": 0.002859091705982768,
+     "R_on": 0.8953085922948144,
+     "R_off": 0.7724055814188537,
+     "tpu_vs_gpu_on": 0.0037411113489262404,
+     "tpu_vs_gpu_off": 0.003987189720073144,
+     "R_max_over_ops": {
+      "on": 0.8953085922948144,
+      "off": 0.7724055814188537
+     }
+    },
+    "路由专家": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 7,
+     "worst_op": "6.mlp.routed_experts",
+     "gpu": 0.0053686766121088655,
+     "tpu_on": 0.004664446188311161,
+     "tpu_off": 0.004350078669387578,
+     "R_on": 0.8688260674503402,
+     "R_off": 0.8102701994707829,
+     "tpu_vs_gpu_on": null,
+     "tpu_vs_gpu_off": null,
+     "R_max_over_ops": {
+      "on": 0.8688260674503402,
+      "off": 0.8102701994707829
+     }
+    }
+   }
+  },
+  {
+   "switch": "M12",
+   "key": "dense_fp32_accumulation",
+   "on_value_in_T1": "（T1 yml 现行值）",
+   "off_value": "false",
+   "what": "DenseGeneral：FP32 累加、输出舍一次 ↔ 默认",
+   "tpu_off_run": "tw-sw-m12",
+   "backward": {
+    "线性层权重梯度（全部 .weight，除 norm）": {
+     "metric": "第 1 步参数梯度 · TPU 对 GPU 的 rel_L2（GPU 三份取中位数）；gpu_vs_gpu 是 GPU 三份两两之间的中位数（噪声尺子）",
+     "n_tensors": 70,
+     "n_bit_identical_on_off": 1,
+     "worst": {
+      "tensor": "model.layers.6.self_attn.q_a_proj.weight",
+      "tpu_vs_gpu_on": 0.011649975685690674,
+      "tpu_vs_gpu_off": 0.014909692246639166,
+      "gpu_vs_gpu": 0.005529709707662936,
+      "tpu_on_vs_off": 0.015525352986396502,
+      "bit_identical_on_off": false,
+      "R": "等 CPU FP64 参照"
+     },
+     "median": {
+      "tpu_vs_gpu_on": 0.0033704272930266633,
+      "tpu_vs_gpu_off": 0.00571475921707389,
+      "gpu_vs_gpu": 0.002073185423331526,
+      "tpu_on_vs_off": 0.005586972936110627
+     }
+    }
+   },
+   "loss": {
+    "on": 12.889265060424805,
+    "off": 12.889260292053223
+   },
+   "all_grads_bit_identical": {
+    "n_identical": 5,
+    "n_tensors": 205
+   },
+   "forward": {
+    "输出门投影": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 8,
+     "worst_op": "2.self_attn.gate_proj",
+     "gpu": 0.001655587278370889,
+     "tpu_on": 0.00165558699645391,
+     "tpu_off": 0.00165558699645391,
+     "R_on": 0.9999998297178392,
+     "R_off": 0.9999998297178392,
+     "tpu_vs_gpu_on": 6.857081157050266e-05,
+     "tpu_vs_gpu_off": 6.857081157050266e-05,
+     "R_max_over_ops": {
+      "on": 0.9999998297178392,
+      "off": 0.9999998297178392
+     }
+    },
+    "注意力整块": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 8,
+     "worst_op": "2.self_attn",
+     "gpu": 0.003359980011127734,
+     "tpu_on": 0.0030893684444446264,
+     "tpu_off": 0.0030893684444446264,
+     "R_on": 0.9194603641132137,
+     "R_off": 0.9194603641132137,
+     "tpu_vs_gpu_on": 0.004043759709901379,
+     "tpu_vs_gpu_off": 0.004043759709901379,
+     "R_max_over_ops": {
+      "on": 0.9194603641132137,
+      "off": 0.9194603641132137
+     }
+    },
+    "稠密 MLP": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 1,
+     "worst_op": "0.mlp",
+     "gpu": 0.003726420473052019,
+     "tpu_on": 0.003307642518006028,
+     "tpu_off": 0.003345659674566482,
+     "R_on": 0.8876192426285693,
+     "R_off": 0.8978213002963443,
+     "tpu_vs_gpu_on": 0.0037968823703497462,
+     "tpu_vs_gpu_off": 0.0035489476607438643,
+     "R_max_over_ops": {
+      "on": 0.8876192426285693,
+      "off": 0.8978213002963443
+     }
+    },
+    "共享专家": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 7,
+     "worst_op": "5.mlp.shared_experts",
+     "gpu": 0.003733135354143068,
+     "tpu_on": 0.0032805780539056587,
+     "tpu_off": 0.0033654747359973675,
+     "R_on": 0.8787728658873413,
+     "R_off": 0.9015142545695088,
+     "tpu_vs_gpu_on": 0.003817712755266892,
+     "tpu_vs_gpu_off": 0.0035270874412786516,
+     "R_max_over_ops": {
+      "on": 0.8953085922948144,
+      "off": 0.9015142545695088
+     }
+    },
+    "MTP eh_proj": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 1,
+     "worst_op": "mtp0.eh_proj",
+     "gpu": 0.0016593255564812013,
+     "tpu_on": 0.0016593242548586416,
+     "tpu_off": 0.0016593242548586416,
+     "R_on": 0.9999992155713178,
+     "R_off": 0.9999992155713178,
+     "tpu_vs_gpu_on": 0.00010331954190010585,
+     "tpu_vs_gpu_off": 0.00010331954190010585,
+     "R_max_over_ops": {
+      "on": 0.9999992155713178,
+      "off": 0.9999992155713178
+     }
+    }
+   }
+  },
+  {
+   "switch": "M28",
+   "key": "ihc_stream_sum_unrolled",
+   "on_value_in_T1": "（T1 yml 现行值）",
+   "off_value": "false",
+   "what": "iHC 四路流加权和逐路 FP32 乘加 ↔ HIGHEST einsum",
+   "tpu_off_run": "tw-sw-m28",
+   "backward": {
+    "iHC 参数梯度": {
+     "metric": "第 1 步参数梯度 · TPU 对 GPU 的 rel_L2（GPU 三份取中位数）；gpu_vs_gpu 是 GPU 三份两两之间的中位数（噪声尺子）",
+     "n_tensors": 45,
+     "n_bit_identical_on_off": 0,
+     "worst": {
+      "tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_scale",
+      "tpu_vs_gpu_on": 1.616255005817485,
+      "tpu_vs_gpu_off": 2.151767931319952,
+      "gpu_vs_gpu": 0.586867983696394,
+      "tpu_on_vs_off": 0.366718144963784,
+      "bit_identical_on_off": false,
+      "R": "等 CPU FP64 参照"
+     },
+     "median": {
+      "tpu_vs_gpu_on": 0.008308739803939836,
+      "tpu_vs_gpu_off": 0.008180804218696255,
+      "gpu_vs_gpu": 0.003575252084964555,
+      "tpu_on_vs_off": 0.005497727209067745
+     }
+    }
+   },
+   "loss": {
+    "on": 12.889265060424805,
+    "off": 12.889265060424805
+   },
+   "all_grads_bit_identical": {
+    "n_identical": 0,
+    "n_tensors": 205
+   },
+   "forward": {
+    "iHC 混合": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 14,
+     "worst_op": "0.ffn_hc.out",
+     "gpu": 0.0011653780185288422,
+     "tpu_on": 0.0011653780195652315,
+     "tpu_off": 0.0011653780199228768,
+     "R_on": 1.000000000889316,
+     "R_off": 1.000000001196208,
+     "tpu_vs_gpu_on": 1.2226037288056914e-05,
+     "tpu_vs_gpu_off": 1.529653531604231e-05,
+     "R_max_over_ops": {
+      "on": 1.000000000889316,
+      "off": 1.000000001196208
+     }
+    },
+    "iHC 写回": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 15,
+     "worst_op": "3.attn_residual",
+     "gpu": 0.0016537070334329694,
+     "tpu_on": 0.0016537070338181132,
+     "tpu_off": 0.0016537070338181132,
+     "R_on": 1.0000000002328973,
+     "R_off": 1.0000000002328973,
+     "tpu_vs_gpu_on": 9.536668349524675e-06,
+     "tpu_vs_gpu_off": 9.536668349524675e-06,
+     "R_max_over_ops": {
+      "on": 1.0000000002328973,
+      "off": 1.0000000002328973
+     }
+    },
+    "hc_head": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 1,
+     "worst_op": "hc_head",
+     "gpu": 0.0015609315541685216,
+     "tpu_on": 0.0015609315542673826,
+     "tpu_off": 0.0015609315542673826,
+     "R_on": 1.0000000000633347,
+     "R_off": 1.0000000000633347,
+     "tpu_vs_gpu_on": 4.170611753140841e-06,
+     "tpu_vs_gpu_off": 4.170611753140841e-06,
+     "R_max_over_ops": {
+      "on": 1.0000000000633347,
+      "off": 1.0000000000633347
+     }
+    }
+   }
+  },
+  {
+   "switch": "M36",
+   "key": "ihc_force_bf16_rounding",
+   "on_value_in_T1": "（T1 yml 现行值）",
+   "off_value": "false",
+   "what": "iHC 分支输入与流 reduce_precision 后舍 BF16 ↔ 可能被 XLA 省掉的 astype 往返",
+   "tpu_off_run": "tw-sw-m36",
+   "backward": {
+    "iHC 参数梯度": {
+     "metric": "第 1 步参数梯度 · TPU 对 GPU 的 rel_L2（GPU 三份取中位数）；gpu_vs_gpu 是 GPU 三份两两之间的中位数（噪声尺子）",
+     "n_tensors": 45,
+     "n_bit_identical_on_off": 0,
+     "worst": {
+      "tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_scale",
+      "tpu_vs_gpu_on": 1.616255005817485,
+      "tpu_vs_gpu_off": 0.5010661463782099,
+      "gpu_vs_gpu": 0.586867983696394,
+      "tpu_on_vs_off": 2.0983315551175927,
+      "bit_identical_on_off": false,
+      "R": "等 CPU FP64 参照"
+     },
+     "median": {
+      "tpu_vs_gpu_on": 0.008308739803939836,
+      "tpu_vs_gpu_off": 0.009714889275388336,
+      "gpu_vs_gpu": 0.003575252084964555,
+      "tpu_on_vs_off": 0.008181628282312574
+     }
+    }
+   },
+   "loss": {
+    "on": 12.889265060424805,
+    "off": 12.889262199401855
+   },
+   "all_grads_bit_identical": {
+    "n_identical": 0,
+    "n_tensors": 205
+   },
+   "forward": {
+    "iHC 混合": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 14,
+     "worst_op": "0.ffn_hc.out",
+     "gpu": 0.0011653780185288422,
+     "tpu_on": 0.0011653780195652315,
+     "tpu_off": 0.0011653780195652315,
+     "R_on": 1.000000000889316,
+     "R_off": 1.000000000889316,
+     "tpu_vs_gpu_on": 1.2226037288056914e-05,
+     "tpu_vs_gpu_off": 1.2226037288056914e-05,
+     "R_max_over_ops": {
+      "on": 1.000000000889316,
+      "off": 1.000000000889316
+     }
+    },
+    "iHC 写回": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 15,
+     "worst_op": "3.attn_residual",
+     "gpu": 0.0016537070334329694,
+     "tpu_on": 0.0016537070338181132,
+     "tpu_off": 0.0016537070338181132,
+     "R_on": 1.0000000002328973,
+     "R_off": 1.0000000002328973,
+     "tpu_vs_gpu_on": 9.536668349524675e-06,
+     "tpu_vs_gpu_off": 9.536668349524675e-06,
+     "R_max_over_ops": {
+      "on": 1.0000000002328973,
+      "off": 1.0000000002328973
+     }
+    },
+    "hc_head": {
+     "metric": "算子输出 · rel_L2 对 FP64（同一 GPU 输入）；逐算子取最差",
+     "n_ops": 1,
+     "worst_op": "hc_head",
+     "gpu": 0.0015609315541685216,
+     "tpu_on": 0.0015609315542673826,
+     "tpu_off": 0.0015609315542673826,
+     "R_on": 1.0000000000633347,
+     "R_off": 1.0000000000633347,
+     "tpu_vs_gpu_on": 4.170611753140841e-06,
+     "tpu_vs_gpu_off": 4.170611753140841e-06,
+     "R_max_over_ops": {
+      "on": 1.0000000000633347,
+      "off": 1.0000000000633347
+     }
+    }
+   },
+   "note": "推断（未单独验证）：开关修的是整网编译时 XLA 在 excess precision 下省掉 FP32→BF16→FP32 往返的情形；单个算子单独编译时这个往返没有被省掉，所以开关前后逐位相同。"
+  },
+  {
+   "switch": "M25",
+   "key": "qk_clip_max_logit_exclude_sink",
+   "on_value_in_T1": "（T1 yml 现行值）",
+   "off_value": "false",
+   "what": "QK-Clip 最大 logit 不含 sink ↔ 含（只作统计）",
+   "tpu_off_run": "tw-sw-m25",
+   "backward": {
+    "全部参数": {
+     "metric": "第 1 步参数梯度 · TPU 对 GPU 的 rel_L2（GPU 三份取中位数）；gpu_vs_gpu 是 GPU 三份两两之间的中位数（噪声尺子）",
+     "n_tensors": 205,
+     "n_bit_identical_on_off": 15,
+     "worst": {
+      "tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_scale",
+      "tpu_vs_gpu_on": 1.616255005817485,
+      "tpu_vs_gpu_off": 1.677210729417662,
+      "gpu_vs_gpu": 0.586867983696394,
+      "tpu_on_vs_off": 0.07134751835573071,
+      "bit_identical_on_off": false,
+      "R": "等 CPU FP64 参照"
+     },
+     "median": {
+      "tpu_vs_gpu_on": 0.004278536154985268,
+      "tpu_vs_gpu_off": 0.004278536154985268,
+      "gpu_vs_gpu": 0.0025006280010543415,
+      "tpu_on_vs_off": 0.00032662668844362963
+     }
+    }
+   },
+   "loss": {
+    "on": 12.889265060424805,
+    "off": 12.889265060424805
+   },
+   "all_grads_bit_identical": {
+    "n_identical": 15,
+    "n_tensors": 205
+   },
+   "qk_max_logit": {
+    "on": {
+     "qk.max_logit.0": [
+      0.11393143236637115,
+      0.1214330643415451,
+      0.1097792237997055,
+      0.1168135404586792,
+      0.11258170008659363,
+      0.11395549774169922,
+      0.11316587030887604,
+      0.1090955138206482
+     ],
+     "qk.max_logit.1": [
+      0.11891903728246689,
+      0.11440174281597137,
+      0.11151757091283798,
+      0.1106584370136261,
+      0.11970169842243195,
+      0.1227809488773346,
+      0.11518789827823639,
+      0.11215807497501373
+     ],
+     "qk.max_logit.2": [
+      0.1152866929769516,
+      0.12060262262821198,
+      0.11074462532997131,
+      0.11931745707988739,
+      0.12400341033935547,
+      0.1149546205997467,
+      0.11786986887454987,
+      0.12925884127616882
+     ],
+     "qk.max_logit.3": [
+      0.10926853865385056,
+      0.09458532929420471,
+      0.09542522579431534,
+      0.10187925398349762,
+      0.11502636969089508,
+      0.10226157307624817,
+      0.09679679572582245,
+      0.10849687457084656
+     ],
+     "qk.max_logit.4": [
+      0.10486090183258057,
+      0.10805937647819519,
+      0.09593424201011658,
+      0.0927792489528656,
+      0.11218871921300888,
+      0.11750203371047974,
+      0.10650528222322464,
+      0.0999327003955841
+     ],
+     "qk.max_logit.5": [
+      0.09864775836467743,
+      0.09283648431301117,
+      0.09818421304225922,
+      0.10420957952737808,
+      0.09018480777740479,
+      0.09606145322322845,
+      0.09714958071708679,
+      0.0976359099149704
+     ],
+     "qk.max_logit.6": [
+      0.10087698698043823,
+      0.081046462059021,
+      0.10401767492294312,
+      0.0908748209476471,
+      0.10843157768249512,
+      0.0875265896320343,
+      0.08074378967285156,
+      0.10487226396799088
+     ],
+     "qk.max_logit.mtp0": [
+      0.11545503884553909,
+      0.11291462182998657,
+      0.117164246737957,
+      0.11394831538200378,
+      0.1059655025601387,
+      0.12126363813877106,
+      0.11251458525657654,
+      0.10723774135112762
+     ]
+    },
+    "off": {
+     "qk.max_logit.0": [
+      0.11413203179836273,
+      0.12172463536262512,
+      0.10991498827934265,
+      0.11707593500614166,
+      0.11272012442350388,
+      0.11411233991384506,
+      0.11330460011959076,
+      0.10929735004901886
+     ],
+     "qk.max_logit.1": [
+      0.11915718019008636,
+      0.11458607763051987,
+      0.11170636862516403,
+      0.11085041612386703,
+      0.1199231818318367,
+      0.1229119822382927,
+      0.11543336510658264,
+      0.11237845569849014
+     ],
+     "qk.max_logit.2": [
+      0.1155417189002037,
+      0.12080907821655273,
+      0.11098841577768326,
+      0.11956054717302322,
+      0.12426299601793289,
+      0.11508681625127792,
+      0.11809393018484116,
+      0.1294652223587036
+     ],
+     "qk.max_logit.3": [
+      0.10953757911920547,
+      0.09482209384441376,
+      0.09558610618114471,
+      0.1021081730723381,
+      0.11523409932851791,
+      0.10245946794748306,
+      0.0969504863023758,
+      0.10872066766023636
+     ],
+     "qk.max_logit.4": [
+      0.10500208288431168,
+      0.10832232236862183,
+      0.09611539542675018,
+      0.09299333393573761,
+      0.11236334592103958,
+      0.11763064563274384,
+      0.1066632866859436,
+      0.10016130656003952
+     ],
+     "qk.max_logit.5": [
+      0.09877672791481018,
+      0.09297266602516174,
+      0.09844408184289932,
+      0.10438418388366699,
+      0.09027865529060364,
+      0.09623291343450546,
+      0.09732907265424728,
+      0.09778791666030884
+     ],
+     "qk.max_logit.6": [
+      0.10104292631149292,
+      0.08116113394498825,
+      0.10424591600894928,
+      0.09107429534196854,
+      0.10860878229141235,
+      0.08766095340251923,
+      0.08090105652809143,
+      0.10506821423768997
+     ],
+     "qk.max_logit.mtp0": [
+      0.1156526580452919,
+      0.1131293848156929,
+      0.11731593310832977,
+      0.11416231095790863,
+      0.10607775300741196,
+      0.12152767926454544,
+      0.11268536746501923,
+      0.10751067101955414
+     ]
+    }
+   },
+   "forward": {}
+  }
+ ]
+}

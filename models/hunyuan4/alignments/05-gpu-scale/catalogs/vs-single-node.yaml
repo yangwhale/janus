@@ -1,0 +1,50 @@
+# 混元 4 · GPU 扩展：多机 / 换并行方式的 GPU 运行（被测）对单机 GPU golden g3-a 的前 300 步曲线。
+# 尺子 = 单机同设置 8 份（g3-a … g3-h）两两 28 对的波动上限（前 300 步窗口）。被测用 `janus run … --test <运行名>` 换。
+# 被测与 g3-a 吃同一批数据：第 s 步都是第 (s-1)·16 … (s-1)·16+15 条（DP 8 × 累积 2 与 DP 16 × 累积 1 只是分法不同），
+# 逐条输入指纹的核对见 setup.md。
+schema_version: 1
+model: hunyuan4-mini
+stage: gpu-scale-vs-single-node
+description: GPU 多机与并行方式，被测对单机 golden g3-a 的前 300 步，尺子 g3 两两 28 对
+runs:
+  test: mn-a
+  golden: [g3-a]
+  noise:
+    - [g3-a, g3-b]
+    - [g3-a, g3-c]
+    - [g3-a, g3-d]
+    - [g3-a, g3-e]
+    - [g3-a, g3-f]
+    - [g3-a, g3-g]
+    - [g3-a, g3-h]
+    - [g3-b, g3-c]
+    - [g3-b, g3-d]
+    - [g3-b, g3-e]
+    - [g3-b, g3-f]
+    - [g3-b, g3-g]
+    - [g3-b, g3-h]
+    - [g3-c, g3-d]
+    - [g3-c, g3-e]
+    - [g3-c, g3-f]
+    - [g3-c, g3-g]
+    - [g3-c, g3-h]
+    - [g3-d, g3-e]
+    - [g3-d, g3-f]
+    - [g3-d, g3-g]
+    - [g3-d, g3-h]
+    - [g3-e, g3-f]
+    - [g3-e, g3-g]
+    - [g3-e, g3-h]
+    - [g3-f, g3-g]
+    - [g3-f, g3-h]
+    - [g3-g, g3-h]
+  root: /data/janus-runs
+checks:
+  - {id: C.loss, type: loss_series, level: L4, select: {kind: metrics, field: lm_loss, window: "1:301"}, threshold: calibrated}
+  - {id: C.loss.tail, type: loss_series, level: L4, select: {kind: metrics, field: lm_loss, window: "101:301"}, threshold: calibrated}
+  - {id: C.mtp_loss, type: loss_series, level: L4, select: {kind: metrics, field: mtp_loss_mt, window: "1:301"}, threshold: calibrated}
+  - {id: C.indexer_loss, type: loss_series, level: L4, select: {kind: metrics, field: indexer_loss, window: "1:301"}, threshold: calibrated}
+  - {id: C.grad_norm, type: loss_series, level: L4, select: {kind: metrics, field: grad_norm, window: "1:301"}, threshold: calibrated}
+  - {id: C.param_norm, type: loss_series, level: L4, select: {kind: metrics, field: param_norm_fp64, window: "1:301"}, threshold: calibrated}
+  - {id: C.router.bias_mean, type: router_stats, level: L4, select: {kind: metrics, prefix: "router.bias_mean.", window: "1:301"}, threshold: calibrated}
+  - {id: C.router.bias_std, type: router_stats, level: L4, select: {kind: metrics, prefix: "router.bias_std.", window: "1:301"}, threshold: calibrated}

@@ -1,0 +1,49 @@
+# 混元 4 · hy4-mid（5,189,678,849 参数，随机初始化）300 步 L4：TPU tm-a（frameworks/maxtext/hy4-mid-t1.yml，T1 现行开关原样）被测，GPU gm-a 为基线，
+# 噪声只用 GPU gm-a..h 两两 28 对（同 t1zr）。口径同 t1t-l4：grad_norm 以参照作分母（2026-11-10 起，原为两边均值），param_norm 比精确值。事先登记：写于任何 hy4-mid 运行之前。
+schema_version: 1
+model: hunyuan4-mid
+stage: tm-l4
+description: hy4-mid L4，300 步（TPU tm-a 被测，GPU gm-a 为基线，GPU 噪声 28 对）
+runs:
+  test: tm-a
+  golden: [gm-a]
+  noise:
+    - [gm-a, gm-b]
+    - [gm-a, gm-c]
+    - [gm-a, gm-d]
+    - [gm-a, gm-e]
+    - [gm-a, gm-f]
+    - [gm-a, gm-g]
+    - [gm-a, gm-h]
+    - [gm-b, gm-c]
+    - [gm-b, gm-d]
+    - [gm-b, gm-e]
+    - [gm-b, gm-f]
+    - [gm-b, gm-g]
+    - [gm-b, gm-h]
+    - [gm-c, gm-d]
+    - [gm-c, gm-e]
+    - [gm-c, gm-f]
+    - [gm-c, gm-g]
+    - [gm-c, gm-h]
+    - [gm-d, gm-e]
+    - [gm-d, gm-f]
+    - [gm-d, gm-g]
+    - [gm-d, gm-h]
+    - [gm-e, gm-f]
+    - [gm-e, gm-g]
+    - [gm-e, gm-h]
+    - [gm-f, gm-g]
+    - [gm-f, gm-h]
+    - [gm-g, gm-h]
+  root: /data/janus-runs
+checks:
+  - {id: L4.loss, type: multi_golden, level: L4, select: {kind: metrics, field: lm_loss, window: "1:301"}, params: {baseline: gm-a}, threshold: calibrated}
+  - {id: L4.loss.tail, type: multi_golden, level: L4, select: {kind: metrics, field: lm_loss, window: "101:301"}, params: {baseline: gm-a}, threshold: calibrated}
+  - {id: L4.mtp_loss, type: loss_series, level: L4, select: {kind: metrics, field: mtp_loss_mt, window: "1:301"}, threshold: calibrated}
+  - {id: L4.mtp_loss.tail, type: loss_series, level: L4, select: {kind: metrics, field: mtp_loss_mt, window: "101:301"}, threshold: calibrated}
+  - {id: L4.indexer_loss, type: loss_series, level: L4, select: {kind: metrics, field: indexer_loss, window: "1:301"}, threshold: calibrated}
+  - {id: L4.grad_norm, type: loss_series, level: L4, select: {kind: metrics, field: grad_norm, window: "1:301"}, threshold: calibrated}
+  - {id: L4.param_norm, type: loss_series, level: L4, select: {kind: metrics, field: param_norm_fp64, test_field: param_norm_exact, window: "1:301"}, threshold: calibrated}
+  - {id: L4.router.bias_mean, type: router_stats, level: L4, select: {kind: metrics, prefix: "router.bias_mean.", window: "1:301"}, threshold: calibrated}
+  - {id: L4.router.bias_std, type: router_stats, level: L4, select: {kind: metrics, prefix: "router.bias_std.", window: "1:301"}, threshold: calibrated}

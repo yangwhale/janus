@@ -1,0 +1,28 @@
+$ python cpu_smoke.py --work <冒烟目录> --steps 3
++ /tmp/mt-venv/bin/python /tmp/janus-tpu/models/hunyuan3/tpu/convert_hf_to_maxtext.py --hf <冒烟目录>/hf --out <冒烟目录>/ckpt base_emb_dim=256 base_mlp_dim=512 base_moe_mlp_dim=128 num_experts=16 num_experts_per_tok=4 base_num_query_heads=8 base_num_kv_heads=2 head_dim=32 vocab_size=1024 max_target_length=128
+MaxText 变量 30 个，与 name_map 推出的叶子逐个一致
+搬运 197 个 HF 张量 → 30 个叶子，每个元素恰好写一次（0 s）
+已存 <冒烟目录>/ckpt/0/items（0 s）
++ /tmp/mt-venv/bin/python /tmp/janus-tpu/models/hunyuan3/tpu/verify_ckpt.py --name-map <冒烟目录>/name_map.small.yaml maxtext --ckpt <冒烟目录>/ckpt/0/items --hf <冒烟目录>/hf
+从 MaxText 检查点取回 197 个 HF 张量；与 tensor_sha256.json 不同 0 个 []
+OK
++ /tmp/mt-venv/bin/python /tmp/janus-tpu/models/hunyuan3/tpu/verify_ckpt.py --name-map <冒烟目录>/name_map.small.yaml hf-manifest --hf <冒烟目录>/hf --janus-run <冒烟目录>/runs-convert/hy3-4l-hf
+OK
++ /tmp/mt-venv/bin/python /tmp/janus-tpu/models/hunyuan3/tpu/verify_ckpt.py --name-map <冒烟目录>/name_map.small.yaml maxtext --ckpt <冒烟目录>/ckpt/0/items --hf <冒烟目录>/hf --janus-run <冒烟目录>/runs-convert/hy3-4l-maxtext-ckpt
+从 MaxText 检查点取回 197 个 HF 张量；与 tensor_sha256.json 不同 0 个 []
+OK
+[janus] 转换检查 hy3-4l-maxtext-ckpt：L0.ckpt.convert.bitwise pass {'params': 197, 'differ': 0, 'only_one_side': 0}；L0.ckpt.convert.dtype pass {'entries': 197, 'wrong_dtype': 0, 'unmatched': 0, 'rule_hits': {'*.expert_bias': 3, '* !*.expert_bias': 194}}；L0.ckpt.source.dtype pass {'entries': 197, 'wrong_dtype': 0, 'unmatched': 0, 'rule_hits': {'*.expert_bias': 3, '* !*.expert_bias': 194}}
+[janus] 转换检查 hy3-4l-maxtext-ckpt-poison：L0.ckpt.convert.bitwise fail {'params': 197, 'differ': 4, 'only_one_side': 0}；L0.ckpt.convert.dtype fail {'entries': 197, 'wrong_dtype': 3, 'unmatched': 0, 'rule_hits': {'*.expert_bias': 3, '* !*.expert_bias': 194}}；L0.ckpt.source.dtype pass {'entries': 197, 'wrong_dtype': 0, 'unmatched': 0, 'rule_hits': {'*.expert_bias': 3, '* !*.expert_bias': 194}}
+[janus] 转换检查自证：好检查点全过；改坏的检查点 4 个张量 sha256 不同（1 个专家权重 + 3 个 expert_bias）、3 个 dtype 不符，都报出来了
++ /tmp/mt-venv/bin/python /tmp/janus-tpu/models/hunyuan3/tpu/train_hy3.py --load <冒烟目录>/ckpt/0/items --golden <冒烟目录>/golden --hf-manifest <冒烟目录>/hf/tensor_sha256.json --steps 3 --cpu-small --janus-run <冒烟目录>/runs/t-hooks --dump-steps 1 --full
+[janus] 第 1 步钩子自检：逐位相同
+[janus] step 1 lm_loss 7.24859619140625 grad_norm 1.9035000801086426 (4.66 s)
+[janus] step 2 lm_loss 7.270639896392822 grad_norm 1.9028159379959106 (0.14 s)
+[janus] step 3 lm_loss 7.241970062255859 grad_norm 1.8661609888076782 (0.13 s)
++ /tmp/mt-venv/bin/python /tmp/janus-tpu/models/hunyuan3/tpu/train_hy3.py --load <冒烟目录>/ckpt/0/items --golden <冒烟目录>/golden --hf-manifest <冒烟目录>/hf/tensor_sha256.json --steps 3 --cpu-small --janus-run <冒烟目录>/runs/t-nohooks --no-hooks --dump-steps 1
+[janus] step 1 lm_loss 7.24859619140625 grad_norm 1.9035000801086426 (1.95 s)
+[janus] step 2 lm_loss 7.270639896392822 grad_norm 1.9028159379959106 (0.14 s)
+[janus] step 3 lm_loss 7.241970062255859 grad_norm 1.8661609888076782 (0.17 s)
++ /tmp/mt-venv/bin/python /tmp/janus-tpu/models/hunyuan3/tpu/smoke_checks.py <冒烟目录> --name-map <冒烟目录>/name_map.small.yaml
+OK
+OK

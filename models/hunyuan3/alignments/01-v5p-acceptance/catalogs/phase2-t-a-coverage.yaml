@@ -1,0 +1,20 @@
+# 第二阶段 · 第 1 步「比全了没有」：TPU 抓数对 golden 的张量清单
+#
+# 被测 t-a（第 1 步全量抓数），golden g1k-a。只比名字清单（coverage），不比数值，所以不受 t-a 钩子自检的影响。
+# 两边本来就没有对应量的三类剔掉（两边同样剔）：
+#   *.experts.out —— GPU 专家并行的分发缓冲区，TPU（FSDP、不开 EP）没有（name_map.yaml，status: not-captured）
+#   *.grad        —— 激活的梯度，TPU 不抓（要往图里插探针输入，会改图）；逐层反向用隔离回放的 layers.k.in.grad 比（phase2-l2-replay-bwd）
+#   input.*       —— GPU 把每步输入存成张量，TPU 存成逐 microbatch 的指纹（data/rank*.jsonl），由 L0.data.fingerprint 逐位比
+schema_version: 1
+model: hunyuan3-4l
+stage: phase2-t-a-coverage
+description: 第 1 步张量清单覆盖率（t-a 对 g1k-a）
+runs:
+  test: t-a
+  golden: [g1k-a]
+  root: /data/janus-runs
+checks:
+  - id: L3.step1.coverage
+    type: coverage
+    level: L3
+    select: {kind: tensor, step: 1, name: "*", exclude: ["*.experts.out", "*.grad", "input.*"]}

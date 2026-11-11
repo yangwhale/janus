@@ -1,0 +1,101 @@
+{
+ "what": "M28 / M9 机制核实：TPU 结果逐位等于哪种舍入 / 加法顺序（numpy FP32 重算），与对 FP64 的 rel_L2",
+ "runs": [
+  {
+   "run": "tw-hlo-a",
+   "xla_flags": "",
+   "device_kind": "TPU v5",
+   "m28": {
+    "einsum_highest": {
+     "rel_l2_vs_fp64": 3.7905042764971166e-08,
+     "frac_equal_sequential": 0.6958761215209961,
+     "frac_equal_pairwise": 0.7558579444885254,
+     "frac_equal_sequential_fma": 0.6413013935089111
+    },
+    "unrolled": {
+     "rel_l2_vs_fp64": 4.009363549941129e-08,
+     "frac_equal_sequential": 1.0,
+     "frac_equal_pairwise": 0.7657256126403809,
+     "frac_equal_sequential_fma": 0.72153639793396
+    },
+    "reduce_sum": {
+     "rel_l2_vs_fp64": 3.7905042764971166e-08,
+     "frac_equal_sequential": 0.6958761215209961,
+     "frac_equal_pairwise": 0.7558579444885254,
+     "frac_equal_sequential_fma": 0.6413013935089111
+    },
+    "numpy_sequential_rel_l2_vs_fp64": 4.009363549941129e-08,
+    "numpy_pairwise_rel_l2_vs_fp64": 3.788149927030404e-08
+   },
+   "m9": {
+    "default": {
+     "rel_l2_vs_fp64": 0.0016673182611603083,
+     "frac_equal_numpy_single_rounding": 0.9999971389770508,
+     "frac_equal_numpy_double_rounding": 0.7559432983398438
+    },
+    "single": {
+     "rel_l2_vs_fp64": 0.0016673182611603083,
+     "frac_equal_numpy_single_rounding": 0.9999971389770508,
+     "frac_equal_numpy_double_rounding": 0.7559432983398438
+    },
+    "numpy_single_vs_double_frac_equal": 0.7559442520141602
+   },
+   "tpu_bit_identical": {
+    "m9_default_vs_single": true,
+    "m28": {
+     "einsum_highest_vs_unrolled": false,
+     "unrolled_vs_reduce_sum": false,
+     "einsum_highest_vs_reduce_sum": true
+    }
+   }
+  },
+  {
+   "run": "tw-hlo-b",
+   "xla_flags": "--xla_allow_excess_precision=false",
+   "device_kind": "TPU v5",
+   "m28": {
+    "einsum_highest": {
+     "rel_l2_vs_fp64": 3.7905042764971166e-08,
+     "frac_equal_sequential": 0.6958761215209961,
+     "frac_equal_pairwise": 0.7558579444885254,
+     "frac_equal_sequential_fma": 0.6413013935089111
+    },
+    "unrolled": {
+     "rel_l2_vs_fp64": 4.009363549941129e-08,
+     "frac_equal_sequential": 1.0,
+     "frac_equal_pairwise": 0.7657256126403809,
+     "frac_equal_sequential_fma": 0.72153639793396
+    },
+    "reduce_sum": {
+     "rel_l2_vs_fp64": 3.7905042764971166e-08,
+     "frac_equal_sequential": 0.6958761215209961,
+     "frac_equal_pairwise": 0.7558579444885254,
+     "frac_equal_sequential_fma": 0.6413013935089111
+    },
+    "numpy_sequential_rel_l2_vs_fp64": 4.009363549941129e-08,
+    "numpy_pairwise_rel_l2_vs_fp64": 3.788149927030404e-08
+   },
+   "m9": {
+    "default": {
+     "rel_l2_vs_fp64": 0.002328370433510595,
+     "frac_equal_numpy_single_rounding": 0.7559418678283691,
+     "frac_equal_numpy_double_rounding": 0.9999871253967285
+    },
+    "single": {
+     "rel_l2_vs_fp64": 0.0016673182611603083,
+     "frac_equal_numpy_single_rounding": 0.9999971389770508,
+     "frac_equal_numpy_double_rounding": 0.7559432983398438
+    },
+    "numpy_single_vs_double_frac_equal": 0.7559442520141602
+   },
+   "tpu_bit_identical": {
+    "m9_default_vs_single": false,
+    "m28": {
+     "einsum_highest_vs_unrolled": false,
+     "unrolled_vs_reduce_sum": false,
+     "einsum_highest_vs_reduce_sum": true
+    }
+   }
+  }
+ ]
+}

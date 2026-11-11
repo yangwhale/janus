@@ -1,0 +1,19 @@
+# 第一阶段 · 观测不改数值：h-light2 只挂逐步统计（不抓张量）对 d-a（第 1、100 步全量抓数：子模块前后向钩子、梯度钩子、优化器包装），确定性。
+# 两边优化器配置必须一样：全量抓数要关分布式优化器，h-light2 用 --no-dist-opt 关掉。第一次用 h-light（开着分布式优化器）比，
+# 第 1 步 grad_norm 就不同——那是优化器配置不同，不是钩子改了数值。
+schema_version: 1
+model: hunyuan3-4l
+stage: phase1-hooks
+runs:
+  test: h-light2
+  golden: [d-a]
+  root: /data/janus-runs2
+checks:
+  - id: L0.hooks.data
+    type: data_fingerprint
+    level: L0
+    select: {kind: tokens, steps: "1:31"}
+  - id: DET.hooks.noop
+    type: determinism
+    level: L4
+    select: {kind: metrics, fields: [lm_loss, grad_norm, param_norm, num_zeros, lr, "router.bias_std.1", "router.bias_std.2", "router.bias_std.3"]}

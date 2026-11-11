@@ -1,0 +1,71 @@
+{
+ "test": "/data/rc/runs/rv-det",
+ "base": "/data/janus-runs2/d-a",
+ "layers": {
+  "1": {
+   "recompute_vs_first": {
+    "logits": true,
+    "topk_idx": true,
+    "probs": true
+   },
+   "layer_in_vs_base": true,
+   "logits_vs_base": {
+    "bitwise": true
+   },
+   "probs_vs_base": {
+    "bitwise": false,
+    "differ_frac": 0.0084228515625,
+    "rel_l2": 4.782789775205374e-08
+   },
+   "topk_set_rows_differ": 0,
+   "tokens": 4096
+  },
+  "2": {
+   "recompute_vs_first": {
+    "logits": true,
+    "topk_idx": true,
+    "probs": true
+   },
+   "layer_in_vs_base": false,
+   "logits_vs_base": {
+    "bitwise": false,
+    "differ_frac": 0.9265759587287903,
+    "rel_l2": 7.143777681493188e-05
+   },
+   "probs_vs_base": {
+    "bitwise": false,
+    "differ_frac": 0.039093017578125,
+    "rel_l2": 0.028725579899489817
+   },
+   "topk_set_rows_differ": 20,
+   "tokens": 4096
+  },
+  "3": {
+   "recompute_vs_first": {
+    "logits": true,
+    "topk_idx": true,
+    "probs": true
+   },
+   "layer_in_vs_base": false,
+   "logits_vs_base": {
+    "bitwise": false,
+    "differ_frac": 0.9890543818473816,
+    "rel_l2": 0.0005238464343163519
+   },
+   "probs_vs_base": {
+    "bitwise": false,
+    "differ_frac": 0.04145558550953865,
+    "rel_l2": 0.06004508795302721
+   },
+   "topk_set_rows_differ": 98,
+   "tokens": 4096
+  }
+ },
+ "topk_order_repro": {
+  "layer": 1,
+  "base_matches_sorted_True": true,
+  "base_matches_sorted_False": false,
+  "test_first_fwd_matches_sorted_True": false,
+  "test_first_fwd_matches_sorted_False": true
+ }
+}

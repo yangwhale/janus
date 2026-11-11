@@ -1,0 +1,66 @@
+# 01 · B200×8 → TPU v5p-8 · 运行清单。数据位置写成占位，不写桶名。
+# 字段出处：各运行目录的 meta.json；golden 的完整参数见 ../../frameworks/megatron/README.md「第一阶段每次运行的参数」。
+schema: 1
+alignment: 01-v5p-acceptance
+golden:
+  - name: g1k-a
+    steps: 1000
+    setting: 默认（非确定性），不开分布式优化器
+    dump: --dump-steps 1,1000 --full
+    code: {framework: "nemo:26.10 容器自带 Megatron-Bridge；train_hy3.py sha256 4e41f0ae455c60bda6113ae97c8afb0cba7412d8fdb5a86560f6f23daed62815", janus: 未记录, image: nvcr.io/nvidia/nemo:26.10}
+    location: gs://<POC 桶>/janus/hunyuan3-4l/golden/g1k-a/
+  - name: g1k-b
+    steps: 1000
+    setting: 同 g1k-a
+    location: gs://<POC 桶>/janus/hunyuan3-4l/golden/g1k-b/
+  - name: g1k-c
+    steps: 1000
+    setting: 同 g1k-a
+    location: gs://<POC 桶>/janus/hunyuan3-4l/golden/g1k-c/
+  - name: g1k-det
+    steps: 1000
+    setting: 确定性；不和默认设置混作噪声参照
+    location: gs://<POC 桶>/janus/hunyuan3-4l/golden/g1k-det/
+test:
+  - name: hy3-4l-maxtext-ckpt
+    role: L0 权重转换核对（只有参数清单，CPU 上由 model/verify_ckpt.py 写出）
+    golden: hy3-4l-hf
+    results: phase2-ckpt-convert
+  - name: t-loss30
+    steps: 30
+    role: 被测（只看 loss，不加钩子、不抓数）
+    setting: "--no-hooks --dump-steps none --no-param-sha；FSDP 8；topology 2x2x2"
+    code: {framework: maxtext@64cd9a640b8ea65aaf856b6f24755f61ee97e057, janus: 16af8f7b116b337fae03265c26bf0ba7256c6fc7, image: "tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf"}
+    config: {file: frameworks/maxtext/hy3-4layers.yml, sha256: 66a03bf31d3578d9d1d5bcfb0103f5047572df5c802f0057f0683ef315ae435f, overrides: [mtp_num_layers=0]}
+    location: gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-loss30/
+    series: results/series/t-loss30.metrics.jsonl
+    results: phase2-t-loss30
+  - name: t-a
+    steps: 1000
+    role: 被测（第 1 步全量抓数）
+    setting: yml 66a03bf31d35…（per_device_batch_size 2、GA 1，不开精度开关；见 setup.md「训练配置版本」表），第 1、1000 步全量抓数；提交号见运行目录的 meta.json
+    location: gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-a/
+    results: [phase2-t-a-coverage]
+  # ---- 2026-11-05 v5p 列正式检查（v5p-8 切片）。观测构建一组用 janus 分支 feat/59-obs-build-cal @8c3c713（yml 7704115，同 T1 LKG），
+  #      其余用 feat/59-obs-build-pkg @68ae6b8（生产 yml）；maxtext 都是 237a32705feb9f028910eb28216299139415d007。「只抓一部分参数」用的是该提交的 --full-include（通配）
+  - {name: obs-t1, steps: 1000, role: "观测构建（--observe --full），第 1、1000 步抓数；每设备 2 行、不累积", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/obs-t1/", results: [phase2-obs-gate, phase2-obs-grad]}
+  - {name: obs-t0-a, steps: 20, role: "观测构建，第 1–8 步只抓一小组参数；第一关的一份", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/obs-t0-a/", results: phase2-obs-calibrate.json}
+  - {name: obs-t0-b, steps: 20, role: "观测构建，不抓张量；第一关的另一份", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/obs-t0-b/", results: phase2-obs-calibrate.json}
+  - {name: t-st1-t1, steps: 2, role: "同提交同 yml 的生产构建，第 1 步全量状态读（第三关梯度一条的基线）", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-st1-t1/", results: phase2-obs-grad}
+  - {name: t-nan8, steps: 8, role: "梯度 NaN 演练（--inject-nan-grad 5），每设备 2 行、不累积", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-nan8/", results: phase2-t-nan8}
+  - {name: r-l1-ops, role: "layer_replay.py --l1-only（生产开关），golden 输入的单算子回放", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/r-l1-ops/"}
+  - {name: r-ff-prod, role: "layer_replay.py --full-forward（生产 yml），整网只前向", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/r-ff-prod/", results: phase2-ff-chain}
+  - {name: t-st1-prod, steps: 2, role: "生产配置（GA 2、三个开关、重算同 t-rmap-1000），--no-hooks，第 1 步全量状态读", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-st1-prod/", results: phase2-st1-prod-state}
+  - {name: t-st8-prod, steps: 9, role: "生产配置，--no-hooks，第 1–8 步状态读（一小组参数）", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-st8-prod/", results: phase2-st8-opt8}
+  - {name: r-cont20, steps: 20, role: "存档续训演练的连续训练：生产配置，第 10 步 orbax 存档（tpu/ckpt/r-cont20-step10），第 11 步全量状态读", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/r-cont20/", results: phase2-resume}
+  - {name: r-res20, steps: 20, role: "从 r-cont20 的第 10 步存档恢复，第 11–20 步", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/r-res20/", results: phase2-resume}
+  - {name: r-wc-base, role: "逐层隔离回放（生产开关，maxtext 237a3270），窗口化 collective matmul 照常", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/r-wc-base/"}
+  - {name: r-wc-off-r4, role: "同上，LIBTPU_INIT_ARGS=--xla_jf_spmd_threshold_for_windowed_einsum_mib=1000000 关掉窗口化", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/r-wc-off-r4/", results: phase2-l1-ops-wcoff}
+  - {name: r-fa32, role: "同上，maxtext 0b5630ee（`dense_fp32_accumulation` 合入前的分支提交）+ dense_fp32_accumulation=true", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/r-fa32/"}
+  # ---- 2026-11-05 对齐配置打开 dense_fp32_accumulation（yml a238883b7f91…，maxtext 0622774a，janus 958d173）
+  - {name: t-st-off-100, steps: 100, role: "步时 / 显存对比：生产 rmap 配置，命令行 dense_fp32_accumulation=false", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-st-off-100/"}
+  - {name: t-st-on-100, steps: 100, role: "步时 / 显存对比：生产 rmap 配置，开关打开", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-st-on-100/"}
+  - {name: r-l2-on, role: "逐层隔离回放 + 反向 + L1（--layers 0,1,2,3 --grad --l1），新 yml", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/r-l2-on/", results: [phase2-l2-replay-rratio-on, phase2-l1-ops-own-on, phase2-l1-ops-on, phase2-l2-replay-bwd-on]}
+  - {name: t-rmap-on-1000, steps: 1000, role: "正式验收第一层（新配置）：生产 rmap 配置 + dense_fp32_accumulation，对最终 golden rcc-a（噪声 rcc-a..j 10 份重跑两两 45 对，phase2-acceptance-rcc-on）", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-rmap-on-1000/", results: [phase2-acceptance-rcc-on, phase2-acc-health-rcc]}
+  - {name: rce-a..rce-e, steps: 1000, role: "曾作第一层 golden（已撤销，现只作参考）：rc 配置 + BF16 权重、全程 FP32（--fp32 --bf16-weights，真关 TF32）；只对 rce-a 比，b..e 是 1e-6 / 3e-6 权重扰动（散布作附录）", location: "gs://<POC 桶>/janus/hunyuan3-4l/golden/rce-*/"}
+  - {name: t-ep8-1000, steps: 1000, role: "并行方式对照：当前对齐配置只改成 EP=8（ici_fsdp_parallelism=1、ici_expert_parallelism=8，对应 GPU DP8 + EP8）", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-ep8-1000/", results: phase2-acceptance-rcc-ep8}

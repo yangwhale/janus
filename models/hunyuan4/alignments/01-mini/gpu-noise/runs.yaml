@@ -1,0 +1,51 @@
+# 00 · GPU 自比与演练（T1，hy4-mini）· 运行清单。数据位置写成占位，不写桶名。
+# 已有的运行是 T1 的 GPU 正式运行（01 的 L4 也用它们）；标「计划」的还没跑。
+schema: 1
+alignment: 01-mini/gpu-noise
+code: {framework: "Megatron-Core 0.20 + TE（NeMo 26.10 镜像所带；meta.json 没有记 TE 版本，未核）", janus: 见各运行的 meta.json, image: 见各运行的 meta.json}
+batches:
+  - name: T1 GPU 同设置重跑，g3 一代再 8 份（1000 步尺子扩到 16 份）
+    runs: [g3-i, g3-j, g3-k, g3-l, g3-m, g3-n, g3-o, g3-p]
+    steps: 1000
+    setting: 与 g3-a … g3-h 同一代码包（hy4_mcore 4dab75aa、train 1763d7ed）、同一 pod_run.sh、同镜像、同参数（不带 --save-batches）；单机 B200 × 8，DP 8 + EP 4
+    location: "gs://<POC 桶>/janus/hunyuan4/golden-t1/g3-*/"
+    results: [g3x16-noise, g3x16-noise-vs-8]
+    note: 与 g3-a … g3-h 一起两两 120 对（catalogs/g3x16-noise.yaml）
+  - name: T1 GPU 同设置重跑（噪声参照），g1 一代（注意力 q·k 在 BF16 里算）
+    runs: [g1-a, g1-b, g1-c, g1-d, g1-e, g1-f, g1-g, g1-h]
+    steps: 300
+    setting: 默认设置；T1 的 GPU 配置（PROTOCOL.md 第 1.2 节）
+    location: "gs://<POC 桶>/janus/hunyuan4/…（各运行的 meta.json）"
+    results: []
+    note: 两两 28 对是 01 里前三代比较（t1-l4、t1-l4-nozm、t1s-l4）的噪声尺子
+  - name: T1 GPU 同设置重跑（噪声参照），g2 一代（q·k 在 FP32 里算，台账 G17）
+    runs: [g2-a, g2-b, g2-c, g2-d, g2-e, g2-f, g2-g, g2-h]
+    steps: 300
+    setting: 默认设置；g1 的设置只改 --attn-scores-fp32
+    location: "gs://<POC 桶>/janus/hunyuan4/…（各运行的 meta.json）"
+    results: []
+    note: 两两 28 对是 01 里 300 步各次比较（现行 t1zw300-l4，上一代 t1zu300-l4，诊断代 t1zv300-l4，更早 t1zr300-l4，诊断代 t1zs300-l4、t1zt300-l4、t1zub300-l4、t1zuc300-l4、t1zud300-l4，之前的 t1z-l4、t1v-l4、t1t-l4）的噪声尺子；GPU 自比（catalogs/t1-gpu-noise.yaml）还没跑
+  - name: T1 GPU 同设置重跑（噪声参照），g3 一代（g2 的设置跑 1000 步）
+    runs: [g3-a, g3-b, g3-c, g3-d, g3-e, g3-f, g3-g, g3-h]
+    steps: 1000
+    setting: 默认设置；g2 的设置
+    location: "gs://<POC 桶>/janus/hunyuan4/…（各运行的 meta.json）"
+    results: []
+    note: 两两 28 对是 01 里 1000 步各次比较（现行 t1zw-l4，上一代 t1zu-l4，诊断代 t1zv-l4，更早 t1zr-l4，诊断代 t1zs-l4、t1zt-l4、t1zub-l4、t1zuc-l4、t1zud-l4，之前的 t1zk-l4、t1w-l4、t1u-l4）的噪声尺子
+  - name: T1 GPU 第 1 步全量抓数参照
+    runs: [g1s-a, g1s-b, g1s-c, g2s-a, g2s-b, g2s-c]
+    steps: 1
+    setting: 不重算、全量抓数（台账 G12、G15）
+    results: []
+    note: 每一代三份两两的逐张量散布进 01 第 1 步比较的结果文件（gpu_noise_max）；g1s 中位数 rel_L2 2.7e-3（台账 G15）
+  - name: 确定性设置（计划）
+    runs: [g1det-a, g1det-b]
+    steps: 300
+    setting: 确定性设置；其余同 T1
+    results: []
+    note: 计划，还没跑（catalogs/t1-gpu-determinism.yaml）
+  - name: 故障演练（计划）
+    runs: []
+    setting: 确定性基线上埋一个错（9 种）
+    results: []
+    note: 计划，还没跑；确定性基线没有之前做不了

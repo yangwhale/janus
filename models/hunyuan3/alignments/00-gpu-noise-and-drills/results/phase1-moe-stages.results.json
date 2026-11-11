@@ -1,0 +1,273 @@
+{
+ "schema_version": 1,
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": null
+ },
+ "catalog": {
+  "path": "models/hunyuan3/frameworks/megatron/moe_stages.py",
+  "sha256": "cda9aa3183ecf46d14ce0bcc0cc476ed0c819fea96d1bd23887b78bb365e31cd"
+ },
+ "runs": {
+  "g61-obs": {
+   "path": "/data/janus-runs2/g61-obs",
+   "meta_sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+  }
+ },
+ "started_at": "2026-11-06T10:29:02+00:00",
+ "finished_at": "2026-11-06T10:34:29+00:00",
+ "environment": {
+  "torch": "2.14.0a0+b2c75dd062.nv26.09",
+  "transformer_engine": "2.20.2+44f31bbe",
+  "cuda": "13.4",
+  "cublas": "13.8.0.4",
+  "device": "NVIDIA B200",
+  "allow_tf32_matmul_default": true,
+  "allow_tf32_cudnn_default": true,
+  "float32_matmul_precision_default": "high",
+  "env": {
+   "TORCH_ALLOW_TF32_CUBLAS_OVERRIDE": "1",
+   "NVIDIA_TF32_OVERRIDE": null,
+   "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+   "NVTE_ALLOW_NONDETERMINISTIC_ALGO": "0"
+  }
+ },
+ "summary": {
+  "pass": 5,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "hard_fail": false
+ },
+ "checks": [
+  {
+   "id": "L2.moe.expert_weights",
+   "type": "op_replay",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "compared": 1152,
+    "mismatch": 0
+   },
+   "worst": [],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "HF 原件转成 Megatron 布局后 1152 个专家权重与训练加载时的 sha256 全部相同",
+   "details": "details/L2.moe.expert_weights.jsonl"
+  },
+  {
+   "id": "L2.moe.stages.chain",
+   "type": "op_replay",
+   "level": "L2",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 0.004032972420885532,
+    "cr_match_frac": 1.7801920572916668e-05,
+    "ulp_max": 472864,
+    "ulp_p999": 295.0,
+    "nonfinite_mismatch": 0,
+    "cases": 30
+   },
+   "worst": [
+    {
+     "name": "layers.3.output",
+     "metric": "rel_l2",
+     "value": 0.004032972420885532,
+     "location": null
+    },
+    {
+     "name": "layers.3.gemm2",
+     "metric": "rel_l2",
+     "value": 0.003984966082376469,
+     "location": null
+    },
+    {
+     "name": "layers.3.unpermute",
+     "metric": "rel_l2",
+     "value": 0.003951441834752798,
+     "location": null
+    },
+    {
+     "name": "layers.3.act",
+     "metric": "rel_l2",
+     "value": 0.003779601988553479,
+     "location": null
+    },
+    {
+     "name": "layers.2.gemm2",
+     "metric": "rel_l2",
+     "value": 0.00376349169487078,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "诊断：只报数，不判",
+   "details": "details/L2.moe.stages.chain.jsonl"
+  },
+  {
+   "id": "L2.moe.stages.local",
+   "type": "op_replay",
+   "level": "L2",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "rel_l2": 0.003240293541806803,
+    "cr_match_frac": 1.7801920572916668e-05,
+    "ulp_max": 472864,
+    "ulp_p999": 198.0,
+    "nonfinite_mismatch": 0,
+    "cases": 30
+   },
+   "worst": [
+    {
+     "name": "layers.3.shared",
+     "metric": "rel_l2",
+     "value": 0.003240293541806803,
+     "location": null
+    },
+    {
+     "name": "layers.2.shared",
+     "metric": "rel_l2",
+     "value": 0.003161077064782231,
+     "location": null
+    },
+    {
+     "name": "layers.1.shared",
+     "metric": "rel_l2",
+     "value": 0.003034361674952695,
+     "location": null
+    },
+    {
+     "name": "layers.3.act",
+     "metric": "rel_l2",
+     "value": 0.0029907758536849485,
+     "location": null
+    },
+    {
+     "name": "layers.1.act",
+     "metric": "rel_l2",
+     "value": 0.002870897405058672,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "诊断：只报数，不判",
+   "details": "details/L2.moe.stages.local.jsonl"
+  },
+  {
+   "id": "L2.moe.movement",
+   "type": "op_replay",
+   "level": "L2",
+   "hard": true,
+   "status": "pass",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "bit_match_frac": 1.0,
+    "cases": 12
+   },
+   "worst": [
+    {
+     "name": "layers.1.permute.tokens",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.1.permute.probs",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.1.dispatch.rank0_to_local",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.1.combine.local_back",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.2.permute.tokens",
+     "metric": "bit_match_frac",
+     "value": 1.0,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "逐位全中（bit_match_frac）",
+   "details": "details/L2.moe.movement.jsonl"
+  },
+  {
+   "id": "L2.moe.topk.fp64",
+   "type": "op_replay",
+   "level": "L2",
+   "hard": false,
+   "status": "pass",
+   "threshold": {},
+   "metrics": {
+    "expect_match_frac": 1.0,
+    "cases": 3
+   },
+   "worst": [
+    {
+     "name": "layers.1.topk.vs_fp64_chain",
+     "metric": "expect_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.2.topk.vs_fp64_chain",
+     "metric": "expect_match_frac",
+     "value": 1.0,
+     "location": null
+    },
+    {
+     "name": "layers.3.topk.vs_fp64_chain",
+     "metric": "expect_match_frac",
+     "value": 1.0,
+     "location": null
+    }
+   ],
+   "evidence": [
+    {
+     "path": "/data/janus-runs2/g61-obs",
+     "sha256": "f2300c3ae9382867687bf58c505e15df19f4b41ed749d177767b881206a2fc0e"
+    }
+   ],
+   "message": "诊断：只报数，不判",
+   "details": "details/L2.moe.topk.fp64.jsonl"
+  }
+ ]
+}

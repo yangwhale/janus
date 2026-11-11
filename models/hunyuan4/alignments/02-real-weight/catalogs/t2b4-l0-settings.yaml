@@ -1,0 +1,11 @@
+# 混元 4 · T2 B 设置核对（TPU 最新设置 tb4-a，GPU gb2-a）：两边每一步学习率等于 1e-5。
+schema_version: 1
+model: hunyuan4-trunc
+stage: t2b4-l0-settings
+description: T2 B 设置核对（TPU tb4-a）
+runs:
+  test: tb4-a
+  golden: [gb2-a]
+  root: /data/janus-runs
+checks:
+  - {id: L0.settings.lr, type: scalar_series, level: L0, select: {kind: metrics, field: lr, window: "1:301"}, params: {equals: 1.0e-5, rtol: 0.0, abs_ulp: 0}}

@@ -1,0 +1,39 @@
+{
+ "schema_version": 1,
+ "kind": "aot_memory",
+ "target": "v5p 2x2x2（compile_topology=v5p-16），8 个设备",
+ "config": {
+  "path": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+  "sha256": "69f54a8e4336a7aca1437f6044eb2f564cfb19e8a11c545429f3ed947f028c56"
+ },
+ "maxtext_commit": "6ba40afa",
+ "note": "编译期估算只作初筛；最终看 TPU 实测 peak_bytes_in_use",
+ "created_at": "2026-11-07T13:43:03+08:00",
+ "stages": [
+  {
+   "stage": "mini",
+   "layers": 7,
+   "mtp": 1,
+   "returncode": 0,
+   "overrides": [
+    "base_num_decoder_layers=7",
+    "mtp_num_layers=1",
+    "compile_topology=v5p-16",
+    "compile_topology_num_slices=1",
+    "run_name=aot-mini",
+    "base_output_directory=/tmp/aotout",
+    "steps=10",
+    "indexer_loss_scaling_factor=0.1"
+   ],
+   "memory_analysis": {
+    "argument_size_in_bytes": 559449600,
+    "output_size_in_bytes": 559294784,
+    "alias_size_in_bytes": 559285760,
+    "temp_size_in_bytes": 22648644288,
+    "generated_code_size_in_bytes": 643614208
+   },
+   "argument_plus_temp_bytes": 23208093888,
+   "num_devices": 8
+  }
+ ]
+}

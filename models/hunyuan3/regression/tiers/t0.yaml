@@ -1,0 +1,11 @@
+# 混元 3 · 日常回归 · T0 档位配置。这份文件的 sha256 登记在 lkg.yaml：改它就是改档位定义，旧 LKG 作废、重建（标准 R02）。
+# run_regression.sh 读它：步数、train_hy3.py 参数、MaxText 命令行覆盖、用哪份检查项目录、要不要取 golden。
+tier: T0
+catalog: catalogs/regression-t0.yaml
+steps: 20
+# 不抓张量；写 FP32 全量状态清单（R07 / R15 / R18）；把生产训练步的优化后 HLO 与编译器开关拷进运行目录（R05 / R20 / R21，
+# 要 run.sh 的 XLA_DUMP=1，run_regression.sh 自动给）；BF16 参数清单（对 GPU 用）不写
+train_args: [--no-hooks, --dump-steps, none, --no-param-sha, --state-sha, --hlo-dir, /data/xla]
+# 主切分（README 第二节平台档案）：FSDP 8，per_device_batch_size 2，GA 1。hy3-4layers.yml 默认是 GA 2（对齐用），这里显式覆盖
+overrides: [per_device_batch_size=2, gradient_accumulation_steps=1]
+golden: []
