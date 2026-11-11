@@ -288,7 +288,7 @@ def issue_table(arms, spec):
     """真有影响：每件一行摘要，标题链到 impacts/ 下的详解。"""
     h, _ = heaps(arms)
     by_id = {a["id"]: a for a in arms}
-    rows = ["| 件 | 涉及的实验 · 曲线最差 r | 第 1 步变远的张量（第一次实验） | 能不能忍 | 怎么修 | 修后 r |", "|---|---|---|---|---|---|"]
+    rows = ["| 件 | 涉及的实验 · 曲线最差 r | 第 1 步变远的张量 · R（离 FP64 ÷ max(golden, GPU 中位数)，第一次实验） | 能不能忍 | 怎么修 | 修后 r |", "|---|---|---|---|---|---|"]
     issues = spec.get("issues") or {}
     keys = []
     for a in h["issue"]:
@@ -321,7 +321,7 @@ def issue_table(arms, spec):
             if f.get("long") and r_long(f) != "—":
                 t += f"（1000 步 {r_long(f)}）"
             after.append(t)
-        w = "—" if worst is None else f"`{worst[0]}`，{worst[1]:.2f} 倍"
+        w = "—" if worst is None else f"`{worst[0]}`，R {worst[1]:.2f}"
         rows.append(f"| [{it['title']}]({it['file']}) | {'；'.join(size)} | {w} | {it['verdict']} | {it['fix']} | {'；'.join(after) or '—'} |")
     return rows
 

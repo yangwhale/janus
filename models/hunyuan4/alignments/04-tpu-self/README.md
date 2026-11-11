@@ -112,14 +112,14 @@
 和 GPU 重跑分得开：曲线 r 超过 GPU 重跑的最大值，或者第 1 步有梯度离精确值更远（超过 golden 与 GPU 里较远那个的 1.2 倍）。每件一行，点标题看详解（改了什么、为什么、怎么修、代价），目录在 [`impacts/`](impacts/README.md)。
 
 <!-- BEGIN:issues -->
-| 件 | 涉及的实验 · 曲线最差 r | 第 1 步变远的张量（第一次实验） | 能不能忍 | 怎么修 | 修后 r |
+| 件 | 涉及的实验 · 曲线最差 r | 第 1 步变远的张量 · R（离 FP64 ÷ max(golden, GPU 中位数)，第一次实验） | 能不能忍 | 怎么修 | 修后 r |
 |---|---|---|---|---|---|
-| [纯数据并行](impacts/01-data-parallel.md) | FSDP 改成纯数据并行 2.62；纯数据并行 + 词嵌入梯度用 FP32 累加（修复前，有 bug） 611.29；纯数据并行、不做梯度累积 3.69；16 卡纯数据并行 2.65；v7x 上 FSDP 改纯数据并行 2.21 | `model.embed_tokens.weight`，3.62 倍 | 不能忍 | 开 `embedding_grad_fp32`、`embedding_grad_fp32_local_bf16_comm`，或只把词嵌入表沿数据并行轴切开的 `embedding_shard_over_data` | 纯数据并行 + 词嵌入梯度用 FP32 累加（修复后） 0.98（1000 步 1.09）；纯数据并行 + 词嵌入梯度本地 FP32 累加、BF16 跨卡求和 0.93（1000 步 1.07）；纯数据并行 + 只把词嵌入表按 FSDP 的方式切开 1.02（1000 步 1.15）；16 卡纯数据并行 + 词嵌入梯度用 FP32 累加 0.99（1000 步 1.30） |
-| [关掉编译器的省舍入（excess precision）](impacts/02-excess-precision.md) | 关掉编译器的省舍入 13.28；v7x 上关掉编译器的省舍入 3.43 | `model.embed_tokens.weight`，26.13 倍 | 不能忍 | 别关（默认开着） | 默认即 golden，逐位相同 |
-| [关小矩阵乘改写](impacts/03-small-matmul-rewrite.md) | 关小矩阵乘改写 0.94 | `model.mtp_layers.0.enorm.weight`，1.40 倍 | 能忍 | 别关（默认开着） | 默认即 golden，逐位相同 |
-| [RMSNorm 多舍一次](impacts/04-rmsnorm-double-rounding.md) | RMSNorm 多舍一次 1.06 | `model.layers.0.input_layernorm.weight`，1.20 倍 | 能忍 | 开着 `rmsnorm_single_rounding`（生产也建议开） | 默认即 golden，逐位相同 |
-| [iHC 不强制舍成 BF16](impacts/05-ihc-bf16-rounding.md) | iHC 不强制舍成 BF16 1.09（1000 步 1.36） | `model.layers.1.self_attn.indexer.k_norm.weight`，1.61 倍 | 能忍 | 对齐时开着 `ihc_force_bf16_rounding`；生产不开 | 默认即 golden，逐位相同 |
-| [上下文并行](impacts/06-context-parallel.md) | 加上下文并行（写了 float32_logits，旧代码不生效） 1.27；加上下文并行（不做负载均衡） 1.27 | `model.layers.6.self_attn.learnable_sink_param`，1.27 倍 | 能忍 | MaxText `56492817` 起打开 `float32_logits`（上下文并行目前只能配普通注意力） | 加上下文并行（softmax 真走 FP32） 1.00 |
+| [纯数据并行](impacts/01-data-parallel.md) | FSDP 改成纯数据并行 2.62；纯数据并行 + 词嵌入梯度用 FP32 累加（修复前，有 bug） 611.29；纯数据并行、不做梯度累积 3.69；16 卡纯数据并行 2.65；v7x 上 FSDP 改纯数据并行 2.21 | `model.embed_tokens.weight`，R 3.62 | 不能忍 | 开 `embedding_grad_fp32`、`embedding_grad_fp32_local_bf16_comm`，或只把词嵌入表沿数据并行轴切开的 `embedding_shard_over_data` | 纯数据并行 + 词嵌入梯度用 FP32 累加（修复后） 0.98（1000 步 1.09）；纯数据并行 + 词嵌入梯度本地 FP32 累加、BF16 跨卡求和 0.93（1000 步 1.07）；纯数据并行 + 只把词嵌入表按 FSDP 的方式切开 1.02（1000 步 1.15）；16 卡纯数据并行 + 词嵌入梯度用 FP32 累加 0.99（1000 步 1.30） |
+| [关掉编译器的省舍入（excess precision）](impacts/02-excess-precision.md) | 关掉编译器的省舍入 13.28；v7x 上关掉编译器的省舍入 3.43 | `model.embed_tokens.weight`，R 26.13 | 不能忍 | 别关（默认开着） | 默认即 golden，逐位相同 |
+| [关小矩阵乘改写](impacts/03-small-matmul-rewrite.md) | 关小矩阵乘改写 0.94 | `model.mtp_layers.0.enorm.weight`，R 1.40 | 能忍 | 别关（默认开着） | 默认即 golden，逐位相同 |
+| [RMSNorm 多舍一次](impacts/04-rmsnorm-double-rounding.md) | RMSNorm 多舍一次 1.06 | `model.layers.0.input_layernorm.weight`，R 1.20 | 能忍 | 开着 `rmsnorm_single_rounding`（生产也建议开） | 默认即 golden，逐位相同 |
+| [iHC 不强制舍成 BF16](impacts/05-ihc-bf16-rounding.md) | iHC 不强制舍成 BF16 1.09（1000 步 1.36） | `model.layers.1.self_attn.indexer.k_norm.weight`，R 1.61 | 能忍 | 对齐时开着 `ihc_force_bf16_rounding`；生产不开 | 默认即 golden，逐位相同 |
+| [上下文并行](impacts/06-context-parallel.md) | 加上下文并行（写了 float32_logits，旧代码不生效） 1.27；加上下文并行（不做负载均衡） 1.27 | `model.layers.6.self_attn.learnable_sink_param`，R 1.27 | 能忍 | MaxText `56492817` 起打开 `float32_logits`（上下文并行目前只能配普通注意力） | 加上下文并行（softmax 真走 FP32） 1.00 |
 <!-- END:issues -->
 
 ## 故意改坏、用来证明工具抓得到的

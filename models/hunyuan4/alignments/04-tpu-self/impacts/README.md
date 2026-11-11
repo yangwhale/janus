@@ -7,7 +7,7 @@
 | # | 件 | 一句话 |
 |---|---|---|
 | 01 | [纯数据并行](01-data-parallel.md) | 纯数据并行让词嵌入梯度丢精度，影响是噪声上限的 2–4 倍；打开 FP32 词嵌入梯度就修好，代价不到 1% |
-| 02 | [关掉编译器的省舍入](02-excess-precision.md) | v5p 上词嵌入梯度每加一次就舍一次，远 26 倍；v7x 上词嵌入走 SparseCore 不受影响，但 iHC 残差更新反向里 d layer_out 的乘积被后端逐个舍成 BF16，主干梯度整体小 4e-4，梯度范数曲线超；别关 |
+| 02 | [关掉编译器的省舍入](02-excess-precision.md) | v5p 上词嵌入梯度每加一次就舍一次，R 26.1；v7x 上词嵌入走 SparseCore 不受影响，但 iHC 残差更新反向里 d layer_out 的乘积被后端逐个舍成 BF16，主干梯度整体小 4e-4，梯度范数曲线超；别关 |
 | 03 | [关小矩阵乘改写](03-small-matmul-rewrite.md) | RMSNorm 的乘法改走 MXU 单遍 BF16，`enorm` 与 `hc_head` 梯度变远；曲线在噪声内，但更慢，别关 |
 | 04 | [RMSNorm 多舍一次](04-rmsnorm-double-rounding.md) | 只让一个张量压线；开着单次舍入的开关就没有这件事 |
 | 05 | [iHC 不强制舍成 BF16](05-ihc-bf16-rounding.md) | 关掉后编译器省掉分支输入的舍入，第 1 层 KD 与只吃 KD 梯度的 `k_norm` 变远；曲线分不开，生产不用开 |

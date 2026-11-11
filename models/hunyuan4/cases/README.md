@@ -21,5 +21,5 @@ r、R、MARE 与定责依据的读法见[总览细节「读法」](../dashboard/
 | 11 | [第 1 步 iHC 梯度：四路流加权和的相加顺序](11-ihc-stream-sum-highest-einsum.md) | 边界 | M28、G29 | 只改 TPU 后两边的差收拢 | 已修；现行配置 6 个 iHC 张量已定责、已接受（D11） |
 | 12 | [param_norm：FP32 全局求和的测量误差与真实漂移](12-param-norm-fp32-sum-and-drift.md) | 量法＋边界 | J13、M28 | 量法（两边比精确值） | 量法已改；余下一半的漂移待查（D12） |
 | 13 | [权重侧精度开关在第 1 步测不到](13-weight-side-switch-step1-blind-spot.md) | 量法 | M13、M27、M8 | 只改一边的 300 步 A/B＋机理核对 | 机理已查明 |
-| 14 | [DDP 和 FSDP 对不上，一路查到词嵌入反向的一次 scatter-add](14-ddp-fsdp-embedding.md) | 边界 | M12、J48 | 对 FP64 的 R；训练步 HLO 审计；单算子逐位对仿真 | 已修（两种修法）；生产尺寸上的验收待核 |
+| 14 | [DDP 和 FSDP 对不上，一路查到词嵌入反向的一次 scatter-add](14-ddp-fsdp-embedding.md) | 边界 | M12、J48；MaxText 上的一处修改 | 对 FP64 的 R；训练步 HLO 审计；单算子逐位对仿真 | 已修（三种修法）；生产尺寸上的验收待核 |
 | 14 · 二 | [案例 14 第二阶段：只把词嵌入表沿数据并行轴切开](14-ddp-fsdp-embedding.md#第二阶段只把词嵌入表沿数据并行轴切开) | 边界 | maxtext `9099c8ce` | 对 FP64 的 R；训练步 HLO 的集合通信清单 | 已验证（300 / 1000 步和 GPU 重跑分不开） |
