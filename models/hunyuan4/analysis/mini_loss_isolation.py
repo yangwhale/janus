@@ -22,6 +22,7 @@ import numpy as np
 BLOCK = 25
 STEPS = 1000
 WINDOWS = [(2, 500), (501, 1000), (551, 1000), (751, 1000)]
+WINDOWS_2000 = [(1001, 1250), (1251, 1500), (1501, 1750), (1751, 2000)]
 
 
 def series(root: str, run: str, field: str) -> np.ndarray:
@@ -90,8 +91,13 @@ def main():
     ap.add_argument("--root", required=True)
     ap.add_argument("--config", nargs="+", required=True, help="名字:GPU 运行（逗号分隔）:TPU 运行（逗号分隔）")
     ap.add_argument("--field", nargs="+", default=["lm_loss"])
+    ap.add_argument("--steps", type=int, default=1000, help="运行的步数（2000 时另报第 1001–2000 步的四个窗口）")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
+    global STEPS
+    STEPS = a.steps
+    if STEPS >= 2000:
+        WINDOWS.extend(WINDOWS_2000)
     res = {"what": "隔离实验：各配置 TPU 对同配置 GPU 均值的主 loss 偏差（25 步分块、后段斜率、窗口、带符号均值 r）", "configs": {}}
     for spec in a.config:
         name, gs, ts = spec.split(":")

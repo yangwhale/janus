@@ -10,6 +10,12 @@
 
 ### Added
 
+- 混元 4 mini 两项 TPU 实验：存档续跑逐位（`x4-*`，1000 步 47 个逐步量与 677 个状态张量都逐位，`t1-resume-bitwise.json`）；推荐生产组合整体跑 1000 步（`x5-prod` 3 份，`t1zp-l4`、`t1zp300-l4`、`t1zp-repeats.json`：1000 步没有不过项，但索引器 KD 三份都待定，r 1.23–1.26，现行对齐配置 `tz-off-rep` 0.77；前 300 步三份的索引器 KD 都不过，r 4.78–5.23）
+- 混元 4 mini 生产配方臂 P1（YaRN factor 8、cosine 学习率、路由偏置零均值三项一起改；GPU 一侧新加 `--bias-zero-mean`、`--yarn-factor`，台账 G35；GPU `p1g-a`、`p1g-b`，TPU `p1t-a`，各 1000 步，`t1pr-*`）与 QK-Clip 真触发时 TPU 梯度累积 2 对 1 的实测（`t1zo-qkclip-accum-tau01`、`-tau005`）。诊断，不进签字
+- 混元 4 mini 生产配方臂补 6 份 GPU（`p1g-c … p1g-h`），用同配方 GPU 8 份两两 28 对当尺子重判 TPU：9 项全过（`t1pr-l4-gpu8`；补跑前 GPU 只有 2 份、量不出同配方尺子，借现行尺子是不过 3、待定 1）。诊断、不进签字：TPU 1 份，8 份尺子是看过借尺结果后才定的（混元 4 `PROTOCOL.md` 第 0 节「生产配方臂」）；两种尺子的对照在 `t1pr-ruler-compare.json`
+- 混元 4 mini D30 的结构消融：两边都去掉 iHC（GPU 台账 G36、`make_tiny_hf.py --no-ihc`），1000 步后段不飘；同时在旧 GPU 口径下把后段根因写成「iHC 流的 BF16 舍入点」（M58、M59），这一条随后由 #418 撤回、改成根因未定。结果 `mini-ihc-ablation.json`
+- 混元 4 案例 16：libtpu 0.0.46–0.0.52 在 v5p 上的 jit 静默算错（多输出 fusion 合进 DUS），机理、4 种 workaround 与存档训练步程序的特征扫描（`hlo_mof_dus_scan.py`）；差异清单 F8
+- 混元 4 TPU 自比：RMSNorm 多舍一次在 libtpu 0.0.52 上变强的机理（`04-tpu-self/impacts/04`）
 - Megatron 抓数（`janus/dump/megatron.py`）新增三个默认不改行为的选项：`gather_experts`（全量抓数步把 rank 0 所在专家并行组里其他 rank 的路由专家收到 rank 0，按全局专家号命名）、`full_kinds`（全量抓数只写指定种类）、`forward_acts`（False 时抓数步不抓前向激活）。格式见 `docs/reference/dump.md`「GPU 侧的限制」；已有运行目录不受影响
 - Megatron 抓数（`janus/dump/megatron.py`）全量抓数时另存 Muon 的动量缓冲 `momentum_buffer.<参数名>`（更新后）；走 Adam 的参数照旧存 `exp_avg*`。格式见 `docs/reference/dump-format.md`；已有运行目录不受影响
 - 混元 3 便宜的等价修法 `rcb`：`rr_arms.py` 新臂 `dgrad-chunk-bf16`（输出头 dgrad 按 1024 分段，每段 BF16 张量核乘法、输出 FP32，段间 FP32 累加），训练前用 `dgrad_accum_ablation.py --check-arm` 核对与离线消融 B1024 逐位相同；`rcb-a`、`rcb-b` 1000 步对 `rcc-a`（`rcc` 45 对噪声）L4 全过，步时 +6%（`rcc` +61%）。新目录 `phase2-rcb-vs-rcc`、交叉核对 `phase2-acceptance-rcb-on`、`phase2-v7x-acceptance-rcb`；正式基线不变，仍是 `rcc-a`
@@ -89,9 +95,15 @@
 
 ### Changed
 
-- **[判定]** 混元 4 mini 的对齐配置关 splash 的 base2 指数（四份对齐 yml `sa_use_base2_exp: false`，所有尺寸一致），现行比较从 `t1zg-a` 换成关 base2 的 `tz-off-rep`；同时 mini 1000 步的噪声尺子从 `g3` 8 份两两 28 对换成 16 份两两 120 对。现行判定：1000 步 9 项过 7、待定 2（`t1zo-l4`）；同一把 16 份尺子下上一代 `t1zg-a` 是 9 项全过（8 份时过 7、待定 2）。旧结果不重判、原样保留，`t1zg-a` 降为上一代；L1 单算子回放、L2、路由一致率第 8 / 30 / 100 步没有关 base2 的结果，照旧引用开 base2 的一代并注明。变更记录见混元 4 `PROTOCOL.md` 2026-11-11
+- 混元 4 mini D30 更正：主 loss 后段根因未定，范围缩到 iHC 到 hc_head 一段（#411 写的「已定位到 iHC 流的 BF16 舍入点」撤回）。判定不变
+- **[判定]** 混元 4 mini L3 第 1 步梯度的 GPU 参照从 3 份 3 对补到 6 份 15 对（`g2s-d … f`），现行判定换成 6 份（`t1zo-step1-train-grad-vs-fp64-n6`）：不过 → 待定；超 N 且 R > 1.2 计入未定责的由 5 个 iHC 张量变成第 3 层注意力前 `hc_scale` 1 个，MTP `enorm` 另列，两个都按 D11 豁免规则单列（豁免规则与沿用待复核）。3 份时的结果保留。GPU 镜像的 TE / cuBLAS / cuDNN 版本改成实测。变更记录见混元 4 `PROTOCOL.md` 2026-11-11
+- 混元 4 mini 优化器一步（L3）换成现行 `tz-off-rep` 第 1 步全量抓数重算（`t1zo-l3-optim-step1`），仍全过；判定不变
+- **[判定]** 混元 4 mini 的对齐配置关 splash 的 base2 指数（四份对齐 yml `sa_use_base2_exp: false`，所有尺寸一致），现行比较从 `t1zg-a` 换成关 base2 的 `tz-off-rep`；同时 mini 1000 步的噪声尺子从 `g3` 8 份两两 28 对换成 16 份两两 120 对。现行判定：1000 步 9 项过 7、待定 2（`t1zo-l4`）；同一把 16 份尺子下上一代 `t1zg-a` 是 9 项全过（8 份时过 7、待定 2）。换代后另有几项结论变了：L1 低阈值 QK-Clip 第 1 步逐头最大 logit 由过变不过（第 4 层 R 0.94 → 1.55，未定责）；L3 第 1 步未定责的 iHC 张量里 3 个是新出现的；L3 第 1 步 MTP `enorm` 由过线内（R 1.18）变成超线（R 1.24），按 D11 豁免规则单列（豁免规则与沿用待复核）；前 300 步主 loss 由过变待定（带符号均值 r 1.10）。前 300 步 grad_norm（MARE r 1.23）上一代就是待定，L4 QK-Clip 全局最大 logit 1000 步 r 1.09 待定。逐项见混元 4 `PROTOCOL.md` 第 0 节表下第 2 条。旧结果不重判、原样保留，`t1zg-a` 降为上一代；L1 注意力整块、L2、路由一致率第 8 / 30 / 100 步没有关 base2 的结果，照旧引用开 base2 的一代并注明。变更记录见混元 4 `PROTOCOL.md` 2026-11-11
 - **[判定]** 混元 4 TPU 自比 1000 步的尺子从 GPU `g3` 8 份两两 28 对换成 16 份两两 120 对，全部 1000 步臂重判：8 份时落在 r 2–3 的灰区臂全部落到「和 GPU 重跑分不开」，GPU 留一法最大值 2.00 → 1.82；前 300 步仍是 8 份。逐臂结果在 `models/hunyuan4/alignments/04-tpu-self/MATRIX.md`「L 长跑」，变更记录见混元 4 `PROTOCOL.md` 2026-11-10
 - **[判定]** 混元 4 的曲线检查一律以参照作分母，grad_norm 不再用两边均值（`denominator: mean`）。87 个目录改动，262 份结果用同一批运行目录重跑后原名覆盖：梯度范数以外的检查不变，判定只变 1 项（`t1zz-l4` 的 grad_norm 过 → 待定），TPU 自比判档与 GPU 留一法最大值（2.47 / 1.82）不变；逐项对照在 `models/hunyuan4/results/grad-norm-denominator-rejudge.md`，变更记录见混元 4 `PROTOCOL.md` 2026-11-10。janus 本身的判法与默认值不变，`denominator: mean` 仍可用；混元 3 已签字，第一层沿用两边均值
+- **[判定]** 混元 4 mini 对齐报告开关表的「波动内」线从升幅 0.45 改成 1.07：原线只取自一个对照（关掉「QK-Clip 不含偏置项」）；新线取只改执行方式的 8 份运行（base2 开、关各 4 份；每组 3 份同一配置只差 vmem 上限或延迟隐藏调度，另 1 份是早一代、少 M50），截前 300 步、用开关表同一把尺子（GPU 8 份 28 对），同组任取两份「升得最多的一项」的最大值（`models/hunyuan4/alignments/01-mini/gpu-noise/results/exec-spread-300.json`）。升幅 0.45–0.9 的 7 行退回「波动内」，单看曲线不再归到开关；超线的只剩 4 行。检查目录、结果文件与判档不变，不用重跑；拿 0.45–1.07 之间的升幅当定责依据的几处已改成如实（单份、在波动内）。去掉蒸馏 loss 一项重算，8 份尺子下最大 0.90、GPU 16 份尺子下 0.81（`exec-spread-300-nokd.json`）
+- 混元 4 变更台账改号：`embedding_shard_over_data` 记作 M54（原记 M51，与精确 log 重号，）；`ihc_stream_grad_gpu_order` 记作 M58（#396 写成 M54 的运行登记与 J58 已改正）。外部按旧号引用的要对照改
+- 混元 4 TPU 自比的档名「在刻度内」改叫「在噪声内」、「超出刻度」改叫「超出噪声上限」：`tpu_self_compare.py` 新写的结果用新档名，已提交结果里的旧档名不改，`build_tables.py` 读到旧档名时按新叫法显示。不改判档。变更记录见混元 4 `PROTOCOL.md` 2026-11-10
 - 结果格式升到 `schema_version: 2`：`catalog` 记目录的内容指纹（`content_sha256`，`hash_algo: content-v1`），原文件 sha256 改名 `raw_sha256` 只留作历史
   - 内容指纹 = 解析 YAML（丢注释）、删掉纯描述键（顶层 `description`；检查项的 `description`、`notes`、`source`、`pending_note`）、键排序的紧凑 JSON 的 sha256（`docs/reference/result-schema.md` 注 2）。
   - 改注释和说明文字不再让已提交的结果对不上；`tests/test_committed_results.py`、`regress.py` 的 R02（`lkg.yaml` 新增 `catalog_content_sha256`）都改比内容指纹。
@@ -118,6 +130,7 @@
 
 ### Fixed
 
+- 混元 4 TPU 自比 `tpu_self_compare.py` 的程序指纹改用跑前离线筛同一套规范化（`hlo_screen.py` 的 `canon_lines`）。已提交的 184 份结果用 `analysis/refresh_program_fingerprint.py` 从运行目录里存下的 HLO 重算 `hlo.program_fingerprint` 与 `hlo.program_equal`，其余字段不动；`program_equal` 变了的只有 C13、E11 两份（false → true）。不改判档。变更记录见混元 4 `PROTOCOL.md` 2026-11-11
 - 混元 4 TPU 自比 `tpu_self_compare.py` 数 HLO 指令时漏掉 6 元及以上的元组指令（形状里的 `/*index=5*/` 注释带等号），合并后的大 all-reduce 和多输出融合都没数进去；已修并加单测。只影响结果文件里只报的 `hlo.op_counts_diff`，不改判定；已提交的结果文件不改，文档里引用过的四处计数在 `models/hunyuan4/alignments/04-tpu-self/b1-grad-reduction.md`「六」重数更正
 - 文档逐条对账后的更正：台账 #1 / #5 与对齐报告第 2 节把「MXU 就近舍入」「12 万长求和上的截断模型」标为推断；#1 的 TPU 读数改为同步号的输出头回放（−2.4e-5 / −7.4e-5）；#5 与术语表的近似平局分差改为生产回放的 2.7e-5 – 6.3e-5；config-alignment 的路由翻转来源改为上游；扰动臂 FP64 R 分平台写（v5p 1.001 – 1.008、v7x 1.003 – 1.039）；术语表五级判法、principles 的 FP64 适用范围、judging 的基线位次。术语表新增截断、ŵ̄、Adam ε 区、两侧执行噪声的并集、`rcb` 与代号白话名表；台账加注 1（为什么是输出头）
 - 第一阶段 5 个 GPU 脚本的结果记的是搬家前的脚本哈希，用当前脚本在 8×B200 上重跑

@@ -39,15 +39,16 @@ GPU ↔ TPU 对齐的现行运行（混元 3 的正式验收，混元 4 各尺�
 |---|---|---|---|
 | TPU | 镜像 | MaxText 官方 `tpu_pre_training` 0.2.5，digest `b152355a…` | 钉在两个模型的 `frameworks/maxtext/run.sh` |
 | TPU | jax / jaxlib | 0.11.1 / 0.11.1 | `meta.json` 的 `versions` |
-| TPU | libtpu | 0.0.46，构建 `cl/963683785`（2026-08-12） | 混元 4 后期的运行在 `versions.libtpu_pip` 记了版本号；更早的运行和混元 3 只记了构建号，按构建号认 |
+| TPU | libtpu | 0.0.46，构建 `cl/963683785`（2026-08-12） | 记录：混元 4 mini 现行 `tz-off-rep`、06 rw3 的 `meta.json` 在 `versions.libtpu_pip` 记了 0.0.46；混元 3 01 / 02、混元 4 02 real-weight、03 mid 与更早的运行只记了构建号，按构建号认作 0.0.46。构建号到 pip 版本的对应已核：同一构建号的探针运行在 v5p、v7x 上都读到 `libtpu_pip` 0.0.46（[`jit-miscompile-probe-v5p.json`](../../models/hunyuan4/results/jit-miscompile-probe-v5p.json)、[`jit-miscompile-probe-v7x.json`](../../models/hunyuan4/results/jit-miscompile-probe-v7x.json)） |
 | TPU | flax / optax / orbax-checkpoint | 0.12.9 / 0.2.8 / 0.12.4 | `meta.json` 的 `versions` |
 | TPU | tokamax | 0.0.14（镜像自带的包） | `meta.json` 不记；读镜像层里的 `tokamax-0.0.14.dist-info` 核过（2026-11-11） |
 | TPU | MaxText | 混元 3：`hunyuan` 分支 `0622774a`；混元 4：集成分支，各尺寸的提交不同 | 各实践 `setup.md` |
 | GPU | 镜像 | NeMo 26.10，digest `fc75bf51…` | `meta.json` 的 `image`（混元 3 第一阶段只记了 tag） |
 | GPU | torch / CUDA / NCCL | 2.14.0a0+b2c75dd062.nv26.09 / 13.4 / 2.31.2 | `meta.json` 的 `versions` |
 | GPU | Megatron-Core / Megatron-Bridge | 0.20.0 / 0.7.0（容器自带，提交未登记） | 混元 4 不用 Megatron-Bridge |
-| GPU | Transformer Engine | 2.20.2+44f31bbe | 混元 3 的 `meta.json` 记了；混元 4 的不记，按同一镜像推断 |
-| GPU | cuBLAS | 13.8.0.4 | 混元 3 第一阶段在容器里读到（`phase1-l1.results.json`）；之后的运行都不记，按同一镜像推断 |
+| GPU | Transformer Engine | 2.20.2+44f31bbe | 实测：混元 3 的 `meta.json` 记了；混元 4 的 `meta.json` 不记，2026-11-11 在 digest `fc75bf51…` 的训练 Pod 里、训练用的库环境下读到（`import` 与已装的包都是这个版本；容器环境变量 `TRANSFORMER_ENGINE_VERSION=2.19` 是基础镜像的，不是实际装的），见混元 4 [`gpu-image-versions.json`](../../models/hunyuan4/alignments/01-mini/results/gpu-image-versions.json) |
+| GPU | cuBLAS | 13.8.1（库文件 `libcublas.so.13.8.1.7`） | 实测：同上，进程实际映射的库与 `cublasGetProperty` 都是 13.8.1（cuBLASLt 130801）。混元 3 第一阶段记的 13.8.0.4 取自容器环境变量 `CUBLAS_VERSION`，不是实际加载的库 |
+| GPU | cuDNN | 9.26.0 | 实测：同上（`torch.backends.cudnn.version()` 92600，`libcudnn.so.9.26.0`）；CUDA 运行时 13.4（`libcudart.so.13.4.49`），NCCL 2.31.2（`libnccl.so.2.31.2`，与 `meta.json` 相同） |
 
 - **libtpu 以构建号和 `libtpu_pip` 为准，不以镜像 digest 为准。** 混元 4 TPU 自比的 0.0.45、0.0.47、0.0.48、0.0.52 臂都是在同一个 digest 上 `pip install --no-deps` 换装的（[自比设置「变种」](../../models/hunyuan4/alignments/04-tpu-self/setup.md#变种)），只看 digest 会把它们判成同一版本。
 - **结论只对这一套版本成立。** 换 libtpu 或 jax，按 [`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md) 的做法先离线编译看哪些程序变了，再重建 golden、重测。混元 4 的 TPU 自比另在 0.0.45、0.0.47、0.0.48、0.0.52 上测过，GPU ↔ TPU 对齐没有。
@@ -61,7 +62,7 @@ GPU ↔ TPU 对齐的现行运行（混元 3 的正式验收，混元 4 各尺�
   - torch 2.14a、CUDA 13.4；
   - Megatron-Core 0.20.0、Megatron-Bridge 0.7.0；
   - Transformer Engine 2.20.2、cuBLAS 13.8。
-  - 出处：`models/hunyuan3/frameworks/megatron/README.md`；TE 与 cuBLAS 版本取自 `phase1-l1.results.json` 的 `environment`。
+  - 出处：`models/hunyuan3/frameworks/megatron/README.md`；TE 与 cuBLAS 版本取自 `phase1-l1.results.json` 的 `environment`。那里的 cuBLAS `13.8.0.4` 读的是容器环境变量 `CUBLAS_VERSION`；同一 digest 实际加载的库是 13.8.1（2026-11-11 实测，见上表）。
 - 起 Pod、下权重、转格式、训练的步骤见 `models/hunyuan3/frameworks/megatron/README.md`。
 
 ### 两种设置
@@ -154,6 +155,7 @@ GPU ↔ TPU 对齐的现行运行（混元 3 的正式验收，混元 4 各尺�
 - 配置逐项对 GPU：`models/hunyuan3/frameworks/maxtext/hy3-4layers.yml`（每行注明 GPU 一侧的值与出处）。
 - 对齐阶段不加性能类 libtpu 参数（`LIBTPU_INIT_ARGS` 默认空）。
 - libtpu 0.0.50 / 0.0.50.1 有已知的 scatter 正确性问题（会丢有效更新），0.0.51 已修；对齐实验不要用这两个版本。
+- v5p 上实测 libtpu 0.0.46、0.0.48、0.0.51、0.0.52 都有一个 jit 静默算错的编译器 bug（0.0.47、0.0.49 没测）：含 DUS 的 kernel 和读同一缓冲的 kernel 被合进一颗多输出 fusion 时，后者的输出可能算丢。nightly 0.0.53.dev20261106 起已修，正式版截至 2026-11-11 没有。存档的 292 份训练步程序扫出 0 处，覆盖混元 3 截 4 层与混元 4 mini 存了 HLO 的运行；mini 现行比较 `tz-off-rep` 与推荐组合 `x5-prod` 没存 HLO，在 CPU 上按 `meta.json` 重编后扫，也是 0 处（离线程序与上卡程序是同一份是推断）。混元 3 正式被测不在内，生产尺寸没扫（[案例 16](../../models/hunyuan4/cases/16-jit-miscompile-sub8-row-block.md)）。换版本、改切分后用 `models/hunyuan4/analysis/hlo_mof_dus_scan.py` 扫一遍训练步程序；修法见[差异清单 F8](tpu-vs-gpu-differences.md#f8-jit-静默算错dus-和读同一缓冲的算子被合进一颗多输出-fusion)。
 - 换 libtpu 版本不一定只换求和顺序：新版本可能改默认行为（混元 4 上 0.0.46 → 0.0.52 就改了 scatter 插排序的门槛，并让「RMSNorm 多舍一次」的影响变大）。换版本先重建 golden、把已知敏感的改动重测一遍，结论只对实测过的版本对成立（`models/hunyuan4/alignments/04-tpu-self/libtpu-052.md`）。libtpu 0.0.52 没有配套的官方 jax；在 jax 0.11.1 的镜像里只换 libtpu 能正常训练（v5p、v7x 实测）。
 - 多主机（v5p 2x2x2 两台主机）的 Pod 必须 `hostNetwork: true` + `dnsPolicy: ClusterFirstWithHostNet`，否则 `jax.distributed` 初始化卡住。
 
@@ -191,7 +193,7 @@ GPU ↔ TPU 对齐的现行运行（混元 3 的正式验收，混元 4 各尺�
 | collective matmul 等融合通信 | 是否改变归约顺序 | 改变，见注 4 |
 | 注意力 kernel 的实现选项 | 与 GPU 侧 softmax 的计算方式（如以 2 为底的指数）是否一致 | 见注 5 |
 | 扰动臂候选 | 哪些开关只改执行方式，能当噪声参照 | 见注 6 |
-| 版本 | jax / jaxlib / libtpu 版本钉死在镜像 digest 里 | 换版本不保证逐位，见注 7 |
+| 版本 | 镜像 digest 只钉基础镜像（jax / jaxlib 随镜像）；libtpu 可在同一 digest 上换装，以构建号和 `libtpu_pip` 为准 | 换版本不保证逐位，见注 7 |
 
 注 1（矩阵乘默认精度）：
 - FP32 操作数在 `DEFAULT` 下只算一遍 BF16：相对误差约 2.3e-3，`HIGHEST` 约 1e-7。

@@ -18,8 +18,12 @@ FP64 参照：从同一份初始权重（HF 目录，FP32 主权重 = 检查点�
 舍入（2^-8）的按分辨率下限过。
 
   python l3_optim_step1.py --fp64 <step1_ref 目录> --hf <HF 目录> --tpu <TPU 全量抓数运行目录> \
-      --gpu g2s-a=<前缀> g2s-b=<前缀> g2s-c=<前缀> --gpu-partition <optimizer_partition.json> --out <json>
-  （GPU 前缀下要有 .s1.main_param / main_param_after / exp_avg / exp_avg_sq .hf.safetensors，export_hf_grads.py 导出）
+      --gpu g2s-a=<前缀> g2s-b=<前缀> g2s-c=<前缀> --gpu-partition <optimizer_partition.json> --out <json> \
+      [--gpu-grads g2s-a=<梯度.safetensors>=<grad_norm> …] [--tpu-gnorm <TPU 第 1 步 raw_grad_norm>] \
+      [--tpu-grads <诊断程序梯度，只作旁证>] [--stage <结果名，默认 t1-l3-optim-step1>]
+  （GPU 前缀下要有 .s1.main_param / main_param_after / exp_avg / exp_avg_sq .hf.safetensors，export_hf_grads.py --kind 导出）
+  给了 --gpu-grads 才算「优化器一步本身」（optim_arith）；TPU 一侧的梯度总是由它自己的动量反推，--tpu-grads 只用来报
+  诊断程序梯度与训练步梯度之差。现行 `t1zo-l3-optim-step1` 用 tz-off-rep 的第 1 步全量抓数（没有诊断运行，不给 --tpu-grads）。
 """
 from __future__ import annotations
 
@@ -141,6 +145,7 @@ def main():
     p.add_argument("--tpu-grads", default="", help="TPU 同一状态同一批的第 1 步梯度（diag_grads.safetensors，HF 名字）")
     p.add_argument("--tpu-gnorm", type=float, default=0.0, help="TPU 训练第 1 步记下的裁剪前 grad_norm")
     p.add_argument("--gpu-grads", nargs="*", default=[], help="名字=GPU 第 1 步梯度（export_hf_grads.py）=它记下的 grad_norm")
+    p.add_argument("--stage", default="t1-l3-optim-step1", help="结果文件的 stage 名")
     p.add_argument("--out", required=True)
     a = p.parse_args()
     from hy4_weights import GLOBAL, layer_plan, mtp_names  # noqa: F401  (只为确认对照表可用)
@@ -247,15 +252,17 @@ def main():
     # 优化器算术本身：每一侧对「FP64 优化器作用在这一侧自己的梯度上」（裁剪系数用这一侧自己记下的 grad_norm），
     # 把第 1 步梯度带来的误差扣掉，只看优化器一步加的那部分（同 L1 优化器回放的思路，这里用的是训练里真实走的那一步）
     arith = []
-    if a.tpu_grads and a.gpu_grads:
+    diag_vs_train = None
+    if a.gpu_grads:
         H = int(cfgj["num_attention_heads"])
         # TPU 训练这一步实际用的（裁剪后）梯度从它自己的动量反推：Adam m = (1−β1)·g、Muon buf = (1−β)·g（第 1 步从零起）。
         # 不用诊断运行的梯度：诊断（--diag-step1）与训练步是分开编译的两个程序，个别病态小张量的梯度不逐位相同（diag_vs_train 里报）
-        TG = safe_open(a.tpu_grads, "pt")
         g_train = {n: tget("exp_avg", n) / ((1 - B1) if opt_of[n] == "adam" else (1 - BETA)) for n in names}
         tref = fp64_opt(lambda n: g_train[n], names, 1.0, opt_of, H)
         coef_t = 1.0 / max(1.0, a.tpu_gnorm)
-        diag_vs_train = {n: rel(npy(TG.get_tensor(n)) * coef_t, g_train[n], float(np.linalg.norm(g_train[n]))) for n in names}
+        if a.tpu_grads:  # 诊断程序梯度只作旁证；没有诊断运行时不比
+            TG = safe_open(a.tpu_grads, "pt")
+            diag_vs_train = {n: rel(npy(TG.get_tensor(n)) * coef_t, g_train[n], float(np.linalg.norm(g_train[n]))) for n in names}
         grefs = {}
         for spec in a.gpu_grads:
             nm, path, gnv = spec.split("=")
@@ -339,12 +346,12 @@ def main():
         w = max(rs, key=lambda r: r["tpu_vs_own_ref"])
         checks[-4]["message"] += f"；对 FP64 作用在 TPU 自己梯度上的动量：最大 {w['tensor']} {w['tpu_vs_own_ref']:.3g}（中位数 {stt.median(r['tpu_vs_own_ref'] for r in rs):.3g}）"
         checks[-4]["metrics"]["arith_tpu_vs_own_ref_max"] = w["tpu_vs_own_ref"]
-    res = {"schema_version": 1, "stage": "t1-l3-optim-step1", "model": "hunyuan4-mini",
+    res = {"schema_version": 1, "stage": a.stage, "model": "hunyuan4-mini",
            "inputs": {"tpu": os.path.basename(a.tpu.rstrip("/")), "gpu": gn, "fp64": "CPU FP64 第 1 步梯度（step1_ref.py）",
                       "fp64_grad_norm": gnorm, "fp64_grad_norm_summary": summ.get("grad_norm"), "clip_coef": coef,
                       "hyper": {"lr": LR, "muon_beta": BETA, "adam_b1": B1, "adam_b2": B2, "adam_eps": EPS, "ns": NS}},
            "summary_by_quantity": summ_out, "checks": checks, "rows": rows, "arith_rows": arith,
-           "tpu_diag_vs_train_grad": diag_vs_train if arith else None}
+           "tpu_diag_vs_train_grad": diag_vs_train}
     res["summary"] = {k: sum(c["status"] == k for c in checks) for k in ("pass", "fail", "inconclusive", "error")}
     with open(a.out, "w") as f:
         json.dump(res, f, ensure_ascii=False, indent=1, default=float)

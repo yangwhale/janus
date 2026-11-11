@@ -13,31 +13,34 @@
 - **mid**（hy4-mid，5.19B，随机初始化）：只换尺寸，看 mini 的结论放大宽度后还在不在（[报告](../alignments/03-mid/ALIGNMENT-REPORT.md)）。
 - **B、D1**（真实权重截层）：B 测 MoE（第 0 层稠密 + 第 1 层 MoE），D1 测 MTP（第 0 层稠密 + 1 层 MTP）（[报告](../alignments/02-real-weight/ALIGNMENT-REPORT.md)）。
 - **tiny**（hy4-tiny，5.4M）：只做 TPU 一侧的 CPU 冒烟（[报告](../alignments/00-tiny/ALIGNMENT-REPORT.md)）。
-- 判法同 mini：每个尺寸 GPU 同设置 8 份两两 28 对量噪声上限 N，TPU 只和指定的一份比；L3 对 CPU FP64 看 R。
+- 判法同 mini：每个尺寸用 GPU 同设置多份两两之差量噪声上限 N（这里各尺寸都是 8 份 28 对；mini 现行 1000 步是 16 份 120 对），TPU 只和指定的一份比；L3 对 CPU FP64 看 R。
 
 ## 各列是什么
 
 | 列 | 含义 |
 |---|---|
-| mid | 03 · hy4-mid 最近一代（base2 开、早于 M50；现行对齐配置在 mid 上尚无运行）：L4 是 TPU tm-b 300 步对 GPU gm-a（噪声 gm 两两 28 对）；L3 是 tm2diag；L0 取 tm-a 一代（同一份检查点、同一学习率） |
-| B | 02 · real-weight 截层 B：L4 是 TPU tb5b-a 1000 步（base2 开、早于 M50；现行对齐配置在 B 上尚无运行）对 GPU gb3-a（噪声 gb3 两两 28 对）；L3 是 tb6diag；L0 学习率取上一代 tb5-b（学习率设置相同） |
-| D1 | 02 · real-weight 截层 D1：L4 是 TPU td5b-b 1000 步（base2 开、早于 M50；现行对齐配置在 D1 上尚无运行）对 GPU gd3-a（噪声 gd3 两两 28 对）；L3 是 td6diag；L0 学习率取上一代 td5-a（学习率设置相同） |
+| mid | 03 · hy4-mid 最近一代（base2 开、早于 M50；现行对齐配置在 mid 上尚无运行）：L4 是 TPU tm-b 300 步对 GPU gm-a（噪声 gm 两两 28 对）；L3 是 tm2diag；L0 学习率核对用 tm-b，权重转换取 tm-a 一代（同一份检查点） |
+| B | 02 · real-weight 截层 B：L4 是 TPU tb5b-a 1000 步（base2 开、早于 M50；现行对齐配置在 B 上尚无运行）对 GPU gb3-a（噪声 gb3 两两 28 对）；L3 是 tb6diag；L0 学习率核对也用 tb5b-a |
+| D1 | 02 · real-weight 截层 D1：L4 是 TPU td5b-b 1000 步（base2 开、早于 M50；现行对齐配置在 D1 上尚无运行）对 GPU gd3-a（噪声 gd3 两两 28 对）；L3 是 td6diag（取回时断流损坏的 5 个 TPU 梯度文件不判）；L0 学习率核对也用 td5b-b |
 | tiny | 00 · hy4-tiny：只有 TPU 一侧的 CPU 冒烟（8 个假 CPU 设备，四个阶段整条链路），没有 GPU 对 TPU 的比较 |
 
 ## L0 地基（设置 / 数据 / 权重 / 配置，必须逐位）
 
 | 检查项 | 指标 | 门槛（严格｜参考） | mid | B | D1 | tiny |
 |---|---|---|---|---|---|---|
-| 跨侧初始权重逐位（TPU 载入后对 GPU 初始参数清单） | — | — | — | ⬜ | ⬜ | — |
-| 每 rank 每步输入指纹（TPU 回放 GPU 的 batch） | — | — | — | ⬜ | ⬜ | — |
-| 配置逐项对照 | — | — | — | ⬜ | ⬜ | — |
+| 跨侧初始权重逐位（TPU 载入后对 GPU 初始参数清单） | — | — | ⬜ | ⬜ | ⬜ | — |
+| 每 rank 每步输入指纹（TPU 回放 GPU 的 batch） | — | — | ⬜ | ⬜ | ⬜ | — |
+| 配置逐项对照 | — | — | ⬜ | ⬜ | ⬜ | — |
 
 <details><summary>说明（非 ✅ 格子，以及参考档不过或无法判的格子）</summary>
 
+- **跨侧初始权重逐位（TPU 载入后对 GPU 初始参数清单） · mid**（未开始）：没做（与 B、D1 同样是缺口）
 - **跨侧初始权重逐位（TPU 载入后对 GPU 初始参数清单） · B**（未开始）：登记了，还没做
 - **跨侧初始权重逐位（TPU 载入后对 GPU 初始参数清单） · D1**（未开始）：登记了，还没做
+- **每 rank 每步输入指纹（TPU 回放 GPU 的 batch） · mid**（未开始）：没做（与 B、D1 同样是缺口）
 - **每 rank 每步输入指纹（TPU 回放 GPU 的 batch） · B**（未开始）：登记了，还没做
 - **每 rank 每步输入指纹（TPU 回放 GPU 的 batch） · D1**（未开始）：登记了，还没做
+- **配置逐项对照 · mid**（未开始）：没做（与 B、D1 同样是缺口）
 - **配置逐项对照 · B**（未开始）：登记了，还没做
 - **配置逐项对照 · D1**（未开始）：登记了，还没做
 
@@ -63,9 +66,9 @@
 
 <details><summary>说明（非 ✅ 格子，以及参考档不过或无法判的格子）</summary>
 
-- **全部参数梯度：对 GPU 第 1 步噪声，超出的对 CPU FP64 定责 · mid**：实测 7（超出 N（或 N = 0 且不低于分辨率下限）而未定责的张量数）｜严格档 ≤ 0 → 不过｜参考档 无对应门槛｜待查：sink 一组是 TPU 一侧 sink 梯度的系统差（[根源一览第 21 行](../ROOT-CAUSES.md#r21)）；iHC 同 hy4-mini（[mini 对齐细节 D11](../alignments/01-mini/DETAILS.md#d11)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-step1)）；落盘损坏的张量不进判定
+- **全部参数梯度：对 GPU 第 1 步噪声，超出的对 CPU FP64 定责 · mid**：实测 7（超出 N（或 N = 0 且不低于分辨率下限）而未定责的张量数）｜严格档 ≤ 0 → 不过｜参考档 无对应门槛｜待查：sink 一组是 TPU 一侧 sink 梯度的系统差（[根源一览第 21 行](../ROOT-CAUSES.md#r21)）；iHC 同 hy4-mini（[mini 对齐细节 D11](../alignments/01-mini/DETAILS.md#d11)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-step1)）；梯度文件取回时断流损坏的张量不进判定
 - **全部参数梯度：对 GPU 第 1 步噪声，超出的对 CPU FP64 定责 · B**：实测 16（超出 N（或 N = 0 且不低于分辨率下限）而未定责的张量数）｜严格档 ≤ 0 → 不过｜参考档 无对应门槛｜待查；real-weight 的 L3 只看对 CPU FP64 的 R（报告第 2 节）。RMSNorm 权重大部分是 dγ 多舍一次 BF16（[根源一览第 23 行](../ROOT-CAUSES.md#r23)），sink 见第 21 行，q latent norm 偏小已定位到 splash 的 base2 指数（[根源一览第 24 行](../ROOT-CAUSES.md#r24)），iHC、`hc_head_scale` 待查（[real-weight 报告 D22](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d22)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
-- **全部参数梯度：对 GPU 第 1 步噪声，超出的对 CPU FP64 定责 · D1**：实测 11（超出 N（或 N = 0 且不低于分辨率下限）而未定责的张量数）｜严格档 ≤ 0 → 不过｜参考档 无对应门槛｜待查；real-weight 的 L3 只看对 CPU FP64 的 R（报告第 2 节）。sink、RMSNorm 权重、q 的上下投影、hc_head TPU 更远（[根源一览第 21、23 行](../ROOT-CAUSES.md#r21)；[real-weight 报告 D22](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d22)）；落盘损坏的张量以重跑的 td7diag 为准，结论相同
+- **全部参数梯度：对 GPU 第 1 步噪声，超出的对 CPU FP64 定责 · D1**：实测 11（超出 N（或 N = 0 且不低于分辨率下限）而未定责的张量数）｜严格档 ≤ 0 → 不过｜参考档 无对应门槛｜待查；real-weight 的 L3 只看对 CPU FP64 的 R（报告第 2 节）。sink、RMSNorm 权重、q 的上下投影、hc_head TPU 更远（[根源一览第 21、23 行](../ROOT-CAUSES.md#r21)；[real-weight 报告 D22](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d22)）；判定以 td6diag 的 52 个张量为准；取回时断流损坏的 5 个另用 td7diag 看过，R 都不超 1.2。td7diag 不是同配置重跑（MaxText `2306c7a5`，含已撤下的 M42），sink 不能拿它换
 
 </details>
 
@@ -105,7 +108,7 @@
 
 | 列 | 严格档 ✅ | 🟡 | ❌ | ⬜ | 参考档 ✅ | ☑️ | ❌ | ❔ |
 |---|---|---|---|---|---|---|---|---|
-| mid | 6 | 4 | 1 | 0 | 3 | 0 | 0 | 0 |
+| mid | 6 | 4 | 1 | 3 | 3 | 0 | 0 | 0 |
 | B | 6 | 3 | 1 | 3 | 3 | 0 | 0 | 0 |
 | D1 | 4 | 5 | 2 | 3 | 3 | 0 | 0 | 0 |
 | tiny | 2 | 0 | 0 | 1 | 0 | 0 | 0 | 0 |

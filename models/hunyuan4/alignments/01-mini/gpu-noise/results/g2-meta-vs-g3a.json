@@ -1,0 +1,233 @@
+{
+ "what": "meta.json 逐字段对参照（只比 meta 记下的字段）",
+ "reference": "g3-a",
+ "compared": [
+  "config",
+  "code",
+  "image",
+  "parallelism",
+  "versions",
+  "data",
+  "model",
+  "steps",
+  "（config.load_check 除外）"
+ ],
+ "meta_sha256": {
+  "g3-a": "60a90786d1676694c15dafd2eb18c5f2ee74bdaf034c8ff5f24e7c64de559a84",
+  "g2-a": "12d0f453679d06a5bc40b957650d2c179d8eeff793e7bf90948dcc7f88b5178c",
+  "g2-b": "777f05f2a99603f4b43a8adaea17be74b10f8cdd685d0b884cadce887f4fc516",
+  "g2-c": "733b4e6775f506b062926336ef13b8ef060845d69b421f9023900c1c8b647da7",
+  "g2-d": "279aa3a00b09169319efb6a583c7a54030f8c9cddfdd614d7f7bf79aa4a3fb13",
+  "g2-e": "d581059a08829085f38d380f54b309e592efaf721cad5574721b32e7e4e32e55",
+  "g2-f": "6300bf4a7f938c588cea495a0e5054c49bd645b8e73f68960a13dcace35981c1",
+  "g2-g": "e8938ffa92225195a6f9d8764aa1817e9ed9cf5c51a1ad29d0c8a4b45a38f400",
+  "g2-h": "25d8130957bc0c2ade57ccd8f148fbb052f301e08d5131057e5ebbae21bf4141",
+  "g2s-a": "0dc1d45ff823a935617a1b07ec2a7100596fb9452f6ac0386adae6cec12d7d93",
+  "g2s-b": "9d5e5f0f1305c6a652861ec8c346af1d6380d1291912cfcabcd2e93197996ce2",
+  "g2s-c": "c4489c36b4fe69631a5f0e852cfde682fd6d7424ddddd20c36b2be9780b01225"
+ },
+ "differences": {
+  "g2-a": [
+   {
+    "field": "code.janus",
+    "g3-a": "janus/hunyuan4/code/janus-hy4-f33d2c37c41c.tgz",
+    "g2-a": "janus/hunyuan4/code/janus-hy4-37ccee82cf33.tgz"
+   },
+   {
+    "field": "data.tokens_sha256_first_rows",
+    "g3-a": "495709a39cce4075feb1843d2afe9894704c753e6a911912d39f132a58a53e52",
+    "g2-a": "cacf6926b1dd6b0cbdb0319c476a2829b5e0e0be82085e7f32db87df3f680efb"
+   },
+   {
+    "field": "steps.last",
+    "g3-a": 1000,
+    "g2-a": 300
+   }
+  ],
+  "g2-b": [
+   {
+    "field": "code.janus",
+    "g3-a": "janus/hunyuan4/code/janus-hy4-f33d2c37c41c.tgz",
+    "g2-b": "janus/hunyuan4/code/janus-hy4-37ccee82cf33.tgz"
+   },
+   {
+    "field": "data.tokens_sha256_first_rows",
+    "g3-a": "495709a39cce4075feb1843d2afe9894704c753e6a911912d39f132a58a53e52",
+    "g2-b": "cacf6926b1dd6b0cbdb0319c476a2829b5e0e0be82085e7f32db87df3f680efb"
+   },
+   {
+    "field": "steps.last",
+    "g3-a": 1000,
+    "g2-b": 300
+   }
+  ],
+  "g2-c": [
+   {
+    "field": "code.janus",
+    "g3-a": "janus/hunyuan4/code/janus-hy4-f33d2c37c41c.tgz",
+    "g2-c": "janus/hunyuan4/code/janus-hy4-37ccee82cf33.tgz"
+   },
+   {
+    "field": "data.tokens_sha256_first_rows",
+    "g3-a": "495709a39cce4075feb1843d2afe9894704c753e6a911912d39f132a58a53e52",
+    "g2-c": "cacf6926b1dd6b0cbdb0319c476a2829b5e0e0be82085e7f32db87df3f680efb"
+   },
+   {
+    "field": "steps.last",
+    "g3-a": 1000,
+    "g2-c": 300
+   }
+  ],
+  "g2-d": [
+   {
+    "field": "code.janus",
+    "g3-a": "janus/hunyuan4/code/janus-hy4-f33d2c37c41c.tgz",
+    "g2-d": "janus/hunyuan4/code/janus-hy4-37ccee82cf33.tgz"
+   },
+   {
+    "field": "data.tokens_sha256_first_rows",
+    "g3-a": "495709a39cce4075feb1843d2afe9894704c753e6a911912d39f132a58a53e52",
+    "g2-d": "cacf6926b1dd6b0cbdb0319c476a2829b5e0e0be82085e7f32db87df3f680efb"
+   },
+   {
+    "field": "steps.last",
+    "g3-a": 1000,
+    "g2-d": 300
+   }
+  ],
+  "g2-e": [
+   {
+    "field": "code.janus",
+    "g3-a": "janus/hunyuan4/code/janus-hy4-f33d2c37c41c.tgz",
+    "g2-e": "janus/hunyuan4/code/janus-hy4-37ccee82cf33.tgz"
+   },
+   {
+    "field": "data.tokens_sha256_first_rows",
+    "g3-a": "495709a39cce4075feb1843d2afe9894704c753e6a911912d39f132a58a53e52",
+    "g2-e": "cacf6926b1dd6b0cbdb0319c476a2829b5e0e0be82085e7f32db87df3f680efb"
+   },
+   {
+    "field": "steps.last",
+    "g3-a": 1000,
+    "g2-e": 300
+   }
+  ],
+  "g2-f": [
+   {
+    "field": "code.janus",
+    "g3-a": "janus/hunyuan4/code/janus-hy4-f33d2c37c41c.tgz",
+    "g2-f": "janus/hunyuan4/code/janus-hy4-37ccee82cf33.tgz"
+   },
+   {
+    "field": "data.tokens_sha256_first_rows",
+    "g3-a": "495709a39cce4075feb1843d2afe9894704c753e6a911912d39f132a58a53e52",
+    "g2-f": "cacf6926b1dd6b0cbdb0319c476a2829b5e0e0be82085e7f32db87df3f680efb"
+   },
+   {
+    "field": "steps.last",
+    "g3-a": 1000,
+    "g2-f": 300
+   }
+  ],
+  "g2-g": [
+   {
+    "field": "code.janus",
+    "g3-a": "janus/hunyuan4/code/janus-hy4-f33d2c37c41c.tgz",
+    "g2-g": "janus/hunyuan4/code/janus-hy4-37ccee82cf33.tgz"
+   },
+   {
+    "field": "data.tokens_sha256_first_rows",
+    "g3-a": "495709a39cce4075feb1843d2afe9894704c753e6a911912d39f132a58a53e52",
+    "g2-g": "cacf6926b1dd6b0cbdb0319c476a2829b5e0e0be82085e7f32db87df3f680efb"
+   },
+   {
+    "field": "steps.last",
+    "g3-a": 1000,
+    "g2-g": 300
+   }
+  ],
+  "g2-h": [
+   {
+    "field": "code.janus",
+    "g3-a": "janus/hunyuan4/code/janus-hy4-f33d2c37c41c.tgz",
+    "g2-h": "janus/hunyuan4/code/janus-hy4-37ccee82cf33.tgz"
+   },
+   {
+    "field": "data.tokens_sha256_first_rows",
+    "g3-a": "495709a39cce4075feb1843d2afe9894704c753e6a911912d39f132a58a53e52",
+    "g2-h": "cacf6926b1dd6b0cbdb0319c476a2829b5e0e0be82085e7f32db87df3f680efb"
+   },
+   {
+    "field": "steps.last",
+    "g3-a": 1000,
+    "g2-h": 300
+   }
+  ],
+  "g2s-a": [
+   {
+    "field": "code.janus",
+    "g3-a": "janus/hunyuan4/code/janus-hy4-f33d2c37c41c.tgz",
+    "g2s-a": "janus/hunyuan4/code/janus-hy4-37ccee82cf33.tgz"
+   },
+   {
+    "field": "config.recompute",
+    "g3-a": true,
+    "g2s-a": false
+   },
+   {
+    "field": "data.tokens_sha256_first_rows",
+    "g3-a": "495709a39cce4075feb1843d2afe9894704c753e6a911912d39f132a58a53e52",
+    "g2s-a": "4a88e2725e9077c5da75595b6e7c6b4d34c1557e09e2d6c9f54aaac159e7fcff"
+   },
+   {
+    "field": "steps.last",
+    "g3-a": 1000,
+    "g2s-a": 1
+   }
+  ],
+  "g2s-b": [
+   {
+    "field": "code.janus",
+    "g3-a": "janus/hunyuan4/code/janus-hy4-f33d2c37c41c.tgz",
+    "g2s-b": "janus/hunyuan4/code/janus-hy4-37ccee82cf33.tgz"
+   },
+   {
+    "field": "config.recompute",
+    "g3-a": true,
+    "g2s-b": false
+   },
+   {
+    "field": "data.tokens_sha256_first_rows",
+    "g3-a": "495709a39cce4075feb1843d2afe9894704c753e6a911912d39f132a58a53e52",
+    "g2s-b": "4a88e2725e9077c5da75595b6e7c6b4d34c1557e09e2d6c9f54aaac159e7fcff"
+   },
+   {
+    "field": "steps.last",
+    "g3-a": 1000,
+    "g2s-b": 1
+   }
+  ],
+  "g2s-c": [
+   {
+    "field": "code.janus",
+    "g3-a": "janus/hunyuan4/code/janus-hy4-f33d2c37c41c.tgz",
+    "g2s-c": "janus/hunyuan4/code/janus-hy4-37ccee82cf33.tgz"
+   },
+   {
+    "field": "config.recompute",
+    "g3-a": true,
+    "g2s-c": false
+   },
+   {
+    "field": "data.tokens_sha256_first_rows",
+    "g3-a": "495709a39cce4075feb1843d2afe9894704c753e6a911912d39f132a58a53e52",
+    "g2s-c": "4a88e2725e9077c5da75595b6e7c6b4d34c1557e09e2d6c9f54aaac159e7fcff"
+   },
+   {
+    "field": "steps.last",
+    "g3-a": 1000,
+    "g2s-c": 1
+   }
+  ]
+ }
+}

@@ -69,7 +69,7 @@ param_norm、grad_norm 是全部可训练参数（不含 3 个路由偏置，它
 
 TPU 同一程序重跑逐位相同，噪声为 0，当不了尺子，所以改用只改执行方式的 TPU 运行，例如换 remat 档位、改片上内存上限、改调度开关。`side` 写 `tpu-perturb-<n>`。每个臂要先证明自己只改了执行。
 
-混元 3 用了三组，用途不同：L4 说明 TPU 不是挑出来的好样本（v5p 5 份、v7x 4 份，对齐报告第 3 节）；第 1 步整步的噪声并集（每个平台 7 份第 1 步状态读，两两 21 对，第 4 章 L3）；日常回归的 TPU 执行噪声（v5p 基线加 7 个臂共 8 份，两两 28 对，第 7 章 7.6）。
+混元 3 用了三组，用途不同：L4 说明 TPU 不是挑出来的好样本（v5p 5 份、v7x 4 份，对齐报告第 3 节）；（历史）第 1 步整步的噪声并集（每个平台 7 份第 1 步状态读，两两 21 对），2026-11-08 撤回，现行第 1 步只用 GPU 3 对，见[两侧执行噪声的并集](#union-noise)；日常回归的 TPU 执行噪声（v5p 基线加 7 个臂共 8 份，两两 28 对，第 7 章 7.6）。
 
 - 详见：[`reference/regression.md`](reference/regression.md) 第五节
 
@@ -241,7 +241,7 @@ R ≈ 1 的前提是两边走同一条精度路径（BF16 乘、FP32 累加、�
 | L1 单算子 | 同一份真实输入，单个算子两边算得一样吗；不一样时谁离 FP64 远 | 回放逐位；对 FP64 定责 |
 | L2 单层（逐层、逐子模块） | 同一份权重、同一份输入，每层每个子模块的前向、反向一样吗 | 前向、反向对 FP64 定责（R 比 ≤ 1.2）；参数梯度 calibrated |
 | L3 第一步整网 | 整网第一步的 loss、logits、全部梯度、更新后参数一样吗 | logits、逐 token loss 对 FP64 定责；梯度与状态对 GPU 第 1 步重跑的噪声 calibrated（混元 3 当时用[两侧执行噪声的并集](#union-noise)），超出时对 FP64 定责；首步 loss 单独给门槛 |
-| L4 多步 | 多步训练的 loss、grad_norm、param_norm、学习率、路由偏置是不是同一条轨迹 | calibrated（三个判定量各对 N 判，取最差） |
+| L4 多步 | 多步训练的 loss、grad_norm、param_norm、路由偏置是不是同一条轨迹（学习率归 L0 设置核对，检查 id 仍是 `L4.lr`） | calibrated（三个判定量各对 N 判，取最差） |
 
 **准出**：每一级的过关标准。低一级不过，不进高一级。详见 [`levels.md`](reference/levels.md) 与 [`levels.md`](reference/levels.md)。
 
@@ -314,7 +314,7 @@ GPU 生产训练程序原样跑 1000 步：B200 × 8 上的 Megatron-Bridge，BF
 <a id="rcc-a"></a>
 ### `rcc-a`（最终 golden 的第 1 份，验收的比较基线）
 
-`rcc` 的第一份，也是事先指定的[基线](#baseline)：TPU 只和这一份逐步比。`rcc-a..j` 10 份两两配对得到的 45 对只用来量噪声上限 N，不取平均，也不挑最差。任意两份 golden 之间的差不超过 N，所以换一份当基线，r 最多挪动 1；实际挪动多少没有逐份算（检查清单「已知的覆盖缺口」）。
+`rcc` 的第一份，也是事先指定的[基线](#baseline)：TPU 只和这一份逐步比。`rcc-a..j` 10 份两两配对得到的 45 对只用来量噪声上限 N，不取平均，也不挑最差。任意两份 golden 之间的差不超过 N，所以换一份当基线，r 最多挪动 1。实测十份每份轮流当基线：单条检查的最差 r 最多挪 0.47（param_norm，v7x EP = 8），四条检查合起来取最差后最多挪 0.33（v7x FSDP 8），v7x 当前配置有三份落进待定（最高 1.11），没有不过（[`case01-rebaseline-rcc.json`](../models/hunyuan3/alignments/01-v5p-acceptance/results/case01-rebaseline-rcc.json)、混元 3 对齐报告第 3 节）。
 
 - 详见：[第 2 章 2.4](guide/02-gpu-golden.md#24-噪声带与基线)
 
@@ -391,9 +391,9 @@ GPU 生产训练程序原样跑 1000 步：B200 × 8 上的 Megatron-Bridge，BF
 
 - param_norm +2.09e-2；
 - loss −1.37e-4（v5p）；
-- loss 约 −1.08e-4（v7x，推断值）。
+- loss −1.07e-4（v7x，[`v7x-tpu-vs-rc.json`](../models/hunyuan3/alignments/02-v7x-acceptance/results/v7x-tpu-vs-rc.json)）。
 
-v7x 的 loss 是由 v7x 对 `rcc-a`（最终 golden 的第 1 份，验收的比较基线）的 +6.32e-5 加上 `rcc-a` 对 `rc` 均值的 −1.71e-4 得到的；v7x 当前配置的逐步序列没有入库，没有直接算。这些差全部来自输出头 dgrad 的长求和，`rcc`（最终 golden）修掉这一处后就和 TPU 重合。
+v7x 的 loss 由 `t-v7x-on-1000` 的逐步序列对 `rc` 五份均值直接算出（序列不在仓库，结果文件记了它 `meta.json` 的 sha256）；和由 v7x 对 `rcc-a`（最终 golden 的第 1 份，验收的比较基线）的 +6.32e-5 加上 `rcc-a` 对 `rc` 均值的 −1.71e-4 推出的值只差约 2e-8。这些差全部来自输出头 dgrad 的长求和，`rcc`（最终 golden）修掉这一处后就和 TPU 重合。
 
 - 详见：[`judging.md`](reference/judging.md#golden-本身有系统偏差时修掉偏差再按一般规矩比)
 
@@ -483,7 +483,7 @@ Adam 的更新量 u = m̂ / (√v̂ + ε)。√v̂ ≫ ε 时 u ≈ m̂ / √v̂
 | 回答 | TPU 和 GPU 训的是同一个模型 | 今天的 TPU 和上一次验证过的 TPU 训的是同一个模型 |
 | 参照 | GPU golden | LKG |
 | 尺子 | GPU 自己重跑的噪声 | 逐位为主；不逐位时用 TPU 扰动臂的噪声 |
-| 频率 | 一次（换平台、换模型、开新配方时重做） | 每次合并、每 2–4 小时、每天 |
+| 频率 | 一次（换平台、换模型、开新配方时重做） | 目标是每次合并、每 2–4 小时、每天；现在全部手动触发 |
 | 放哪 | `models/<模型>/alignments/<实践>/` | `models/<模型>/regression/` |
 
 日常回归里的几个词：
@@ -493,7 +493,7 @@ Adam 的更新量 u = m̂ / (√v̂ + ε)。√v̂ ≫ ε 时 u ≈ m̂ / √v̂
 | 回归门 | 被测对 LKG 比：数值变没变；变了是不是在 PR 声明的范围和幅度内 |
 | <a id="tolerance-gate"></a>容差门 | PR 声明「会改数值 · 执行级」或升级依赖时，被测对 LKG 不再要求逐位，改用 TPU 自己的执行噪声判 |
 | 对齐门 | 数值变了以后，被测对 GPU golden 比：差有没有变大（「不变差」） |
-| 档位（tier，T0–T4） | 回归的几档配置：<br>T0 冒烟（每次合并、几十步）<br>T1 主力（每 2–4 小时）<br>T2 每日（抓第 1 步张量）<br>T3 生产形状<br>T4 低精度配方<br>另有金丝雀、对照臂、标定 |
+| 档位（tier，T0–T4） | 回归的几档配置：<br>T0 冒烟（每次合并、几十步）<br>T1 主力（每 2–4 小时）<br>T2 每日（抓第 1 步张量，未实施）<br>T3 生产形状（待定）<br>T4 低精度配方（未启用）<br>另有金丝雀、对照臂、标定。节奏都是目标，现在全部手动触发（第 7 章 7.3） |
 | PR 声明 | 训练代码 PR 正文的「数值影响」一栏三选一：数学不变 / 会改数值（执行级或数学级）/ 升级依赖。决定回归门每一行怎么判 |
 
 详见 [`reference/regression.md`](reference/regression.md)。

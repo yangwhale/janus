@@ -8,7 +8,7 @@
 
 | 级 · 检查 | 判定 | 读数 | 出处 |
 |---|---|---|---|
-| L0 · CPU 冒烟各步（四个阶段的转换、往返、RoPE 去交错与负对照、训练、初始权重、数据指纹、学习率） | ✅ | 全部 `ok` | [`hy4-cpu-smoke.json`](results/hy4-cpu-smoke.json)、[检查清单](CHECKS.md) |
+| L0 · CPU 冒烟各步（四个阶段的转换、往返、RoPE 去交错与负对照、训练、初始权重、数据指纹、学习率） | ✅ | 全部 `ok`。数据指纹四项（A–D）在结果文件里 detail 为空：比的是 8 个 rank 的 `data/rank*.jsonl` 与假 golden 逐字节相同（比法只在 [`cpu_smoke.py`](../../frameworks/maxtext/cpu_smoke.py) 里，结果文件没存证） | [`hy4-cpu-smoke.json`](results/hy4-cpu-smoke.json)、[检查清单](CHECKS.md) |
 | 语义 · QK-Clip 在扫描层下按层缩放 | 已修（M1） | 修前扫描块里实测缩放等于两层期望的逐头最小值；修后同一脚本复跑（MaxText `b87a55aa`），11 层每层每头与期望逐位相同 | 修前 [`hy4-tiny11-qk-clip-scan.json`](../../results/hy4-tiny11-qk-clip-scan.json)、修后 [`hy4-tiny11-qk-clip-scan-postfix.json`](../../results/hy4-tiny11-qk-clip-scan-postfix.json)、[案例 07](../../cases/07-qk-clip-bugs.md) |
 | L1–L3 · T0 两边逐层对 FP64 | ⬜ 没做 | — | 待做 |
 | L4 · GPU 对 TPU 多步 | ⬜ 没做 | — | 在 [mini](../01-mini/ALIGNMENT-REPORT.md) 上做 |

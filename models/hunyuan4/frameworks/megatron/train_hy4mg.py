@@ -21,6 +21,8 @@ RNG、下一步的步号即数据游标），--resume 从存档的下一步接�
 - 精度：主权重 FP32、计算 BF16、梯度累加与 DP 归约 FP32；iHC、hc_head、sinks、输出头留 FP32（hy4_mcore.py）。
 - 路由偏置：--bias-rate（默认 1e-3）由 Megatron 的 finalize_model_grads 按全局批更新（bias += rate·sign(平均负载 − 负载)）。
 - QK-Clip（--qk-clip）：Megatron-Core 的 clip_qk 遍历主干；--qk-clip-mtp on（默认，同 MaxText）时 MTP 层照同一流程裁。
+- 生产配方开关（默认都关，T1 不用；台账 G35）：--lr-schedule cosine（照 MaxText 的 cosine 调度逐步设学习率）、
+  --yarn-factor（RoPE 频率做 YaRN 插值，不乘 mscale）、--bias-zero-mean on（路由偏置更新量减去对专家的均值）。
 
 指标（metrics.jsonl）：loss、mtp_loss、indexer_loss（MaxText 口径）、grad_norm、param_norm（FP32 主权重）、lr、
 step_time_s、peak_alloc_gib、router.bias_mean / bias_std（每个 MoE 层）、max_attention_logit。
@@ -62,6 +64,107 @@ def tf32_probe(dev) -> dict:
     }
 
 
+def maxtext_lr(count: int, peak: float, warmup: int, final_frac: float, length: int) -> float:
+    """MaxText create_learning_rate_schedule（lr_schedule_type cosine）第 count 次更新（从 0 起）的学习率，FP32 照写：
+    warmup 段 optax.linear_schedule(0 → peak, W)：(0 − peak)·(1 − c / W) + peak；余弦段 c' = c − W，
+    pct = c' / (L − W − 1)，a = 0.5·(cos(π·pct) + 1)，lr = peak·a + final·(1 − a)。"""
+    f = np.float32
+    pk, fin = f(peak), f(peak) * f(final_frac)
+    if warmup > 0 and count < warmup:
+        frac = f(1) - f(count) / f(warmup)
+        return float((f(0) - pk) * frac + pk)
+    n = length - warmup
+    c = count - warmup
+    pct = f(c) / f(n - 1) if n > 1 else f(1)
+    a_ = f(0.5) * (np.cos(f(np.pi) * pct, dtype=np.float32) + f(1))
+    return float(pk * a_ + fin * (f(1) - a_))
+
+
+def apply_yarn(model, base: float, factor: float, orig_max: int, beta_fast: float, beta_slow: float) -> dict:
+    """把模型里每个 RotaryEmbedding（MLA 与 MTP 层各一份；索引器用所在层 MLA 算出的那份）的 inv_freq 换成
+    YaRN 插值后的频率，写法逐项照 MaxText YarnRotaryEmbedding.freqs_cis（truncate：下界 floor、上界 ceil）。
+    只换频率：Megatron 的 rope_type 仍是 rope，不走 YarnRotaryEmbedding（那条路会把 mscale 乘到 cos / sin 上）。"""
+    import math
+
+    from megatron.core.models.common.embeddings.rotary_pos_embedding import RotaryEmbedding
+
+    n, info = 0, {}
+    for mod in model.modules():
+        if type(mod) is not RotaryEmbedding:
+            continue
+        inv = mod.inv_freq
+        dim = 2 * inv.numel()
+
+        def corr(r):
+            return dim * math.log(orig_max / (r * 2 * math.pi)) / (2 * math.log(base))
+
+        low, high = max(math.floor(corr(beta_fast)), 0), min(math.ceil(corr(beta_slow)), dim - 1)
+        hi = high + 0.001 if low == high else high
+        ramp = torch.clamp((torch.arange(dim // 2, dtype=torch.float32, device=inv.device) - low) / (hi - low), 0, 1)
+        smooth = 1 - ramp
+        mod.inv_freq = inv / factor * (1 - smooth) + inv * smooth
+        n += 1
+        info = {
+            "dim": dim,
+            "base": base,
+            "low": low,
+            "high": high,
+            "factor": factor,
+            "original_max": orig_max,
+            "beta_fast": beta_fast,
+            "beta_slow": beta_slow,
+            "mscale": "none",
+        }
+    assert n > 0, "模型里没有 RotaryEmbedding"
+    RotaryEmbedding.forward.cache_clear()
+    # 自检：前向真的用上了新频率（emb 前一半 = 位置 × 新频率）
+    for mod in model.modules():
+        if type(mod) is RotaryEmbedding:
+            emb = mod(16)
+            emb = emb[0] if isinstance(emb, tuple) else emb
+            want = torch.outer(torch.arange(16, dtype=torch.float32, device=mod.inv_freq.device), mod.inv_freq)
+            assert torch.equal(emb.reshape(16, -1)[:, : dim // 2].float(), want), "YaRN 频率没有用上"
+            RotaryEmbedding.forward.cache_clear()
+            info["forward_check"] = "emb == outer(pos, yarn_inv_freq)"
+            break
+    info["modules"] = n
+    return info
+
+
+def install_bias_zero_mean():
+    """Megatron-Core 的路由偏置更新改成零均值：更新量 rate·sign(…) 先减去对专家（最后一维）的均值，再加到偏置上
+    （MaxText _maybe_zero_mean_bias_update 的写法）。finalize_model_grads 按模块名引用 get_updated_expert_bias，换它。"""
+    import importlib
+
+    # 包 megatron.core.distributed 把同名函数 finalize_model_grads 导出到包上，「import … as」拿到的是函数不是模块
+    fmg = importlib.import_module("megatron.core.distributed.finalize_model_grads")
+    assert hasattr(fmg, "_update_router_expert_bias"), fmg
+
+    def upd(tokens_per_expert, expert_bias, rate, tp_dp_cp_group=None):
+        from megatron.core import parallel_state
+
+        with torch.no_grad():
+            if tp_dp_cp_group is None:
+                tp_dp_cp_group = parallel_state.get_tensor_and_data_parallel_group(with_context_parallel=True)
+            dist.all_reduce(tokens_per_expert, group=tp_dp_cp_group)
+            ne = tokens_per_expert.shape[-1]
+            total = tokens_per_expert.sum(dim=-1, keepdim=True)
+            u = torch.sign(total - tokens_per_expert * ne).to(dtype=expert_bias.dtype) * rate
+            u = u - u.mean(dim=-1, keepdim=True)
+            if not upd.logged and dist.get_rank() == 0:
+                upd.logged = True
+                print(
+                    "BIAS_ZERO_MEAN",
+                    json.dumps({"shape": list(u.shape), "update_mean_absmax": float(u.mean(-1).abs().max())}),
+                    flush=True,
+                )
+            return expert_bias + u
+
+    upd.logged = False
+
+    fmg.get_updated_expert_bias = upd
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--hf", required=True)
@@ -76,6 +179,32 @@ def main():
     ap.add_argument("--clip", type=float, default=1.0)
     ap.add_argument("--head-chunk", type=int, default=1024, help="输出头 dgrad 分段长度；0 = 一次乘完")
     ap.add_argument("--bias-rate", type=float, default=1e-3, help="路由偏置更新率（DeepSeek-V3 公开值，项目负责人定）")
+    ap.add_argument(
+        "--bias-zero-mean",
+        default="off",
+        choices=["on", "off"],
+        help="路由偏置零均值更新：每层的更新量先减去对专家取的均值再加到偏置上（同 MaxText routed_bias_zero_mean_update；"
+        "原版 Megatron-Core 没有，T1 关）",
+    )
+    ap.add_argument(
+        "--lr-schedule",
+        default="constant",
+        choices=["constant", "cosine"],
+        help="constant：每步都是 --lr（T1）；cosine：照 MaxText create_learning_rate_schedule（lr_schedule_type cosine）"
+        "——第 c 次更新（c 从 0 起）先线性 warmup lr·c / W，再从 lr 余弦衰减到 lr·final，长度 = --steps",
+    )
+    ap.add_argument("--warmup-steps", type=int, default=0, help="--lr-schedule cosine 的 warmup 步数 W")
+    ap.add_argument("--lr-final-fraction", type=float, default=0.1, help="--lr-schedule cosine 的终点 = lr × 它")
+    ap.add_argument(
+        "--yarn-factor",
+        type=float,
+        default=1.0,
+        help="YaRN 频率插值因子（MLA 与索引器共用的 RoPE）；1 = 普通 RoPE（T1）。只改频率，照 MaxText YarnRotaryEmbedding："
+        "freq / factor · (1 − smooth) + freq · smooth；不乘 mscale（MaxText 在 max_position == original_max 时不改 softmax 缩放）",
+    )
+    ap.add_argument("--yarn-orig-max", type=int, default=1048576, help="YaRN 的 original_max_position_embeddings")
+    ap.add_argument("--yarn-beta-fast", type=float, default=32.0)
+    ap.add_argument("--yarn-beta-slow", type=float, default=1.0)
     ap.add_argument(
         "--indexer-loss",
         type=float,
@@ -331,6 +460,15 @@ def main():
     pp_stages = H.check_pp_split(cfg)  # 每段的全局层号范围；切分点不在 full 层上就报错
     rg = H.stage_layers(cfg)  # 本段的全局层号
     model = H.build_model(cfg, use_te=True, vocab_size=hf["vocab_size"], max_seq=a.seq, mtp=a.mtp).to(dev)
+    yarn_info = None
+    if a.yarn_factor != 1.0:
+        yarn_info = apply_yarn(
+            model, float(cfg.rotary_base), a.yarn_factor, a.yarn_orig_max, a.yarn_beta_fast, a.yarn_beta_slow
+        )
+        if rank == 0:
+            print("YARN", json.dumps(yarn_info), flush=True)
+    if a.bias_zero_mean == "on":
+        install_bias_zero_mean()
     model = Float16Module(
         cfg, model
     )  # 先转精度再载入：BF16 参数拿到 checkpoint 的原值，FP32 参数（iHC、偏置等）不经 BF16
@@ -465,7 +603,17 @@ def main():
             },
             "config": {
                 "lr": a.lr,
-                "lr_schedule": "constant",
+                "lr_schedule": a.lr_schedule
+                if a.lr_schedule == "constant"
+                else {
+                    "type": "cosine (MaxText create_learning_rate_schedule)",
+                    "peak": a.lr,
+                    "warmup_steps": a.warmup_steps,
+                    "final_fraction": a.lr_final_fraction,
+                    "length": a.steps,
+                },
+                "rope_yarn": yarn_info,
+                "routing_bias_zero_mean": a.bias_zero_mean == "on",
                 "betas": [0.9, a.adam_beta2],
                 "eps": a.adam_eps,  # 原来写死 1e-8，与实际的 adam_eps 不符（台账 G24）
                 "weight_decay_effective": a.wd,
@@ -911,6 +1059,10 @@ def main():
         if cap is not None and step == a.l1_capture_step:
             cap.finish({"run": a.name, "attn_scores_fp32": bool(cfg.hy4_attn_scores_fp32)})
             cap = None
+        if a.lr_schedule == "cosine":  # 第 step 步是第 step − 1 次更新（MaxText 的 count 从 0 起，第 1 步 lr = 0）
+            lr_now = maxtext_lr(step - 1, a.lr, a.warmup_steps, a.lr_final_fraction, a.steps)
+            for g in opt.param_groups:
+                g["lr"] = lr_now
         gsq = grad_sq_by_group()  # 优化器步之前（裁剪前），FP64，独立于 Megatron 的 grad_norm 核对用
         ok, gnorm, _ = opt.step()
         max_logit = None

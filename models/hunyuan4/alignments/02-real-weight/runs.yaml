@@ -1,7 +1,7 @@
 # 02 · T2 真实权重截层（B、D1）· 运行清单。数据位置写成占位，不写桶名。
 # 事先登记：写于任何 T2 运行之前（PROTOCOL.md 变更记录）；原来全部是「计划」。2026-11-08：GPU 22 份已跑完。TPU 三代：第一代（t1v 等价）td2-a 已判（t2d1-l4），tb2-a 第 1 步更新后出 NaN（M35 已修），tb2-b 已取消；
-# 第二代（t1z 的开关、M25 暂关）td3-a、tb3-b 已判（t2d1z-l4、t2bz-l4），tb3-a 中断；第三代（t1zr 再加 M34、M37（登记时同 t1zt；之后打包的还会带 M39–M41，以 `meta.json` 为准），M25 重新打开）td4-a 已判（t2d14-l4），tb4-a 已判（t2b4-l4）。每个运行用哪一版配置以 meta.json 为准。
-# 角色同 T1：GPU 是 golden / 基线，TPU 是被测；噪声只用 GPU 同设置 8 份两两 28 对。GPU 作业规格见 README.md。
+# 第二代（t1z 的开关、M25 暂关）td3-a、tb3-b 已判（t2d1z-l4、t2bz-l4），tb3-a 中断；第三代（t1zr 再加 M34、M36、M37，M25 重新打开；MaxText 469dbb85，不带 M39–M41，meta.json 已核）td4-a 已判（t2d14-l4），tb4-a 已判（t2b4-l4）。每个运行用哪一版配置以 meta.json 为准。
+# 角色同 T1：GPU 是 golden / 基线，TPU 是被测；噪声只用 GPU 同设置 8 份两两 28 对。GPU 作业规格见 setup.md「GPU golden 的作业规格」。
 schema: 1
 alignment: 02-real-weight
 weights:
@@ -27,12 +27,12 @@ test:     # TPU：第一代 tb2-a（NaN）/ td2-a；第二代 tb3-b / td3-a 已�
   - {name: tb2diag, stage: B, steps: 1, role: "第 1 步诊断（--diag-step1，不更新），回放 gb2s-a；逐张量梯度对 gb2s-*", config: frameworks/maxtext/hy4-t2-b.yml}
   - {name: tb3-a, stage: B, steps: 300, role: "B 的被测（第二代：t1z 的开关、M25 暂关），回放 gb2-a；约第 200 步因两台 TPU 节点被重建（基础设施）中断，不进判定", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb2-a}
   - {name: tb3-b, stage: B, steps: 300, role: "B 的被测（第二代，同 tb3-a 的设置），回放 gb2-a；已跑完，判定 t2bz-l4（过 2、不过 1、待定 4）", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb2-a, results: [t2bz-l4]}
-  - {name: tb4-a, stage: B, steps: 300, role: "B 的被测（第三代：t1zr 再加 M34、M37（登记时同 t1zt；之后打包的还会带 M39–M41，以 `meta.json` 为准），M25 重新打开），回放 gb2-a；已判 t2b4-l4（过 3、不过 1、待定 3）", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb2-a, results: [t2b4-l4, t2b4-l0-settings]}
+  - {name: tb4-a, stage: B, steps: 300, role: "B 的被测（第三代：t1zr 再加 M34、M36、M37，M25 重新打开；MaxText 469dbb85、janus fd796f6，不带 M39–M41，meta.json 已核），回放 gb2-a；已判 t2b4-l4（过 3、不过 1、待定 3）", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb2-a, results: [t2b4-l4, t2b4-l0-settings]}
   - {name: tb-fp32-30, stage: B, steps: 30, role: "诊断：同一批数据上的 TPU FP32 轨迹（dtype float32、matmul_precision highest），逐步比谁离它更近；不进门槛。稠密 MoE 的 FP32 实现编译期显存超，没有跑成，改跑 tb-fp32-30c"}
   - {name: tb-fp32-30c, stage: B, steps: 30, role: "诊断：同 tb-fp32-30，MoE 改用分组矩阵乘、小 tile（wi_/wo_tile_* 256 / 512）；与 tb4-a 同一提交、同样的开关；不进门槛", results: [t2b-early-vs-fp32]}
   - {name: td2-a, stage: D1, steps: 300, role: "D1 的被测（第一代），回放 gd2-a；已跑完，首次判定 t2d1-l4（过 1、不过 3、待定 5）；t1v 等价设置（M31 / M33 关），不是现在仓库里的 yml", config: frameworks/maxtext/hy4-t2-d1.yml, golden: gd2-a, results: [t2d1-l4, t2d1-l0-settings], location: "gs://<POC 桶>/janus/hunyuan4/tpu/td2-a/"}
   - {name: td3-a, stage: D1, steps: 300, role: "D1 的被测（第二代：t1z 的开关、M25 暂关），回放 gd2-a；已跑完，判定 t2d1z-l4（过 2、不过 3、待定 4）", config: frameworks/maxtext/hy4-t2-d1.yml, golden: gd2-a, results: [t2d1z-l4]}
-  - {name: td4-a, stage: D1, steps: 300, role: "D1 的被测（第三代：t1zr 再加 M34、M37（登记时同 t1zt；之后打包的还会带 M39–M41，以 `meta.json` 为准）），回放 gd2-a；已判 t2d14-l4（过 1、不过 4、待定 4）", config: frameworks/maxtext/hy4-t2-d1.yml, golden: gd2-a, results: [t2d14-l4, t2d14-l0-settings]}
+  - {name: td4-a, stage: D1, steps: 300, role: "D1 的被测（第三代：t1zr 再加 M34、M36、M37，M25 重新打开；MaxText 469dbb85、janus fd796f6，不带 M39–M41，meta.json 已核），回放 gd2-a；已判 t2d14-l4（过 1、不过 4、待定 4）", config: frameworks/maxtext/hy4-t2-d1.yml, golden: gd2-a, results: [t2d14-l4, t2d14-l0-settings]}
   - {name: td-fp32-30, stage: D1, steps: 30, role: "诊断：同 tb-fp32-30，D1", results: [t2d1-early-vs-fp32]}
   - {name: td2fp32, stage: D1, steps: 1, role: "诊断：第 1 步前向的 TPU FP32 + HIGHEST 版（与被测同源，不作定责；MaxText 64652880，FP32、HIGHEST、sparse_matmul false，开 M31、M33；与被测 td2-a 设置不同）", results: [t2d1-step1-vs-fp32]}
   - {name: td2-b, stage: D1, steps: 300, role: "同设置重跑（只核逐位，不进尺子）", config: frameworks/maxtext/hy4-t2-d1.yml, golden: gd2-a}
@@ -40,9 +40,19 @@ test:     # TPU：第一代 tb2-a（NaN）/ td2-a；第二代 tb3-b / td3-a 已�
   - {name: td5-a, stage: D1, steps: 1000, role: "D1 1000 步的被测（T2 yml 当时的全部开关，含 M39–M41，base2 开；MaxText 3741e818、janus 2679a837），回放 gd3-a；已判 t2d15-l4（过 5、不过 1、待定 3）", config: frameworks/maxtext/hy4-t2-d1.yml, golden: gd3-a, results: [t2d15-l4, t2d15-l0-settings]}
   - {name: tb5-a, stage: B, steps: 1000, role: "B 1000 步的被测；约第 280 步中断，没有运行目录", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb3-a}
   - {name: tb5-b, stage: B, steps: 1000, role: "B 1000 步的被测（同 tb5-a 的设置补跑；MaxText 3741e818、janus 2679a837，meta.json 已核），回放 gb3-a；已判 t2b5-l4（过 3、不过 0、待定 4）", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb3-a, results: [t2b5-l4, t2b5-l0-settings]}
-  - {name: td5b-b, stage: D1, steps: 1000, role: "D1 最近一代被测（T2 yml 当时的全部开关，含 M42b；sa_use_base2_exp 开，早于 M50；MaxText 2c28a4f4、janus 9c0f19a，meta.json 已核）。现行对齐配置（关 base2、含 M50）在 D1 上尚无运行。回放 gd3-a", config: frameworks/maxtext/hy4-t2-d1.yml, golden: gd3-a, results: [t2d15b-l4]}
-  - {name: tb5b-a, stage: B, steps: 1000, role: "B 最近一代被测（T2 yml 当时的全部开关，含 M42b；sa_use_base2_exp 开，早于 M50；MaxText 2c28a4f4、janus 9c0f19a，meta.json 已核）。现行对齐配置（关 base2、含 M50）在 B 上尚无运行。回放 gb3-a", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb3-a, results: [t2b5b-l4]}
+  - {name: td5b-b, stage: D1, steps: 1000, role: "D1 最近一代被测（T2 yml 当时的全部开关，含 M42b；sa_use_base2_exp 开，早于 M50；MaxText 2c28a4f4、janus 9c0f19a，meta.json 已核）。现行对齐配置（关 base2、含 M50）在 D1 上尚无运行。回放 gd3-a", config: frameworks/maxtext/hy4-t2-d1.yml, golden: gd3-a, results: [t2d15b-l4, t2d15b-l0-settings]}
+  - {name: tb5b-a, stage: B, steps: 1000, role: "B 最近一代被测（T2 yml 当时的全部开关，含 M42b；sa_use_base2_exp 开，早于 M50；MaxText 2c28a4f4、janus 9c0f19a，meta.json 已核）。现行对齐配置（关 base2、含 M50）在 B 上尚无运行。回放 gb3-a", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb3-a, results: [t2b5b-l4, t2b5b-l0-settings, t2b5b-l4-vs-8gpu]}
+  # 第 1 步诊断（--diag-step1，不更新；L3 与 D20、D22 的定责用）。都 base2 开、早于 M50
+  - {name: tb6diag, stage: B, steps: 1, role: "L3 判定证据：T2 B yml 当时的全部开关（含 M39–M41，没有 M42b、M50），MaxText 3741e818；回放 gb2s-a，逐张量梯度对 gb2s-* 与 CPU FP64", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb2s-a, results: [t2b-step1-grad-vs-fp64, t2b-step1-attn-along-ref, t2b-step1-qpath-base2-exp]}
+  - {name: td6diag, stage: D1, steps: 1, role: "L3 判定证据：同 tb6diag 的设置（MaxText 3741e818）；5 个张量的梯度文件取回损坏、不判", config: frameworks/maxtext/hy4-t2-d1.yml, golden: gd2s-a, results: [t2d1-step1-grad-vs-fp64, td6diag-grad-file-holes]}
+  - {name: td7diag, stage: D1, steps: 1, role: "补看 td6diag 损坏的 5 个张量；不是同配置重跑：MaxText 2306c7a5、janus 3ed31f8，含 M42（splash_dsinks_fp32 开，之后从对齐配置撤下），sink 梯度不能与 td6diag 互换", config: frameworks/maxtext/hy4-t2-d1.yml, golden: gd2s-a, results: [t2d1-td7-step1-grad-vs-fp64]}
+  - {name: tnorm-base, stage: B, steps: 1, role: "D22 对照的基线：T2 B yml（MaxText 2306c7a5、janus effa41e），只存 norm 权重梯度", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb2s-a, results: [t2b-step1-norm-scale-grad-fp32]}
+  - {name: tnorm-sg, stage: B, steps: 1, role: "同 tnorm-base，再开 rmsnorm_scale_grad_fp32（只改反向）；base2 开。D20 只关 base2 对照的开臂", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb2s-a, results: [t2b-step1-norm-scale-grad-fp32, ../06-rw3/results/step1-base2-observed]}
+  - {name: tqa-nb2, stage: B, steps: 1, role: "同 tnorm-sg，只差 sa_use_base2_exp 关（MaxText 2306c7a5）。D20 的关臂、D22 q latent norm 的对照", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb2s-a, results: [t2b-step1-qpath-base2-exp, ../06-rw3/results/step1-base2-observed]}
+  - {name: tqa-dot / tnorm-f32, stage: B, steps: 1, role: "诊断：注意力换 dot_product（不走 splash）/ dtype float32 + matmul_precision highest；只记第 1 步 loss（06 的 step1-base2-observed）", golden: gb2s-a, results: [../06-rw3/results/step1-base2-observed]}
 offline:  # CPU
   - {name: hy4-t2-aot-memory, role: "v5p 2x2x2 编译期显存（B、D1 与候选 hy4-mid）＋ B200 每卡显存估算", results: results/hy4-t2-aot-memory.json}
+  - {name: step1-loss-from-metrics, role: "第 1 步主 loss 对 CPU FP64：各运行 metrics.jsonl 第 1 步的 lm_loss 对 L3 结果文件里的参照（analysis/step1_metrics_vs_ref.py）", results: [t2b-step1-loss-vs-fp64, t2d1-step1-loss-vs-fp64]}
+  - {name: max-logit-summary, role: "QK-Clip 最大 logit：GPU golden 全程、tb6diag 第 1 步逐头（analysis/max_logit_summary.py）；TPU 训练运行不记这一列", results: [t2-max-logit-summary]}
   - {name: "hy4-d1-{hf,maxtext-ckpt}", role: "D1 的 L0 本侧（model/t2_l0.sh，MaxText 5eaa12f3）", results: [hy4-d1-l0-ckpt-convert, hy4-d1-l0-rope]}
   - {name: "hy4-b-{hf,maxtext-ckpt}", role: "B 的 L0 本侧，用当前 MaxText 重做（model/t2_l0.sh，MaxText 5eaa12f3）", results: [hy4-b-l0-ckpt-convert-t2, hy4-b-l0-rope-t2]}

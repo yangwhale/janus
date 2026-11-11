@@ -28,7 +28,7 @@ G3=--mtp,--ep=4,--optimizer=muon,--opt-kv=muon_scale_mode=shape_scaling,--qk-cli
 | `mn-pp2` | 2 | `--pp=2,--pp-first=5`（段 0：层 0–4；段 1：层 5–6、MTP、输出头） |
 | `mn4-pp2` | 4 | `--ep=16,--pp=2,--pp-first=5`（PP 2 × DP 16） |
 | `mn-lr`（正对照） | 2 | `--lr=1.1e-5`（学习率大 10%，应当被判出来） |
-| `sn-a` | 1 | 无（新代码在单机上重跑 `g3-a` 的设置：代码改动不改单机数值） |
+| `sn-a` | 1 | 无（多机代码包，`hy4_mcore.py` `8acdc54a…`，在单机上重跑 `g3-a` 的设置：8 项都在 GPU 噪声内，最大 0.93×N；不逐位，第 1 步主 loss 相对差 −8.1e-7。新旧代码逐位等价没核） |
 | `sn-ep8` | 1 | `--ep=8` |
 
 真实宽度截层（hy4-preview 第 0–2 层 + MTP，HF 目录 `hf/hy4-4l`，`层数` 写 3）：附加参数（没写的同样取默认值）

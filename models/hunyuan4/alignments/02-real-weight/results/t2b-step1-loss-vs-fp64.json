@@ -1,0 +1,85 @@
+{
+ "what": "metrics.jsonl 第 1 步主 loss 对 CPU FP64 参照的相对差 (x − FP64) ÷ FP64",
+ "reference": {
+  "file": "models/hunyuan4/alignments/02-real-weight/results/t2b-step1-grad-vs-fp64.json",
+  "lm_loss": 11.702070551776643
+ },
+ "gpu": {
+  "gb2-a": {
+   "lm_loss": 11.702826499938965,
+   "loss": null,
+   "rel_vs_fp64": 6.459952185188788e-05,
+   "meta_sha256": "ae1e1696a2f9a2ecd8eb661497991f46dab45f275eb1ba99ac53b2c2078ab3ff"
+  },
+  "gb2-b": {
+   "lm_loss": 11.702827453613281,
+   "loss": null,
+   "rel_vs_fp64": 6.468101805481937e-05,
+   "meta_sha256": "94af9efc02f536e8e7fc2cefd6464d773d18ba34fd519a75ee3317ba2c08a579"
+  },
+  "gb2-c": {
+   "lm_loss": 11.702828407287598,
+   "loss": null,
+   "rel_vs_fp64": 6.476251425775087e-05,
+   "meta_sha256": "a2848ddd6f0de2a7a9f7923b03a007e4c199d1a21bb853ca546f728888f73229"
+  },
+  "gb2-d": {
+   "lm_loss": 11.702840805053711,
+   "loss": null,
+   "rel_vs_fp64": 6.582196489586029e-05,
+   "meta_sha256": "548bf0810bd888b7d1faf6c9d998b6b910968e22baaea38093578e027bf2eef9"
+  },
+  "gb2-e": {
+   "lm_loss": 11.702834129333496,
+   "loss": null,
+   "rel_vs_fp64": 6.525149147533984e-05,
+   "meta_sha256": "9544b2579f610a986970bb4cffd9e7dec256be83f3bcff86e1bb442526eb91fd"
+  },
+  "gb2-f": {
+   "lm_loss": 11.702836036682129,
+   "loss": null,
+   "rel_vs_fp64": 6.541448388120283e-05,
+   "meta_sha256": "b0d3a6d9b8be0eb6812bca2ec6602003fcb24fb025d95552c70c12b176b409b0"
+  },
+  "gb2-g": {
+   "lm_loss": 11.70283317565918,
+   "loss": null,
+   "rel_vs_fp64": 6.516999527240834e-05,
+   "meta_sha256": "c006144af223f9254a373b9000b8b25f14e1483c05e1c4c9f9c2556331336738"
+  },
+  "gb2-h": {
+   "lm_loss": 11.702834129333496,
+   "loss": null,
+   "rel_vs_fp64": 6.525149147533984e-05,
+   "meta_sha256": "a14bff123771f555e6a9bc70f598dc84e0ddf289586f85e462254b989a1a7c3a"
+  }
+ },
+ "gpu_spread_rel": 1.2224430439724109e-06,
+ "tpu": {
+  "tb5-b": {
+   "lm_loss": 11.701141357421875,
+   "loss": 11.711694717407227,
+   "rel_vs_fp64": -7.940426872806213e-05,
+   "meta_sha256": "aca82d0ef165d38beee2a5e26367e6d2d86bc158d61c3d2a8ba503fc1e0d8be1"
+  },
+  "tb5b-a": {
+   "lm_loss": 11.701141357421875,
+   "loss": 11.711694717407227,
+   "rel_vs_fp64": -7.940426872806213e-05,
+   "meta_sha256": "05301acb70d519522fa6f80657a6fd174bf98d0e6c8a5b2d68208911d9eb5330"
+  },
+  "tb4-a": {
+   "lm_loss": 11.701095581054688,
+   "loss": 11.711648941040039,
+   "rel_vs_fp64": -8.331608646877385e-05,
+   "meta_sha256": "da2d8e3837c5ace0b2d5cb17bcdf7f65787401bbd5f10c5f80340b0f7c6fbba6"
+  },
+  "tb3-b": {
+   "lm_loss": 11.701053619384766,
+   "loss": 11.7116060256958,
+   "rel_vs_fp64": -8.690191939775958e-05,
+   "meta_sha256": "7570d06dcc2df653349a0eeb7097f3c8122b75ae348d4e3908454993688462ff"
+  }
+ },
+ "note": "T2 · B。参照取 t2b-step1-grad-vs-fp64.json 的 reference.lm_loss。tb5-b 第 1 步的训练目标 loss 与第 1 步诊断 tb6diag 的 objective 逐位相同（11.711694717407227），所以 tb6diag 一代的第 1 步主 loss 用 tb5-b 记下的 lm_loss。"
+}

@@ -1,0 +1,85 @@
+{
+ "what": "metrics.jsonl 第 1 步主 loss 对 CPU FP64 参照的相对差 (x − FP64) ÷ FP64",
+ "reference": {
+  "file": "models/hunyuan4/alignments/02-real-weight/results/t2d1-step1-grad-vs-fp64.json",
+  "lm_loss": 13.581562696522893
+ },
+ "gpu": {
+  "gd2-a": {
+   "lm_loss": 13.582487106323242,
+   "loss": null,
+   "rel_vs_fp64": 6.806358156313218e-05,
+   "meta_sha256": "4e4ef41802c75fec56412f7dc5521e5bca8600a7b8a2241f99884804c2dce2f9"
+  },
+  "gd2-b": {
+   "lm_loss": 13.582487106323242,
+   "loss": null,
+   "rel_vs_fp64": 6.806358156313218e-05,
+   "meta_sha256": "5a3fe1ddb89da59c583934fff566847194af5abe4d5bf4890708e66a3f9da3a3"
+  },
+  "gd2-c": {
+   "lm_loss": 13.582487106323242,
+   "loss": null,
+   "rel_vs_fp64": 6.806358156313218e-05,
+   "meta_sha256": "ab4cbbd579b2552c6fce5a3984e4760026e24f8af204079dce09c0b1160dbdc8"
+  },
+  "gd2-d": {
+   "lm_loss": 13.582487106323242,
+   "loss": null,
+   "rel_vs_fp64": 6.806358156313218e-05,
+   "meta_sha256": "f4c9174beaaa36e7aacc7cc0e9238266f10e454eb92eba3bd20cc5e02eb0964e"
+  },
+  "gd2-e": {
+   "lm_loss": 13.582487106323242,
+   "loss": null,
+   "rel_vs_fp64": 6.806358156313218e-05,
+   "meta_sha256": "71fc325a1d7de8f9925db6bc1a04ff2dc6200cff6301fb142bcb6c00543e273a"
+  },
+  "gd2-f": {
+   "lm_loss": 13.582487106323242,
+   "loss": null,
+   "rel_vs_fp64": 6.806358156313218e-05,
+   "meta_sha256": "8b736032892f560043a2d32c109702e8f008e7e745522063eb66ca4c366802f0"
+  },
+  "gd2-g": {
+   "lm_loss": 13.582487106323242,
+   "loss": null,
+   "rel_vs_fp64": 6.806358156313218e-05,
+   "meta_sha256": "0630ffc983db6892f7895793cd6eee9f31dc795117f871a85cec41c8f1f13767"
+  },
+  "gd2-h": {
+   "lm_loss": 13.582487106323242,
+   "loss": null,
+   "rel_vs_fp64": 6.806358156313218e-05,
+   "meta_sha256": "2bc12c5859655363120110edc49da903cddd7caef125ce13cfa454730cdc4fa8"
+  }
+ },
+ "gpu_spread_rel": 0.0,
+ "tpu": {
+  "td5-a": {
+   "lm_loss": 13.581339836120605,
+   "loss": 14.691595077514648,
+   "rel_vs_fp64": -1.6409039759776348e-05,
+   "meta_sha256": "4faab4a08db6f6d35eaed351ea07de9f19dec27ad9b030f2a1c7e48cfdeab713"
+  },
+  "td5b-b": {
+   "lm_loss": 13.581339836120605,
+   "loss": 14.691595077514648,
+   "rel_vs_fp64": -1.6409039759776348e-05,
+   "meta_sha256": "517e6d4341e0558595b57430810bbec03d48b5804f43d490d6a9fd408d5b2f53"
+  },
+  "td4-a": {
+   "lm_loss": 13.581339836120605,
+   "loss": 14.69159984588623,
+   "rel_vs_fp64": -1.6409039759776348e-05,
+   "meta_sha256": "54ed3a23262ca2bc8745ede63f2bf5455b409d2e27fd7eb718fe5d8424e3dc73"
+  },
+  "td3-a": {
+   "lm_loss": 13.581334114074707,
+   "loss": 14.691449165344238,
+   "rel_vs_fp64": -1.6830349591810805e-05,
+   "meta_sha256": "bbb7d4fabe5e93c103488dbb9076fcd97bb717fd322281e039707119ca408ac6"
+  }
+ },
+ "note": "T2 · D1。参照取 t2d1-step1-grad-vs-fp64.json 的 reference.lm_loss。td6diag 只记训练目标；对齐报告 D19 的 TPU 主 loss 取同设置训练运行 td5-a 第 1 步记下的 lm_loss。"
+}

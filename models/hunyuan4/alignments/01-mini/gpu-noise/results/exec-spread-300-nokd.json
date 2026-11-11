@@ -1,0 +1,286 @@
+{
+ "what": "exec-spread-300 的「升得最多的一项」去掉指定项后重算（只读已存的各项 r，规则同 exec_spread_300.py）",
+ "dropped_items": [
+  "L4.indexer_loss"
+ ],
+ "results": {
+  "exec-spread-300.json": {
+   "ruler": "tq-base-l4.yaml（g2-a 基线，g2 8 份 28 对，第 1–300 步）",
+   "groups": {
+    "on": [
+     "t1zw-a",
+     "ts-c-nolhs-1k",
+     "tz-on-vm32b",
+     "tz-on-vm64"
+    ],
+    "off": [
+     "t1zz-a",
+     "tz-off-nolhs",
+     "tz-off-vm32",
+     "tz-off-vm64"
+    ]
+   },
+   "input_sha256": "518072af1a9b7471f737f1f5e3795b01f0336ae18b2cf647645dccd81f556993",
+   "all_items": {
+    "max_rise_over_ordered_pairs": {
+     "n": 24,
+     "min": 0.1093607887170337,
+     "median": 0.6000217254928901,
+     "p90": 0.8730538778567214,
+     "max": 1.0679012137419814
+    },
+    "top_pairs": [
+     {
+      "group": "on",
+      "from": "tz-on-vm64",
+      "to": "tz-on-vm32b",
+      "max_rise": 1.0679012137419814,
+      "item": "L4.indexer_loss·signed_mean"
+     },
+     {
+      "group": "off",
+      "from": "tz-off-vm64",
+      "to": "t1zz-a",
+      "max_rise": 0.9039256754552718,
+      "item": "L4.router.bias_mean·max_step"
+     },
+     {
+      "group": "off",
+      "from": "tz-off-vm64",
+      "to": "tz-off-nolhs",
+      "max_rise": 0.884668926293801,
+      "item": "L4.grad_norm·signed_mean"
+     },
+     {
+      "group": "on",
+      "from": "tz-on-vm64",
+      "to": "t1zw-a",
+      "max_rise": 0.8459520981702026,
+      "item": "L4.indexer_loss·signed_mean"
+     },
+     {
+      "group": "on",
+      "from": "ts-c-nolhs-1k",
+      "to": "t1zw-a",
+      "max_rise": 0.8235895383190419,
+      "item": "L4.router.bias_mean·max_step"
+     }
+    ]
+   },
+   "without_dropped": {
+    "max_rise_over_ordered_pairs": {
+     "n": 24,
+     "min": 0.10227987788288562,
+     "median": 0.6000217254928901,
+     "p90": 0.8336971846957211,
+     "max": 0.9039256754552718
+    },
+    "top_pairs": [
+     {
+      "group": "off",
+      "from": "tz-off-vm64",
+      "to": "t1zz-a",
+      "max_rise": 0.9039256754552718,
+      "item": "L4.router.bias_mean·max_step"
+     },
+     {
+      "group": "off",
+      "from": "tz-off-vm64",
+      "to": "tz-off-nolhs",
+      "max_rise": 0.884668926293801,
+      "item": "L4.grad_norm·signed_mean"
+     },
+     {
+      "group": "on",
+      "from": "tz-on-vm64",
+      "to": "tz-on-vm32b",
+      "max_rise": 0.8380290331428693,
+      "item": "L4.grad_norm·signed_mean"
+     },
+     {
+      "group": "on",
+      "from": "ts-c-nolhs-1k",
+      "to": "t1zw-a",
+      "max_rise": 0.8235895383190419,
+      "item": "L4.router.bias_mean·max_step"
+     },
+     {
+      "group": "on",
+      "from": "tz-on-vm32b",
+      "to": "t1zw-a",
+      "max_rise": 0.8043874781400434,
+      "item": "L4.router.bias_mean·max_step"
+     }
+    ]
+   }
+  },
+  "exec-spread-300-g3.json": {
+   "ruler": "t1zza-l4-n16.yaml（g3-a 基线，g3 16 份 120 对），窗口截到第 1–300 / 101–300 步",
+   "groups": {
+    "on": [
+     "t1zw-a",
+     "ts-c-nolhs-1k",
+     "tz-on-vm32b",
+     "tz-on-vm64"
+    ],
+    "off": [
+     "t1zz-a",
+     "tz-off-nolhs",
+     "tz-off-vm32",
+     "tz-off-vm64"
+    ]
+   },
+   "input_sha256": "76f42986c3d3e91e233ac9f0586e84643941f7bb3d798fcd4b9236d9ff713460",
+   "all_items": {
+    "max_rise_over_ordered_pairs": {
+     "n": 24,
+     "min": 0.08638343494038803,
+     "median": 0.39229254162276794,
+     "p90": 1.5978894543045996,
+     "max": 1.6657432036405853
+    },
+    "top_pairs": [
+     {
+      "group": "on",
+      "from": "ts-c-nolhs-1k",
+      "to": "t1zw-a",
+      "max_rise": 1.6657432036405853,
+      "item": "L4.indexer_loss·signed_mean"
+     },
+     {
+      "group": "off",
+      "from": "tz-off-vm32",
+      "to": "t1zz-a",
+      "max_rise": 1.641415355033149,
+      "item": "L4.indexer_loss·signed_mean"
+     },
+     {
+      "group": "on",
+      "from": "tz-on-vm64",
+      "to": "t1zw-a",
+      "max_rise": 1.6296275867626298,
+      "item": "L4.indexer_loss·signed_mean"
+     },
+     {
+      "group": "off",
+      "from": "tz-off-vm64",
+      "to": "t1zz-a",
+      "max_rise": 1.5238338119025292,
+      "item": "L4.indexer_loss·signed_mean"
+     },
+     {
+      "group": "off",
+      "from": "tz-off-nolhs",
+      "to": "t1zz-a",
+      "max_rise": 1.2411438276501932,
+      "item": "L4.indexer_loss·signed_mean"
+     }
+    ]
+   },
+   "without_dropped": {
+    "max_rise_over_ordered_pairs": {
+     "n": 24,
+     "min": 0.08638343494038803,
+     "median": 0.3468284657613559,
+     "p90": 0.7079046364162149,
+     "max": 0.8103798457370595
+    },
+    "top_pairs": [
+     {
+      "group": "off",
+      "from": "tz-off-vm32",
+      "to": "t1zz-a",
+      "max_rise": 0.8103798457370595,
+      "item": "L4.mtp_loss.tail·signed_mean"
+     },
+     {
+      "group": "off",
+      "from": "tz-off-vm32",
+      "to": "tz-off-vm64",
+      "max_rise": 0.7845850832455359,
+      "item": "L4.mtp_loss.tail·signed_mean"
+     },
+     {
+      "group": "off",
+      "from": "tz-off-vm64",
+      "to": "tz-off-nolhs",
+      "max_rise": 0.7192825413090443,
+      "item": "L4.grad_norm·signed_mean"
+     },
+     {
+      "group": "on",
+      "from": "tz-on-vm64",
+      "to": "tz-on-vm32b",
+      "max_rise": 0.6813561916662798,
+      "item": "L4.grad_norm·signed_mean"
+     },
+     {
+      "group": "on",
+      "from": "tz-on-vm64",
+      "to": "t1zw-a",
+      "max_rise": 0.6318132806886616,
+      "item": "L4.grad_norm·signed_mean"
+     }
+    ]
+   }
+  }
+ },
+ "run_settings": {
+  "t1zw-a": {
+   "meta_sha256": "d87e30eebb5901c6d86df7615f200297c243003486537da503f4316bcef3f3bc",
+   "maxtext_commit": "2c28a4f4",
+   "indexer_kd_generalized_kl": null,
+   "sa_use_base2_exp": true,
+   "libtpu_pip": null
+  },
+  "ts-c-nolhs-1k": {
+   "meta_sha256": "e28516bb73b3fd6214511cd25bde58930e47262f750ba2c850b885f2bb02f7ba",
+   "maxtext_commit": "b87a55aa",
+   "indexer_kd_generalized_kl": true,
+   "sa_use_base2_exp": true,
+   "libtpu_pip": "libtpu==0.0.46"
+  },
+  "tz-on-vm32b": {
+   "meta_sha256": "6f8af7fa9396ea93cfe17cdf3787b595efd6966605344ebe17a487509a83cf74",
+   "maxtext_commit": "b87a55aa",
+   "indexer_kd_generalized_kl": true,
+   "sa_use_base2_exp": true,
+   "libtpu_pip": "libtpu==0.0.46"
+  },
+  "tz-on-vm64": {
+   "meta_sha256": "26a1ee6638a113b1896c23228e7b5f2792edd5b4a43ca45ecc76a73cc8da0d94",
+   "maxtext_commit": "b87a55aa",
+   "indexer_kd_generalized_kl": true,
+   "sa_use_base2_exp": true,
+   "libtpu_pip": "libtpu==0.0.46"
+  },
+  "t1zz-a": {
+   "meta_sha256": "4a94eeb11aef885cc88b2a1b3462dd572404c5c509754d05b25fb68b3833be7a",
+   "maxtext_commit": "2c28a4f4",
+   "indexer_kd_generalized_kl": null,
+   "sa_use_base2_exp": false,
+   "libtpu_pip": null
+  },
+  "tz-off-nolhs": {
+   "meta_sha256": "04de1bf0642aa45d1cfbf44ac94077efa14697bbe840555e88ad7d9facf38b9a",
+   "maxtext_commit": "b87a55aa",
+   "indexer_kd_generalized_kl": true,
+   "sa_use_base2_exp": false,
+   "libtpu_pip": "libtpu==0.0.46"
+  },
+  "tz-off-vm32": {
+   "meta_sha256": "b1625b8b824472894b968c41a82364b11fa12ee293591b2ab8d20519aa5f6738",
+   "maxtext_commit": "b87a55aa",
+   "indexer_kd_generalized_kl": true,
+   "sa_use_base2_exp": false,
+   "libtpu_pip": "libtpu==0.0.46"
+  },
+  "tz-off-vm64": {
+   "meta_sha256": "d34091e1da9ee3b7819d88316b708dfdf78e2a7d5b03b418fe147ced6329940f",
+   "maxtext_commit": "b87a55aa",
+   "indexer_kd_generalized_kl": true,
+   "sa_use_base2_exp": false,
+   "libtpu_pip": "libtpu==0.0.46"
+  }
+ }
+}

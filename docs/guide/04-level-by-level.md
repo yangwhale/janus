@@ -15,11 +15,11 @@ flowchart TB
   L4["L4 多步<br/>1000 步的 loss、范数、路由偏置<br/>判法：对噪声，两层验收"]
   L0 -- 过 --> L1 -- 过 --> L2 -- 过 --> L3 -- 过 --> L4
   L4 -- 过 --> S(["第 5 章签字清单"])
-  L3 -. 已定责、不累积时带说明 .-> L4
+  L3 -. 机理已查到、不累积时带说明 .-> L4
 ```
 
 - 任何一级不过，就停在这一级排查（[第 6 章](06-debugging.md)）。
-- 例外：不过的原因已经定责、并且确认不累积，可以带着说明往上走。混元 3 第 1 步的梯度就是这样（L3 一节）。
+- 例外：不过的机理已经查到、并且确认不累积，可以带着说明往上走；签字时这一级仍算不满足，要验收方决定是否接受。混元 3 第 1 步的梯度就是这样：机理已查到，一部分张量未达逐张量 R ≤ 1.2 的定责线，打开三个梯度 FP32 开关后也没消完（L3 一节；第 5 章签字清单 3a 待定）。
 
 每一级具体比哪些模块和张量、用什么门槛、混元 3 在 v5p / v7x 上的逐项结果，都在[检查清单 `CHECKS.md`](../../models/hunyuan3/CHECKS.md)。本章讲每一级为什么比、怎么跑、怎么读、不过时先查什么；清单里有的数这里不重抄。
 
@@ -27,7 +27,7 @@ flowchart TB
 |---|---|
 | 做什么 | L0 到 L4 逐级比 TPU 和 GPU |
 | 怎么做 | 任意一台 CPU 机器上，每一级跑一份检查项目录或一个判定脚本（命令在各节） |
-| 做完看到什么算对 | L0 全部逐位；L1、L2 的 R 比 ≤ 1.2（超线的格子已定责）；L4 第一层全过 |
+| 做完看到什么算对 | L0 全部逐位；L1、L2 的 R 比 ≤ 1.2（超线的格子已定责）；L4 第一层全过。L3 第 1 步梯度超出噪声，一部分张量未达 R ≤ 1.2 的定责线（梯度逐张量最差 2.20 / 2.70，v5p / v7x；4.6） |
 | 下一步 | [第 5 章](05-reading-results.md)：读清单、总览和报告，对照签字清单 |
 
 ## 本章做完手里有什么
@@ -60,7 +60,7 @@ done
 gcloud storage cp -r $B/golden/g1k-{a,b,c} $B/tpu/t-smoke30 $B/tpu/t-st1 $B/tpu/r-l2 $ROOT/
 ```
 
-上面只拉了主线的运行。L3 另要 6 份只改执行参数的第 1 步状态读（`t-st1n-*`）、整网只前向的回放、FP64 整步参照；L1 的连续 8 步重放与 L0 的续训各要自己的运行。名字写在各检查项目录开头。
+上面只拉了主线的运行。L3 另要整网只前向的回放与 FP64 整步参照（旧的并集判法另要 6 份只改执行参数的第 1 步状态读 `t-st1n-*`，现行判法不用）；L1 的连续 8 步重放与 L0 的续训各要自己的运行。名字写在各检查项目录开头。
 
 ### 每级对哪份 golden、被测是哪次运行
 
@@ -70,7 +70,7 @@ gcloud storage cp -r $B/golden/g1k-{a,b,c} $B/tpu/t-smoke30 $B/tpu/t-st1 $B/tpu/
 |---|---|---|
 | L0 | [`g1k-a`](../glossary.md#g1k)：同一份检查点、同一批数据 | 冒烟 `t-smoke30`；第 1 步状态读 `t-st1` |
 | L1、L2 前向与反向 | `g1k-a` 第 1 步的逐层输入；FP64 真值在这份输入上算 | 逐层隔离回放 `r-l2` |
-| L2 参数梯度、L3 | `g1k-a`；噪声参照 `g1k-a/b/c` 3 份两两 3 对（混元 3 当时另并上 TPU 只改执行参数的 7 份两两 21 对；2026-11-07 起现行判法只用 GPU，超出的对 FP64 定责，见 4.6） | `t-st1` 反推梯度后的 `t-st1-gm` |
+| L2 参数梯度、L3 | `g1k-a`；噪声参照 `g1k-a/b/c` 3 份两两 3 对（混元 3 当时另并上 TPU 只改执行参数的 7 份两两 21 对；2026-11-08 起现行判法只用 GPU，超出的对 FP64 定责，见 4.6） | `t-st1` 反推梯度后的 `t-st1-gm` |
 | L4 第一层、路由偏置、健康信号 | [基线](../glossary.md#baseline) [`rcc-a`](../glossary.md#rcc-a)；噪声参照 [`rcc-a..j`](../glossary.md#rcc) 10 份两两 45 对 | 生产配置 `t-prod-1000` |
 | L4 第二层 | [`rc-a`](../glossary.md#rc)；噪声参照 `rc-a..e` 5 份两两 10 对 | 同上 |
 
@@ -84,7 +84,7 @@ gcloud storage cp -r $B/golden/g1k-{a,b,c} $B/tpu/t-smoke30 $B/tpu/t-st1 $B/tpu/
 | 本指南 | 混元 3 的结果里 | 是什么 |
 |---|---|---|
 | `t-smoke30` | `t-loss30` | 30 步冒烟 |
-| `t-st1` / `t-st1-gm` | `t-st1n-base` / `t-st1n-base-gm` | 第 1 步状态读 / 反推梯度后；另有 6 份只改执行参数的 `t-st1n-*` |
+| `t-st1` / `t-st1-gm` | `t-st1n-base` / `t-st1n-base-gm` | 第 1 步状态读 / 反推梯度后；另有 6 份只改执行参数的 `t-st1n-*`，只在旧的并集判法里用 |
 | `r-l2` | `r-l2-on` | 逐层隔离回放（带 `--l1 --grad`） |
 | `r-ff` | `r-ff-prod` | 整网只前向的回放（`--full-forward`），L3 的 logits 与逐 token loss 用 |
 | `t-prod-1000` | `t-rmap-on-1000`（v5p）、`t-v7x-on-1000`（v7x） | 生产配置 1000 步 |
@@ -94,7 +94,7 @@ gcloud storage cp -r $B/golden/g1k-{a,b,c} $B/tpu/t-smoke30 $B/tpu/t-st1 $B/tpu/
 ### 换成你的运行
 
 - 被测用 `--test <运行名>` 换，`runs.root` 用 `--root <运行根>` 换。
-- 有些检查项目录另外写死了混元 3 当时的运行名（如 `phase2-l0-state.yaml` 里的 `select.test_run`、`select.run`，`phase2-st1-on-state-xnoise.yaml` 里的噪声对），`--test` 管不到。复制一份改成你的，改完先 `janus validate <检查项目录>`。
+- 有些检查项目录另外写死了混元 3 当时的运行名（如 `phase2-l0-state.yaml` 里的 `select.test_run`、`select.run`，`phase2-st1-on-state-gpuonly.yaml` 里的噪声对），`--test` 管不到。复制一份改成你的，改完先 `janus validate <检查项目录>`。
 
 ## 4.2 怎么判
 
@@ -185,7 +185,7 @@ python -m janus run models/hunyuan3/alignments/01-v5p-acceptance/catalogs/phase2
 
 - 算子：R 比 ≤ 1.2。主判是「两侧各用自己的输入」：每一侧的真值都从这一侧自己抓到的算子输入在 FP64 里算，上游的差不进来。v5p 另有一组「用 golden 的输入」，可以直接和 GPU 的输出比、核对舍入方式。
 - 路由：本侧输入在 FP64 里重新取 top-8，与本侧实际选中的集合相同的比例 ≥ 0.97。
-- 优化器：用 TPU 读出的主权重、梯度、实际超参在 FP64 里重放 AdamW，比更新量的 rel_L2 ≤ 5e-3（GPU 实测 1.79e-3 的 2.8 倍）。不比更新后参数：参数比更新量大约三个数量级。
+- 优化器：用 TPU 读出的主权重、梯度、实际超参在 FP64 里重放 AdamW，比更新量的 rel_L2 ≤ 5e-3。门槛是经验取值：GPU 运行 `t-full` 第 1 步，FP64 重放的更新量舍入到 FP32 后自身误差最大 1.79e-3（第 2 层 `q_layernorm`），取约 3 倍（`phase1-full` 的 `L1.optim.adamw.replay`）；连续 8 步实测 GPU 3.37e-3、v5p 4.80e-3，余量变小（[`metrics.md`](../reference/metrics.md)）。不比更新后参数：参数比更新量大约三个数量级。
 
 **怎么跑**：
 
@@ -238,16 +238,17 @@ python models/hunyuan3/analysis/fwd_rratio.py --mode bwd      --hf <HF 目录> -
 **怎么判**：
 
 - logits、逐 token loss：R 比 ≤ 1.2。
-- 梯度与状态（混元 3 当时的做法；2026-11-07 起改为噪声只用 GPU、超出的对 FP64 定责，见[判定](../reference/judging.md#第-1-步张量两侧执行噪声的并集)）：对噪声，噪声取两侧执行噪声的并集：GPU 第 1 步重跑 3 份两两 3 对 ∪ TPU 只改执行参数（splash 分块、编译器片上内存上限）的 7 份两两 21 对。GPU 重跑第 1 步路由一个都不翻，只拿它当尺子量不到「近似平局在两种硬件上各落一边」；TPU 只改执行参数就会翻同类的路由，并集能看见它。依据见[方法详解：判定](../reference/judging.md#第-1-步张量两侧执行噪声的并集)。
+- 梯度与状态（混元 3 当时的做法；2026-11-08 起改为噪声只用 GPU、超出的对 FP64 定责，见[判定](../reference/judging.md#第-1-步张量两侧执行噪声的并集)）：对噪声，噪声取两侧执行噪声的并集：GPU 第 1 步重跑 3 份两两 3 对 ∪ TPU 只改执行参数（splash 分块、编译器片上内存上限）的 7 份两两 21 对。GPU 重跑第 1 步路由一个都不翻，只拿它当尺子量不到「近似平局在两种硬件上各落一边」；TPU 只改执行参数就会翻同类的路由，并集能看见它。依据见[方法详解：判定](../reference/judging.md#第-1-步张量两侧执行噪声的并集)。
 - 超出噪声的部分，用 FP64 整步参照定责：同一份权重、同一个全局 batch 在 FP64 里求梯度，比 TPU 和 GPU 谁离精确更远。只报不判。
 - 梯度要配范数比：cosine 对整体缩放完全看不见，梯度整体乘 1/8 时 cosine 仍是 1。
 
 **怎么跑**：
 
 ```bash
-# 从状态读反推梯度（零扰动，4.8），7 份 TPU 运行都要做；运行名见检查项目录开头
+# 从状态读反推梯度（零扰动，4.8），只需被测这一份（旧的并集判法要 7 份 TPU 运行都做）
 python models/hunyuan3/analysis/grads_from_moments.py --src <运行根>/t-st1 --out <运行根>/t-st1-gm
-python -m janus run models/hunyuan3/alignments/01-v5p-acceptance/catalogs/phase2-st1-on-state-xnoise.yaml --root <运行根> --test t-st1-gm --out /tmp/st1
+python -m janus run models/hunyuan3/alignments/01-v5p-acceptance/catalogs/phase2-st1-on-state-gpuonly.yaml --root <运行根> --test t-st1-gm --out /tmp/st1
+# 历史：phase2-st1-on-state-xnoise.yaml 是已撤回的并集判法，只作对照
 # 对 FP64 定责：先在 CPU 上算 FP64 整步参照（fp64_step.py），再比
 python models/hunyuan3/analysis/fwd_rratio.py --mode step --hf <HF 目录> --golden <运行根>/g1k-a --test <运行根>/t-st1-gm --fp64-step <FP64 整步参照目录> --out <结果目录> --stage <名>
 # logits 与逐 token loss：被测是整网只前向的回放（layer_replay.py --full-forward，混元 3 是 r-ff-prod）
@@ -258,10 +259,10 @@ python -m janus run models/hunyuan3/alignments/01-v5p-acceptance/catalogs/phase2
 
 FP64 整步参照的参数见 [`fp64_step.py`](../../models/hunyuan3/analysis/fp64_step.py) 文件头；回放怎么提交见 TPU 操作手册「[在 TPU 上拿第 1 步的正式证据：三条路](../../models/hunyuan3/frameworks/maxtext/README.md#在-tpu-上拿第-1-步的正式证据三条路)」。
 
-**混元 3 的结果**：logits、逐 token loss、覆盖率全过。梯度、动量 2026-11-08 起按只用 GPU 第 1 步重跑 3 对的尺子重判，全部超 2 倍，判「不过 · 已解释」：超出的张量都已对 FP64 定责，但一部分 R 在 1.23–2.70 之间，按 R ≤ 1.2 的字面不算已定责（[对齐报告](../../models/hunyuan3/ALIGNMENT-REPORT.md)第 4 节与「判法变更记录」；[判定](../reference/judging.md#第-1-步张量两侧执行噪声的并集)）。原来按两侧执行噪声的并集判时，多数落在 1–2 倍，几层参数梯度超 2 倍。退出码 1 是预期的。原因：
+**混元 3 的结果**：logits、逐 token loss、覆盖率全过。梯度、动量 2026-11-08 起按只用 GPU 第 1 步重跑 3 对的尺子重判，全部超 2 倍，判「不过 · 已解释」。这里的倍数很大：GPU 第 1 步重跑几乎逐位，第 3 层梯度 rel_L2 的 N 只有 3.85e-6，按 rel_L2 是 2.7e4 倍 N，1−cos 最差 7.3e8 倍（v7x 2.6e4 / 6.7e8）。尺子接近 0，判不过只说明 GPU 重跑量不到近似平局翻转，不说明差有这么大（更新后主权重待定，1−cos 1.63 / 1.61 倍 N）：机理都已查到台账 #5 / #17 / #20，但一部分张量未达 R ≤ 1.2 的定责线：梯度逐张量最差 R 2.20（v7x 2.70），优化器状态 7.95（v7x 7.86，最差在二阶动量），更新后主权重 6.42（v7x 51.3），后两者的最差都在 128 维的 q norm 上；按能量合计梯度、动量 1.20 / 1.21，主权重 0.92 / 0.94。打开三个梯度 FP32 开关后（v5p）按能量合计降到 0.67 / 0.67 / 0.92，逐张量最差仍超 1.2：梯度 1.79、动量 6.17、主权重 5.49（[`phase2-st1-fp64-gradfp32`](../../models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-st1-fp64-gradfp32.results.json)）；q norm 上的超线来自 Adam 第 1 步的符号效应，开关消不掉（[对齐报告](../../models/hunyuan3/ALIGNMENT-REPORT.md)第 4 节与「判法变更记录」；[判定](../reference/judging.md#第-1-步张量两侧执行噪声的并集)）。原来按两侧执行噪声的并集判时，多数落在 1–2 倍，几层参数梯度超 2 倍。退出码 1 是预期的。原因：
 
 - 大头是路由近似平局：第 1 步每层 0.44%–0.56% 的路由槽位两边各落一边，分到 token 少的专家梯度相对差到 0.10；按梯度能量加权，整网只差 1.3e-3（台账 #5）。
-- 一维 norm 权重、输出层与 embedding 的梯度 TPU 先以 BF16 落地，离 FP64 比 GPU 远；有三个前向不变的可选开关能消掉（台账 #20）。
+- 一维 norm 权重、输出层与 embedding 的梯度 TPU 先以 BF16 落地，离 FP64 比 GPU 远；有三个前向不变的可选开关，按能量合计能消掉这一处（台账 #20）。
 - L4 的 1000 步统计在噪声内（截 4 层、1000 步、常数学习率 1e-5 下；更长的训练和生产学习率没测）。
 - 专家参数每层只比了 192 个里的 0、1 号两个（检查清单「已知的覆盖缺口」）。
 
@@ -271,9 +272,9 @@ FP64 整步参照的参数见 [`fp64_step.py`](../../models/hunyuan3/analysis/fp
 
 **目的**：训练 1000 步，看逐步曲线是否落在 GPU 自己重跑的散布里。前三级的差如果会累积，在这里显出来。
 
-**比什么**：loss（全程与第 301–1000 步）、grad_norm、param_norm、学习率、路由偏置曲线、健康信号；另有 EP = 8、可选开关、对 `rc` 三组对照。见[清单 L4 一节](../../models/hunyuan3/CHECKS.md#l4--多步训练)。
+**比什么**：loss（全程与第 301–1000 步）、grad_norm、param_norm、路由偏置曲线、健康信号（学习率在 L0 设置核对里逐步逐位核）；另有 EP = 8、可选开关、对 `rc` 三组对照。见[清单 L4 一节](../../models/hunyuan3/CHECKS.md#l4--多步训练)。
 
-**怎么判**：每条序列算带符号均值、MARE、最大单步三个判定量，各自对 N 判，最差的决定结果；首步差只报。学习率逐步逐位。健康信号看 NaN / Inf 与突跳。算法见 [`reference/metrics.md`](../reference/metrics.md#逐步序列lossgrad_normparam_norm)。
+**怎么判**：每条序列算带符号均值、MARE、最大单步三个判定量，各自对 N 判，最差的决定结果；首步差只报。健康信号看 NaN / Inf 与突跳。算法见 [`reference/metrics.md`](../reference/metrics.md#逐步序列lossgrad_normparam_norm)。
 
 **怎么跑**：
 
@@ -310,7 +311,7 @@ python -m janus run models/hunyuan3/alignments/01-v5p-acceptance/catalogs/phase2
 
 回放尽量贴近生产：`layer_replay.py` 用同一份 MaxText 配置（`hy3-4layers.yml` 加同样的覆盖项）、同样的设备网格与切分规则（`mt_common.make_mesh`、同一组 logical axis rules），由同一个 `run.sh` 提交，`XLA_FLAGS` 与 `LIBTPU_INIT_ARGS` 和训练一样透传。
 
-精度开关在生产程序里是否真的生效，由日常回归直接看生产训练步优化后的 HLO（`hlo/train_step.after_optimizations.txt`）核对：R20 数 `reduce-precision`、all-reduce、`tpu_custom_call`、megablox 分组 GEMM、splash 注意力的个数，要和 LKG 相等，FP8 类型与随机数算子必须是 0（v5p 当前对齐配置 `reduce-precision` 63、all-reduce 8，[`regression/README.md`](../../models/hunyuan3/regression/README.md)）。窗口化 collective matmul 的个数和路由 GEMM 的精度还没有可靠的匹配规则，暂由 R21 的 HLO 指纹兜底：变了会报，但说不出是哪一条。
+精度开关在编译出的训练步里是否真的生效，由日常回归直接看回归程序训练步优化后的 HLO（`hlo/train_step.after_optimizations.txt`）核对：R20 数 `reduce-precision`、all-reduce、`tpu_custom_call`、megablox 分组 GEMM、splash 注意力的个数，要和 LKG 相等，FP8 类型与随机数算子必须是 0（v5p 当前对齐配置 `reduce-precision` 63、all-reduce 8，[`regression/README.md`](../../models/hunyuan3/regression/README.md)）。回归程序是累积 1、不重算，和正式验收的 `t-rmap-on-1000`（累积 2 + rmap 重算）不是同一个程序；验收程序优化后的 HLO 没有这样数过（[回归守的不是正式验收的那个程序](../../models/hunyuan3/regression/README.md#回归守的不是正式验收的那个程序)）。窗口化 collective matmul 的个数和路由 GEMM 的精度还没有可靠的匹配规则，暂由 R21 的 HLO 指纹兜底：变了会报，但说不出是哪一条。
 
 ---
 

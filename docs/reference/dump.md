@@ -190,11 +190,23 @@ models/hunyuan3/frameworks/megatron/run.sh <运行名> <步数> --janus-run <目
 - 激活的梯度（`<名>.grad`）不抓：余切量不落在任何模块输出上，要往图里插探针输入才能拿到，会改图。
 - 路由的 top-k 在稀疏路径的 `shard_map` 里抓不出来。
   - `topk_idx` / `probs` / `counts` 由图内抓到的同一份 FP32 分数在主机上重算（派生量，名字映射里注明）。
-- 训练步里的跨平台逐层注入、跨平台路由回放（把 GPU 选中的专家喂给 TPU）还没有。
+- 混元 3：训练步里的跨平台逐层注入、跨平台路由回放（把 GPU 选中的专家喂给 TPU）还没有。
   - 原因：扫描层里拿不到层号；混元 3 的层还没接 MaxText 的 `forced_routed_experts`。
+  - 混元 4 第 1 步已有「灌 GPU 的选择」，只作诊断、不进判定（[差异清单 G12](tpu-vs-gpu-differences.md#g12-第-1-步正式判定用-tpu-自选的路由灌-gpu-的选择只作诊断)）。
   - 它和 GPU 生产 golden [`rc`](../glossary.md#rc) / TPU `rmap` 里的「路由回放」不是一回事。
   - 后者是同一次运行里重算沿用自己首次前向选中的专家，两侧都已实现（[`levels.md`](levels.md#l2--单层逐层逐子模块)「L2 · 单层：逐层、逐子模块」）。
 - 加钩子的训练步只支持不做梯度累积。
+
+### 混元 4 怎么抓
+
+训练入口 `models/hunyuan4/frameworks/maxtext/train_hy4.py`（参数见文件头与 `--help`）。和混元 3 的不同在于不加钩子，图内的值不进训练步：
+
+- **取什么**：状态类全量抓数（`--full`）：更新前后的 FP32 主权重、Adam 两个动量、路由偏置，写 GPU golden 的名字与 HF 布局；逐步另记 loss、范数、分组参数平方和、输入指纹。
+- **何时取**：`--dump-steps` / `--full-steps` 指定的步，在训练步与训练步之间从训练状态读出，训练步本身不变。
+- **第 1 步梯度**：正式 L3 用训练步实际用的梯度，由第 1 步全量抓数里的 Adam 一阶动量反推（相对误差约 1e-7）。文件完整性核导出文件的 sha256 与反推梯度的全局范数（以现行比较 tz-off-rep 为准：[`t1zo-step1-train-grad-file-check.json`](../../models/hunyuan4/alignments/01-mini/results/t1zo-step1-train-grad-file-check.json)；混元 4 [`PROTOCOL.md`](../../models/hunyuan4/PROTOCOL.md#0-现行口径按变更记录汇总) 第 0 节）。
+  - `--diag-step1` 单独编一个只算梯度、不更新的程序（与训练同一个梯度累积函数），写 HF 名字与布局的 FP32 梯度后退出。它和训练步分开编译，同一状态、同一批数据的梯度不逐位相同（205 个张量相对差中位数 2.9e-4），只作旁证（PROTOCOL 变更记录 2026-11-09）。
+- **激活**：梯度累积 2 时训练步里不抓（同混元 3）；接线核对用 `probe_forward.py` 的诊断前向。
+- **自检**：抓与不抓整次运行逐步比。以现行比较 tz-off-rep 为准：第 1 步全量抓数的 `tz-off-rep` 对不抓的 `tz-off-qkc` 1000 步 47 个逐步量逐位相同（[`t1zo-determinism`](../../models/hunyuan4/alignments/01-mini/results/t1zo-determinism.report.md)）。换配置要重做这一条。
 
 ## 抓完以后：两侧共同的检查
 

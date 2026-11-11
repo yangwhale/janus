@@ -115,7 +115,7 @@ T0–T2、T4 都用回放数据，所以**生产的数据管线不在这几档�
 
 - T0、T1 跑的是 yml 默认的重算设置（各中间量都存 `device`，等于不重算）加 GA 1（`tiers/t0.yaml`、`tiers/t1.yaml` 的 `overrides`）。
 - 正式 L4 的被测 `t-rmap-on-1000` 是 GA 2，命令行另加了 rmap 重算覆盖：除层输入和 `moe_routing_maps` 外全部 `remat`（01 [`runs.yaml`](../alignments/01-v5p-acceptance/runs.yaml)）。
-- 两处都改数值：重算换舍入点（第五节 `rematqkv` 一行，R20 `reduce-precision` 31 → 24），累积分组也改舍入（对齐报告台账 #12）。
+- 两处都改数值：重算换舍入点（第五节 `rematqkv` 一行，旧配置 yml 7704115b 下 R20 `reduce-precision` 31 → 24；现行配置下没有重测重算前后的计数），累积分组也改舍入（对齐报告台账 #12）。
 - 所以 T0、T1 绿了，只说明回归这个程序没变，不说明验收签字的那个程序没变。要守验收程序，得给 GA 2 + rmap 覆盖单独建一个变体和 LKG；建不建另行确定。
 
 ## 四、各行的具体内容
@@ -172,7 +172,7 @@ T0–T2、T4 都用回放数据，所以**生产的数据管线不在这几档�
     - ① FP8 类型 = 0；
     - ② 随机数算子 = 0；
     - ④ 分组 GEMM（megablox，按 kernel 元数据里的 `tile_m` 数）、⑤ splash attention（按指令名 `splash_mha_*`）、全部 `tpu_custom_call`、all-reduce、`reduce-precision` 的个数与 LKG 相等。
-  - v5p 上 `t-hlo` 的计数：`tpu_custom_call` 15、megablox 9、splash 6、all-reduce 9、`reduce-precision` 31、FP8 0、随机数 0（规则对着这份 HLO 核过）。
+  - v5p 上 `t-hlo` 的计数（旧配置 yml 7704115b；现行配置下 all-reduce 8、`reduce-precision` 63，见第五节）：`tpu_custom_call` 15、megablox 9、splash 6、all-reduce 9、`reduce-precision` 31、FP8 0、随机数 0（规则对着这份 HLO 核过）。
   - **暂缓**：③ 路由 GEMM 的操作数 dtype 与精度、⑥ `moe_routing_maps` 作为保存点。
     - 原因：优化后的 HLO 里路由矩阵乘被融进 fusion，还没有可靠的正则。
     - 先由 R21 指纹兜底（变了会报，但不会说是哪一条）。
@@ -196,7 +196,7 @@ T0–T2、T4 都用回放数据，所以**生产的数据管线不在这几档�
 
 ## 五、TPU 自噪声标定
 
-和迁移验收的 TPU 噪声参照（扰动臂）共用同一批运行。
+这批运行（扰动臂）曾给迁移验收第 1 步当 TPU 噪声参照，2026-11-08 起撤回。
 每个扰动臂跑 T1 的 1000 步，第 1 步抓张量。
 给日常回归的 T1 / T2 当执行噪声。迁移验收的 L2 / L3 不用它：2026-11-08 起第 1 步只用 GPU 第 1 步重跑 3 对当尺子，超出部分对 FP64 定责（尺子只来自参照一侧）。
 

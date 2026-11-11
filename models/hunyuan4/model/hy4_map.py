@@ -127,6 +127,10 @@ def mapping_and_hooks(hf_cfg: dict, mt_cfg) -> tuple[dict, dict]:
     """分支的 Hy4 映射与变换（scan_layers=True），补上「MoE 不足一组」的情形。"""
     from maxtext.checkpoint_conversion.utils import param_mapping as pm
 
+    if hf_cfg.get("hc_mult", 4) == 1:  # 结构消融：没有 iHC 与 hc_head（make_tiny_hf.py --no-ihc），映射里去掉它们
+        m, h = mapping_and_hooks({**hf_cfg, "hc_mult": 4}, mt_cfg)
+        drop = [k for k in m if "-mhc_" in k or "hc_head" in k]
+        return {k: v for k, v in m.items() if k not in drop}, {k: v for k, v in h.items() if k not in drop}
     num_dense = sum(1 for t in hf_cfg["mlp_layer_types"] if t == "dense")
     num_moe = hf_cfg["num_hidden_layers"] - num_dense
     interval = getattr(mt_cfg, "indexer_share_interval", 1)

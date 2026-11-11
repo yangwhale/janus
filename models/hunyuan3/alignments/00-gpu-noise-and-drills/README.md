@@ -485,7 +485,7 @@
 - 该怎么做：
   - 要关 TF32 的运行用 `run_check.sh` 的 `TF32=off`，以 `meta.json` 里 `tf32` 的实测值为准（[`docs/reference/environment.md`](../../../../docs/reference/environment.md) 第 4 条）。
   - 最终 golden `rcc` 保留容器默认的 TF32（开，与上游相同；只有 `dgrad-chunk`（输出头 dgrad 分段 FP32 累加）在它那一次 FP32 乘法里关）。
-    - 原因：BF16 程序里受影响的只有路由反向两个 GEMM，关 TF32 对 1000 步没有可见影响（[`goldens.md`](../../goldens.md)「TF32」行）。
+    - 原因：BF16 程序里受影响的只有路由反向两个 GEMM，关 TF32 跑 400 步看不出影响（1000 步没跑，[`goldens.md`](../../goldens.md)「TF32」行）。
 
 **14. 几个容易误判的算子行为。**
 
@@ -636,7 +636,7 @@
   - 之后 GEMM2、unpermute、加共享专家链式停在 3.3e-3–4.0e-3；
   - unpermute 与最后的相加对正确舍入 100%；
   - permute、all-to-all、combine 的搬运逐位。
-- 意味着：TPU 若把 silu·up·prob 融合在 FP32 里只舍一次，本阶段误差会明显更小——那是写法不同，不是错（推断）。
+- 意味着：激活这一段的舍入写法两边可能不同，那是写法不同，不是错。TPU 的激活舍入位置后来核实了（见下「后续」）；整块看，v5p 当前配置 MoE 块对 FP64 的 R 0.94（最差的第 2 层：TPU rel_L2 3.68e-3，GPU 各层最大 4.03e-3；01 [`phase2-l1-ops-own-on`](../01-v5p-acceptance/results/phase2-l1-ops-own-on.report.md)），没有明显更小。
 - 该怎么做：逐阶段对齐时按 GPU 的舍入位置写激活，或在报告里注明。
 - 后续（已核实，[对齐报告](../../ALIGNMENT-REPORT.md)偏差台账 #8）：
   - MaxText 默认写法确实编成 FP32 算完舍一次，与 GPU 只有 73.7% 元素逐位；

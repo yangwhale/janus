@@ -111,7 +111,7 @@
 | 精度 | 参数与主权重 | 更新精度；小扰动在 BF16 里看不见（00 README 第 11 条） | BF16 参数 + FP32 主权重：`main_params_dtype: torch.float32`（GPU meta） | 只存 FP32 主权重，计算时转 BF16：`weight_dtype: "float32"`（TPU yml） | 等价 | 已对齐（L0、L3） | 载入后的主权重对 golden 逐位；更新后不是 BF16 冒充的 FP32（见注 7） |
 | 精度 | 优化器状态 | Adam 两个动量 | `exp_avg_dtype`、`exp_avg_sq_dtype: torch.float32`（GPU meta） | `mu_dtype: "float32"`（TPU yml）；二阶矩 `nu` 跟参数 dtype，即 FP32（optax `scale_by_adam`） | 相同 | 已对齐（L0、L3） | 两个动量全是 FP32，更新后也不是 BF16 冒充（见注 8） |
 | 精度 | 梯度 dtype 与规约 | 规约顺序与精度 | `dtypes.grad_reduce: fp32`（GPU meta） | `grad_dtype: "float32"`（TPU yml）；但部分梯度在 8 个设备之间按 BF16 规约（见注 9） | dtype 配置相同；规约顺序不同（切分不同，见下）；部分梯度以 BF16 落地或规约，其中 norm scale、输出层、embedding 三类可用对齐报告台账 #20 的开关改成 FP32 落地（不在当前对齐配置里） | 有差异（已核对无影响） | GPU 反过来改成 BF16 规约，仍在 GPU 自己的散布里（见注 9） |
-| 精度 | 路由 GEMM | 路由 logits 离 FP64 本来就远；但翻转不从这里来：喂两边相同的路由输入，翻转是 0，翻转来自上游注意力舍入造成的输入差 | `moe_router_dtype: fp32`（GPU meta），在这版 Megatron 里走 TE `general_gemm`，BF16 入、FP32 出，不是先升 FP32 再乘 | `float32_gate_logits: True`（模型 yml）；DEFAULT 档下 FP32 操作数先舍 BF16 再乘（见注 10） | 相同（操作数）；累加方式不同（不可避免） | 已对齐（L1） | TPU 对 FP64 4.8e-8–5.7e-8，GPU 3.8e-6–4.0e-6；翻转 0（见注 10） |
+| 精度 | 路由 GEMM | 路由 logits 离 FP64 本来就远；但 GEMM 本身不造成翻转：喂两边相同的路由输入，按 golden 偏置重选 top-8，翻转是 0。这类检查在主机上用 FP64 过 sigmoid（对齐报告注 5），不经过 TPU 上的近似 FP32 sigmoid，它对翻转的贡献没测（见注 11）；其余来自上游注意力舍入造成的输入差 | `moe_router_dtype: fp32`（GPU meta），在这版 Megatron 里走 TE `general_gemm`，BF16 入、FP32 出，不是先升 FP32 再乘 | `float32_gate_logits: True`（模型 yml）；DEFAULT 档下 FP32 操作数先舍 BF16 再乘（见注 10） | 相同（操作数）；累加方式不同（不可避免） | 已对齐（L1） | TPU 对 FP64 4.8e-8–5.7e-8，GPU 3.8e-6–4.0e-6；翻转 0（见注 10） |
 | 精度 | 路由打分 dtype | sigmoid 在哪个精度算 | 路由 logits FP32，sigmoid 在 FP32 上（推断，按 `moe_router_dtype: fp32`） | sigmoid 与加偏置都在 FP32 上（见注 11） | dtype 相同（GPU 一侧推断）；TPU 默认的 FP32 sigmoid 是近似实现（见注 11） | 已对齐（L1） | top-8 集合对 FP64 每层一致率 ≥ 0.9995（见注 11） |
 | 精度 | expert_bias dtype | 存成 BF16 后更新量会被舍入吃掉 | FP32 buffer（00 `L0.dtype.manifest` 规则 `buffer.*expert_bias`） | FP32（MaxText `MoEBiasVar`；检查点里存 FP32） | 相同 | 已对齐（检查点） | 01 `phase2-ckpt-convert` 的 `L0.ckpt.convert.dtype`（3 个 FP32） |
 | 精度 | TF32 | FP32 输入的 GEMM 会被降成 TF32 | 默认开，只有 `NVIDIA_TF32_OVERRIDE=0` 能全关（见注 12） | 没有 TF32。路由反向的 GEMM 按 `matmul_precision: "default"` 算，FP32 操作数推断是单遍 BF16 | 不可避免差异（推断） | 有差异 | 00 `phase1-kernels` 的 `TF32.gemm_inventory`、`TF32.switch.matrix`；00 `phase1-tf32`（关 TF32 后参数梯度最大差是噪声上限的 4.95 倍，30 步 loss 在噪声内） |
@@ -131,7 +131,7 @@
   - 检查点是 FP32（01 `phase2-ckpt-convert` 的 dtype 清单）。
   - 载入后的主权重对 golden 逐位，50 个张量 0 个不同（`L0.main_params.loaded`，v5p `phase2-l0-state`、v7x `phase2-v7x-l0-state`）。
   - `L0.model.structure` 规则「主权重 FP32（全部 29 个参数叶子）」。
-  - 更新后的主权重不是 BF16 冒充的 FP32（`L3.step1.fake_fp32.main_param`，50 个张量，`phase2-st1-prod-state`、`phase2-v7x-st1-prod-state`）。
+  - 更新后的主权重不是 BF16 冒充的 FP32（`L3.step1.fake_fp32.main_param`，50 个张量，`phase2-st1-on-state-gpuonly`、`phase2-v7x-st1-on-state-gpuonly`）。
 - 注 8（优化器状态）：
   - `L0.dtype.state`：`opt_state/0/mu`、`nu` 各 58 项全是 FP32（v5p `phase2-l0-state`）。
   - 第 1 步更新后两个动量不是 BF16 冒充的 FP32（`L3.step1.fake_fp32.optim_state`，100 个张量，v5p、v7x）。
@@ -266,8 +266,7 @@
     - 四项里最差的比值 r 0.85（`phase2-acceptance-rcc-on`、`phase2-v7x-acceptance-rcc`；[`ALIGNMENT-REPORT.md`](ALIGNMENT-REPORT.md) 第 3 节）。
   - 对 GPU 生产 `rc`：写成已解释差异（ALIGNMENT-REPORT 偏差台账 #1、#2）。
     - TPU 第 1000 步 param_norm 比 `rc` 五份均值多 +2.09e-2。
-    - 301–1000 步 loss 相对差 −1.37e-4（v5p）/ 约 −1.08e-4（v7x）。
-    - v7x 那个数是推断：v7x 对 `rcc-a` 的 +6.32e-5 加上 `rcc-a` 对 `rc` 均值的 −1.71e-4；v7x 当前配置的逐步序列没有入库，没有直接算。
+    - 301–1000 步 loss 相对差 −1.37e-4（v5p）/ −1.07e-4（v7x，02 `v7x-tpu-vs-rc.json`，由逐步序列直接算）。
   - 为什么分段：关 TF32 的 cuBLAS FP32 一次累加整个词表（`dgrad-exact` 的写法）在 B200 上也有偏。
     - 沿 ŵ̄ 第 1 步 −1.8e-6、θ₂₉₉（第 300 步开始时的状态）−2.6e-4（[`case01-cublas-fp32-longk.json`](alignments/01-v5p-acceptance/results/case01-cublas-fp32-longk.json)）。
     - 分段累加才精确。
@@ -285,14 +284,14 @@
 | 优化器 | β1 / β2 / ε | 更新量 | `adam_beta1: 0.9`、`adam_beta2: 0.95`、`adam_eps: 1e-08`（GPU meta；ε 加在 sqrt 外面） | `adam_b1: 0.9`、`adam_b2: 0.95`、`adam_eps: 1.0e-8`、`adam_eps_root: 0.0`（TPU yml） | 相同 | 已对齐（L1） | 上一行的两组重放用的就是这几个值（见注 25） |
 | 优化器 | 实际生效的权重衰减 | 只读配置会对错超参 | 配置 `weight_decay: 0.1`，但调度器 `start_weight_decay` / `end_weight_decay: 0.033` 覆盖了它（GPU meta 的 `scheduler_config`；00 README 第 10 条） | `adam_weight_decay: 0.033`（TPU yml） | 相同（按实际值） | 已对齐（配置） | 01 `phase2-t-loss30` 的 `L0.config.diff.dropout`（TPU `weight_decay` = GPU `start_weight_decay`） |
 | 优化器 | 哪些参数衰减 | 一维参数不衰减 | Megatron 默认对一维参数（各 RMSNorm 的 scale）不衰减 | `adamw_mask: ["norm/scale"]`（TPU yml）：扫描层把一维 scale 堆成二维，只能按名字排除 | 等价 | 已对齐（L1，两侧） | 两侧重放都按「一维 wd = 0、其余 0.033」吻合（见注 26） |
-| 优化器 | 梯度裁剪 | 第 1 步就裁（裁剪系数 0.057） | `clip_grad: 1.0`（GPU meta） | `gradient_clipping_threshold: 1.0`（TPU yml） | 相同 | 已对齐（L1） | 第 1 步优化器重放按 `max_norm / (grad_norm + 1e-6)` 算出的裁剪系数 0.0570（v5p、v7x），带着它重放的更新量在门槛内（`phase2-st1-prod-state`、`phase2-v7x-st1-prod-state` 的 `clip_coeff`） |
+| 优化器 | 梯度裁剪 | 第 1 步就裁（裁剪系数 0.057） | `clip_grad: 1.0`（GPU meta） | `gradient_clipping_threshold: 1.0`（TPU yml） | 相同 | 已对齐（L1） | 第 1 步优化器重放按 `max_norm / (grad_norm + 1e-6)` 算出的裁剪系数 0.0570（v5p、v7x），带着它重放的更新量在门槛内（`phase2-st1-on-state-gpuonly`、`phase2-v7x-st1-on-state-gpuonly` 的 `clip_coeff`） |
 | 优化器 | 学习率与调度 | 常数学习率 | `lr = min_lr = 1e-5`、`lr_decay_style: constant`、`lr_warmup_iters: 0`（GPU meta） | `learning_rate: 1.0e-5`、`lr_schedule_type: "wsd"`、`warmup_steps_fraction: 0.0`、`wsd_decay_steps_fraction: 0.0`、`learning_rate_final_fraction: 1.0`（TPU yml） | 等价 | 已对齐 | 01 `phase2-t-loss30` 的 `L4.lr`（30 步逐位） |
 | 优化器 | 跳步 | 尖峰时是否跳过更新 | 不跳（golden `skipped_iter` 全 0） | `skip_step_on_spikes: false`（TPU yml） | 相同 | 已对齐（配置） | 两边都关；1000 步健康信号都过（见注 27） |
 
 - 注 24（优化器算法）：
   - TPU 侧：生产配置第 1 步状态读，按被测自己 meta 里记的 β1 / β2 / ε / 权重衰减 / 裁剪阈值重放一步。
     - 用和 GPU 侧同一个 FP64 公式（ε 加在根号外，[`janus/replay.py`](../../janus/replay.py) 的 `adamw_step`）。
-    - 比更新量和两个动量：48 个参数 × 3 = 144 个张量，rel_l2 最大 2.13e-3（v5p）/ 2.12e-3（v7x），门槛 5e-3，cosine 1.0（`L1.optim.adamw.replay`，`phase2-st1-prod-state`、`phase2-v7x-st1-prod-state`）。
+    - 比更新量和两个动量：48 个参数 × 3 = 144 个张量，rel_l2 最大 2.13e-3（v5p、v7x），门槛 5e-3，cosine 1.0（`L1.optim.adamw.replay`，`phase2-st1-on-state-gpuonly`、`phase2-v7x-st1-on-state-gpuonly`）。
     - 连续 8 步重放（第 0 层注意力、各层路由权重、全部归一化权重，66 个张量）rel_l2 最大 4.80e-3 / 4.79e-3（`L1.optim.adamw.8steps`，`phase2-st8-opt8`、`phase2-v7x-st8-opt8`），已到门槛 5e-3 的 0.96 倍。
     - 混元 4 查明 TPU 默认的 FP32 除法、sqrt、1 − β^t 不精确（2 / 3 / 108 ulp），Adam 小张量离 FP64 最多是 GPU 的 3.82 倍，改精确写法后收拢（[根源一览第 17 行](../hunyuan4/ROOT-CAUSES.md#r17)）。混元 3 这 0.96 倍里有多少来自这几处，没有单独测（推断：同一个 optax 写法、同一个 libtpu 构建，应有同类贡献）。
     - 梯度从一阶动量反推，所以一阶动量按构造吻合，有信息量的是更新量与二阶动量。
@@ -324,7 +323,7 @@
 | 数据 | 序列长度 | — | `--seq 4096`（GPU meta `config.args`） | `max_target_length: 4096`（TPU yml） | 相同 | 已对齐 | 01 `phase2-t-loss30` 的 `L0.data.fingerprint` |
 | 数据 | 全局批 / microbatch / 梯度累积 | 累加分组变了，舍入点就变（00 README 第四节：梯度累积切分让 embedding 梯度差到噪声上限的 31 倍） | `gbs 16`、`mbs 1`，8 卡 DP，每卡 2 个 microbatch 分两次前反向再累加 | `per_device_batch_size: 1`、`gradient_accumulation_steps: 2`（TPU yml，janus 67208dd 起）；分法与之前的排法见注 28 | 相同（分组方式）；累加顺序与精度未逐位核对 | 已对齐（对齐配置的一部分） | 01 [`t-ga2-30`](../../docs/glossary.md#run-prefixes)：输入指纹逐个 microbatch 逐位；只改这一项 loss 没有变好（见注 28） |
 | 数据 | 数据来源 | 两边吃同一批 token | Megatron `GPTDataset` 读 `fw_hy3_text_document`（`prep_data.sh`） | 不用 MaxText 数据管线：`dataset_type: "synthetic"`，由 `train_hy3.py` 按 golden 的 `data/batches` 原样回放（`replay.py`） | 相同（回放） | 已对齐 | 01 `phase2-t-loss30` 的 `L0.data.fingerprint`（1950 个单元逐位） |
-| 数据 | EOD / pad id | 文档边界、pad 处理 | EOD `120026`、pad `120002`（HF）；`GPTDataset` 把 tokens / labels 里的 pad id 换成 0、label 为 pad 的位置 loss_mask 置 0 | 回放时与 GPU 相同；原生加载器（Grain `mmap_npy`）原样保留 pad id | 回放：相同；原生加载器：有差异 | 回放：已对齐；原生加载器：有差异 | 01 `phase2-native-loader` 的 `L0.native.pad_id`、`L0.native.fields` |
+| 数据 | EOD / pad id | 文档边界、pad 处理 | EOD `120025`（预处理 `--append-eod` 写进去的混元 3 分词器 eos；整份 .bin 里 120025 恰好 726,000 个，等于文档数，01 `phase2-native-loader` 的 `full_bin`）、pad `120002`（HF）；`GPTDataset` 把 tokens / labels 里的 pad id 换成 0、label 为 pad 的位置 loss_mask 置 0 | 回放时与 GPU 相同；原生加载器（Grain `mmap_npy`）原样保留 pad id | 回放：相同；原生加载器：有差异 | 回放：已对齐；原生加载器：有差异 | 01 `phase2-native-loader` 的 `L0.native.pad_id`、`L0.native.fields` |
 | 数据 | 注意力 / 位置 / loss 掩码重置 | 是否按文档切分注意力 | `reset_attention_mask = reset_position_ids = false`、`eod_mask_loss = false`（`data/README.md`） | 回放：整条序列一个因果段；原生加载器要设 `reset_attention_mask: false`（MaxText 默认 true） | 相同 | 已对齐（原生加载器） | 01 `phase2-native-loader` 的 `L0.native.eod_cases` |
 | 数据 | 样本 → 设备的分配 | 原生加载器下谁拿哪一行 | Megatron 每个 microbatch 取连续 dp × mbs 行 | 原生加载器按 `reshape(gbs//ga, ga)` 交错取行；`janus/data_layout.py` 给出换序 | 等价（换序后） | 有差异（原样）／已对齐（换序后） | 01 `phase2-native-loader` 的 `L0.native.device_map.native`、`L0.native.hosts` |
 | 数据 | 种子 | — | `seed 1234`（GPU meta） | `init_weights_seed: 1234`、`data_shuffle_seed: 1234`（TPU yml）；两个种子都不影响数值（见注 29） | 相同 | 不适用（种子不进数值） | 生产 HLO 里随机数算子 0 个（`regression/README.md` R20 ②） |
@@ -350,21 +349,21 @@
 | 并行 | ZeRO-1 + 梯度累积 | `shard_optimizer_over_data=True` 且有梯度累积时，参数在累积前转 BF16、累加器也是 BF16 | — | `shard_optimizer_over_data: false`（base.yml 默认）：TPU yml 有 `gradient_accumulation_steps: 2`，累加器随参数是 FP32（读 `gradient_accumulation.py`） | — | 不适用（当前配置） | 打开 ZeRO-1 前要先改 `gradient_accumulation.py` 的 ZeRO-1 分支 |
 | 并行 | 分布式优化器 | 「分布式优化器开 + 默认设置」这组对其余三组有持续偏移（00 README 第 6 条） | 全部 golden 关（`use_distributed_optimizer: false`）：`g1k-*` 由 `--full` 强制，最终 golden `rcc-*` 带 `--no-dist-opt`；全量抓数要求关 | 无对应开关；FSDP 下优化器状态按切分存，AdamW 逐元素更新，切分不改公式（推断） | — | 不适用（TPU 无此开关） | TPU 的逐元素更新由优化器 FP64 重放核对（「优化器 · 算法」行）；GPU 侧的偏移见 00 `figures/offsets.json` |
 | 确定性 | 确定性开关 | 噪声参照只能用同一种设置 | 默认设置（不设三个确定性变量），重跑自然散开，这就是噪声来源（见注 32） | 无对应开关；同程序同输入重跑逐位相同 | 不可避免差异（GPU 默认设置不确定、TPU 确定） | 已核对 | TPU 双跑逐位，散布靠扰动运行来造（见注 32） |
-| 重算 | 激活重算 | 首次前向与重算不逐位（00 README 第四节）；生产训练都开重算 | `rcc-*`、`rc-*` 每层整层重算；`g1k-*` 不开（见注 33） | `remat_policy: "custom"`，存层输入、各投影等，其余重算（见注 33） | 不可避免差异：两边存的东西不同（TPU 存得多）；路由选中这一项相同（见下一行） | 有差异 | 重算不是案例 01 偏移的来源（见注 33） |
+| 重算 | 激活重算 | 首次前向与重算不逐位（00 README 第四节）；生产训练都开重算 | `rcc-*`、`rc-*` 每层整层重算；`g1k-*` 不开（见注 33） | `remat_policy: "custom"`：yml 默认存层输入、各投影等；正式验收与生产（rmap 覆盖）只存层输入与路由，其余重算（见注 33） | 正式验收与生产：存的东西与 GPU 整层重算一样（层输入与路由）；yml 默认 TPU 存得多（日常回归 T0、T1 用）；路由选中这一项相同（见下一行） | 有差异 | 重算不是案例 01 偏移的来源（见注 33） |
 | 重算 | 路由是否在重算里重选 | 不回放时 GPU 重算会重跑 top-k，专家输出与首次前向不逐位（见注 34） | `rcc-*`、`rc-*` 回放 top-k 专家下标；`g1k-*` 不重算，不涉及（见注 34） | `moe_routing_maps: "device"`：top-k 下标与排序置换跨重算边界保存（见注 34） | 相同（只存下标、权重重算；TPU 权重一侧是推断） | 已对齐（GPU 侧）；TPU 侧只读了代码 | GPU 57 / 57 个张量逐位；TPU 没有在编译后的程序里核实（见注 34） |
 | 专家执行 | 丢 token 与分组 GEMM | 丢 token 会改数值 | dropless（Megatron 默认） | `capacity_factor: -1.0`、`megablox: true`、`sparse_matmul: true`（TPU yml） | 相同（不丢 token） | 已对齐（L1） | MoE 块单独回放对 FP64 不比 GPU 远（v5p `L1.ops.kernel.moe` R 0.94；v7x 见「top-k 权重归一与缩放」行）。推断：被丢掉的 token 那一份专家输出是 O(1) 的差，会让这一项不过 |
 
 - 注 30（切分方式）：
   - 00 `phase1-parallel`、`phase1-parallel-ext`：只换 EP 度，反向就不逐位。
-  - 并行方式对 L4 的影响（2026-11-05）：TPU 生产配置只改成和 GPU 一样的 EP = 8（`ici_fsdp_parallelism=1`、`ici_expert_parallelism=8`）。
-    - 1000 步对精确轨迹的 param_norm 带符号均值：v5p `t-ep8-1000` 比当前 FSDP 配置少 18%（4.27e-7 降到 3.52e-7），v7x `t-v7x-ep8-1000` 反而多 17%（3.19e-7 升到 3.74e-7）；差值都在 GPU 精确五份两两的上限 1.07e-7 以内。第 1000 步的差另列：v5p +2.35e-3 → +1.86e-3，v7x 不变（+2.35e-3）。
-    - 仍是约 3 倍噪声，不过。
+  - 并行方式对 L4 的影响（2026-11-05）：TPU 生产配置只把专家并行度改成和 GPU 相同的 EP = 8（`ici_fsdp_parallelism=1`、`ici_expert_parallelism=8`；词嵌入表沿 expert 轴切 8 份（读 HLO 核过），其余非专家参数按逻辑轴规则推断同样切，≈ FSDP 8，见本注末条）。
+    - 1000 步对精确轨迹的 param_norm 带符号均值：v5p `t-ep8-1000` 比当前 FSDP 配置少 18%（4.27e-7 降到 3.52e-7），v7x `t-v7x-ep8-1000` 反而多 17%（3.19e-7 升到 3.74e-7）；差值 7.5e-8、5.5e-8 都在 GPU 精确五份两两的上限 1.07e-7 以内（这把尺子是 1e-6 扰动的散布，偏严，只作参考，见 [goldens.md](goldens.md) 注 17）。第 1000 步的差另列：v5p +2.35e-3 → +1.86e-3，v7x 不变（+2.35e-3）。
+    - EP = 8 本身对 `rce-a` 的 param_norm 带符号均值仍是噪声上限的 2.8–3.0 倍，不过。
     - 这是排查期对 `rce-a`（精确轨迹，BF16 权重、全程 FP32 计算）的读数，`rce` 现在只作参考；读数见案例 01 第 0 节「并行方式」行。
     - 结论：切分方式只解释 TPU 剩下那一份的一小部分。
   - 对最终 golden `rcc-a`：FSDP 8（当前配置）与 EP = 8 两种切分在 v5p、v7x 上 L4 都在噪声内。
     - 目录：`phase2-acceptance-rcc-on` / `-ep8`、`phase2-v7x-acceptance-rcc` / `-ep8`。
-  - EP = 8 时非专家参数沿 expert 轴切 8 份（MaxText 逻辑轴规则把 `embed` 也映射到 expert 轴），对词嵌入和 FSDP 8 是同一种切法：读优化后 HLO 核实，反向 scatter 每卡 32768 个下标、被排序，不是纯数据并行（[`goldens.md`](goldens.md) 注 50）。只在 libtpu 0.0.46 上核过。
-    - 切分方式不构成可测的差。
+  - EP = 8 时词嵌入表沿 expert 轴切 8 份（逻辑轴 `embed_vocab` 映射到 expert 轴；其余非专家参数没读 HLO，按同一组规则推断同样切），对词嵌入和 FSDP 8 是同一种切法：读优化后 HLO 核实，反向 scatter 每卡 32768 个下标，v5p 上被排序，v7x 上交给 SparseCore（累加精度没有实测，推断），不是纯数据并行（[`goldens.md`](goldens.md) 注 50）。只在 libtpu 构建 `cl/963683785`（按构建号认作 0.0.46）上核过。
+    - TPU 上测到的两种切法（FSDP 8、EP = 8）对非专家参数推断都是 FSDP 式切分，GPU 的 DP 8 那种整份复制在 TPU 上没测过；非专家参数 DP 对 FSDP 的差没有直接对照。
   - 已知限制：GPU 换 FSDP 的对照没做成（两种失败方式都记在 [goldens.md](goldens.md)「并行」行）：
     - Megatron-FSDP 载入检查点时报 `MegatronFSDP` 没有 `sharded_state_dict`（Bridge 要求 FSDP 用 `fsdp_dtensor` 格式的检查点，现有的是 `torch_dist`）；
     - torch FSDP2 在专家权重上报 `Invalid sharding pattern`（EP 与 FSDP 的切分叠在一起）。
@@ -380,7 +379,7 @@
     - `g1k-det` 是确定性设置，只用来归因，不和默认设置混作参照。
     - 出处：00 README 第 6 条。
   - TPU：v7x 生产配置 1000 步双跑，`lm_loss`、`grad_norm`、`param_norm` 逐步逐位，输入指纹 65000 个单元 0 个不同（`phase2-v7x-rmap-repro`）。
-    - v5p 同一提交双跑逐位（日常回归首个 LKG `reg-t0-lkg1-a` / `-b`，记在 `phase2-v7x-rmap-repro.yaml` 文件头）。
+    - v5p 同一提交重跑逐位的证据在日常回归：现行配置 `reg-t0-fa-a…e`、`reg-t1-fa-a…e` 各 5 次逐位（[`regression/README.md`](regression/README.md)；首个 LKG `reg-t0-lkg1-a` / `-b` 是旧配置那一代，记在 `phase2-v7x-rmap-repro.yaml` 文件头）。回归程序是累积 1、不重算，不是验收的 `t-rmap-on-1000`（累积 2 + rmap 重算）；验收程序本身在 v5p 上没有双跑。
     - 所以 TPU 的散布要靠只改执行参数的扰动运行来造（v5p 5 份、v7x 4 份，ALIGNMENT-REPORT 第 3 节）。
 - 注 33（激活重算）：
   - GPU：
@@ -436,7 +435,7 @@
 - 注 35（`dense_fp32_accumulation`）：
   - 收缩维被 FSDP 切开的投影（q / k / v、稠密 MLP 的 wi）在窗口化 collective matmul 里按 BF16 累加部分积。
   - L1 / L2 前向 R 比超线：v5p 1.24 / 1.29，v7x 1.57 / 1.58。
-  - 打开后四层前向 v5p 1.01 – 1.10、v7x 1.01 – 1.06。
+  - 打开后四层前向 v5p 1.01 – 1.09、v7x 1.01 – 1.06。
 - 注 36（TPU 诊断臂的提交）：
   - `cot-dgrad` / `cot-wgrad` 两档后补进 main。
   - `train_hy3.py` 与运行 [`t-v5p-bw-rd-hcd/hcw-1000`](../../docs/glossary.md#run-prefixes) 所用提交逐字节相同。

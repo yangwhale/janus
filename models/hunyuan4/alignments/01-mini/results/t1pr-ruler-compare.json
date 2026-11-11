@@ -1,0 +1,308 @@
+{
+ "schema_version": 1,
+ "stage": "t1pr-ruler-compare",
+ "model": "hunyuan4-mini",
+ "inputs": {
+  "own": "t1pr-l4-gpu8.results.json",
+  "borrowed": "t1pr-l4.results.json"
+ },
+ "checks": [
+  {
+   "id": "L4.loss",
+   "status_own": "pass",
+   "status_borrowed": "fail",
+   "r_own": 0.7557918798536974,
+   "r_own_metric": "max_step",
+   "r_borrowed": 2.9687953716686466,
+   "r_borrowed_metric": "signed_mean",
+   "ruler_ratio_own_over_borrowed": {
+    "signed_mean": 4.809355554448435,
+    "mare": 2.662977549620205,
+    "max_step": 1.3110105927896942
+   },
+   "upper_own": {
+    "signed_mean": 2.237920407890897e-05,
+    "mare": 2.384110461378984e-05,
+    "max_step": 9.749308057959073e-05
+   },
+   "upper_borrowed": {
+    "signed_mean": 4.653264626735536e-06,
+    "mare": 8.952799702419597e-06,
+    "max_step": 7.436483054811601e-05
+   },
+   "tpu_value": {
+    "signed_mean": 1.381459048700189e-05,
+    "mare": 1.4947085961566378e-05,
+    "max_step": 7.368447864397688e-05
+   },
+   "refs": [
+    28,
+    120
+   ]
+  },
+  {
+   "id": "L4.loss.tail",
+   "status_own": "pass",
+   "status_borrowed": "fail",
+   "r_own": 0.7557918798536974,
+   "r_own_metric": "max_step",
+   "r_borrowed": 3.015681890794673,
+   "r_borrowed_metric": "signed_mean",
+   "ruler_ratio_own_over_borrowed": {
+    "signed_mean": 4.936291622383895,
+    "mare": 2.7145042663619696,
+    "max_step": 1.3110105927896942
+   },
+   "upper_own": {
+    "signed_mean": 2.4800301508047993e-05,
+    "mare": 2.6138673572773668e-05,
+    "max_step": 9.749308057959073e-05
+   },
+   "upper_borrowed": {
+    "signed_mean": 5.024075440678913e-06,
+    "mare": 9.629262291713108e-06,
+    "max_step": 7.436483054811601e-05
+   },
+   "tpu_value": {
+    "signed_mean": 1.5151013324441662e-05,
+    "mare": 1.6251840953554837e-05,
+    "max_step": 7.368447864397688e-05
+   },
+   "refs": [
+    28,
+    120
+   ]
+  },
+  {
+   "id": "L4.mtp_loss",
+   "status_own": "pass",
+   "status_borrowed": "pass",
+   "r_own": 0.9252695763014521,
+   "r_own_metric": "max_step",
+   "r_borrowed": 0.8977190540852718,
+   "r_borrowed_metric": "mare",
+   "ruler_ratio_own_over_borrowed": {
+    "signed_mean": 1.0444806914217077,
+    "mare": 1.0287645813612893,
+    "max_step": 0.855880456304717
+   },
+   "upper_own": {
+    "signed_mean": 2.628633612962487e-05,
+    "mare": 3.832065943082102e-05,
+    "max_step": 0.0002146215805758252
+   },
+   "upper_borrowed": {
+    "signed_mean": 2.5166895228905474e-05,
+    "mare": 3.724920173681921e-05,
+    "max_step": 0.0002507611652945771
+   },
+   "tpu_value": {
+    "signed_mean": 1.0032605902521172e-05,
+    "mare": 3.34393181486088e-05,
+    "max_step": 0.00019858281892454175
+   },
+   "refs": [
+    28,
+    120
+   ]
+  },
+  {
+   "id": "L4.mtp_loss.tail",
+   "status_own": "pass",
+   "status_borrowed": "pass",
+   "r_own": 0.9252695763014521,
+   "r_own_metric": "max_step",
+   "r_borrowed": 0.9003327443638083,
+   "r_borrowed_metric": "mare",
+   "ruler_ratio_own_over_borrowed": {
+    "signed_mean": 1.0416254679231103,
+    "mare": 1.0333617490902614,
+    "max_step": 0.855880456304717
+   },
+   "upper_own": {
+    "signed_mean": 2.9159611266117604e-05,
+    "mare": 4.233948092959822e-05,
+    "max_step": 0.0002146215805758252
+   },
+   "upper_borrowed": {
+    "signed_mean": 2.7994334013605433e-05,
+    "mare": 4.0972564512739654e-05,
+    "max_step": 0.0002507611652945771
+   },
+   "tpu_value": {
+    "signed_mean": 1.1157262434122658e-05,
+    "mare": 3.6888941451378075e-05,
+    "max_step": 0.00019858281892454175
+   },
+   "refs": [
+    28,
+    120
+   ]
+  },
+  {
+   "id": "L4.indexer_loss",
+   "status_own": "pass",
+   "status_borrowed": "inconclusive",
+   "r_own": 0.9961814994430958,
+   "r_own_metric": "signed_mean",
+   "r_borrowed": 1.0429465864262346,
+   "r_borrowed_metric": "signed_mean",
+   "ruler_ratio_own_over_borrowed": {
+    "signed_mean": 1.046944343986796,
+    "mare": 0.9984416261838678,
+    "max_step": 0.951712736487734
+   },
+   "upper_own": {
+    "signed_mean": 0.000299819682430972,
+    "mare": 0.00038925765064030466,
+    "max_step": 0.0020055528553631517
+   },
+   "upper_borrowed": {
+    "signed_mean": 0.0002863759512652311,
+    "mare": 0.0003898652063697322,
+    "max_step": 0.002107309042395063
+   },
+   "tpu_value": {
+    "signed_mean": 0.0002986748208066385,
+    "mare": 0.0003781710425325557,
+    "max_step": 0.0017832720419241647
+   },
+   "refs": [
+    28,
+    120
+   ]
+  },
+  {
+   "id": "L4.grad_norm",
+   "status_own": "pass",
+   "status_borrowed": "fail",
+   "r_own": 0.9133200191569869,
+   "r_own_metric": "mare",
+   "r_borrowed": 2.4509999740931803,
+   "r_borrowed_metric": "mare",
+   "ruler_ratio_own_over_borrowed": {
+    "signed_mean": 2.4234767024281854,
+    "mare": 2.683615734554361,
+    "max_step": 1.4997283120527336
+   },
+   "upper_own": {
+    "signed_mean": 0.0014927947107241577,
+    "mare": 0.007850493417877209,
+    "max_step": 0.11532551911714314
+   },
+   "upper_borrowed": {
+    "signed_mean": 0.0006159723793624517,
+    "mare": 0.002925341850099435,
+    "max_step": 0.07689760751351879
+   },
+   "tpu_value": {
+    "signed_mean": 0.00029575781486279563,
+    "mare": 0.007170012798807412,
+    "max_step": 0.06987354190939506
+   },
+   "refs": [
+    28,
+    120
+   ]
+  },
+  {
+   "id": "L4.param_norm",
+   "status_own": "pass",
+   "status_borrowed": "pass",
+   "r_own": 0.6410174258629484,
+   "r_own_metric": "max_step",
+   "r_borrowed": 0.7816762280828777,
+   "r_borrowed_metric": "mare",
+   "ruler_ratio_own_over_borrowed": {
+    "signed_mean": 1.353904325452848,
+    "mare": 1.353632677510172,
+    "max_step": 1.0388789595182688
+   },
+   "upper_own": {
+    "signed_mean": 7.405225216555487e-06,
+    "mare": 7.405903949820184e-06,
+    "max_step": 2.2382259558779008e-05
+   },
+   "upper_borrowed": {
+    "signed_mean": 5.469533612782144e-06,
+    "mare": 5.471132658707947e-06,
+    "max_step": 2.1544626882382646e-05
+   },
+   "tpu_value": {
+    "signed_mean": 4.272718006181166e-06,
+    "mare": 4.276654339999875e-06,
+    "max_step": 1.434741840736489e-05
+   },
+   "refs": [
+    28,
+    120
+   ]
+  },
+  {
+   "id": "L4.router.bias_mean",
+   "status_own": "pass",
+   "status_borrowed": "pass",
+   "r_own": 0.3985235437891695,
+   "r_own_metric": "mare",
+   "r_borrowed": 3.732242535311687e-06,
+   "r_borrowed_metric": "signed_mean",
+   "ruler_ratio_own_over_borrowed": {
+    "signed_mean": 1.1013871514084996e-05,
+    "mare": 6.271368656497608e-06,
+    "max_step": 6.646243343068355e-08
+   },
+   "upper_own": {
+    "signed_mean": 1.1401718386055563e-05,
+    "mare": 1.1430754920489467e-05,
+    "max_step": 4.6887951306465216e-05
+   },
+   "upper_borrowed": {
+    "signed_mean": 1.035214399539215,
+    "mare": 1.8226890407162317,
+    "max_step": 705.4805081033727
+   },
+   "tpu_value": {
+    "signed_mean": 3.863671215127405e-06,
+    "mare": 4.555424959098949e-06,
+    "max_step": 1.8427735659446702e-05
+   },
+   "refs": [
+    28,
+    120
+   ]
+  },
+  {
+   "id": "L4.router.bias_std",
+   "status_own": "pass",
+   "status_borrowed": "pass",
+   "r_own": 0.8972898825486479,
+   "r_own_metric": "mare",
+   "r_borrowed": 0.9103691823942132,
+   "r_borrowed_metric": "mare",
+   "ruler_ratio_own_over_borrowed": {
+    "signed_mean": 1.4216371496722309,
+    "mare": 1.0145764485925273,
+    "max_step": 0.9768933823927607
+   },
+   "upper_own": {
+    "signed_mean": 0.002837809707652295,
+    "mare": 0.005864792913886291,
+    "max_step": 0.03389501010690696
+   },
+   "upper_borrowed": {
+    "signed_mean": 0.0019961561276775675,
+    "mare": 0.005780533267869793,
+    "max_step": 0.03469673427809079
+   },
+   "tpu_value": {
+    "signed_mean": 0.0008527800620788267,
+    "mare": 0.0052624193448731725,
+    "max_step": 0.02987892923976592
+   },
+   "refs": [
+    28,
+    120
+   ]
+  }
+ ]
+}

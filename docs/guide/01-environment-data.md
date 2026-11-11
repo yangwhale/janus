@@ -168,7 +168,7 @@ bash /data/janus-src/models/hunyuan3/frameworks/megatron/prep_data.sh
 - 硬件与并行方式、确定性开关；
 - **运行时实际生效**的配置。
 
-容器里拿不到镜像 digest，`pod.yaml` 通过环境变量 `JANUS_IMAGE` 把它设好。
+容器里拿不到镜像 digest，`pod.yaml` 通过环境变量 `JANUS_IMAGE` 把它设好。混元 3 第一阶段的运行还没有这一步，`meta.json` 的 `image` 只记了 tag（[环境「第一阶段的缺口」](../reference/environment.md#每次运行都要记下的)）。
 
 要钉死哪些、为什么，见[方法详解：环境](../reference/environment.md#每次运行都要记下的)「每次运行都要记下的」。
 

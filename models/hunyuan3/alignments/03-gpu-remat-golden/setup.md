@@ -14,7 +14,7 @@
 
 | golden | 设置 | 用途 |
 |---|---|---|
-| **`rc-a`..`rc-e`**（本实践） | `g1k-a` 的设置 + 整层重算 + 路由回放 | **生产近似 golden，TPU 对齐默认对它**（见表下） |
+| **`rc-a`..`rc-e`**（本实践） | `g1k-a` 的设置 + 整层重算 + 路由回放 | **生产近似 golden**；正式迁移验收对最终 golden `rcc-a`，`rc` 只做第二层对照（01 [README「golden 的分工」](../01-v5p-acceptance/README.md#golden-的分工)） |
 | `g1k-a`/`b`/`c`（`00`） | 不重算 | **归因参照**（见表下） |
 
 - **`rc` 为什么当生产近似 golden**：
@@ -58,4 +58,4 @@
 
 ## 软件版本
 
-本实践只有 GPU，版本同 [00 的「软件版本」](../00-gpu-noise-and-drills/setup.md#软件版本)。`rc-*` 的 `meta.json` 直接记了镜像 digest `fc75bf51…` 与 torch、CUDA 13.4、Megatron-Core 0.20.0、Megatron-Bridge 0.7.0、Transformer Engine 2.20.2+44f31bbe、NCCL 2.31.2（结果文件 [`remat-noise.results.json`](results/remat-noise.results.json) 记着它们的 `meta_sha256`）；cuBLAS 不记，按同一镜像是 13.8.0.4。
+本实践只有 GPU，版本同 [00 的「软件版本」](../00-gpu-noise-and-drills/setup.md#软件版本)。`rc-*` 的 `meta.json` 直接记了镜像 digest `fc75bf51…` 与 torch、CUDA 13.4、Megatron-Core 0.20.0、Megatron-Bridge 0.7.0、Transformer Engine 2.20.2+44f31bbe、NCCL 2.31.2（结果文件 [`remat-noise.results.json`](results/remat-noise.results.json) 记着它们的 `meta_sha256`）；cuBLAS 不记，按同一镜像推断实际加载的是 13.8.1（容器环境变量写 13.8.0.4，见 00 的「软件版本」）。

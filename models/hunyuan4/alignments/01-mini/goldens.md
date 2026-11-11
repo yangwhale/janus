@@ -2,7 +2,7 @@
 
 # 混元 4 · T1 的运行登记（共同权重、GPU 运行、TPU 运行、噪声）
 
-T1（hy4-mini）每一份运行是怎么来的、属于哪一组、用来干什么。
+T1（hy4-mini）的 golden、噪声与各次主比较的运行是怎么来的、属于哪一组、用来干什么。诊断运行的分组见下文「诊断运行（不进 L4）」；续跑、扰动臂、2000 步等其余运行只登记在 [`runs.yaml`](runs.yaml)。
 
 - **两个角色**：语义以 TPU 一侧 MaxText 的混元 4 实现为准（[`PROTOCOL.md`](../../PROTOCOL.md) 第 1.2 节）；判定时 GPU 是 golden / 基线、TPU 是被测，噪声尺子只用 GPU 重跑（[`PROTOCOL.md`](../../PROTOCOL.md) 第 3 节与变更记录）。
 - 设置的登记在 `PROTOCOL.md` 第 1.2 节，两边每个开关见 [`config-alignment.md`](config-alignment.md)，每一处改动见 [`CHANGES-LEDGER.md`](../../CHANGES-LEDGER.md)。
@@ -17,8 +17,13 @@ T1（hy4-mini）每一份运行是怎么来的、属于哪一组、用来干什�
 | `t1s-l4` | 300 | `t1s-a` | `g1-a` | `g1-a … g1-h` 两两 28 对 | 过 4、不过 3、待定 2 |
 | `t1-l4-nozm` | 300 | `t1n-a` | `g1-a` | 同上 | 过 2、不过 3、待定 4 |
 | `t1-l4`（旧设置） | 300 | `t1-a` | `g1-a` | 同上 | 过 2、不过 5、待定 2 |
-| `t1zo-l4`（**现行**，2026-11-11 起：现行 yml 的全部开关，base2 关） | 1000 | `tz-off-rep` | `g3-a` | `g3-a … g3-p` 16 份两两 120 对 | 过 7、不过 0、待定 2 |
-| `t1zo300-l4`（现行，同一运行前 300 步） | 300 | `tz-off-rep` | `g2-a` | `g2-a … g2-h` 两两 28 对 | 过 7、不过 0、待定 2 |
+| `t1zc-l4`（**现行**，2026-11-11 起：C 口径，现行 yml 的全部开关，M36、M52、M58 都开，base2 关；同配置 5 份取第一份） | 1000 | `tc-a` | `g3-a` | `g3-a … g3-p` 16 份两两 120 对 | 过 8、不过 0、待定 1 |
+| `t1zc300-l4`（现行，同一运行前 300 步） | 300 | `tc-a` | `g2-a` | `g2-a … g2-h` 两两 28 对 | 过 8、不过 0、待定 1 |
+| `t1zo-l4`（上一代，C 口径之前：M52、M58 不开，base2 关） | 1000 | `tz-off-rep` | `g3-a` | `g3-a … g3-p` 16 份两两 120 对 | 过 7、不过 0、待定 2 |
+| `t1zp-l4`（推荐生产组合整体跑，不进签字） | 1000 | `x5-prod` | `g3-a` | `g3-a … g3-p` 16 份两两 120 对 | 过 8、待定 1（索引器 KD） |
+| `t1zp300-l4`（同上，前 300 步） | 300 | `x5-prod` | `g2-a` | `g2-a … g2-h` 两两 28 对 | 过 6、待定 2、不过 1（索引器 KD） |
+| `t1pr-l4-gpu8`（生产配方臂 P1，诊断，不进签字） | 1000 | `p1t-a` | `p1g-a` | 同配方 `p1g-a … p1g-h` 8 份两两 28 对（事后选的尺子） | 过 9 |
+| `t1zo300-l4`（上一代，同一运行前 300 步） | 300 | `tz-off-rep` | `g2-a` | `g2-a … g2-h` 两两 28 对 | 过 7、不过 0、待定 2 |
 | `t1zga-l4`（上一代，t1zw-a + M50，base2 开） | 1000 | `t1zg-a` | `g3-a` | `g3-a … g3-h` 两两 28 对 | 过 7、不过 0、待定 2 |
 | `t1zga300-l4`（上一代，同一运行前 300 步） | 300 | `t1zg-a` | `g2-a` | `g2-a … g2-h` 两两 28 对 | 过 8、不过 0、待定 1 |
 | `t1zw-l4`（上一代，t1zu-a + M42b） | 1000 | `t1zw-a` | `g3-a` | `g3-a … g3-h` 两两 28 对 | 过 6、不过 0、待定 3 |
@@ -74,7 +79,7 @@ fineweb-edu `sample/10BT` 第一个分片，混元 4 分词器。GPU 写下每�
 
 ## GPU 运行（判定时的 golden）
 
-B200 × 8，Megatron-Core 0.20 + TE（NeMo 26.10 镜像所带；`meta.json` 不记 TE 版本，按同一镜像推断是 TE 2.20.2，见[软件版本](setup.md#软件版本)），数据并行 8、专家并行 4（每份运行的 `meta.json` 记 `parallelism`；`g3-*` 的完整附加参数见 [`05-gpu-scale/setup.md`](../05-gpu-scale/setup.md) 的 `G3`，`g1-*`、`g2-*` 的命令行没有入库），默认设置（不逐位复现：各代第 1 步 loss 的相对极差 1.7e-6–2.9e-6，[`gpu-load-check-and-step1-spread.json`](gpu-noise/results/gpu-load-check-and-step1-spread.json)）。
+B200 × 8，Megatron-Core 0.20 + TE 2.20.2（NeMo 26.10 镜像所带；`meta.json` 不记 TE 版本，2026-11-11 在同一 digest 的训练 Pod 里实测，见[软件版本](setup.md#软件版本)），数据并行 8、专家并行 4（每份运行的 `meta.json` 记 `parallelism`；`g3-*` 的完整附加参数见 [`05-gpu-scale/setup.md`](../05-gpu-scale/setup.md) 的 `G3`；`g1-*` 的命令行没有核；`g2-*`、`g2s-*` 各运行的 `train.log` 里没有命令行，作业的 `pod.log` 里有 `RUN_START` 行（2026-11-11 核过），`g2s-*` 的附加参数照抄在 [`g2s6-meta-vs-g2sa.json`](gpu-noise/results/g2s6-meta-vs-g2sa.json)；`g2-*`、`g2s-*` 的 `meta.json` 逐字段对 `g3-a` 见 [`g2-meta-vs-g3a.json`](gpu-noise/results/g2-meta-vs-g3a.json)：`g2-*` 只差步数与代码包名（模型、训练程序 sha256 相同），`g2s-*` 另关了整层重算），默认设置（不逐位复现：各代第 1 步 loss 的相对极差 1.7e-6–2.9e-6，[`gpu-load-check-and-step1-spread.json`](gpu-noise/results/gpu-load-check-and-step1-spread.json)）。
 
 三代：
 
@@ -87,10 +92,11 @@ B200 × 8，Megatron-Core 0.20 + TE（NeMo 26.10 镜像所带；`meta.json` 不�
 | `g1-a` | 1 | 300 | 前三代比较的 GPU 基线 |
 | `g1-b … g1-h` | 7 | 300 | 同设置重跑：与 `g1-a` 一起 8 份，两两 28 对是前三代的噪声尺子 |
 | `g1s-a … g1s-c` | 3 | 1 | 第 1 步全量抓数参照（不重算）；导出成 HF 布局的梯度（台账 G15）；t1s 一代第 1 步逐张量比较的 GPU 一侧 |
-| `g2-a` | 1 | 300 | **300 步比较的基线**（现行 `t1zo300-l4`；上一代现行 `t1zga300-l4`、`t1mz300-l4-qkclip`；上一代及更早 `t1zw300-l4`、`t1zv300-l4`、`t1zz300-l4`、`t1zla300-l4`、`t1zud300-l4`、`t1zr300-l4`、`t1zs300-l4`、`t1zt300-l4`、`t1zub300-l4`、`t1zuc300-l4`、`t1zu300-l4`、`t1z-l4`、`t1v-l4`、`t1t-l4`） |
+| `g2-a` | 1 | 300 | **300 步比较的基线**（现行 `t1zc300-l4`；上一代 `t1zo300-l4`；上一代现行 `t1zga300-l4`、`t1mz300-l4-qkclip`；上一代及更早 `t1zw300-l4`、`t1zv300-l4`、`t1zz300-l4`、`t1zla300-l4`、`t1zud300-l4`、`t1zr300-l4`、`t1zs300-l4`、`t1zt300-l4`、`t1zub300-l4`、`t1zuc300-l4`、`t1zu300-l4`、`t1z-l4`、`t1v-l4`、`t1t-l4`） |
 | `g2-b … g2-h` | 7 | 300 | 同 `g2-a` 重跑：上一行各次比较的噪声尺子 |
-| `g2s-a … g2s-c` | 3 | 1 | 同 `g1s-*`，只改注意力 q·k 在 FP32 里算；t1t、t1v、t1z、上一代 t1zg 与现行 `tz-off-rep` 第 1 步逐张量比较的 GPU 一侧 |
-| `g3-a` | 1 | 1000 | **1000 步比较的基线**（现行 `t1zo-l4`；上一代现行 `t1zga-l4`、`t1zgb-l4`、`t1mz-l4-qkclip`；上一代及更早 `t1zw-l4`、`t1zv-l4`、`t1zz-l4`、`t1zla-l4`、`t1zud-l4`、`t1zr-l4`、`t1zs-l4`、`t1zt-l4`、`t1zub-l4`、`t1zuc-l4`、`t1zu-l4`、`t1zk-l4`、`t1w-l4`、`t1u-l4`）；存下全部 1000 步的 batch 给 TPU 回放 |
+| `g2s-a … g2s-c` | 3 | 1 | 同 `g1s-*`，只改注意力 q·k 在 FP32 里算；整层重算关（`meta.json` 的 `config.recompute` false，`g2-*`、`g3-*` 是开的）；t1t、t1v、t1z、上一代 t1zg 第 1 步逐张量比较的 GPU 一侧；`tz-off-rep` 2026-11-11 前也只用这三份 |
+| `g2s-d … g2s-f` | 3 | 1 | 同 `g2s-a … c` 再三份（2026-11-11；同一代码包、`pod_run.sh`、镜像与附加参数，`meta.json` 除运行名与启动时的 TF32 探针外逐字段相同，[`g2s6-meta-vs-g2sa.json`](gpu-noise/results/g2s6-meta-vs-g2sa.json)）；与 `g2s-a … c` 一起 6 份两两 15 对，是现行 `tz-off-rep` 第 1 步逐张量比较的 GPU 尺子（[`t1zo-step1-train-grad-vs-fp64-n6.json`](results/t1zo-step1-train-grad-vs-fp64-n6.json)） |
+| `g3-a` | 1 | 1000 | **1000 步比较的基线**（现行 `t1zc-l4`；上一代 `t1zo-l4`；上一代现行 `t1zga-l4`、`t1zgb-l4`、`t1mz-l4-qkclip`；上一代及更早 `t1zw-l4`、`t1zv-l4`、`t1zz-l4`、`t1zla-l4`、`t1zud-l4`、`t1zr-l4`、`t1zs-l4`、`t1zt-l4`、`t1zub-l4`、`t1zuc-l4`、`t1zu-l4`、`t1zk-l4`、`t1w-l4`、`t1u-l4`）；存下全部 1000 步的 batch 给 TPU 回放 |
 | `g3-b … g3-h` | 7 | 1000 | 同 `g3-a` 重跑：与 `g3-a` 一起 8 份，两两 28 对是 2026-11-11 前各次 1000 步比较的噪声尺子 |
 | `g3-i … g3-p` | 8 | 1000 | 同 `g3-a` 再 8 份重跑（同一代码包 hy4_mcore `4dab75aa`、train `1763d7ed`，同一 `pod_run.sh`、同镜像、同参数，不带 `--save-batches`；`meta.json` 的配置、代码指纹、镜像、并行、版本、数据逐项与 `g3-a` 相同，[`g3x16-noise-vs-8.json`](gpu-noise/results/g3x16-noise-vs-8.json) 的 `settings_diff`）；与 `g3-a … g3-h` 一起 16 份两两 120 对，是现行 `t1zo-l4`、`t1zo-l4-qkclip` 与 TPU 自比 1000 步的噪声尺子；登记见 [`gpu-noise/runs.yaml`](gpu-noise/runs.yaml) |
 | `g2d-a` | 1 | 300 | 诊断（param_norm 定位，不进门槛）：`g2-a` 的设置，另在第 1 步与第 300 步做全量抓数（主权重前后、梯度、优化器状态；路由专家只有 rank 0 的 0–3 号）；台账 G22 |
@@ -122,11 +128,12 @@ v5p 2x2x2（8 个设备），MaxText 混元 4 集成分支，配置 [`frameworks
 | `t1zu-a` | t1zu-c 再开 `moe_mcore_prob_before_fc2`（M40）；同一提交，1000 步 | 上一代比较的被测（2026-11-08 至 11-09 是现行） | [`t1zu-l4`](results/t1zu-l4.report.md)、[`t1zu300-l4`](results/t1zu300-l4.report.md) |
 | `t1zu-d` | t1zu-a 只关 M41（即 t1zt + M39 + M40）；同一提交，1000 步 | 诊断：凑齐 M40 / M41 的 2×2 | [`t1zud-l4`](results/t1zud-l4.report.md)、[`t1zud300-l4`](results/t1zud300-l4.report.md) |
 | `t1zv-b` | t1zu-a 再开 `splash_dsinks_fp32`（M42，sink 梯度全程 FP32），MaxText `2306c7a5`，1000 步；`t1zv-a` 未完成，同设置重跑 | 诊断代：整网离 GPU 更远，M42 从对齐配置撤下（PROTOCOL 变更记录 2026-11-09）；「更远」只基于开、关各一份运行，没排除轨迹偶然（[知识库](../../knowledge.md#mini-上关-base2-为什么离-gpu-更远要点与出处)） | [`t1zv-l4`](results/t1zv-l4.report.md)、[`t1zv300-l4`](results/t1zv300-l4.report.md) |
-| `t1zz-a` | t1zw-a 再关 `sa_use_base2_exp`（M43，splash 不走 base2 指数），MaxText `2c28a4f4`，1000 步 | 当时是诊断代：对 8 份 GPU 主 loss 带符号均值 r 中位数 0.51 → 2.06，对齐配置当时改回开（PROTOCOL 变更记录 2026-11-09）；换 16 份尺子、各补只改执行方式的重复后开、关两组交叠，2026-11-11 起对齐配置关 base2，现行 `tz-off-rep` 是它的原样重跑（PROTOCOL 变更记录 2026-11-11） | [`t1zz-l4`](results/t1zz-l4.report.md)、[`t1zz300-l4`](results/t1zz300-l4.report.md) |
+| `t1zz-a` | t1zw-a 再关 `sa_use_base2_exp`（M43，splash 不走 base2 指数），MaxText `2c28a4f4`，1000 步 | 当时是诊断代：对 8 份 GPU 主 loss 带符号均值 r 中位数 0.51 → 2.06，对齐配置当时改回开（PROTOCOL 变更记录 2026-11-09）；换 16 份尺子、各补只改执行方式的重复后开、关两组交叠，2026-11-11 起对齐配置关 base2，现行 `tz-off-rep` 是它加 M50、换 MaxText `b87a55aa` 的重跑，主 loss、MTP、grad_norm 逐位相同（PROTOCOL 变更记录 2026-11-11） | [`t1zz-l4`](results/t1zz-l4.report.md)、[`t1zz300-l4`](results/t1zz300-l4.report.md) |
 | `t1zw-a` | t1zu-a 再开 `splash_dsinks_gpu_order`（M42b，sink 梯度照 GPU 的写法），MaxText `2c28a4f4`，1000 步 | 上一代比较的被测（2026-11-09 上午是现行） | [`t1zw-l4`](results/t1zw-l4.report.md)、[`t1zw300-l4`](results/t1zw300-l4.report.md) |
 | `t1zg-a` | t1zw-a 再开 `indexer_kd_generalized_kl`（M50，只改 KD 记录值），MaxText `47d31984`，即 2026-11-11 前 yml 的全部开关（base2 开），1000 步；41 个逐步量与 `t1zw-a` 逐位相同，KD、总 loss、param_norm 的记录值有末位差（参数逐位相同） | 上一代现行比较的被测（2026-11-09 至 11-11；PROTOCOL 变更记录 2026-11-09） | [`t1zga-l4`](results/t1zga-l4.report.md)、[`t1zga300-l4`](results/t1zga300-l4.report.md)、L0 [`t1zg-l0-data`](results/t1zg-l0-data.report.md) |
 | `t1zg-b` | t1zg-a 的重跑，M50 修订版（MaxText `fd30fbfb`） | 只核与 `t1zg-a` 是否一致：KD 记录值 865 步逐位相同，其余最多差 2 ulp，判定相同 | [`t1zgb-l4`](results/t1zgb-l4.report.md) |
-| `tz-off-rep` | 现行 yml 的全部开关、base2 关（2026-11-11 起），MaxText `b87a55aa`，1000 步，第 1 步全量抓数；`t1zz-a` 的原样重跑，主 loss、MTP、grad_norm 逐位等于 `t1zz-a` | **现行比较的被测**（PROTOCOL 变更记录 2026-11-11）；L3：第 1 步动量反推训练步梯度（`export_train_grads.py`） | [`t1zo-l4`](results/t1zo-l4.report.md)、[`t1zo300-l4`](results/t1zo300-l4.report.md)、[`t1zo-step1-train-grad-vs-fp64.json`](results/t1zo-step1-train-grad-vs-fp64.json) |
+| `tc-a … tc-e` | C 口径（2026-11-11 起现行）：`tz-off-rep` 的配置再开 M52、M58，MaxText `8d3d7561`，1000 步；`tc-a` 默认执行方式，`tc-b` / `tc-d` scoped VMEM 64 / 32 MiB，`tc-c` 关延迟隐藏调度，`tc-e` `remat_policy=full` | 现行比较的被测（`tc-a`）与同配置重复 | [`t1zc-l4`](results/t1zc-l4.report.md)、[`t1zc300-l4`](results/t1zc300-l4.report.md)、[`t1zc-repeats.json`](results/t1zc-repeats.json) |
+| `tz-off-rep` | C 口径之前的上一代：yml 的全部开关、base2 关（2026-11-11 起），MaxText `b87a55aa`，1000 步，第 1 步全量抓数；相对 `t1zz-a` 多 M50、换了 MaxText 提交，M50 只改 KD 记录值，所以主 loss、MTP、grad_norm 逐位等于 `t1zz-a`，KD 记录值不同 | **现行比较的被测**（PROTOCOL 变更记录 2026-11-11）；L3：第 1 步动量反推训练步梯度（`export_train_grads.py`） | [`t1zo-l4`](results/t1zo-l4.report.md)、[`t1zo300-l4`](results/t1zo300-l4.report.md)、[`t1zo-step1-train-grad-vs-fp64-n6.json`](results/t1zo-step1-train-grad-vs-fp64-n6.json)（GPU 6 份；3 份时 [`t1zo-step1-train-grad-vs-fp64.json`](results/t1zo-step1-train-grad-vs-fp64.json)） |
 | `tz-off-qkc`、`tz-off-qkq` | 同 `tz-off-rep`，再开 `qk_clip_log_per_head`（只记录），不抓数；`tz-off-qkq` 由 `analysis/derive_max_logit.py` 派生每步全局最大 logit | 现行 L4 QK-Clip 曲线、健康信号、同设置重跑逐位（对 `tz-off-rep` 47 个逐步量逐位相同） | [`t1zo-l4-qkclip`](results/t1zo-l4-qkclip.report.md)、[`t1zo-health`](results/t1zo-health.results.json)、[`t1zo-determinism`](results/t1zo-determinism.report.md) |
 | `t1zk-a` | t1z 的设置，1000 步 | 上一代 1000 步比较的被测 | [`t1zk-l4`](results/t1zk-l4.report.md) |
 | `t1w-a` | 同 `t1v-a`，1000 步，回放 `g3-a` 的数据 | 再上一代 1000 步比较的被测（M28 之后） | [`t1w-l4`](results/t1w-l4.report.md)、[`t1w-l0-settings`](results/t1w-l0-settings.report.md) |
@@ -151,7 +158,7 @@ TPU 训练程序的诊断模式（`train_hy4.py --diag-step1`，台账 J5）：�
 | `t1vdiag` | t1v 设置（t1t + `ihc_stream_sum_unrolled`） | 第 1 步逐张量梯度对 `g2s-*` | [`t1v-step1-grad-vs-fp64.json`](results/t1v-step1-grad-vs-fp64.json) |
 | `t1zdiag2` | t1z 设置 | 第 1 步逐张量梯度对 `g2s-*`；L3 的上一代 | [`t1z-step1-grad-vs-fp64.json`](results/t1z-step1-grad-vs-fp64.json) |
 | `tz-off-qk01` | 现行配置（base2 关）τ 0.1 低阈值 QK-Clip 30 步，记逐头最大 logit（GOLDEN `g6-qk-a`） | L1 低阈值 QK-Clip 第 1 步逐头最大 logit | [`t1zo-qkclip-maxlogit`](results/t1zo-qkclip-maxlogit.results.json) |
-| `mz-diag1`、`mz-opt2` | base2 开的上一代配置（MaxText `fd30fbfb`） | 上一代 L3：`mz-opt2` 的第 1 步动量反推训练步梯度，`mz-diag1` 是诊断程序梯度（旁证）；优化器一步（只比算术，与 base2 无关）仍用 `mz-opt2` | [`t1zg-step1-train-grad-vs-fp64.json`](results/t1zg-step1-train-grad-vs-fp64.json)、[`t1zg-step1-grad-vs-fp64.json`](results/t1zg-step1-grad-vs-fp64.json) |
+| `mz-diag1`、`mz-opt2` | base2 开的上一代配置（MaxText `fd30fbfb`） | 上一代 L3：`mz-opt2` 的第 1 步动量反推训练步梯度，`mz-diag1` 是诊断程序梯度（旁证）；优化器一步上一代用 `mz-opt2`（[`t1-l3-optim-step1`](results/t1-l3-optim-step1.results.json)），现行改用 `tz-off-rep` 的第 1 步全量抓数在 CPU 上离线重算（[`t1zo-l3-optim-step1`](results/t1zo-l3-optim-step1.results.json)） | [`t1zg-step1-train-grad-vs-fp64.json`](results/t1zg-step1-train-grad-vs-fp64.json)、[`t1zg-step1-grad-vs-fp64.json`](results/t1zg-step1-grad-vs-fp64.json) |
 | `mz-g1`、`mz-g1q` | base2 开的上一代配置 1000 步（MaxText `fd30fbfb`；`mz-g1q` 多记全局最大 logit） | L4 健康信号、QK-Clip 曲线、同设置重跑（对 `t1zg-b`） | [`t1mz-health`](results/t1mz-health.results.json)、[`t1mz-l4-qkclip`](results/t1mz-l4-qkclip.report.md)、[`t1mz-determinism`](results/t1mz-determinism.report.md) |
 | `mz-dump30` | base2 开的上一代配置 30 步，第 1、30 步全量抓数（MaxText `fd30fbfb`） | 抓数不改数值（对 `t1zg-b`） | [`t1mz-dump-determinism`](results/t1mz-dump-determinism.report.md) |
 | `mz-sp849`、`mz-sp900`；GPU `g3x-a` | `g3x-a` 是 g3 的设置重跑；TPU 从它第 849、900 步的状态各走一步 | grad_norm 尖峰段同一状态单步 | [`t1-spike-same-state.json`](results/t1-spike-same-state.json) |
@@ -174,12 +181,12 @@ TPU 训练程序的诊断模式（`train_hy4.py --diag-step1`，台账 J5）：�
 
 ### 第 1 步的 CPU FP64 参照（L3 定责用，不是任何一侧的运行）
 
-GPU golden 同一套 Megatron-Core 代码（`frameworks/megatron/step1_ref.py`，台账 J34）在 CPU 上全程 FP64 跑第 1 步：同一份初始权重（`tensor_sha256.json` 的 sha256 `1d869124…`）、tokens.npy 第 0–15 行（与 `g2s-*` 的 `tokens_sha256_first_rows` 逐字节相同）、同一套 loss 语义。三份产物：FP64 全批（两次重跑 205 个张量逐位相同）、同一代码的 FP32 全批（自检）、第一行灌 GPU `g7-l1-a` 的 DSA / 路由选择的 FP64（灵敏度）。产物较大，不入库，比较结果见 [`t1z-step1-grad-vs-fp64.json`](results/t1z-step1-grad-vs-fp64.json)、[`t1v-step1-grad-vs-fp64.json`](results/t1v-step1-grad-vs-fp64.json)、[`t1t-step1-grad-vs-fp64.json`](results/t1t-step1-grad-vs-fp64.json)、[`t1s-step1-grad-vs-fp64.json`](results/t1s-step1-grad-vs-fp64.json)。
+GPU golden 同一套 Megatron-Core 代码（`frameworks/megatron/step1_ref.py`，台账 J34）在 CPU 上全程 FP64 跑第 1 步。参照用的 `hy4_mcore.py` sha256 是 `c02ade45…`（结果文件 `reference.code`），golden 登记的是 `4dab75aa…`：两版只差注释（issue 号写成全仓库名，提交 `ba7f369`），代码逐行相同；参照跑在 CPU 上，torch `2.11.0+cpu`、Megatron-Core `0.20.0+685fb8b`，与 GPU 镜像的版本不同（预期内：参照全程 FP64，逐算子核过没有 FP64 以外的浮点输出，结果文件 `reference.audit`）。输入与 golden 相同：同一份初始权重（`tensor_sha256.json` 的 sha256 `1d869124…`）、tokens.npy 第 0–15 行（与 `g2s-*` 的 `tokens_sha256_first_rows` 逐字节相同）、同一套 loss 语义。三份产物：FP64 全批（两次重跑 205 个张量逐位相同）、同一代码的 FP32 全批（自检）、第一行灌 GPU `g7-l1-a` 的 DSA / 路由选择的 FP64（灵敏度）。产物较大，不入库，比较结果见 [`t1z-step1-grad-vs-fp64.json`](results/t1z-step1-grad-vs-fp64.json)、[`t1v-step1-grad-vs-fp64.json`](results/t1v-step1-grad-vs-fp64.json)、[`t1t-step1-grad-vs-fp64.json`](results/t1t-step1-grad-vs-fp64.json)、[`t1s-step1-grad-vs-fp64.json`](results/t1s-step1-grad-vs-fp64.json)。
 
 ## 噪声：只用 GPU
 
-- L4：同一代 GPU 8 份两两 28 对（`g1-*` 给前三代，`g2-*` 给现行 `t1zo300-l4`、上一代 `t1zga300-l4`、`t1mz300-l4-qkclip` 与 `t1t-l4`、`t1v-l4`、`t1z-l4`、`t1zr300-l4`、`t1zs300-l4`、`t1zt300-l4`、四份 `t1zu*300-l4`、`t1zv300-l4`、`t1zw300-l4`、`t1zz300-l4` 与 `t1zla300-l4`，`g3-*` 给上一代 `t1zga-l4`、`t1zgb-l4`、`t1mz-l4-qkclip` 与 `t1u-l4`、`t1w-l4`、`t1zk-l4`、`t1zr-l4`、`t1zs-l4`、`t1zt-l4`、四份 `t1zu*-l4`、`t1zv-l4`、`t1zw-l4`、`t1zz-l4` 与 `t1zla-l4`），每一对算一次三个判定量，每个判定量取 28 对里的最大值（`PROTOCOL.md` 第 3 节）。
-- L4 现行 `t1zo-l4`（1000 步）用 `g3-a … g3-p` 16 份两两 120 对（2026-11-11 起）。
-- L3：GPU 第 1 步参照三份两两（`g1s-*` 给 t1s 一代，`g2s-*` 给 t1t、t1v、t1z、t1zg 与现行 `tz-off-rep`）。
+- L4：同一代 GPU 8 份两两 28 对（`g1-*` 给前三代，`g2-*` 给现行 `t1zc300-l4`、上一代 `t1zo300-l4`、上一代 `t1zga300-l4`、`t1mz300-l4-qkclip` 与 `t1t-l4`、`t1v-l4`、`t1z-l4`、`t1zr300-l4`、`t1zs300-l4`、`t1zt300-l4`、四份 `t1zu*300-l4`、`t1zv300-l4`、`t1zw300-l4`、`t1zz300-l4` 与 `t1zla300-l4`，`g3-*` 给上一代 `t1zga-l4`、`t1zgb-l4`、`t1mz-l4-qkclip` 与 `t1u-l4`、`t1w-l4`、`t1zk-l4`、`t1zr-l4`、`t1zs-l4`、`t1zt-l4`、四份 `t1zu*-l4`、`t1zv-l4`、`t1zw-l4`、`t1zz-l4` 与 `t1zla-l4`），每一对算一次三个判定量，每个判定量取 28 对里的最大值（`PROTOCOL.md` 第 3 节）。
+- L4 现行 `t1zc-l4`（1000 步）与上一代 `t1zo-l4` 用 `g3-a … g3-p` 16 份两两 120 对（2026-11-11 起）。
+- L3：GPU 第 1 步参照两两（`g1s-*` 三份给 t1s 一代，`g2s-a … c` 三份给 t1t、t1v、t1z、t1zg；C 口径之前的 `tz-off-rep` 用 `g2s-a … g2s-f` 6 份 15 对（C 口径的第 1 步还没判），2026-11-11 前用三份）。
 - TPU 同设置重跑逐位相同只作记录，TPU 只改执行参数的扰动运行只作诊断，都不进尺子。
-- 各次比较的目录在 [`alignments/01-mini/catalogs/`](catalogs/)（`t1v-l4.yaml`、`t1w-l4.yaml`、`t1t-l4.yaml`、`t1u-l4.yaml`、`t1s-l4.yaml`、`t1-l4-nozm.yaml`、`t1-l4.yaml`）。现行 `t1zo-l4.yaml`（1000 步）与 `t1zo300-l4.yaml`（前 300 步，被测都是 `tz-off-rep`）；上一代现行 `t1zga-l4.yaml`、`t1zga300-l4.yaml`（被测 `t1zg-a`），重跑 `t1zgb-l4.yaml`；上一代 `t1zw-l4.yaml`、`t1zw300-l4.yaml`（被测 `t1zw-a`）；验证 `t1zz-l4.yaml`、`t1zz300-l4.yaml`（被测 `t1zz-a`）；再上一代 `t1zu-l4.yaml`、`t1zu300-l4.yaml`（被测 `t1zu-a`）；诊断代 `t1zv-l4.yaml`、`t1zv300-l4.yaml`（被测 `t1zv-b`）；更早一代 `t1zr-l4.yaml`、`t1zr300-l4.yaml`（被测 `t1zr-a`）；诊断代 `t1zs-l4.yaml`、`t1zs300-l4.yaml`、`t1zt-l4.yaml`、`t1zt300-l4.yaml`，诊断运行 `t1zub*`、`t1zuc*`、`t1zud*` 各一对（1000 步与前 300 步）；上一代 `t1z-l4.yaml`（300 步，被测 `t1z-a`）与 `t1zk-l4.yaml`（1000 步，被测 `t1zk-a`）。
+- 各次比较的目录在 [`alignments/01-mini/catalogs/`](catalogs/)（`t1v-l4.yaml`、`t1w-l4.yaml`、`t1t-l4.yaml`、`t1u-l4.yaml`、`t1s-l4.yaml`、`t1-l4-nozm.yaml`、`t1-l4.yaml`）。现行 `t1zc-l4.yaml`（1000 步）与 `t1zc300-l4.yaml`（前 300 步，被测都是 `tc-a`）；上一代 `t1zo-l4.yaml`、`t1zo300-l4.yaml`（被测 `tz-off-rep`）；上一代现行 `t1zga-l4.yaml`、`t1zga300-l4.yaml`（被测 `t1zg-a`），重跑 `t1zgb-l4.yaml`；上一代 `t1zw-l4.yaml`、`t1zw300-l4.yaml`（被测 `t1zw-a`）；验证 `t1zz-l4.yaml`、`t1zz300-l4.yaml`（被测 `t1zz-a`）；再上一代 `t1zu-l4.yaml`、`t1zu300-l4.yaml`（被测 `t1zu-a`）；诊断代 `t1zv-l4.yaml`、`t1zv300-l4.yaml`（被测 `t1zv-b`）；更早一代 `t1zr-l4.yaml`、`t1zr300-l4.yaml`（被测 `t1zr-a`）；诊断代 `t1zs-l4.yaml`、`t1zs300-l4.yaml`、`t1zt-l4.yaml`、`t1zt300-l4.yaml`，诊断运行 `t1zub*`、`t1zuc*`、`t1zud*` 各一对（1000 步与前 300 步）；上一代 `t1z-l4.yaml`（300 步，被测 `t1z-a`）与 `t1zk-l4.yaml`（1000 步，被测 `t1zk-a`）。

@@ -1,0 +1,45 @@
+{
+ "what": "TPU 当前对齐配置对 GPU 生产 golden rc-a..e：loss 逐步相对差 (TPU − mean(rc)) / mean(rc) 的带符号均值（mean(rc) 是同一步 5 份的均值），第 1000 步 param_norm 绝对差 TPU − mean(rc)（TPU 记的原始 param_norm 列）。inferred_301_1000 = 对齐报告第 3 节的推导：(TPU − rcc-a)/rcc-a 的 301–1000 步均值 + (rcc-a − mean(rc))/mean(rc) 的301–1000 步均值，两段都由同一批序列现算；direct_minus_inferred = 直接值 − 推导值",
+ "script": "models/hunyuan3/analysis/tpu_vs_rc_loss.py",
+ "inputs": {
+  "rc": [
+   "models/hunyuan3/alignments/03-gpu-remat-golden/results/series/rc-a.metrics.jsonl",
+   "models/hunyuan3/alignments/03-gpu-remat-golden/results/series/rc-b.metrics.jsonl",
+   "models/hunyuan3/alignments/03-gpu-remat-golden/results/series/rc-c.metrics.jsonl",
+   "models/hunyuan3/alignments/03-gpu-remat-golden/results/series/rc-d.metrics.jsonl",
+   "models/hunyuan3/alignments/03-gpu-remat-golden/results/series/rc-e.metrics.jsonl"
+  ],
+  "rcc_a": "rcc-a",
+  "rcc_a_meta_sha256": "dd43ca3861409bd535c92cf3602d50614265bb1979d8513233e5526ad4465c40"
+ },
+ "rcc_a_vs_rc_loss_rel_signed_mean": {
+  "steps_1_1000": -0.00013352745775488566,
+  "steps_301_1000": -0.00017058728008510426
+ },
+ "tpu": {
+  "v5p": {
+   "run": "t-rmap-on-1000",
+   "meta_sha256": null,
+   "loss_rel_signed_mean": {
+    "steps_1_1000": -9.5084858547703e-05,
+    "steps_301_1000": -0.0001371968637790322
+   },
+   "param_norm_diff_1000": 0.020919503705499665,
+   "vs_rcc_a_loss_rel_signed_mean_301_1000": 3.340516573525065e-05,
+   "inferred_301_1000": -0.0001371821143498536,
+   "direct_minus_inferred_301_1000": -1.4749429178603345e-08
+  },
+  "v7x": {
+   "run": "t-v7x-on-1000",
+   "meta_sha256": "19385f314a436022c7db87c56ede8f9edea283ceb651e5e24efc69e30f1402da",
+   "loss_rel_signed_mean": {
+    "steps_1_1000": -8.241658856990365e-05,
+    "steps_301_1000": -0.00010738666614235954
+   },
+   "param_norm_diff_1000": 0.020919503705499665,
+   "vs_rcc_a_loss_rel_signed_mean_301_1000": 6.321997580647247e-05,
+   "inferred_301_1000": -0.0001073673042786318,
+   "direct_minus_inferred_301_1000": -1.936186372774489e-08
+  }
+ }
+}

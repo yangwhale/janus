@@ -1,0 +1,777 @@
+{
+ "dump": "d46",
+ "module": "module_0000.jit_f.cl_963683785",
+ "n_files": 96,
+ "n_err": 0,
+ "first_changed": null,
+ "rows": [
+  {
+   "file": "module_0000.jit_f.cl_963683785.before_optimizations.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0000.hlo_device_type_async_wrapper.after_pipeline-start.before_add-random-host-offloading.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0001.Process_DebugLog_custom_call.after_pipeline-start.before_debug-log-custom-call-processor.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0002.Before_X64_rewriter.after_pipeline-start.before_legalize-scheduling-annotations.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0003.Before_X64_rewriter.after_call-inliner.before_conditional-canonicalizer.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0004.Before_X64_rewriter.after_scatter_expander.before_map-inline.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0005.Before_X64_rewriter.after_map-inline.before_dce.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0006.Before_X64_rewriter.after_dce.before_pipeline-end.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0007.X64_elimination.after_pipeline-start.before_bitcast_dtypes_expander.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0008.Phase_1_pre-layout_assignment_passes.after_pipeline-start.before_async-collective-custom-call-rewriter.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0009.Phase_1_pre-layout_assignment_passes.after_hlo-module-dce.before_ConvolutionTypeCanonicalizer.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0010.convolution_folding.after_pipeline-start.before_convolution-folding.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0011.convolution_folding.after_transpose-folding.before_convert_operand_folding.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0012.convolution_folding.after_pipeline-start.before_convolution-folding.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0013.Phase_1_pre-layout_assignment_passes.after_convolution_folding.before_simplification-1.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0014.simplification-1.after_pipeline-start.before_cse.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0015.simplification-1.after_cse.before_tpu-reduce-window-rewriter.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0016.simplification-1.after_algsimp.before_gather_optimizer.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0017.simplification-1.after_algsimp.before_dce.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0018.simplification-1.after_constant_folding.before_simplify-conditional.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0019.simplification-1.after_dce.before_dead-dus-elimination.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0020.simplification-1.after_cse.before_dce.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0021.simplification-1.after_pipeline-start.before_cse.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0022.simplification-1.after_algsimp.before_gather_optimizer.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0023.simplification-1.after_pipeline-start.before_cse.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0024.Phase_1_pre-layout_assignment_passes.after_simplification-1.before_algsimp.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0025.Phase_2_pre-layout_assignment_passes.after_pipeline-start.before_simplification-2.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0026.simplification-2.after_pipeline-start.before_simplify-sorts.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0027.simplification-3.after_pipeline-start.before_convert-mover.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0028.post-space-to-batch-simplification.after_pipeline-start.before_simplify-sorts.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0029.simplification-4.after_pipeline-start.before_simplify-sorts.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0030.simplification-4-spmd.after_pipeline-start.before_simplify-sorts.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0031.Pre_layout_assignment.after_pipeline-start.before_tuple-simplifier.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0032.while-loop-simplification.after_pipeline-start.before_simplify-while-loops.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0033.Pre_layout_assignment_call_inliner.after_pipeline-start.before_call-inliner.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0034.Layout_assignment.after_pipeline-start.before_layout-assignment.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0035.tpu-tiling-rewriter.before_tiling_rewriter.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0036.tpu-tiling-rewriter.after_tiling_propagation.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0037.tpu-tiling-rewriter.after_tiling_conversion_copy_insertion.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0038.tpu-tiling-rewriter.after_decomposing_tiling_conversion_copy_insertion.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0039.Layout_assignment.after_layout-assignment.before_pipeline-end.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0040.JF_dot_canonicalization.after_pipeline-start.before_dot_canonicalizer.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0041.JF_dot_canonicalization.after_dot_canonicalizer.before_TpuConvolutionTypeCanonicalizer.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0042.Post_layout_assignment.after_pipeline-start.before_reduce-scatter-decomposer.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0043.Post_layout_assignment.after_cse.before_dce.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0044.JF_after_layout_assignment.after_pipeline-start.before_tpu-quantized-all-reduce-backend-config-setter.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0045.Pre_main_fusion.after_pipeline-start.before_tpu-copy-normalizer.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0046.layout_fixup.after_pipeline-start.before_algsimp.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0047.Pre_main_fusion.after_concat-decomposer.before_tpu_scatter_gather_optimizer.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0048.Pre_main_fusion.after_algsimp.before_pad-slice-mover.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0049.Pre_main_fusion.after_pad-slice-mover.before_tpu-all-reduce-scatter-fusion.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0050.Pre_main_fusion.after_dce.before_pred_packing.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0051.Pre_main_fusion.after_tpu-indexed-instruction-analyzer.before_tpu-sort-prefix-fusion-rewriter.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0052.JF_after_layout_assignment.after_Pre_main_fusion.before_while-initializer-removal.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0053.host_offloading.after_pipeline-start.before_host-offload-legalize.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0054.Main_fusion.after_pipeline-start.before_tpu_fusion.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0055.Main_fusion.after_tpu_fusion.before_pipeline-end.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0056.JF_after_main_fusion.after_pipeline-start.before_cse.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0057.Post_main_fusion.after_pipeline-start.before_cse.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0058.Post_main_fusion.after_tpu_multi_output_fusion.before_pipeline-end.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0059.JF_after_main_fusion.after_Post_main_fusion.before_dot_algorithm_normalizer.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0060.multi_output_fusion_and_bf16_folding.after_pipeline-start.before_bfloat16-propagation.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0061.multi_output_fusion_and_bf16_folding.after_tpu_multi_output_fusion.before_cse.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0062.multi_output_fusion_and_bf16_folding.after_cse.before_dce.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0063.multi_output_fusion_and_bf16_folding.after_tpu_fusion.before_SetupCompileTimeHelpfulBackendConfigInfo.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0064.multi_output_fusion_and_bf16_folding.after_SetupCompileTimeHelpfulBackendConfigInfo.before_cse.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0065.multi_output_fusion_and_bf16_folding.after_cse.before_dce.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0066.multi_output_fusion_and_bf16_folding.after_tpu_fusion.before_tpu_fusion.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0067.multi_output_fusion_and_bf16_folding.after_tpu_fusion.before_tpu_trivial_instruction_unfuser.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0068.host_offloading.after_pipeline-start.before_host_collective_rewriter.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0069.After_rewrite_shapes.after_pipeline-start.before_while-initializer-removal.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0070.Global_Copy_Insertion.after_pipeline-start.before_flatten-call-graph.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0071.copy-insertion.after_adding_copies_to_resolve_interference.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0072.copy-insertion.after_removing_unnecessary_copies.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0073.copy-insertion.after_adding_special-case_copies.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0074.Global_Copy_Insertion.after_copy-insertion.before_pipeline-end.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0075.Post_Fusion_Tiling_Assignment.after_pipeline-start.before_post-fusion-tiling-assignment.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0076.SparseCore_Offload.after_pipeline-start.before_sparsecore-data-format-offloader.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0077.HLO_SC_Pipeline.after_pipeline-start.before_dce.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0078.HLO_SC_Pipeline.after_sparse-core-lowering-planner.before_fusion.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0079.Float_type_correction_after_SC_offloading.after_pipeline-start.before_float-type-correction.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0080.Post-Global_Copy_Insertion.after_pipeline-start.before_tpu-copy-normalizer.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0081.final_scheduler.after_pipeline-start.before_host-memory-transfer-asyncifier.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0082.final_scheduler.after_hlo-memory-scheduler-with-brkga-fallback.before_constant-deferring.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0083.apply_xla_transforms_pre_scheduling.after_pipeline-start.before_apply-xla-transforms-0.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0084.async_scheduling.after_pipeline-start.before_async-collective-merger.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0085.async_scheduling.after_legalize-scheduling-annotations.before_latency-hiding-scheduler.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0086.async_scheduling.after_aggregate-send-recv.before_async-collective-fusion.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0087.final_rematerialization.after_pipeline-start.before_rematerialization_with_stats.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0088.final_rematerialization.after_tpu-indexed-instruction-analyzer.before_cse_barrier_expander.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0089.Pre_memory_space_assignment.after_pipeline-start.before_root-instruction-sinker.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0090.Pre_memory_space_assignment.after_instruction-hoister.before_plumb-vmem-info.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0091.Pre_memory_space_assignment.after_plumb-vmem-info.before_early-scalar-operand-scheduler.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0092.HT_info_assignment.after_pipeline-start.before_host-transfer-channel-id-assigner.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.0093.Rename_TensorCore_Fusions.after_pipeline-start.before_rename-tensor-core-fusion-ops.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "file": "module_0000.jit_f.cl_963683785.after_optimizations.txt",
+   "status": "OK",
+   "max_rel_vs_before": [
+    0.0,
+    0.0
+   ]
+  }
+ ]
+}

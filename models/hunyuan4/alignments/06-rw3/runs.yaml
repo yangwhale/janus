@@ -2,7 +2,7 @@
 schema: 1
 alignment: 06-rw3
 golden:   # GPU：2 台 B200 × 8，DP 16 + EP 16
-  - {name: rw1k-a, stage: rw3, steps: 1000, role: "基线，带 --save-batches（TPU 回放它的 batch）；05-gpu-scale 的多机 golden", results: [rw3-l4, rw3-l0-settings], location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/rw1k-a/"}
+  - {name: rw1k-a, stage: rw3, steps: 1000, role: "基线，带 --save-batches（TPU 回放它的 batch）；05-gpu-scale 的多机 golden", results: [rw3-l4, rw3-l0-settings, rw3-b2off-l0-settings], location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/rw1k-a/"}
   - {name: rw1k-b..rw1k-h, stage: rw3, steps: 1000, role: "同设置重跑：与 rw1k-a 一起 8 份，两两 28 对是 L4 的噪声尺子", location: "gs://<POC 桶>/janus/hunyuan4/gpu-scale/rw1k-*/"}
   - {name: r3s1-a..r3s1-c, stage: rw3, steps: 1, role: "第 1 步逐张量抓数参照：单机 DP 8 + EP 8 同设置 3 份（--dump-steps 1 --full --full-kinds grad+param --no-dump-acts --recompute）；TPU 第 1 步的 R 用", results: [step1-tpu-gpu-vs-fp64], location: "gs://<POC 桶>/janus/hunyuan4/megatron/<作业>/runs/r3s1-*/"}
   - {name: s150-a / s150-b, stage: rw3, steps: 2, role: "同状态诊断：2 台载入 TPU b2s-off150 的 BF16 快照（输出头、k_norm 也舍成 BF16），tokens 从第 2400 行起，第 1 步 = 第 151 步的批", results: [rw3-step151-same-state]}
@@ -33,7 +33,7 @@ test:     # TPU：v5p 2x2x4（16 个设备），FSDP 16
   - {name: b2d3-noexc151, stage: rw3, steps: 1, role: "同 b2d2-off151，再关编译器省舍入（XLA_FLAGS=--xla_allow_excess_precision=false）", results: [rw3-step151-same-state-grads-noexc]}
   - {name: b2r-noexc, stage: rw3, steps: 250, role: "base2 关、关编译器省舍入的 250 步回放：看 iHC 那几次舍入是不是后段轨迹差的原因（不是：主 loss r 7.32 → 29.6）", golden: rw1k-a, results: [rw3-l4-b2r250-noexc, rw3-b2r-noexc-vs-off]}
   - {name: rfx-on, stage: rw3, steps: 1000, role: "被测（2026-11-11 前的对齐配置，base2 开；含 M42b、M50，MaxText b87a55aa、janus f46f6981，meta.json 已核）：修好续跑以后的代码包，每 100 步存档；第 62、119 步两次被收，第三段从第 100 步存档续跑到第 1000 步，各段重叠的 81 步逐位相同；前 250 步与 b2r-on 逐位相同", golden: rw1k-a, results: [rw3-l4, rw3-l0-settings, rw3-1k-replay], location: "gs://<POC 桶>/janus/hunyuan4/tpu/rfx-on-s*/"}
-  - {name: rfx-off, stage: rw3, steps: 1000, role: "同 rfx-on 但只改 sa_use_base2_exp=false：除命令行的 gradient_accumulation_steps=1、ici_fsdp_parallelism=16 外与现行 hy4-t2-d1.yml 逐键相同（meta.json 的 maxtext_config_full 已核）；一段跑完；前 250 步与 b2r-off 逐位相同；L0 学习率没核", golden: rw1k-a, results: [rw3-l4-b2off, rw3-1k-replay], location: "gs://<POC 桶>/janus/hunyuan4/tpu/rfx-off-s2/"}
+  - {name: rfx-off, stage: rw3, steps: 1000, role: "同 rfx-on 但只改 sa_use_base2_exp=false：除命令行的 gradient_accumulation_steps=1、ici_fsdp_parallelism=16 外与现行 hy4-t2-d1.yml 逐键相同（meta.json 的 maxtext_config_full 已核）；一段跑完；前 250 步与 b2r-off 逐位相同；L0 学习率已核（rw3-b2off-l0-settings）", golden: rw1k-a, results: [rw3-l4-b2off, rw3-b2off-l0-settings, rw3-1k-replay], location: "gs://<POC 桶>/janus/hunyuan4/tpu/rfx-off-s2/"}
   - {name: mtp9-snap / mtp9-fp32, stage: rw3, steps: 1, role: "从 rfx-off 第 900 步存档续跑一步，导出 HF 快照（BF16 / 输出头与索引器 k_norm 的 FP32 原值），给 GPU 同状态对照；第 901 步与 rfx-off 逐位相同", results: [rw3-mtp-same-state], location: "gs://<POC 桶>/janus/hunyuan4/tpu/mtp9-*-s1/"}
   - {name: mtp9-frz / mtp9-frz32, stage: rw3, steps: 8, role: "同一份权重（rfx-off 第 900 步之后）连算第 901–908 步 8 批 / 第 901–932 步 32 批：learning_rate=0、routed_bias_update_rate=0（param_norm 不变）；32 批的前 8 批与 8 批那次逐位相同", results: [rw3-mtp-same-state], location: "gs://<POC 桶>/janus/hunyuan4/tpu/mtp9-frz-s1/"}
 l0:

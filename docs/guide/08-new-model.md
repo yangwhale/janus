@@ -63,8 +63,8 @@
 
 ### janus 里和模型有关的两处
 
-- [`janus/dump/maxtext.py`](../../janus/dump/maxtext.py) 的 `install_capture()` 只给列出来的 MaxText 层类套壳，现在是 `hunyuan3.Hunyuan3DenseLayer`、`hunyuan3.Hunyuan3MoELayer` 和 `qwen3.AttentionWithNorm` 等。新模型的层类不同时，要把它的层类加进去，否则 TPU 侧抓不到逐层激活。
-- [`janus/dump/names.py`](../../janus/dump/names.py) 的 `_RULES` 把 Megatron 模块名映射到规范名，按 GPT 结构写（`self_attention.linear_qkv`、`mlp.router`、`mlp.experts`…）。新模型的模块名不同时要补规则。MLA 就是这种情况，它有 q / kv 的降维投影。
+- [`janus/dump/maxtext.py`](../../janus/dump/maxtext.py) 的 `install_capture()` 只给列出来的 MaxText 层类套壳，现在是 `hunyuan3.Hunyuan3DenseLayer` / `Hunyuan3MoELayer`（混元 3）、`deepseek.DeepSeekDenseLayer` / `DeepSeekMoELayer`、`attention_mla.MLA`、`mhc.DeepSeek4HyperHead` / `IdentityHyperConnections`（混元 4）和 `qwen3.AttentionWithNorm` 等，分支里没有的类自动跳过。新模型的层类不同时，要把它的层类加进去，否则 TPU 侧抓不到逐层激活。
+- [`janus/dump/names.py`](../../janus/dump/names.py) 的 `_RULES` 把 Megatron 模块名映射到规范名，按 GPT 结构写（`self_attention.linear_qkv`、`mlp.router`、`mlp.experts`…）。新模型的模块名不同时要补规则。混元 4（MLA、iHC）没有改这张表：TPU 侧按 MaxText 模块路径另写了一张 `HY4_TAG_RULES`（同在 `maxtext.py`，`tag_model(model, HY4_TAG_RULES)` 时用）。新模型可以照这个做法另起一张表，不动已经自证过的混元 3 规则。
 
 这两处改动和新模型同一个 PR 提交，并补单测：
 
@@ -79,7 +79,7 @@
 | 截层与权重转换 | `model/` 下 5 个脚本（见下） | 截层要同时截配置、去 MTP、写逐张量 sha256 清单 |
 | 框架训练与抓数脚本 | `frameworks/` 下训练脚本、配置、`run.sh`（见下） | 结构相近时大部分能照抄；结构不同的部分要改，见第四节清单 |
 | 配置对照表 | `config-alignment.md` | 照模板填；每个值都要有出处（见下） |
-| GPU golden | 起步 `g1k`（第一阶段 GPU golden），最终 `rcc`（GPU 生产程序只修一处），见下 | 至少 3 份同设置；签字前建议 6 份以上 |
+| GPU golden | 起步 `g1k`（第一阶段 GPU golden），最终 `rcc`（GPU 生产程序只修一处），见下 | 至少 3 份同设置；签字前单一设置至少 6 份；长窗口要更多，混元 4 的 1000 步用 16 份 |
 | 噪声参照 | 第一阶段 GPU 自比，`alignments/00-gpu-noise-and-drills/` | 噪声大小和模型、数据、并行有关，不能沿用混元 3 的数 |
 | 检查项目录 | `alignments/*/catalogs/*.yaml` | 层号、张量名、门槛的出处都和模型有关 |
 | 总览清单 | `dashboard/items.yaml` | 每行一项检查，每列一个实践 |
@@ -146,6 +146,7 @@
 - 包括：softmax / sigmoid、分组路由、top-k 归一、缩放、无辅助损失的偏置。
 - 混元 3：sigmoid + expert_bias（更新率 0.001），top-k 归一后乘 2.826。
 - 会影响到：路由 GEMM 写法、翻转率、偏置更新。
+- 要核对偏置更新是否减均值：混元 4 上 TPU 每步对路由偏置减均值、原版 Megatron-Core 不减，路由偏置均值 r 19.1（[差异清单 E2](../reference/tpu-vs-gpu-differences.md#e2-路由偏置的零均值更新原版-megatron-core-没有)、[混元 4 案例 09](../../models/hunyuan4/cases/09-router-bias-zero-mean.md)）。
 - 要做什么：
   - L1 路由回放与 `discrete_agreement`；
   - 偏置的 dtype 进 `dtype_manifest`；
@@ -233,7 +234,7 @@
 | 注意力 sink | splash 反向把 sink 梯度在 BF16 里累加；上下文并行时 sink 梯度整条在 BF16 里算 | [A10](../reference/tpu-vs-gpu-differences.md#a10-splash-反向的-sink-梯度在-bf16-里累加生产用-m42对齐用-m42b余量见-u1)、[A14](../reference/tpu-vs-gpu-differences.md#a14-上下文并行时-sink-梯度在-bf16-里算float32_logits-没接到-mla)；L3 单列 sink 梯度，先看只换顺序的运行跳多大 |
 | 超连接（iHC） | 多路流加权和的相加顺序；编译器省掉 BF16 往返，同一个值被读成两种精度；hc_head 收拢后同类问题 | [B5](../reference/tpu-vs-gpu-differences.md#b5-ihc-四路流加权和的相加顺序机制待查见-u11)、[A6](../reference/tpu-vs-gpu-differences.md#a6-编译器省掉了-gpu-一定会做的-bf16-往返后端省长跑归因见-u12)、[A13](../reference/tpu-vs-gpu-differences.md#a13-hc_head-收拢之后没舍-bf16)；要照 GPU 舍入点的地方用 `reduce_precision`；L3 单列 iHC 小参数 |
 | 稀疏注意力索引器（DSA） | 打分精度、KD 标量病态、KD 记录写法；GPU 参照自己的 RoPE 在 BF16 里算 | [B2](../reference/tpu-vs-gpu-differences.md#b2-索引器打分只算一遍-bf16)、[C4](../reference/tpu-vs-gpu-differences.md#c4-病态标量一格误差被放大成大差)、[A15](../reference/tpu-vs-gpu-differences.md#a15-gpu-参照的索引器-rope-在-bf16-里算)；L3 路由一致率加 DSA top-k；病态标量先查 CPU 上是否同样偏 |
-| QK-Clip | 扫描层共用缩放、梯度累积把最大 logit 求和、负数开根号，三个 bug；含不含 sink | [D7–D10](../reference/tpu-vs-gpu-differences.md#d7-qk-clip-在扫描层下各层共用一个缩放)；L4 加 QK-Clip 全局最大 logit 曲线 |
+| QK-Clip | 扫描层共用缩放、梯度累积把最大 logit 求和、负数开根号，三个 bug；缩放的分母；含不含 sink | [D6–D10](../reference/tpu-vs-gpu-differences.md#d6-qk-clip-缩放的分母)；L4 加 QK-Clip 全局最大 logit 曲线 |
 | 注意力内核选项 | splash base2 把常数 log2 e 舍成 BF16，logits 整体放大 | [A11](../reference/tpu-vs-gpu-differences.md#a11-splash-的-base2-指数把注意力-logits-放大-10018-倍q-多舍一次-bf16生产与对齐都关)；TPU 设 `sa_use_base2_exp: false` |
 | 词嵌入与并行方式 | 纯数据并行下词嵌入梯度在 BF16 里 scatter、不排序 | [A12](../reference/tpu-vs-gpu-differences.md#a12-纯数据并行时词嵌入梯度在-bf16-里-scatter不排序)；TPU 换切法先查 [TPU 自比](../../models/hunyuan4/alignments/04-tpu-self/README.md) |
 

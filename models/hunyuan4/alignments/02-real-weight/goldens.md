@@ -2,7 +2,7 @@
 
 # 混元 4 · real-weight（T2）· 运行登记
 
-完整清单在 [`runs.yaml`](runs.yaml)，作业规格在 [README](README.md)。数据位置都在 `gs://<POC 桶>/janus/hunyuan4/` 下。
+完整清单在 [`runs.yaml`](runs.yaml)，GPU golden 的作业规格在 [`setup.md`](setup.md#gpu-golden-的作业规格)。数据位置都在 `gs://<POC 桶>/janus/hunyuan4/` 下。
 
 ## B（第 0 层稠密 + 第 1 层 MoE）
 
@@ -17,7 +17,10 @@
 | `tb5b-a` | TPU（1000 步，加 M42b；base2 开、早于 M50） | 1000 | 最近一代，MaxText `2c28a4f4`、janus `9c0f19a`；已判：过 4、不过 0、待定 3 | [`t2b5b-l4`](results/t2b5b-l4.report.md) |
 | `tb2-a` | TPU（第一代） | 300 | 第 1 步更新后出 NaN（M35 已修），不是判定 | [`t2b-l0-settings`](results/t2b-l0-settings.report.md) |
 | `tb3-a`、`tb3-b` | TPU（第二代） | 300 | `tb3-a` 约第 200 步因节点重建中断；`tb3-b` 跑完 | [`t2bz-l4`](results/t2bz-l4.report.md) |
-| `tb4-a` | TPU（第三代） | 300 | t1zr 再加 M34、M37，M25 重新打开 | [`t2b4-l4`](results/t2b4-l4.report.md)（过 3、不过 1、待定 3）、[`t2b4-l0-settings`](results/t2b4-l0-settings.report.md) |
+| `tb4-a` | TPU（第三代） | 300 | t1zr（已含 M36）再加 M34、M37，M25 重新打开（相对第二代即加 M34、M36、M37）；MaxText `469dbb85`，不带 M39–M41（`meta.json` 已核） | [`t2b4-l4`](results/t2b4-l4.report.md)（过 3、不过 1、待定 3）、[`t2b4-l0-settings`](results/t2b4-l0-settings.report.md) |
+| `tb6diag` | TPU 第 1 步诊断（MaxText `3741e818`，T2 B yml 当时的全部开关，含 M39–M41；base2 开、早于 M50） | 1 | L3 判定证据；回放 `gb2s-a` | [`t2b-step1-grad-vs-fp64`](results/t2b-step1-grad-vs-fp64.json)、[`t2b-step1-attn-along-ref`](results/t2b-step1-attn-along-ref.json) |
+| `tnorm-base` / `tnorm-sg` | TPU 第 1 步诊断（MaxText `2306c7a5`、janus `effa41e`；`tnorm-sg` 再开 `rmsnorm_scale_grad_fp32`，只改反向；base2 开） | 1 | D22 RMSNorm 权重梯度的开关对照；`tnorm-sg` 也是 D20 的 base2 开臂 | [`t2b-step1-norm-scale-grad-fp32`](results/t2b-step1-norm-scale-grad-fp32.json) |
+| `tqa-nb2` | TPU 第 1 步诊断（同 `tnorm-sg`，只差 `sa_use_base2_exp` 关） | 1 | D20 的 base2 关臂；D22 q latent norm 的对照 | [`t2b-step1-qpath-base2-exp`](results/t2b-step1-qpath-base2-exp.json)、06 [`step1-base2-observed`](../06-rw3/results/step1-base2-observed.json) |
 
 ## D1（第 0 层稠密 + 1 层 MTP）
 
@@ -32,6 +35,8 @@
 | `td5b-b` | TPU（1000 步，加 M42b；base2 开、早于 M50） | 1000 | 最近一代，MaxText `2c28a4f4`、janus `9c0f19a`；已判：过 1、不过 1（索引器 KD）、待定 7 | [`t2d15b-l4`](results/t2d15b-l4.report.md) |
 | `td2-a` | TPU（第一代） | 300 | t1v 等价设置的首次判定 | [`t2d1-l4`](results/t2d1-l4.report.md)、[`t2d1-l0-settings`](results/t2d1-l0-settings.report.md) |
 | `td3-a` | TPU（第二代） | 300 | t1z 的开关、M25 暂关 | [`t2d1z-l4`](results/t2d1z-l4.report.md) |
-| `td4-a` | TPU（第三代） | 300 | t1zr 再加 M34、M37，M25 重新打开 | [`t2d14-l4`](results/t2d14-l4.report.md)（过 1、不过 4、待定 4）、[`t2d14-l0-settings`](results/t2d14-l0-settings.report.md) |
+| `td4-a` | TPU（第三代） | 300 | t1zr（已含 M36）再加 M34、M37，M25 重新打开（相对第二代即加 M34、M36、M37）；MaxText `469dbb85`，不带 M39–M41（`meta.json` 已核） | [`t2d14-l4`](results/t2d14-l4.report.md)（过 1、不过 4、待定 4）、[`t2d14-l0-settings`](results/t2d14-l0-settings.report.md) |
+| `td6diag` | TPU 第 1 步诊断（同 `tb6diag` 的设置，MaxText `3741e818`） | 1 | L3 判定证据；回放 `gd2s-a`；5 个张量的梯度文件取回损坏、不判 | [`t2d1-step1-grad-vs-fp64`](results/t2d1-step1-grad-vs-fp64.json)、[`td6diag-grad-file-holes`](results/td6diag-grad-file-holes.json) |
+| `td7diag` | TPU 第 1 步诊断（MaxText `2306c7a5`、janus `3ed31f8`，含 M42：`splash_dsinks_fp32` 开，之后从对齐配置撤下） | 1 | 只补看 `td6diag` 损坏的 5 个张量；不是同配置重跑，sink 梯度不能与 `td6diag` 互换 | [`t2d1-td7-step1-grad-vs-fp64`](results/t2d1-td7-step1-grad-vs-fp64.json) |
 
 噪声只用 GPU 同设置重跑；TPU 同设置重跑只核逐位，不进尺子。全部 TPU 运行 base2 开、早于 M50；2026-11-11 起的现行对齐配置在 B、D1 上尚无运行。

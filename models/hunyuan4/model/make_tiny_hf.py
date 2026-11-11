@@ -3,12 +3,16 @@
     python make_tiny_hf.py --out /tmp/hy4-tiny-hf [--config tiny] [--layers 4] [--mtp 1] [--seed 0]
     python make_tiny_hf.py --out /tmp/hy4-mini-hf --config mini --layers 7 --mtp 1 --seed 0
     python make_tiny_hf.py --out /tmp/hy4-mid-hf --config mid --layers 7 --mtp 1 --seed 0
+    python make_tiny_hf.py --out /tmp/hy4-mini-noihc-hf --config mini --layers 7 --mtp 1 --seed 0 --no-ihc
 
 维度取 MaxText 分支 hf_model_configs 的 hy4_tiny_dict（hidden 256、4 头、8 专家……）、hy4_mini_dict（hidden 1024、8 头、
 16 专家、真实词表，每头维度同 hy4-preview）或 hy4_mid_dict（hy4-mini 的结构，宽 6144、64 头、q_lora 2048、稠密 FFN 18432、专家宽 512），层数截到 --layers；
 张量名与形状按 HF 发布的命名（与 hf_shapes 一致，真实检查点的头会在 verify_ckpt 里逐个核）。
 另写 tensor_sha256.json（逐张量原始字节的 sha256）与 model.safetensors.index.json，和 GPU 侧上传的目录同一种格式。
 dtype 按 hy4_map.hf_dtype（与发布的检查点同一种分布：iHC、hc_head、主干路由偏置与 sink 存 FP32，其余 BF16）。
+
+`--no-ihc`（结构消融：主干换成普通残差，只有一条流）：照常按同一个随机数顺序造出全部张量，再去掉 iHC 与 hc_head 的
+参数，config 写 `hc_mult` 1、`enable_ihc` false。所以其余张量与不加这个参数时逐位相同。
 """
 from __future__ import annotations
 
@@ -30,8 +34,10 @@ def hf_shapes(c: dict, layers: int, mtp: int) -> dict[str, tuple]:
     nh, hd = c["index_n_heads"], c["index_head_dim"]
     F, I, E = c["intermediate_size"], c["moe_intermediate_size"], c["n_routed_experts"]
     Is = I * c.get("n_shared_experts", 1)
-    s = {"model.embed_tokens.weight": (V, D), "lm_head.weight": (V, D), "model.norm.weight": (D,),
-         "model.hc_head.hc_head_fn": (n, n * D), "model.hc_head.hc_head_base": (n,), "model.hc_head.hc_head_scale": (1,)}
+    s = {"model.embed_tokens.weight": (V, D), "lm_head.weight": (V, D), "model.norm.weight": (D,)}
+    if n > 1:  # hc_mult 1：没有 iHC 与 hc_head（结构消融，--no-ihc）
+        s.update({"model.hc_head.hc_head_fn": (n, n * D), "model.hc_head.hc_head_base": (n,),
+                  "model.hc_head.hc_head_scale": (1,)})
 
     def layer(p, kind, with_indexer, with_hc):
         s[p + "input_layernorm.weight"] = (D,)
@@ -52,7 +58,7 @@ def hf_shapes(c: dict, layers: int, mtp: int) -> dict[str, tuple]:
             s[a + "indexer.k_norm.weight"] = (hd,)
             s[a + "indexer.k_norm.bias"] = (hd,)
             s[a + "indexer.weights_proj.weight"] = (nh, D)
-        if with_hc:
+        if with_hc and n > 1:
             for hc in ("hc_attn_layer", "hc_mlp_layer"):
                 s[f"{p}{hc}.hc_pre.hc_fn"] = (2 * n, n * D)
                 s[f"{p}{hc}.hc_pre.hc_base"] = (2 * n,)
@@ -136,6 +142,7 @@ def main(argv=None):
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--vocab", type=int, default=None, help="改词表大小（默认取 config：tiny 1024、mini 120832）")
     p.add_argument("--config", choices=("tiny", "mini", "mid"), default="tiny")
+    p.add_argument("--no-ihc", action="store_true", help="去掉 iHC 与 hc_head（其余张量与不加时逐位相同）")
     p.add_argument("--std", type=float, default=None,
                    help="权重矩阵的标准差（默认 tiny 0.02；mini、mid 取 HF initializer_range 0.006）")
     a = p.parse_args(argv)
@@ -165,12 +172,18 @@ def main(argv=None):
         else:
             x = std * rng.standard_normal(shp)
         tensors[name] = x.astype(np.float32 if hf_dtype(name) == "float32" else ml_dtypes.bfloat16)
+    if a.no_ihc:
+        tensors = {k: v for k, v in tensors.items() if ".hc_pre." not in k and not k.startswith("model.hc_head.")}
+        c["hc_mult"] = 1
     write_safetensors(out / "model.safetensors", tensors)
     (out / "model.safetensors.index.json").write_text(json.dumps(
         {"metadata": {}, "weight_map": {k: "model.safetensors" for k in sorted(tensors)}}, indent=1))
     (out / "tensor_sha256.json").write_text(json.dumps(
         {k: hashlib.sha256(np.ascontiguousarray(v).tobytes()).hexdigest() for k, v in sorted(tensors.items())}, indent=1))
-    (out / "config.json").write_text(json.dumps(full_config(c), indent=1))
+    cfg = full_config(c)
+    if a.no_ihc:
+        cfg["enable_ihc"] = False
+    (out / "config.json").write_text(json.dumps(cfg, indent=1))
     print(f"写了 {len(tensors)} 个张量到 {out}")
 
 

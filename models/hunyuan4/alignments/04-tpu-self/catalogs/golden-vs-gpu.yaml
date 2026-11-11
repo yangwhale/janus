@@ -1,4 +1,5 @@
-# 混元 4 · TPU 自比：TPU golden ts-g-a（现行对齐配置，MaxText b87a55aa）1000 步对 GPU g3-a，噪声 g3-* 两两 28 对；检查与 01-mini 的 t1zga-l4.yaml 相同，只换被测。
+# 混元 4 · TPU 自比：TPU golden ts-g-a（base2 开的上一代对齐配置，MaxText b87a55aa）1000 步对 GPU g3-a，噪声 g3-* 两两 28 对；检查与 01-mini 的 t1zga-l4.yaml 相同，只换被测。
+# 按 GPU 16 份 120 对重判见 catalogs/v7x-1k-vs-gpu16.yaml（--test ts-g-a，结果 ts-g-a-vs-gpu16）。
 schema_version: 1
 model: hunyuan4-mini
 stage: tpu-self-golden-vs-gpu

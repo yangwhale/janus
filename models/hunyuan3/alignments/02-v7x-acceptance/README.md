@@ -16,10 +16,10 @@
 
 判法：TPU 只和事先指定的一份 [`rcc-a`](../../../../docs/glossary.md#rcc-a)（最终 golden 的第 1 份）比，噪声上限 N 取 `rcc-a..j` 10 份重跑两两配对得到的 45 对比较；r = 被测统计量 ÷ N，≤ 1 过。
 
-- L4：当前对齐配置 `t-v7x-on-1000`（v7x 当前对齐配置 1000 步）全过。loss 全程 0.82、第 301–1000 步 0.83、grad_norm 0.85、param_norm 0.53；学习率逐位，路由偏置曲线 0.81，健康信号过；EP = 8 臂也全过。
+- L4：当前对齐配置 `t-v7x-on-1000`（v7x 当前对齐配置 1000 步）全过。loss 全程 0.82、第 301–1000 步 0.83、grad_norm 0.85、param_norm 0.53；学习率逐位，路由偏置曲线 0.81，健康信号过；EP = 8 臂也全过。这是对事先定下的基线 `rcc-a`；十份 golden 轮流当基线时，当前配置有三份落进待定（`rcc-j` grad_norm 1.11、`rcc-e` grad_norm 1.01、`rcc-d` loss 后段 1.08），没有不过（[`case01-rebaseline-rcc.json`](../01-v5p-acceptance/results/case01-rebaseline-rcc.json)、对齐报告第 3 节）。
 - L0：全过。
 - L1、L2 前向：按当前配置全过（四层 R 1.06 / 1.01 / 1.01 / 1.02），只有 MoE 块回放第 2 层有 1 个 token 路由翻转（R 1.27）。
-- 第 1 步梯度与优化器状态：严格档不过，已定责为路由近似平局翻转（对齐报告台账 #5、#17）。
+- 第 1 步梯度与优化器状态：严格档不过，机理查到路由近似平局翻转（对齐报告台账 #5）与第 0 层等 FP32 参数的梯度以 BF16 落地（#20）；一部分张量未达 R ≤ 1.2 的定责线：梯度逐张量最差 R 2.70，优化器状态 7.86（最差在二阶动量），更新后主权重 51.3，后两者的最差都在 128 维的 q norm 上；按能量合计梯度、动量 1.21，主权重 0.94（对齐报告第 4 节注 3）；一个专家的偏置更新方向见 #17。
 
 全部数字见 [`../../ALIGNMENT-REPORT.md`](../../ALIGNMENT-REPORT.md)。
 
@@ -31,13 +31,13 @@
 
 2026-11-05 配置换代：对齐配置打开 `dense_fp32_accumulation`（FSDP 切开收缩维的投影改用 FP32 累加），yml `a238883b7f91…`，maxtext ≥ `0622774`。原因见 [`../../config-alignment.md`](../../config-alignment.md)「收缩维被 FSDP 切开的投影的累加精度」。v7x 上生产 rmap 配置开 / 关各跑 100 步（`t-v7x-st-off-100` / `t-v7x-st-on-100`）：步时中位数 0.9615 s → 0.9798 s（+1.9%），显存峰值 23.09 GiB 不变。
 
-被测是生产配置 1000 步 `t-v7x-rmap-1000-a`。它与 01 的 `t-rmap-1000`（v5p 生产配置 1000 步）用同一份代码包、同一份 yml 与命令行覆盖，即 GA 2 加三个精度开关，整层重算，只存路由。
+换代前的被测是生产配置 1000 步 `t-v7x-rmap-1000-a`；现行正式被测是 `t-v7x-on-1000`（四个精度开关，含 `dense_fp32_accumulation`，见 [`setup.md`](setup.md)「软件版本」与 [`runs.yaml`](runs.yaml)）。`t-v7x-rmap-1000-a` 与 01 的 `t-rmap-1000`（v5p 生产配置 1000 步）用同一份代码包、同一份 yml 与命令行覆盖，即 GA 2 加三个精度开关，整层重算，只存路由。
 
 ### 五条记录
 
 1. v7x 自己跑两次逐位（`phase2-v7x-rmap-repro`）
 
-   `-a`、`-b` 各占一个切片，`metrics.jsonl` 1000 步 × 60 个字段（`step_time` 除外）全部相同，输入指纹 65,000 项相同。所以 v7x 上「同程序」的噪声是 0，和 v5p 一样；下面对 GPU 的差都是确定的偏差，不是 TPU 侧抖动。
+   `-a`、`-b` 各占一个切片，`metrics.jsonl` 1000 步 × 60 个字段（`step_time` 除外）全部相同，输入指纹 65,000 项相同。所以换代前配置在 v7x 上「同程序」的噪声是 0。现行验收程序 `t-v7x-on-1000` 和 v5p 的 `t-rmap-on-1000` 都没有逐步逐位的双跑结果文件（v5p 验收程序没双跑；v7x 当前配置的双跑只有汇总统计相同，见[签字清单](../../../../docs/guide/05-reading-results.md#56-签字清单现在离签字还差什么) 1b），这一条对它们是推断。
 2. 对生产 golden `rc` 偏差和 v5p 同号、同量级（`phase2-v7x-acceptance-rc`）
    - 第二层，只对 GPU 生产 golden [`rc`](../../../../docs/glossary.md#rc) 的第一份 `rc-a`。
    - loss 带符号相对均值 1.20e-4（v5p 9.13e-5，待定）。
@@ -71,12 +71,12 @@
 - 原因和在 v5p 上查出的一样，是窗口化 collective matmul：收缩维被 FSDP 切开，分片部分积在 BF16 里累加，v7x 上偏差更大。
 - 关掉窗口化核对（`r-v7x-wcoff`）：同一份回放加 `LIBTPU_INIT_ARGS=--xla_jf_spmd_threshold_for_windowed_einsum_mib=1000000`。
   - qkv 1.000、fc1 1.104，四层前向 1.059 / 1.010 / 1.012 / 1.015 全过；
-  - 和 v5p 关窗口化的读数到第三位都相同；
+  - 单算子里 qkv、qk_norm、注意力输出投影、fc1、稠密层激活与 fc2、注意力核和 v5p 关窗口化（01 的 `phase2-l1-ops-wcoff`）到第三位相同；路由 GEMM（0.017 对 0.022）、MoE 核（0.983 对 0.924）不同，都远在 1.2 以内；v5p 关窗口化的四层前向读数仓库里没有，四层无从对照；
   - 关掉后 mlp_norm 变成 1.64 超线，v5p 也是 1.64（见 01 的 `phase2-l1-ops-wcoff`）；
-  - v7x 这一臂的结果文件已删除，读数记在这里。
+  - v7x 这一臂当时的 janus 输出（单算子回放与四层逐层隔离前向回放）原样收在 [`v7x-wcoff-recovered.json`](results/v7x-wcoff-recovered.json)，读数与上面一致；当时用的是旧版 `fwd_rratio.py`，回放运行目录已不在本机，没有用现行脚本重算，所以不进总览。
 - 到 logits 与逐 token loss 就看不出来了（整网前向 R 1.00 / 1.02，过）。
 - 2026-11-06 打开 `dense_fp32_accumulation` 后按当前配置重做（`r-v7x-l2-on`，v7x 逐层隔离回放）：
-  - 四层前向 R 1.06 / 1.01 / 1.01 / 1.02，单算子全部 ≤ 1.16（`phase2-v7x-l2-replay-rratio-on`、`phase2-v7x-l1-ops-own-on`），和 v5p 当前配置的读数相同。
+  - 四层前向 R 1.06 / 1.01 / 1.01 / 1.02，单算子全部 ≤ 1.16（`phase2-v7x-l2-replay-rratio-on`、`phase2-v7x-l1-ops-own-on`），都过；v5p 当前配置四层是 1.06 / 1.01 / 1.01 / 1.09（第 3 层不同，`phase2-l2-replay-rratio-on`）。
   - 只有 MoE 块（`L1.ops.kernel.moe`）第 2 层 R 1.27：4096 个 token 里有 1 个在近似平局处和 FP64 选了不同的专家，去掉它 R 0.95（`results/v7x-l1-moe-routeflip.json`）。
   - 逐层反向现行按 FP64 R 比判，4 层全过（`phase2-v7x-l2-replay-bwd-fp64-on`）。按 GPU 噪声判的旧结果 `phase2-v7x-l2-replay-bwd-on` 与 v5p 一样：第 0 层过，1–3 层超；原因是路由翻转，而 GPU 第 1 步反向噪声极小、量不到。
 

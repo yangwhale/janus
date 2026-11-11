@@ -18,6 +18,8 @@ FMT_PATHS ?= janus/__init__.py janus/__main__.py janus/cli.py janus/demo.py janu
              models/glm52/analysis/param_counts.py \
              models/hunyuan4/frameworks/megatron/hy4_mcore.py models/hunyuan4/frameworks/megatron/hy4_weights.py models/hunyuan4/frameworks/megatron/hy4_bridge.py \
              models/hunyuan4/frameworks/megatron/equiv_hf.py models/hunyuan4/frameworks/megatron/bridge_check.py models/hunyuan4/frameworks/megatron/train_hy4mg.py models/hunyuan4/frameworks/megatron/hy4_capture.py models/hunyuan4/analysis/fp64_l1_gpu.py models/hunyuan4/analysis/qk_clip_nonpositive_repro.py models/hunyuan4/analysis/sigmoid_silu_probe.py models/hunyuan4/analysis/ihc_sum_order_probe.py models/hunyuan4/analysis/rmsnorm_dgamma_probe.py \
+             models/hunyuan4/analysis/attn_scores_fp32_unit.py models/hunyuan4/analysis/ihc_param_grad_conditioning.py models/hunyuan4/analysis/step1_train_grad_file_check.py models/hunyuan4/analysis/tpu_grad_file_holes.py \
+             models/hunyuan3/analysis/rebaseline_sensitivity.py models/hunyuan3/analysis/tpu_vs_rc_loss.py \
              models/hunyuan4/frameworks/megatron/indexer_kd_check.py models/hunyuan4/frameworks/megatron/export_hf_grads.py \
              models/hunyuan4/frameworks/megatron/step1_ref.py models/hunyuan4/analysis/step1_vs_fp64.py \
              models/hunyuan4/frameworks/megatron/layer_ref.py models/hunyuan4/analysis/l2_vs_fp64.py models/hunyuan4/analysis/l1_kd_qkclip_vs_fp64.py models/hunyuan4/analysis/step1_inject_vs_fp64.py models/hunyuan4/analysis/gpu_scale_compare.py models/hunyuan4/analysis/noise_leave_one_run.py models/hunyuan4/alignments/05-gpu-scale/figures/plot.py models/hunyuan4/analysis/step1_loss_vs_fp64.py \
@@ -26,7 +28,7 @@ FMT_PATHS ?= janus/__init__.py janus/__main__.py janus/cli.py janus/demo.py janu
              models/hunyuan4/analysis/kd_input_rounding.py models/hunyuan4/analysis/kd_bf16_vs_fp64.py models/hunyuan4/analysis/kd_gpu_dump_vs_fp64.py models/hunyuan4/analysis/kd_cpu16_vs_gpu_dump.py models/hunyuan4/analysis/kd_noise_scaling.py models/hunyuan4/analysis/kpe_round_emul.py models/hunyuan4/analysis/kd_gpu_bias_summary.py \
              models/hunyuan4/analysis/mla_rope16_emul.py models/hunyuan4/analysis/round_sites_emul.py models/hunyuan4/analysis/main_loss_sites_summary.py models/hunyuan4/analysis/same_state_grads.py models/hunyuan4/analysis/emb_grad_row_groups.py \
              models/hunyuan4/alignments/04-tpu-self/hlo_screen.py models/hunyuan4/frameworks/maxtext/aot_hlo.py tests/models/hunyuan4/test_hlo_screen.py models/hunyuan4/analysis/refresh_program_fingerprint.py \
-             models/hunyuan4/alignments/04-tpu-self/hlo_screen_libtpu.py models/hunyuan4/analysis/llo_bf16_alu.py
+             models/hunyuan4/alignments/04-tpu-self/hlo_screen_libtpu.py models/hunyuan4/analysis/llo_bf16_alu.py models/hunyuan4/analysis/qkclip_accum_compare.py models/hunyuan4/analysis/prodrecipe_settings_check.py models/hunyuan4/analysis/gpu_meta_versions_check.py models/hunyuan4/analysis/step1_metrics_vs_ref.py models/hunyuan4/analysis/max_logit_summary.py models/hunyuan4/analysis/exec_spread_drop_items.py models/hunyuan4/analysis/meta_settings_diff.py models/hunyuan4/analysis/prodrecipe_ruler_compare.py models/hunyuan4/analysis/hc_head_dgrad_fusion.py models/hunyuan4/analysis/jit_miscompile_offline_scan.py
 
 .PHONY: help install dev test test-fast lint fmt docs-check check dist dashboard dashboard-check clean
 

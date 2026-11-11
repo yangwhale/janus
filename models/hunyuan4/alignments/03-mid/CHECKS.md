@@ -11,18 +11,18 @@
 
 | 级 | 目的 | 检查项 | 检查条数 | 张量级比较 | 其他比较单元（hy4-mid · tm-b（300 步，base2 开、早于 M50）） | hy4-mid · tm-b（300 步，base2 开、早于 M50） 判定 | hy4-mid · L0 取 tm-a 一代（同一份检查点）；L3 tm2diag 判定 |
 |---|---|---|---|---|---|---|---|
-| [L0](#l0--地基设置与权重) | 设置与权重逐位 | 3 | 0 / 5 | 0 / 244 | — | — | ✅ 3 |
+| [L0](#l0--地基设置与权重) | 设置与权重逐位 | 3 | 1 / 5 | 0 / 244 | 300 步 | ✅ 1 | ✅ 3 |
 | [L3](#l3--整网第-1-步) | 第 1 步逐张量梯度对 GPU 噪声，超出的对 CPU FP64 参照定责 | 1 | 0 / 1 | 0 / 196 | — | — | ❌ 1 |
 | [L4](#l4--多步训练) | 300 步逐步曲线在 GPU 重跑的噪声内 | 7 | 9 / 0 | — | 1,900 步 | ✅ 3 🟡 4 | — |
-| 合计 |  | 11 | 9 / 6 | 0 / 440 |  |  |  |
+| 合计 |  | 11 | 10 / 6 | 0 / 440 |  |  |  |
 
 ## L0 · 地基：设置与权重
 
-L0 共 3 项检查，检查条数 0 / 5。GPU 一侧 8 份运行的载入自检与清单 sha256 见 [`hy4-mid-gpu-load-check.json`](results/hy4-mid-gpu-load-check.json)（不是 janus 结果格式，不进本表）。
+L0 共 3 项检查，检查条数 1 / 5。GPU 一侧 8 份运行的载入自检与清单 sha256 见 [`hy4-mid-gpu-load-check.json`](results/hy4-mid-gpu-load-check.json)（不是 janus 结果格式，不进本表）。
 
 | 检查 | 比什么 | 对象 | 判法（严格｜参考） | 证据来源 | hy4-mid · tm-b（300 步，base2 开、早于 M50） | hy4-mid · L0 取 tm-a 一代（同一份检查点）；L3 tm2diag |
 |---|---|---|---|---|---|---|
-| 设置核对：逐步学习率<br>`L0.settings.lr` | 两边每一步记下的学习率都等于登记的常数 1e-5 | 300 步<br>比较单元：300 步<br>聚合：逐步比，任一步超出容差就不过 | rtol ≤ 0、abs_ulp ≤ 0｜参考：无 | 生产程序（逐步记录） | — | [两边每一步都等于登记值 1e-05 ✅](results/tm-l0-settings.report.md) |
+| 设置核对：逐步学习率<br>`L0.settings.lr` | 两边每一步记下的学习率都等于登记的常数 1e-5 | 300 步<br>比较单元：300 步<br>聚合：逐步比，任一步超出容差就不过 | rtol ≤ 0、abs_ulp ≤ 0｜参考：无 | 生产程序（逐步记录） | [两边每一步都等于登记值 1e-05 ✅](results/tmb-l0-settings.report.md) | [两边每一步都等于登记值 1e-05 ✅](results/tm-l0-settings.report.md) |
 | 权重转换往返与 dtype 清单<br>`L0.ckpt.convert.bitwise`<br>`L0.ckpt.convert.dtype`<br>`L0.ckpt.source.dtype` | TPU 检查点反向取回逐张量对 HF 清单逐位，dtype 清单全符合 | 212 个张量<br>比较单元：212 个参数张量、424 项 dtype<br>聚合：逐张量比 sha256，数不同的个数；逐项核 dtype，数不合规的个数 | 逐位｜参考：无 | 离线核对（CPU，检查点文件，MaxText 469dbb85） | — | [0 / 212 不同 ✅](results/hy4-mid-l0-ckpt-convert.report.md) |
 | RoPE 列去交错<br>`L0.ckpt.rope_deinterleave.bitwise` | 带 RoPE 的列正向去交错、逆置换逐位回到原件 | 32 个张量<br>比较单元：32 个张量<br>聚合：逐条规则核，数不满足的条数 | 只报，不判｜参考：无 | 离线核对（CPU，检查点文件，MaxText 469dbb85） | — | [32/32 个带 RoPE 列的张量：正向 = 偶数位接奇数位、逆置换逐位回到原件 ✅](results/hy4-mid-l0-rope.results.json) |
 
@@ -36,7 +36,7 @@ L3 共 1 项检查。
 
 非 ✅ 格子的原因：
 
-- **第 1 步逐张量梯度**（hy4-mid · L0 取 tm-a 一代（同一份检查点）；L3 tm2diag ❌）：TPU 梯度文件 9 个张量落盘损坏（文件平方和对不上设备上算的 per_tensor.sq，取回时一段被写成 0；第 0 层 gate_proj、第 4 层 o_proj、第 5 / 6 层与 MTP 层输出门、第 5 层与 MTP 层专家 gate_up、输出头、词嵌入），不可判。其余 196 个的 rel_L2 对 FP64 中位数 GPU 2.48e-2、TPU 2.41e-2，R 0.98，误差余弦中位数 0.54。未定责 7 个：第 3 层 FFN 前 `hc_base`（7.98 N）GPU 2.79e-3、TPU 4.27e-2，R 15.3；第 3 层注意力前 `hc_base`（3.79 N）GPU 1.06e-2、TPU 5.81e-2，R 5.46；第 2 层 FFN 前 `hc_scale`（2.34 N）GPU 4.67e-2、TPU 1.18e-1，R 2.53；第 0 / 2 / 4 层与 MTP 层注意力的 sink（1.73–2.22 N）GPU 3.47e-2 / 3.70e-2 / 3.69e-2 / 4.65e-2、TPU 4.27e-2 / 4.59e-2 / 4.78e-2 / 6.83e-2，R 1.23 / 1.24 / 1.30 / 1.47。sink 一组 8 个 R 1.09–1.47、余弦 0.49–0.75，与上一代 `tmdiag`（没有 M39–M41）持平，是 TPU 一侧 sink 梯度的系统差（推断），待查；iHC 3 个未定责（mini 的 D11 是 6 个 iHC 张量 R 1.57–5.22、已接受，接受理由没在 mid 上核），待查。上一代 `tmdiag` 的判定（未定责 8 个）在 `mid-step1-grad-vs-fp64.json`。
+- **第 1 步逐张量梯度**（hy4-mid · L0 取 tm-a 一代（同一份检查点）；L3 tm2diag ❌）：TPU 梯度文件 9 个张量取回损坏（文件平方和对不上设备上算的 per_tensor.sq。当时按 256 MiB 分块并行取回、只核总字节数，有的块中途断流，本机文件留下没写入的空洞，读出来是 0；9 个空洞都止于块边界，见 `tm2diag-grad-file-holes.json`；mid 没有用同一份代码重跑诊断，这 9 个仍不可判（之后的 `tm3diag` 文件完好，但不是同配置重跑：MaxText `2306c7a5`，含 M42；比它要重算 CPU FP64 参照梯度、重新取回 GPU 三份全量抓数，还没做）；第 0 层 gate_proj、第 4 层 o_proj、第 5 / 6 层与 MTP 层输出门、第 5 层与 MTP 层专家 gate_up、输出头、词嵌入），不可判。其余 196 个的 rel_L2 对 FP64 中位数 GPU 2.48e-2、TPU 2.41e-2，R 0.98，误差余弦中位数 0.54。未定责 7 个：第 3 层 FFN 前 `hc_base`（7.98 N）GPU 2.79e-3、TPU 4.27e-2，R 15.3；第 3 层注意力前 `hc_base`（3.79 N）GPU 1.06e-2、TPU 5.81e-2，R 5.46；第 2 层 FFN 前 `hc_scale`（2.34 N）GPU 4.67e-2、TPU 1.18e-1，R 2.53；第 0 / 2 / 4 层与 MTP 层注意力的 sink（1.73–2.22 N）GPU 3.47e-2 / 3.70e-2 / 3.69e-2 / 4.65e-2、TPU 4.27e-2 / 4.59e-2 / 4.78e-2 / 6.83e-2，R 1.23 / 1.24 / 1.30 / 1.47。sink 一组 8 个 R 1.09–1.47、余弦 0.49–0.75，与上一代 `tmdiag`（没有 M39–M41）持平，是 TPU 一侧 sink 梯度的系统差（推断），待查；iHC 3 个未定责（mini 的 D11 是 6 个 iHC 张量 R 1.57–5.22、已接受，接受理由没在 mid 上核），待查。上一代 `tmdiag` 的判定（未定责 8 个）在 `mid-step1-grad-vs-fp64.json`。
 
 ## L4 · 多步训练
 

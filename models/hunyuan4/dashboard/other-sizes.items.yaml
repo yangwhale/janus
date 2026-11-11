@@ -1,17 +1,17 @@
 # 混元 4 其他尺寸（支线）的总览条目：格式同 items.yaml，列 = mid / B / D1 / tiny；生成 other-sizes.md。
 # <列>_why 同 items.yaml。
 columns:
-  mid: "03 · hy4-mid 最近一代（base2 开、早于 M50；现行对齐配置在 mid 上尚无运行）：L4 是 TPU tm-b 300 步对 GPU gm-a（噪声 gm 两两 28 对）；L3 是 tm2diag；L0 取 tm-a 一代（同一份检查点、同一学习率）"
-  B: "02 · real-weight 截层 B：L4 是 TPU tb5b-a 1000 步（base2 开、早于 M50；现行对齐配置在 B 上尚无运行）对 GPU gb3-a（噪声 gb3 两两 28 对）；L3 是 tb6diag；L0 学习率取上一代 tb5-b（学习率设置相同）"
-  D1: "02 · real-weight 截层 D1：L4 是 TPU td5b-b 1000 步（base2 开、早于 M50；现行对齐配置在 D1 上尚无运行）对 GPU gd3-a（噪声 gd3 两两 28 对）；L3 是 td6diag；L0 学习率取上一代 td5-a（学习率设置相同）"
+  mid: "03 · hy4-mid 最近一代（base2 开、早于 M50；现行对齐配置在 mid 上尚无运行）：L4 是 TPU tm-b 300 步对 GPU gm-a（噪声 gm 两两 28 对）；L3 是 tm2diag；L0 学习率核对用 tm-b，权重转换取 tm-a 一代（同一份检查点）"
+  B: "02 · real-weight 截层 B：L4 是 TPU tb5b-a 1000 步（base2 开、早于 M50；现行对齐配置在 B 上尚无运行）对 GPU gb3-a（噪声 gb3 两两 28 对）；L3 是 tb6diag；L0 学习率核对也用 tb5b-a"
+  D1: "02 · real-weight 截层 D1：L4 是 TPU td5b-b 1000 步（base2 开、早于 M50；现行对齐配置在 D1 上尚无运行）对 GPU gd3-a（噪声 gd3 两两 28 对）；L3 是 td6diag（取回时断流损坏的 5 个 TPU 梯度文件不判）；L0 学习率核对也用 td5b-b"
   tiny: "00 · hy4-tiny：只有 TPU 一侧的 CPU 冒烟（8 个假 CPU 设备，四个阶段整条链路），没有 GPU 对 TPU 的比较"
 groups:
   - name: L0 地基（设置 / 数据 / 权重 / 配置，必须逐位）
     items:
       - name: 设置核对：逐步学习率等于登记的常数 1e-5（两边都要）
-        mid: tm-l0-settings:L0.settings.lr
-        B: t2b5-l0-settings*:L0.settings.lr
-        D1: t2d15-l0-settings*:L0.settings.lr
+        mid: tmb-l0-settings:L0.settings.lr
+        B: t2b5b-l0-settings:L0.settings.lr
+        D1: t2d15b-l0-settings:L0.settings.lr
       - {name: CPU 冒烟各步（生成 HF 目录、转换、往返逐位、RoPE 去交错与负对照、训练、初始权重、数据指纹、学习率）, tiny: hy4-tiny-smoke:*}
       - name: 权重转换 → MaxText 往返逐位（含 dtype 清单）
         mid: hy4-mid-l0-ckpt-convert:*
@@ -22,9 +22,9 @@ groups:
         B: hy4-b-l0-rope-t2:*
         D1: hy4-d1-l0-rope:*
       - {name: 负对照：不去交错的检查点必须判不一致, tiny: hy4-cpu-smoke:L0.ckpt.rope.negative_control}
-      - {name: 跨侧初始权重逐位（TPU 载入后对 GPU 初始参数清单）, B: 'todo: 登记了，还没做', D1: 'todo: 登记了，还没做'}
-      - {name: 每 rank 每步输入指纹（TPU 回放 GPU 的 batch）, B: 'todo: 登记了，还没做', D1: 'todo: 登记了，还没做'}
-      - {name: 配置逐项对照, B: 'todo: 登记了，还没做', D1: 'todo: 登记了，还没做'}
+      - {name: 跨侧初始权重逐位（TPU 载入后对 GPU 初始参数清单）, mid: 'todo: 没做（与 B、D1 同样是缺口）', B: 'todo: 登记了，还没做', D1: 'todo: 登记了，还没做'}
+      - {name: 每 rank 每步输入指纹（TPU 回放 GPU 的 batch）, mid: 'todo: 没做（与 B、D1 同样是缺口）', B: 'todo: 登记了，还没做', D1: 'todo: 登记了，还没做'}
+      - {name: 配置逐项对照, mid: 'todo: 没做（与 B、D1 同样是缺口）', B: 'todo: 登记了，还没做', D1: 'todo: 登记了，还没做'}
   - name: L1 单算子（对 FP64；逐元素函数按 ULP）
     items:
       - {name: T0：hy4-tiny 逐层前向 / 反向对 FP64, tiny: 'todo: 待做'}
@@ -32,11 +32,11 @@ groups:
     items:
       - name: 全部参数梯度：对 GPU 第 1 步噪声，超出的对 CPU FP64 定责
         mid: mid-tm2-step1-grad-vs-fp64:L3.step1.grads.vs_gpu
-        mid_why: 待查：sink 一组是 TPU 一侧 sink 梯度的系统差（[根源一览第 21 行](../ROOT-CAUSES.md#r21)）；iHC 同 hy4-mini（[mini 对齐细节 D11](../alignments/01-mini/DETAILS.md#d11)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-step1)）；落盘损坏的张量不进判定
+        mid_why: 待查：sink 一组是 TPU 一侧 sink 梯度的系统差（[根源一览第 21 行](../ROOT-CAUSES.md#r21)）；iHC 同 hy4-mini（[mini 对齐细节 D11](../alignments/01-mini/DETAILS.md#d11)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-step1)）；梯度文件取回时断流损坏的张量不进判定
         B: t2b-step1-grad-vs-fp64:L3.step1.grads.vs_gpu
         B_why: 待查；real-weight 的 L3 只看对 CPU FP64 的 R（报告第 2 节）。RMSNorm 权重大部分是 dγ 多舍一次 BF16（[根源一览第 23 行](../ROOT-CAUSES.md#r23)），sink 见第 21 行，q latent norm 偏小已定位到 splash 的 base2 指数（[根源一览第 24 行](../ROOT-CAUSES.md#r24)），iHC、`hc_head_scale` 待查（[real-weight 报告 D22](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d22)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
         D1: t2d1-step1-grad-vs-fp64:L3.step1.grads.vs_gpu
-        D1_why: 待查；real-weight 的 L3 只看对 CPU FP64 的 R（报告第 2 节）。sink、RMSNorm 权重、q 的上下投影、hc_head TPU 更远（[根源一览第 21、23 行](../ROOT-CAUSES.md#r21)；[real-weight 报告 D22](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d22)）；落盘损坏的张量以重跑的 td7diag 为准，结论相同
+        D1_why: 待查；real-weight 的 L3 只看对 CPU FP64 的 R（报告第 2 节）。sink、RMSNorm 权重、q 的上下投影、hc_head TPU 更远（[根源一览第 21、23 行](../ROOT-CAUSES.md#r21)；[real-weight 报告 D22](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d22)）；判定以 td6diag 的 52 个张量为准；取回时断流损坏的 5 个另用 td7diag 看过，R 都不超 1.2。td7diag 不是同配置重跑（MaxText `2306c7a5`，含已撤下的 M42），sink 不能拿它换
   - name: L4 多步（B、D1 1000 步；mid 300 步）
     items:
       - name: loss（全程）

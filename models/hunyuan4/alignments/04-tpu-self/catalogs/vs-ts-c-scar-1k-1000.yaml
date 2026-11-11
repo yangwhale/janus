@@ -2,7 +2,7 @@
 schema_version: 1
 model: hunyuan4-mini
 stage: tpu-self-vs-ts-c-scar-1k-1000
-description: TPU 自比 1000 步，被测对 TPU golden ts-g-a，尺子 GPU g3 16 份 120 对
+description: TPU 自比 1000 步，被测对 ts-c-scar-1k（L11：C6 all-reduce 走 SparseCore 跑 1000 步）的 1000 步窗口，尺子 GPU g3 16 份 120 对；test 是占位，跑时用 --test 换成被测（F2b 是 ts-f-sc45-1ks）
 runs:
   test: ts-g-b
   golden: [ts-c-scar-1k]

@@ -1,0 +1,267 @@
+{
+ "what": "GPU golden 各份 meta.json 的 image、versions 对 T1 g3-a 的逐字段比对（字段 diff 为空即逐字相同）",
+ "reference": {
+  "run": "g3-a",
+  "meta_sha256": "60a90786d1676694c15dafd2eb18c5f2ee74bdaf034c8ff5f24e7c64de559a84",
+  "image": "nvcr.io/nvidia/nemo:26.10@sha256:fc75bf516de6845fd85fe627c7c18e69e7568428fe56438e31ff3b1917044b6c",
+  "versions": {
+   "torch": "2.14.0a0+b2c75dd062.nv26.09",
+   "cuda": "13.4",
+   "megatron_core": "0.20.0",
+   "nccl": "2.31.2"
+  }
+ },
+ "groups": {
+  "g3": [
+   {
+    "run": "g3-a",
+    "meta_sha256": "60a90786d1676694c15dafd2eb18c5f2ee74bdaf034c8ff5f24e7c64de559a84",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "g3-b",
+    "meta_sha256": "a74d5f5d76f2236c01a8143723a3ce594f525cbe279df7d28d376ed4d0ab8011",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "g3-c",
+    "meta_sha256": "a62e26b5e5bafd3d9520065ee54e03b84376d0a999d64e586210df8e294ef28f",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "g3-d",
+    "meta_sha256": "31473c0e54f9a699e5672516004721f069167819d5cd05aa23a314ae28771359",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "g3-e",
+    "meta_sha256": "9709d9bb9b318845daf28c16fb3e0dfc372c476ef6bc14f1b6dc5fef7abd0833",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "g3-f",
+    "meta_sha256": "5dd67483acca4b7af991ebc51c3a8610f22178027d880bbbf5ae3dfb030b3c2a",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "g3-g",
+    "meta_sha256": "5562ebb3a733a2d0953de29d60d40e09048d98e28f45322a7651622f1d80c874",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "g3-h",
+    "meta_sha256": "7dfcb24ad06d91fcededdb562f56d37d62e68f4da3fa3a2c142a6a21b0681e93",
+    "image_same": true,
+    "versions_diff": {}
+   }
+  ],
+  "gb3": [
+   {
+    "run": "gb3-a",
+    "meta_sha256": "7576beb856fb885f3ed15e76bde7cf8f3c943d9d848e5fd277f980820010aa1b",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gb3-b",
+    "meta_sha256": "cd75671a308b6bcd34588ed77ccd8a567e31cb4ff528c8288bbd73da438f8867",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gb3-c",
+    "meta_sha256": "a8c0b068609f139b8219c8457e918965f0a45634c26d28794076a63377c93bbb",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gb3-d",
+    "meta_sha256": "98299ae67bd44630cbc129c8e08b0c1d4337ab1c1951a2ddadaa644578275b75",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gb3-e",
+    "meta_sha256": "5b4bbe6fcd09e3e8c8b2eb4bf170cc6942f8ef2323289a4b94ec4bf4e1910fcc",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gb3-f",
+    "meta_sha256": "537dfa662bb7e20dd72c075411889a3425e3356ccd4847048dec8e733f166578",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gb3-g",
+    "meta_sha256": "bb9ca5fdf42f40ac913e389eb884f8626b9f43269f7776103f2b034fee4111c7",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gb3-h",
+    "meta_sha256": "b2371dd307e1d9130b762c920c3c2d2ee82b7beaac425c9f0153be8fea808aae",
+    "image_same": true,
+    "versions_diff": {}
+   }
+  ],
+  "gd3": [
+   {
+    "run": "gd3-a",
+    "meta_sha256": "293015a4cba43cfc8e95d452dfcef7f4ee8b1118ddcd01709d04a03014b440d0",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gd3-b",
+    "meta_sha256": "71240f68a34c16d6c82bac27d2989d6986691f564654d1f4fe574e3664bb9200",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gd3-c",
+    "meta_sha256": "a60c744da2ab27d2372cac01f23a1c7321cc4045f4f1a4d505c776925275d3a9",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gd3-d",
+    "meta_sha256": "e73716bd7e41d39743820f7a56f7b2685f59f58ed50d823a73848f4d1655d5f4",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gd3-e",
+    "meta_sha256": "520e5ea3d6300ac8649638cfcbf5f3c6dfe7650610a88e941f084082dc04f763",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gd3-f",
+    "meta_sha256": "a30c82b563c3e52910322027376b66ebe0dac3623b69749ad9081e01f8663f08",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gd3-g",
+    "meta_sha256": "16a389ed4aa7141801a1aaf8a6360e4fd772474f1e2bdf4e9c64aea8351f53be",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gd3-h",
+    "meta_sha256": "8420deab35e9799a308febd64b6560d880550b57bcf8e0cb5cef347f191e5f60",
+    "image_same": true,
+    "versions_diff": {}
+   }
+  ],
+  "gm": [
+   {
+    "run": "gm-a",
+    "meta_sha256": "91cf1cd8137965d39f89f7f73b177ad477ca2a3fd918b77a98fc92a16d840af7",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gm-b",
+    "meta_sha256": "2e8dcbe7852f0496f0bdd3fbe3bca1cb08b5fce374762a0ec7e554dfee929bb2",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gm-c",
+    "meta_sha256": "9e570a3075532b5d98d66f455c0061d1953c7a9a1f92103eac2dbc4e3b37330a",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gm-d",
+    "meta_sha256": "95ae383ae3a4fd7ee073f97e53f1138f4c7faa9a68dcf8a6d0fcaab9e46ce0ca",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gm-e",
+    "meta_sha256": "e83c821a9eac8996e431f206644d5f1bc87569b2a4d8001a99743cea314645ca",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gm-f",
+    "meta_sha256": "5be7f945617fd218891d9e82ff6799dcd2affce879d33503ed2ae9e8c5eb8996",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gm-g",
+    "meta_sha256": "17f1a9c8219b64c61dedcc38482b78b6dc3b3fef5d0387a05672b18c61ca9f65",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "gm-h",
+    "meta_sha256": "1a3ba8cb99ca3dadd18d43b86b910f6869d7fb94e8be0f226e9457923a0d4f64",
+    "image_same": true,
+    "versions_diff": {}
+   }
+  ],
+  "rw1k": [
+   {
+    "run": "rw1k-a",
+    "meta_sha256": "24f0f06ccdac41dc3949ba24d93ee30af811208ded5c9a5e09c474776befb57e",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "rw1k-b",
+    "meta_sha256": "59bcf0470339398cfe644f8e477ed52f947b335898a05d967ccea058b011904d",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "rw1k-c",
+    "meta_sha256": "114578c72787604edae508677f150bb8952135a7d1eb933653c5615e5153852b",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "rw1k-d",
+    "meta_sha256": "9083e23075454a812f05f21f9c16a5b0f0821345216f8dd86e5ec5605b650aca",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "rw1k-e",
+    "meta_sha256": "817fe4f692c9cc4728522146d665c5d4ea57382231a8f06a519919eabac3af97",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "rw1k-f",
+    "meta_sha256": "fa97c0d9b3c7343bde05fa71c95ea34811ba2edbeea24f0375f2b4b65ee3a708",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "rw1k-g",
+    "meta_sha256": "e2ea002688d20519c8dd016e55eecb549fa96715f9ffcb66b9dd1ae75190c0fa",
+    "image_same": true,
+    "versions_diff": {}
+   },
+   {
+    "run": "rw1k-h",
+    "meta_sha256": "87d52325349d67352d8f2bf273465c25e974553d3f4b5b693c305388f09214d4",
+    "image_same": true,
+    "versions_diff": {}
+   }
+  ]
+ },
+ "all_identical": true
+}

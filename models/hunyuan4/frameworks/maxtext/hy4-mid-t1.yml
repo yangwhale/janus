@@ -27,6 +27,8 @@ qk_clip_max_logit_exclude_sink: true   # 原版 Megatron-Core：QK-Clip 的最�
 indexer_weights_proj_bf16_weight: true # 原版 Megatron-Core：weights_proj 乘 BF16 的模型权重、FP32 输出（台账 M27）
 ihc_stream_sum_unrolled: true          # GPU：iHC 四路流加权和是 FP32 逐元素乘加，不是 HIGHEST einsum（台账 M28）
 ihc_force_bf16_rounding: true          # GPU：iHC 输出与流总是舍成 BF16；TPU 上用 reduce_precision 防 XLA 省掉（台账 M36）
+hc_head_force_bf16_rounding: true      # GPU：hc_head 收拢在 FP32 里算、存 BF16；TPU 上用 reduce_precision 防 XLA 省掉（台账 M52；PROTOCOL 变更记录 2026-11-11 C 口径）
+ihc_stream_grad_gpu_order: true        # GPU：BF16 的流的梯度逐份舍 BF16、按 autograd 顺序相加，分支输出存 BF16（台账 M58；同上）
 # GPU 一侧（Megatron-Core 0.20 + TE 2.20）的舍入位置，混元 3 已为同一套 GPU 栈打开的四个开关（台账 M8–M10、M12）：
 dense_fp32_accumulation: true          # TE GEMM：FP32 累加、输出只舍一次
 rmsnorm_single_rounding: true          # TE 融合 RMSNorm：FP32 里乘完 scale 只舍一次

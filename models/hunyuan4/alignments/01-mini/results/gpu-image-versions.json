@@ -1,0 +1,101 @@
+{
+ "what": "混元 4 GPU 训练镜像里实际加载的软件版本（实测）：在训练 Pod 里、训练用的库环境下，GPU 上跑一次矩阵乘与 TE 线性层后读进程映射的库并调各库自己的版本函数",
+ "image": {
+  "requested": "nvcr.io/nvidia/nemo:26.10@sha256:fc75bf516de6845fd85fe627c7c18e69e7568428fe56438e31ff3b1917044b6c",
+  "pod_image_id": "nvcr.io/nvidia/nemo@sha256:fc75bf516de6845fd85fe627c7c18e69e7568428fe56438e31ff3b1917044b6c",
+  "note": "pod_image_id 是 Pod 状态里容器实际拉起的镜像 digest；与 hy4-mini 各代 GPU 运行 meta.json 的 image 相同"
+ },
+ "context": {
+  "date_utc": "2026-11-11",
+  "pod": "跑 g2s-d / g2s-e / g2s-f 的同一个 Pod（8 × B200，驱动 580.159.04）",
+  "env": "同 pod_run.sh：LD_LIBRARY_PATH 以 /usr/lib/x86_64-linux-gnu 打头，NCCL_*_PLUGIN=none，NVIDIA_TF32_OVERRIDE=0，去掉 TORCH_ALLOW_TF32_CUBLAS_OVERRIDE",
+  "script": "models/hunyuan4/frameworks/megatron/version_probe.py（入库的这份与跑的那份只差文件头说明和 ruff 格式化）",
+  "without_ld_prefix": "不加 LD_LIBRARY_PATH 前缀时 import torch 失败（libtorch_cuda.so: undefined symbol ncclGetPeerDeviceLeInfo，先找到了节点挂进来的旧 NCCL）；训练用 pod_run.sh 的前缀，读到的是下面这一套"
+ },
+ "measured": {
+  "torch": "2.14.0a0+b2c75dd062.nv26.09",
+  "torch_version_cuda": "13.4",
+  "transformer_engine": "2.20.2+44f31bbe",
+  "megatron_core": "0.20.0",
+  "cublas": "13.8.1（cublasGetProperty；进程映射 libcublas.so.13.8.1.7）",
+  "cublasLt": "130801（cublasLtGetVersion；进程映射 libcublasLt.so.13.8.1.7）",
+  "cuda_runtime": "13040（cudaRuntimeGetVersion，即 13.4；libcudart.so.13.4.49）",
+  "nvcc": "13.4（V13.4.59）",
+  "cudnn": "92600（torch.backends.cudnn.version()，即 9.26.0；libcudnn.so.9.26.0）",
+  "nccl": "2.31.2（torch.cuda.nccl.version() 与 ncclGetVersion 23102 一致；libnccl.so.2.31.2）",
+  "driver": "580.159.04"
+ },
+ "discrepancies_vs_container_env": [
+  {
+   "item": "cuBLAS",
+   "container_env": "CUBLAS_VERSION=13.8.0.4",
+   "loaded": "13.8.1.7",
+   "note": "混元 3 第一阶段记的 13.8.0.4 取自这个环境变量（l1_ops.py 读 os.environ['CUBLAS_VERSION']），不是进程实际加载的库"
+  },
+  {
+   "item": "Transformer Engine",
+   "container_env": "TRANSFORMER_ENGINE_VERSION=2.19",
+   "loaded": "2.20.2+44f31bbe",
+   "note": "环境变量是基础镜像的；实际装的包与 import 读到的是 2.20.2"
+  }
+ ],
+ "probe_raw": {
+  "cudnn": 92600,
+  "env": {
+   "CUBLAS_VERSION": "13.8.0.4",
+   "CUDA_VERSION": "13.4.1.012",
+   "CUDNN_VERSION": "9.26.0.51",
+   "NCCL_VERSION": "2.31.2",
+   "NVIDIA_BUILD_ID": "511436261",
+   "NVIDIA_PYTORCH_VERSION": "26.09",
+   "PYTORCH_VERSION": "2.14.0a0+b2c75dd",
+   "TRANSFORMER_ENGINE_VERSION": "2.19",
+   "TRT_VERSION": "11.3.0.99"
+  },
+  "lib_versions": {
+   "/usr/lib/x86_64-linux-gnu/libnccl.so.2.31.2": 23102,
+   "/usr/local/cuda-13.4/targets/x86_64-linux/lib/libcublas.so.13.8.1.7": "13.8.1",
+   "/usr/local/cuda-13.4/targets/x86_64-linux/lib/libcublasLt.so.13.8.1.7": 130801,
+   "/usr/local/cuda-13.4/targets/x86_64-linux/lib/libcudart.so.13.4.49": 13040,
+   "/usr/local/lib/python3.12/dist-packages/nvidia/cu13/lib/libcudart.so.13": 13040
+  },
+  "loaded_libs": {
+   "cublas": [
+    "/usr/local/cuda-13.4/targets/x86_64-linux/lib/libcublas.so.13.8.1.7"
+   ],
+   "cublasLt": [
+    "/usr/local/cuda-13.4/targets/x86_64-linux/lib/libcublasLt.so.13.8.1.7"
+   ],
+   "cudart": [
+    "/usr/local/cuda-13.4/targets/x86_64-linux/lib/libcudart.so.13.4.49",
+    "/usr/local/lib/python3.12/dist-packages/nvidia/cu13/lib/libcudart.so.13"
+   ],
+   "cudnn": [
+    "/usr/lib/x86_64-linux-gnu/libcudnn.so.9.26.0",
+    "/usr/lib/x86_64-linux-gnu/libcudnn_graph.so.9.26.0"
+   ],
+   "nccl": [
+    "/usr/lib/x86_64-linux-gnu/libnccl.so.2.31.2"
+   ]
+  },
+  "megatron_core": "0.20.0",
+  "nccl": "2.31.2",
+  "nvcc": "Cuda compilation tools, release 13.4, V13.4.59\nBuild cuda_13.4.r13.4/compiler.38657139_0",
+  "nvidia_smi": [
+   "NVIDIA B200, 580.159.04"
+  ],
+  "pip_nvidia": {
+   "megatron-bridge": "0.7.0",
+   "megatron-core": "0.20.0",
+   "megatron-energon": "7.4.1",
+   "nccl4py": "0.6.0",
+   "nvidia-cuda-runtime": "13.4.92",
+   "nvidia-cudnn-frontend": "1.29.1",
+   "torch": "2.14.0a0+b2c75dd062.nv26.9.68203377",
+   "transformer_engine": "2.20.2+44f31bbe"
+  },
+  "torch": "2.14.0a0+b2c75dd062.nv26.09",
+  "torch_version_cuda": "13.4",
+  "transformer_engine": "2.20.2+44f31bbe"
+ }
+}

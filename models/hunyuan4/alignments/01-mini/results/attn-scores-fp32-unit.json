@@ -1,0 +1,122 @@
+{
+ "what": "GPU 参照 sparse_sink_attention：scores_fp32=False（q·k 先舍 BF16）/True（留 FP32）对 FP64 参照的输出相对 L2 误差",
+ "source": "models/hunyuan4/frameworks/megatron/hy4_mcore.py",
+ "source_sha256": "4120a0510aa8ec1260b4f4b17b62d67ff6caffa863ba77e97085fa975b0c4f89",
+ "test": "tests/models/hunyuan4/test_attn_scores_fp32.py",
+ "test_sha256": "e336754ce2edbba4370c416cea98e2b8482b588635bc4033fa3ec1861ef4754f",
+ "functions_extracted_by_ast": [
+  "causal_sparse_mask",
+  "sparse_sink_attention"
+ ],
+ "inputs": {
+  "s": 64,
+  "h": 2,
+  "d": 32,
+  "dv": 16,
+  "k": 16,
+  "q_k_scale": 3,
+  "dtype": "bfloat16",
+  "sinks": "zeros"
+ },
+ "torch": "2.12.0+cpu",
+ "device": "cpu",
+ "seed0_same_as_unit_test": {
+  "seed": 0,
+  "rel_l2_scores_bf16": 0.008181016723947684,
+  "rel_l2_scores_fp32": 0.0016208654376667813,
+  "ratio_fp32_over_bf16": 0.1981251832577413,
+  "outputs_differ": true,
+  "fp32_closer": true
+ },
+ "per_seed": [
+  {
+   "seed": 0,
+   "rel_l2_scores_bf16": 0.008181016723947684,
+   "rel_l2_scores_fp32": 0.0016208654376667813,
+   "ratio_fp32_over_bf16": 0.1981251832577413,
+   "outputs_differ": true,
+   "fp32_closer": true
+  },
+  {
+   "seed": 1,
+   "rel_l2_scores_bf16": 0.005918181652213619,
+   "rel_l2_scores_fp32": 0.0018592765227411331,
+   "ratio_fp32_over_bf16": 0.31416347655460947,
+   "outputs_differ": true,
+   "fp32_closer": true
+  },
+  {
+   "seed": 2,
+   "rel_l2_scores_bf16": 0.007269822644736945,
+   "rel_l2_scores_fp32": 0.001905527563448771,
+   "ratio_fp32_over_bf16": 0.2621147250171633,
+   "outputs_differ": true,
+   "fp32_closer": true
+  },
+  {
+   "seed": 3,
+   "rel_l2_scores_bf16": 0.005653171800163525,
+   "rel_l2_scores_fp32": 0.0017803356305027317,
+   "ratio_fp32_over_bf16": 0.3149268576007602,
+   "outputs_differ": true,
+   "fp32_closer": true
+  },
+  {
+   "seed": 4,
+   "rel_l2_scores_bf16": 0.007010287479295132,
+   "rel_l2_scores_fp32": 0.001748039895016235,
+   "ratio_fp32_over_bf16": 0.2493535251127813,
+   "outputs_differ": true,
+   "fp32_closer": true
+  },
+  {
+   "seed": 5,
+   "rel_l2_scores_bf16": 0.004602353367621634,
+   "rel_l2_scores_fp32": 0.0018241539098116251,
+   "ratio_fp32_over_bf16": 0.39635242322870495,
+   "outputs_differ": true,
+   "fp32_closer": true
+  },
+  {
+   "seed": 6,
+   "rel_l2_scores_bf16": 0.005976535061325343,
+   "rel_l2_scores_fp32": 0.0018524337472108517,
+   "ratio_fp32_over_bf16": 0.3099511218796498,
+   "outputs_differ": true,
+   "fp32_closer": true
+  },
+  {
+   "seed": 7,
+   "rel_l2_scores_bf16": 0.00835738544507312,
+   "rel_l2_scores_fp32": 0.0018679186918063458,
+   "ratio_fp32_over_bf16": 0.22350515051421124,
+   "outputs_differ": true,
+   "fp32_closer": true
+  },
+  {
+   "seed": 8,
+   "rel_l2_scores_bf16": 0.006776005607956286,
+   "rel_l2_scores_fp32": 0.0018528818312926675,
+   "ratio_fp32_over_bf16": 0.2734475055801372,
+   "outputs_differ": true,
+   "fp32_closer": true
+  },
+  {
+   "seed": 9,
+   "rel_l2_scores_bf16": 0.0067112329239939405,
+   "rel_l2_scores_fp32": 0.001718916559975618,
+   "ratio_fp32_over_bf16": 0.2561253020782758,
+   "outputs_differ": true,
+   "fp32_closer": true
+  }
+ ],
+ "summary": {
+  "n_seeds": 10,
+  "fp32_closer_all": true,
+  "ratio_min": 0.1981251832577413,
+  "ratio_median": 0.26778111529865023,
+  "ratio_max": 0.39635242322870495,
+  "rel_l2_bf16_median": 0.006743619265975113,
+  "rel_l2_fp32_median": 0.0018382938285112383
+ }
+}

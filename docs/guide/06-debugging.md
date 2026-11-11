@@ -55,7 +55,7 @@
 - 找机制：漂移的推手是输出头流回隐状态的梯度 dh 沿「所有 logits 一起升降」方向的分量。GPU 生产的输出头 dgrad 要沿 12 万词表做长求和，这次求和在 B200 张量核上被系统地朝 0 截断。
 - 裁判也要核对：排查用「BF16 权重、全程 FP32」的精确轨迹当裁判，逐处对 FP64 后发现裁判自己也有偏。B200 上 cuBLAS 的 FP32 乘法一次累加整个词表也不精确，只有分段累加才精确。改正后，GPU 精确与 TPU 精确重合。教训是：「全程 FP32」的参照也要逐处对 FP64，第 1 步对得上不代表训练中途对得上。
 - 落地：参照答案（golden）原本是 GPU 生产训练程序的结果，现在换成最终 golden [`rcc`](../glossary.md#rcc)。`rcc` 保持生产程序其余设置不变，只把输出头 dgrad 修成分段 FP32 累加，参照从此不带 GPU 一侧这处偏差。验收分两层，见[第 4 章](04-level-by-level.md#两层验收l4-对哪份-golden)「两层验收」：
-  - 第一层：TPU 只和事先指定的一份 [`rcc-a`](../glossary.md#rcc-a)（最终 golden 的第 1 份）比 L4 的 loss、范数、学习率、路由偏置与健康信号。噪声上限取 `rcc` 10 份重跑两两配对得到的 45 对。这一层必须过，v5p、v7x 全过，最差 r = 0.85。
+  - 第一层：TPU 只和事先指定的一份 [`rcc-a`](../glossary.md#rcc-a)（最终 golden 的第 1 份）比 L4 的 loss、范数、路由偏置与健康信号（学习率归 L0 设置核对）。噪声上限取 `rcc` 10 份重跑两两配对得到的 45 对。这一层必须过，v5p、v7x 全过，最差 r = 0.85；结论对正式被测程序成立，改执行参数（splash 分块、片上内存上限等）要重判。
   - 第二层：对 GPU 生产 golden [`rc`](../glossary.md#rc) 的差写成[已解释差异](../glossary.md#explained-difference)。
 
   `rcc` 只是对参照的一处修正。TPU 一侧的精度开关、数据回放等其余环节见对齐报告第 5、6 节。
@@ -125,6 +125,22 @@ flowchart LR
 2. 统计口径：步号错位、窗口或分母写错。案例 01 比较了同步号与错一步的平均绝对差，错一步大 100 倍，由此排除了错位。
 3. 上游没过：L0 没有逐位就去看 L3、L4，看到的差混着输入的差。见[方法详解：分级流程](../reference/levels.md#为什么低一级不过高一级的结论不可信)「为什么低一级不过，高一级的结论不可信」。
 
+### 怀疑编译 bug：逐算子执行对 jit
+
+差大得不像舍入时（相对误差 1e-2 以上；或者只在某些形状下错、换个尺寸就好），先别查精度开关，先判断是不是编译器把程序算错了：
+
+1. **逐算子执行对 jit。** 在 TPU 上用 `with jax.disable_jit():` 跑同一个函数，同时在 CPU 上 jit 跑一份当参考。
+   - 逐算子执行时每个算子单独编译，不做跨算子的融合和改写；
+   - 逐算子对、jit 错：问题在跨算子的编译（融合、改写、代码生成），是编译 bug，不是精度；
+   - 两边都错、错得一样：才是算子本身的数值问题，回到本节和第 2 节的流程。
+2. **缩小。** 在 jaxpr 层逐个删算子，每一步都要求「TPU jit 对 CPU 差 > 1e-2、TPU 逐算子对 CPU 差 < 1e-4」两条同时成立，缩到几十个算子再改写成最小函数。
+3. **定位到编译阶段。** `--xla_dump_to=<目录> --xla_dump_hlo_pass_re=.*` 导出每个 pass 之后的 HLO，用 [`hlo_pass_cpu_replay.py`](../../models/hunyuan4/analysis/hlo_pass_cpu_replay.py) 逐份在 CPU 上执行：
+   - 第一份结果变了的，就是那个 pass 改坏了语义；
+   - 全都对，就是 HLO 之下（代码生成）错了。这时只能逐个关开关二分。开关名从 dump 里的 `tpu_comp_env.txt` 找，不要凭印象写。
+4. **换 libtpu 找修复窗口。** 同一镜像里 `pip install --no-deps` 换版本，nightly 在公开桶 `libtpu-nightly-releases`。这一步只用来定位修复窗口：nightly 没经过发版测试，不建议上生产；换版本会改别处的数值，真要换就重建 golden、重测（[差异清单 F7](../reference/tpu-vs-gpu-differences.md#f7-libtpu-版本改的不只是求和顺序)、[`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md)）。
+
+实例见[混元 4 案例 16](../../models/hunyuan4/cases/16-jit-miscompile-sub8-row-block.md)。
+
 ### 确认是真的以后
 
 - 开 issue 记下来。贴结果文件与检查 id，不贴截图里的数。
@@ -181,7 +197,7 @@ L4 的三个工具：
 ## 4 · 验证：该过的过了，别的没坏
 
 - **用同一份目录、同一组 golden 与噪声参照重跑**。只有被测换成修复后的运行；参照一换，前后就不可比。
-- **r 在 1–2 之间的改动，一份运行判不了好坏**。混元 4 上只改一个按理不改数值的开关，TPU 融合一变，1000 步主 loss r 就从 0.36 变成 1.44（[差异清单 G17](../reference/tpu-vs-gpu-differences.md#g17-单次运行的-r-在-1-附近不分好坏)）；关 base2 时一份运行看着离 GPU 更远，开、关各补到 4 份只改执行方式的重复后两组交叠，是轨迹偶然（[`mini-base2-loo.json`](../../models/hunyuan4/alignments/01-mini/gpu-noise/results/mini-base2-loo.json)）。这种时候修前、修后各补几份只改执行方式的 TPU 重复，看两组交不交叠，并用 GPU 留一法看纯噪声能到多大（[尺子 1.6](ruler.md#16-r-与判法)）。
+- **r 在 1–2 之间的改动，一份运行判不了好坏**。混元 4 上只改一个按理不改数值的开关，TPU 融合一变，1000 步主 loss r 就从 0.36 变成 1.44（当时 GPU 8 份的尺子，N 3.78e-6；[差异清单 G17](../reference/tpu-vs-gpu-differences.md#g17-单次运行的-r-在-1-附近不分好坏)）；关 base2 时一份运行看着离 GPU 更远，开、关各补到 4 份只改执行方式的重复后两组交叠，是轨迹偶然（[`mini-base2-loo.json`](../../models/hunyuan4/alignments/01-mini/gpu-noise/results/mini-base2-loo.json)）。这种时候修前、修后各补几份只改执行方式的 TPU 重复，看两组交不交叠，并用 GPU 留一法看纯噪声能到多大（[尺子 1.6](ruler.md#16-r-与判法)）。
 - 新运行、新结果文件，不覆盖旧的。`runs.yaml` 加一条，写清相对哪次运行改了什么。结果文件用新名字，见 [`conventions.md`](../dev/conventions.md#结果与图)「结果与图」。旧结果是修复前的证据，留着并排比。
 - 看全表，不只看出问题的那条，因为修复可能让别的检查变差。L4 的问题修完，要回到 L4 的窗口重跑确认：带符号均值回到噪声参照内，先漂的那个量不再漂。案例 01 里这个量是 `param_norm`，第 6 节第 5 项「修复验证」就是这一步。
 - 修的是 janus 本身时，`make check` 要通过。新增检查要有测试证明故意改坏的数据会被抓到，工具先自证。

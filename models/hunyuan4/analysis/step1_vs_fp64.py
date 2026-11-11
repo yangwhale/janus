@@ -1,12 +1,14 @@
 """第 1 步逐张量梯度对 CPU FP64 参照（frameworks/megatron/step1_ref.py 的输出）的三方距离与定责。
 
 逐张量（HF 名字；路由专家只取 GPU 全量抓数有的那几个，见 GPU 导出旁边的 JSON）：
-- rel_L2(GPU_i, FP64)、rel_L2(TPU, FP64)、rel_L2(GPU_i, TPU)，分母都是 ‖FP64‖；GPU 三份两两的噪声同一分母；
-- R = rel_L2(TPU, FP64) ÷ 中位数_i rel_L2(GPU_i, FP64)（同旧口径：GPU 取三份的中位数），另记每份的 R；
+- rel_L2(GPU_i, FP64)、rel_L2(TPU, FP64)、rel_L2(GPU_i, TPU)，分母都是 ‖FP64‖；GPU 各份两两（3 份 3 对，6 份 15 对）的噪声同一分母；
+- R = rel_L2(TPU, FP64) ÷ 中位数_i rel_L2(GPU_i, FP64)（同旧口径：GPU 取各份的中位数），另记每份的 R；
 - 误差向量夹角余弦 cos_i = ⟨GPU_i − FP64, TPU − FP64⟩ ÷ (‖GPU_i − FP64‖·‖TPU − FP64‖)，直接用完整张量算；
-- 「超出 N」沿用旧口径（与参照无关）：TPU 对最近一份 GPU 的 rel_L2（分母 ‖GPU‖）÷ GPU 三份两两的最大 rel_L2；
+- 「超出 N」沿用旧口径（与参照无关）：TPU 对最近一份 GPU 的 rel_L2（分母 ‖GPU‖）÷ GPU 各份两两的最大 rel_L2；
 - 判定同 dashboard/build.py 的 `_step1_judge`（PROTOCOL 第 5 节 + 2026-11-08 分辨率下限）。
 - 给了 `--tpu-diag` 就先核 TPU 梯度文件：逐张量平方和对设备上算的（`per_tensor.sq`），对不上的记为落盘损坏、不进统计与判定。
+  TPU 梯度是由全量抓数的动量反推的（export_train_grads.py，没有 diag_step1.json）时，改给 `--tpu-file-check`：
+  step1_train_grad_file_check.py 的结果，逐张量的 corrupt_suspect 记为落盘损坏，规则照抄进 tpu_file_check。
 另报：旧参照（TPU FP32 + HIGHEST）与 CPU FP32 自检各自离 FP64 多远；旧参照下与新参照下定责结论的差异；
 离散选择（第一行）FP64 对 GPU 的翻转，按 FP64 分差分桶；灌 GPU 选择的灵敏度（若给了 --inject）。
 
@@ -18,6 +20,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import itertools
 import json
 import os
 import re
@@ -40,6 +44,11 @@ MODULES = [  # (模块, 正则)；按顺序取第一个匹配
     ("norm", r"layernorm\.weight$|^model\.norm\.|\.(enorm|hnorm|final_layernorm)\."),
     ("其他", r"."),
 ]
+
+
+def _fen(n):
+    """份数的写法：3 份照旧写「三份」（与之前的结果文件逐字相同），其余写数字。"""
+    return "三份" if n == 3 else f"{n} 份"
 
 
 def module_of(name):
@@ -145,7 +154,7 @@ def dsa_flips(ref_topk, other_mask, q_, k_, w_):
 
 
 def gpu_only(a, ref, refsum, gnames, gfiles, gexp):
-    """TPU 第 1 步梯度还没有时：GPU 三份各对 FP64、GPU 两两噪声，按模块汇总；不判定。"""
+    """TPU 第 1 步梯度还没有时：GPU 各份各对 FP64、GPU 两两噪声，按模块汇总；不判定。"""
     rows = []
     for h in sorted(gfiles[0].keys()):
         gs = [f.get_tensor(h).to(torch.float64) for f in gfiles]
@@ -158,7 +167,7 @@ def gpu_only(a, ref, refsum, gnames, gfiles, gexp):
             "numel": int(f64.numel()),
             "ref_norm": den,
             "gpu_vs_ref_each": [rel(x, f64, den) for x in gs],
-            "gpu_noise_each": [rel(gs[i], gs[j], den) for i, j in ((0, 1), (0, 2), (1, 2))],
+            "gpu_noise_each": [rel(gs[i], gs[j], den) for i, j in itertools.combinations(range(len(gs)), 2)],
         }
         r["gpu_vs_ref"] = float(np.median(r["gpu_vs_ref_each"]))
         e = [x - f64 for x in gs]
@@ -166,7 +175,7 @@ def gpu_only(a, ref, refsum, gnames, gfiles, gexp):
             float((e[i] * e[j]).sum() / (float(e[i].norm()) * float(e[j].norm())))
             if float(e[i].norm()) * float(e[j].norm()) > 0
             else float("nan")
-            for i, j in ((0, 1), (0, 2), (1, 2))
+            for i, j in itertools.combinations(range(len(gs)), 2)
         ]
         rows.append(r)
     out = {
@@ -218,9 +227,11 @@ def gpu_only(a, ref, refsum, gnames, gfiles, gexp):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--ref", required=True, help="step1_ref.py 的输出目录（FP64）")
-    p.add_argument("--gpu", nargs=3, required=True, help="名字=HF 名字的梯度 safetensors（export_hf_grads.py）")
     p.add_argument(
-        "--tpu", default="", help="名字=diag_grads.safetensors；不给时只报 GPU 三份对 FP64（TPU 第 1 步梯度还没有时）"
+        "--gpu", nargs="+", required=True, help="名字=HF 名字的梯度 safetensors（export_hf_grads.py），至少 3 份"
+    )
+    p.add_argument(
+        "--tpu", default="", help="名字=diag_grads.safetensors；不给时只报 GPU 各份对 FP64（TPU 第 1 步梯度还没有时）"
     )
     p.add_argument("--old-ref", default="", help="名字=旧参照的 diag_grads.safetensors（TPU FP32 + HIGHEST）")
     p.add_argument("--cpu32", default="", help="step1_ref.py --dtype float32 的输出目录（自检）")
@@ -239,9 +250,16 @@ def main():
         default="",
         help="TPU diag_step1.json（loss 对照；其 per_tensor.sq 是设备上算的平方和，用来核 TPU 梯度文件落盘有没有坏）",
     )
+    p.add_argument(
+        "--tpu-file-check",
+        default="",
+        help="step1_train_grad_file_check.py 的结果 json（TPU 梯度由全量抓数反推、没有 diag_step1.json 时用它核落盘）",
+    )
     p.add_argument("--note", default="")
     p.add_argument("--out", required=True)
     a = p.parse_args()
+    if len(a.gpu) < 3:
+        raise SystemExit("--gpu 至少 3 份")
 
     ref, refk = load(os.path.join(a.ref, "grads_hf.safetensors"))
     refsum = json.load(open(os.path.join(a.ref, "summary.json")))
@@ -264,6 +282,9 @@ def main():
     # TPU 梯度文件的完整性：文件里每个张量的平方和对设备上算的（diag_step1.json 的 per_tensor.sq）。
     # 干净的张量两者相对差 1e-14 量级；落盘时一段被写成 0 的张量差 1e-7 以上（文件偏小）。超过 FILE_SQ_TOL 的不可判。
     dev_sq = (json.load(open(a.tpu_diag)).get("per_tensor") or {}) if a.tpu_diag else {}
+    fchk = json.load(open(a.tpu_file_check)) if a.tpu_file_check else None
+    if fchk is not None and dev_sq:
+        raise SystemExit("--tpu-diag 与 --tpu-file-check 只给一个")
     rows = []
     for h in sorted(gfiles[0].keys()):
         gs = [f.get_tensor(h) for f in gfiles]
@@ -289,10 +310,10 @@ def main():
             "gpu_vs_ref_each": [rel(x, f64, den) for x in g],
             "tpu_vs_ref": net / den if den else float("nan"),
             "gpu_vs_tpu_each": [rel(x, t, den) for x in g],
-            "gpu_noise_each": [rel(g[i], g[j], den) for i, j in ((0, 1), (0, 2), (1, 2))],
+            "gpu_noise_each": [rel(g[i], g[j], den) for i, j in itertools.combinations(range(len(g)), 2)],
             # 旧口径（与参照无关）：TPU 对最近一份 GPU、GPU 两两，分母是 GPU 一侧
             "tpu_vs_gpu_min": min(rel(t, x, n) for x, n in zip(g, gn)),
-            "gpu_noise_max": max(rel(g[i], g[j], gn[j]) for i, j in ((0, 1), (0, 2), (1, 2))),
+            "gpu_noise_max": max(rel(g[i], g[j], gn[j]) for i, j in itertools.combinations(range(len(g)), 2)),
             "cos_each": [
                 float((e * et).sum() / (float(e.norm()) * net)) if float(e.norm()) * net > 0 else float("nan")
                 for e in eg
@@ -310,6 +331,8 @@ def main():
             fs = float(tpu.get_tensor(h).to(torch.float64).pow(2).sum())  # 整个张量（不只比的那几个专家）
             r["tpu_file_sq_rel"] = (fs - dev_sq[h]["sq"]) / dev_sq[h]["sq"] if dev_sq[h]["sq"] else 0.0
             r["tpu_file_corrupt"] = abs(r["tpu_file_sq_rel"]) > FILE_SQ_TOL
+        if fchk is not None:
+            r["tpu_file_corrupt"] = bool(fchk["per_tensor"][h]["corrupt_suspect"])
         if old is not None:
             o = t64(old, h, sl)
             r["old_ref_vs_fp64"] = rel(o, f64, den)
@@ -325,7 +348,7 @@ def main():
         del g, gs, eg, et, f64, t
 
     # 落盘损坏的张量（见上）留在 rows 里备查，但不进任何统计与判定
-    corrupt = [(r["tensor"], r["tpu_file_sq_rel"]) for r in rows if r.get("tpu_file_corrupt")]
+    corrupt = [(r["tensor"], r.get("tpu_file_sq_rel")) for r in rows if r.get("tpu_file_corrupt")]
     allrows, rows = rows, [r for r in rows if not r.get("tpu_file_corrupt")]
     R = [r["R_vs_ref"] for r in rows]
     new = judge(allrows)
@@ -343,9 +366,9 @@ def main():
         },
         "definitions": {
             "rel_L2": "‖a − b‖ ÷ ‖FP64‖",
-            "gpu_vs_ref": "三份 GPU 各自对 FP64 的 rel_L2 的中位数",
+            "gpu_vs_ref": f"{_fen(len(gnames))} GPU 各自对 FP64 的 rel_L2 的中位数",
             "R_vs_ref": "rel_L2(TPU, FP64) ÷ gpu_vs_ref",
-            "cos": "误差向量 (GPU_i − FP64) 与 (TPU − FP64) 的夹角余弦，三份取中位数（完整张量直接点积）",
+            "cos": f"误差向量 (GPU_i − FP64) 与 (TPU − FP64) 的夹角余弦，{_fen(len(gnames))}取中位数（完整张量直接点积）",
             "over_N": "tpu_vs_gpu_min ÷ gpu_noise_max（旧口径，分母 ‖GPU‖，与参照无关）",
             "judge": "同 dashboard/build.py 的 _step1_judge：超 2N 且 R > 1.2 不过；1–2N 且 R > 1.2 待定；N = 0 的按分辨率下限",
             "experts": "路由专家只比 GPU 全量抓数里有的（rank 0 本地 0–3 号）",
@@ -356,9 +379,22 @@ def main():
             "rule": f"TPU 梯度文件里每个张量的平方和对设备上算的（diag_step1.json 的 per_tensor.sq），相对差 > {FILE_SQ_TOL:g} 记为落盘损坏、不可判",
             "corrupt": [{"tensor": t, "file_sq_rel": x} for t, x in corrupt],
             "stats_exclude_corrupt": True,
+        }
+        if fchk is None
+        else {
+            "checked": bool(fchk["tpu_file_check"]["checked"]),
+            "rule": fchk["tpu_file_check"]["rule"],
+            "source": {
+                "file": os.path.basename(a.tpu_file_check),
+                "sha256": hashlib.sha256(open(a.tpu_file_check, "rb").read()).hexdigest(),
+                "run": fchk["inputs"]["run"],
+                "meta_sha256": fchk["inputs"]["meta_sha256"],
+            },
+            "corrupt": [{"tensor": t} for t, _ in corrupt],
+            "stats_exclude_corrupt": True,
         },
         "median": {
-            "gpu_vs_ref_each": [float(np.median([r["gpu_vs_ref_each"][i] for r in rows])) for i in range(3)],
+            "gpu_vs_ref_each": [float(np.median([r["gpu_vs_ref_each"][i] for r in rows])) for i in range(len(gnames))],
             "gpu_vs_ref": float(np.median([r["gpu_vs_ref"] for r in rows])),
             "tpu_vs_ref": float(np.median([r["tpu_vs_ref"] for r in rows])),
             "gpu_vs_tpu": float(np.median([r["gpu_vs_tpu"] for r in rows])),

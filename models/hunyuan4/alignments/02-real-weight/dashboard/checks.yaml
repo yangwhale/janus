@@ -27,6 +27,8 @@ header:
 summary_lead:
   - "## 规模"
   - ""
+  - "「判定」几列按检查项（表里的行）数：MTP loss 全程 / 后段、路由偏置均值 / 标准差各合成一项；「检查条数」和结果文件、运行登记里的「过 / 待定 / 不过」按检查条数数，所以两边数不一样（例：`tb5b-a` 这里 ✅ 3 🟡 3，结果文件 `t2b5b-l4` 是过 4、待定 3）。"
+  - ""
 
 how_to_read: []
 
@@ -45,13 +47,13 @@ levels:
     lead:
       - "目的：两边学习率等于登记值、TPU 检查点反向取回逐张量等于 HF 清单。"
       - ""
-      - "L0 共 {rows} 项检查，检查条数 {checks}（D1 第二代 / B 第二代 / D1 第一代 / B 第一代 / D1 第三代 / B 第三代）。"
+      - "L0 共 {rows} 项检查，检查条数 {checks}（D1 第二代 / B 第二代 / D1 第一代 / B 第一代 / D1 第三代 / B 第三代 / D1 1000 步 M42b 一代 / D1 1000 步 / B 1000 步 M42b 一代 / B 1000 步）。"
     tables:
       - rows:
           - name: 设置核对：逐步学习率
             what: 两边每一步记下的学习率都等于登记的常数 1e-5
             objects: 300 步
-            src: {d1: "t2d1-l0-settings:L0.settings.lr", b1: "t2b-l0-settings:L0.settings.lr", d14: "t2d14-l0-settings*:L0.settings.lr", d15: "t2d15-l0-settings*:L0.settings.lr", b4: "t2b4-l0-settings*:L0.settings.lr", b5: "t2b5-l0-settings*:L0.settings.lr"}
+            src: {d1: "t2d1-l0-settings:L0.settings.lr", b1: "t2b-l0-settings:L0.settings.lr", d14: "t2d14-l0-settings*:L0.settings.lr", d15: "t2d15-l0-settings*:L0.settings.lr", b4: "t2b4-l0-settings*:L0.settings.lr", b5: "t2b5-l0-settings*:L0.settings.lr", d15b: "t2d15b-l0-settings:L0.settings.lr", b5b: "t2b5b-l0-settings:L0.settings.lr"}
           - name: 权重转换往返与 dtype 清单
             what: TPU 检查点反向取回逐张量对 HF 清单逐位，dtype 清单全符合
             objects: "B：60 个张量；D1：58 个张量"
@@ -79,8 +81,8 @@ levels:
             agg: 逐张量算 r 与 R；有超 2N 而 R > 1.2 的判不过，只有 1–2N 的判待定
             src: {b5: "t2b-step1-grad-vs-fp64:L3.step1.grads.vs_gpu", d15: "t2d1-step1-grad-vs-fp64:L3.step1.grads.vs_gpu"}
             why: >-
-              B：59 个张量的 rel_L2 对 FP64 中位数 GPU 1.41e-3、TPU 1.61e-3，R 0.96；GPU 三份噪声中位数只有 2.0e-4，49 个张量超出 2N，其中 R > 1.2 的 16 个：RMSNorm 权重 8 个（第 0 层 q latent norm R 3.11 最大，norm 一组 R 中位数 1.60）、第 1 层 sink（R 3.07）、第 1 层 iHC 3 个、q 的上下投影 3 个，另有 N = 0 的第 0 层索引器 `k_norm.bias`（R 1.41）。RMSNorm 权重梯度 TPU 更远是真实权重上新出现的（hy4-mini、hy4-mid 的 norm 一组 R 中位数 0.91 / 0.99），待查。
-              D1：57 个张量里 5 个 TPU 梯度文件落盘损坏、不可判（MTP 层输出门与专家 gate_up / down、输出头、词嵌入；文件平方和对不上设备上算的，取回时一段被写成 0）。其余 52 个中位数 GPU 1.86e-3、TPU 2.18e-3，R 0.93；R > 1.2 的 11 个：`hc_head_scale` 4.43 / `hc_head_base` 1.90、第 0 层与 MTP 层 sink 3.13 / 2.46、RMSNorm 权重 4 个（1.46–2.22）、第 0 层 q 的上下投影 1.46 / 1.37，另有 N = 0 的 `k_norm.bias`（1.41）。
+              B：59 个张量的 rel_L2 对 FP64 中位数 GPU 1.41e-3、TPU 1.61e-3，R 0.96；GPU 三份噪声中位数只有 2.0e-4，49 个张量超出 2N，其中 R > 1.2 的 16 个：RMSNorm 权重 8 个（第 0 层 q latent norm R 3.11 最大，norm 一组 R 中位数 1.60）、第 1 层 sink（R 3.07）、第 1 层 iHC 3 个、q 的上下投影 3 个，另有 N = 0 的第 0 层索引器 `k_norm.bias`（R 1.41）。RMSNorm 权重梯度 TPU 更远是真实权重上新出现的（hy4-mini、hy4-mid 的 norm 一组 R 中位数 0.91 / 0.99）；机制已查明：dγ 多舍一次 BF16（根源一览第 23 行，打开 `rmsnorm_scale_grad_fp32` 后这 9 个张量 R 中位数 1.60 → 0.98，9 个里 3 个仍 > 1.2：两层 `q_a_layernorm` 和第 1 层 `kv_a_layernorm`，再关 base2 后都回到 1.2 以内，`t2b-step1-norm-scale-grad-fp32.json`、`t2b-step1-qpath-base2-exp.json`），但这个开关不在对齐配置里，所以照结果仍记未定责。
+              D1：57 个张量里 5 个 TPU 梯度文件取回损坏、不可判（MTP 层输出门与专家 gate_up / down、输出头、词嵌入；文件平方和对不上设备上算的。当时按 256 MiB 分块并行取回、只核总字节数，有的块中途断流，本机文件留下没写入的空洞，读出来是 0；25 个空洞都止于块边界，碰到的正好是这 5 个张量，见 `td6diag-grad-file-holes.json`；之后的取回逐块核字节并核 sha256）。判定以 td6diag 的 52 个为准；5 个损坏的张量另用 td7diag 看过（[`t2d1-td7-step1-grad-vs-fp64.json`](results/t2d1-td7-step1-grad-vs-fp64.json)），R 0.93–1.15，都不超 1.2。td7diag 不是同配置重跑：MaxText `2306c7a5`，含 M42（`splash_dsinks_fp32` 开，现已从对齐配置撤下），所以两份的 sink 不能互换（第 0 层 sink R 3.13 / 2.66）。其余 52 个中位数 GPU 1.86e-3、TPU 2.18e-3，R 0.93；R > 1.2 的 11 个：`hc_head_scale` 4.43 / `hc_head_base` 1.90、第 0 层与 MTP 层 sink 3.13 / 2.46、RMSNorm 权重 4 个（1.46–2.22）、第 0 层 q 的上下投影 1.46 / 1.37，另有 N = 0 的 `k_norm.bias`（1.41）。
 
   - id: L4
     title: L4 · 多步训练
@@ -88,7 +90,7 @@ levels:
     lead:
       - "目的：训练 300 步与 1000 步，看 TPU 被测对 GPU 基线的差是否落在 GPU 自己重跑的散布里。"
       - ""
-      - "L4 共 {rows} 项检查，检查条数 {checks}（D1 第二代 / B 第二代 / D1 第一代 / B 第一代 / D1 第三代 / B 第三代 / D1 1000 步 / B 1000 步）。窗口：主 loss 第 1–300 步与第 101–300 步，其余第 1–300 步（1000 步两列是第 1–1000 步与第 101–1000 步）；MTP loss 只有 D1；路由偏置 B 是第 1 层、D1 是 MTP 层（`PROTOCOL.md` 第 4 节 T2 一行）。"
+      - "L4 共 {rows} 项检查，检查条数 {checks}（D1 第二代 / B 第二代 / D1 第一代 / B 第一代 / D1 第三代 / B 第三代 / D1 1000 步 M42b 一代 / D1 1000 步 / B 1000 步 M42b 一代 / B 1000 步）。窗口：主 loss 第 1–300 步与第 101–300 步，其余第 1–300 步（1000 步两列是第 1–1000 步与第 101–1000 步）；MTP loss 只有 D1；路由偏置 B 是第 1 层、D1 是 MTP 层（`PROTOCOL.md` 第 4 节 T2 一行）。"
     tables:
       - rows:
           - name: 主 loss
@@ -118,7 +120,7 @@ levels:
             what: 逐步裁剪前全局梯度范数；分母用参照（2026-11-10 起，原为两边均值）
             objects: "`grad_norm`，全程"
             src: {d1z: "t2d1z-l4:L4.grad_norm", b: "t2bz-l4:L4.grad_norm", d1: "t2d1-l4:L4.grad_norm", d14: "t2d14-l4*:L4.grad_norm", d15b: "t2d15b-l4:L4.grad_norm", d15: "t2d15-l4*:L4.grad_norm", b4: "t2b4-l4*:L4.grad_norm", b5b: "t2b5b-l4:L4.grad_norm", b5: "t2b5-l4*:L4.grad_norm"}
-            why: D1 待定（第二代最大单步：N 3.52e-2、TPU 5.68e-2，r 1.62；第三代 MARE：N 2.97e-3、TPU 4.27e-3，r 1.44），待查；B 第二代过（MARE：N 5.24e-3、TPU 5.06e-3，r 0.97），第三代待定（带符号均值：N 7.84e-4、TPU 1.19e-3，r 1.52）。
+            why: D1 待定（第二代最大单步：N 3.46e-2、TPU 5.85e-2，r 1.69；第三代 MARE：N 2.97e-3、TPU 4.28e-3，r 1.44），待查；B 第二代过（MARE：N 5.26e-3、TPU 5.06e-3，r 0.96），第三代待定（带符号均值：N 7.65e-4、TPU 1.23e-3，r 1.61）；1000 步 B 两份都待定（`tb5b-a` MARE：N 8.55e-3、TPU 9.65e-3，r 1.13）。分母 2026-11-10 起用参照，读数以结果文件为准。
           - name: param_norm
             what: 逐步更新后参数范数，两边比精确值
             objects: "`param_norm_fp64` 对 `param_norm_exact`，全程"
@@ -128,10 +130,12 @@ levels:
             what: 逐步路由偏置的均值、标准差
             objects: B 第 1 层；D1 MTP 层
             src: {d1z: "t2d1z-l4:L4.router.*", b: "t2bz-l4:L4.router.*", d1: "t2d1-l4:L4.router.*", d14: "t2d14-l4*:L4.router.*", d15b: "t2d15b-l4:L4.router.*", d15: "t2d15-l4*:L4.router.*", b4: "t2b4-l4*:L4.router.*", b5b: "t2b5b-l4:L4.router.*", b5: "t2b5-l4*:L4.router.*"}
-            why: B 第二代均值、标准差 MARE（N 0.121 / 2.82e-3、TPU 0.134 / 3.22e-3，r 1.10 / 1.14），待定；B 第三代都过；D1 第二代都过；第一代均值待定；第三代均值待定（最大单步：N 6.62e-3、TPU 8.97e-3，r 1.36）、标准差过。待查。
+            why: B 第二代均值、标准差 MARE（N 0.121 / 2.82e-3、TPU 0.134 / 3.22e-3，r 1.10 / 1.14），待定；B 第三代都过；D1 第二代都过；第一代均值待定；第三代均值待定（最大单步：N 6.62e-3、TPU 8.97e-3，r 1.36）、标准差过。D1 1000 步两份（`td5-a`、`td5b-b`）均值都待定，都是最大单步 1.20e-2（N 7.16e-3，r 1.68）：两份结果文件里这个值逐位相同，而两份运行的 M42b 和 MaxText 提交不同；推测最大单步落在两份还完全相同的头几步，且偏置均值接近 0、相对差被放大（逐步明细不在仓库里，未核；若属实，这一格不随开关变）。其余待查。
 unlisted_reasons:
-  t2b-l4-vs-8gpu: 诊断：tb5-b 对 8 份 GPU（gb3-a…h）的 r 与 GPU 28 对留一 r；L4 判定只对单一 golden gb3-a，文件里的 rules 是未采用的候选
-  t2d1-l4-vs-8gpu: 诊断：td5-a、td5b-b 对 8 份 GPU（gd3-a…h），同上；判定只对 gd3-a
+  t2b-l4-vs-8gpu: 诊断：tb5-b 对 8 份 GPU（gb3-a…h）的 r 与 GPU 28 对留一 r；L4 判定只对单一 golden gb3-a，文件里的 rules 是未采用的候选。grad_norm 一行早于 2026-11-10 的分母改动，已过时，现行读数见 `t2b5b-l4-vs-8gpu`
+  t2b5b-l4-vs-8gpu: 诊断：tb5-b、tb5b-a 对 8 份 GPU（gb3-a…h），用现行脚本重算（grad_norm 以参照作分母）；其余各项 tb5 与 `t2b-l4-vs-8gpu` 逐位相同，tb5b 对 gb3-a 与 `t2b5b-l4` 一致；判定只对 gb3-a
+  t2d1-l4-vs-8gpu: 诊断：td5-a、td5b-b 对 8 份 GPU（gd3-a…h），同上；判定只对 gd3-a。grad_norm 一行早于 2026-11-10 的分母改动，已过时（没有重算）
+  td6diag-grad-file-holes: D1 第 1 步诊断 td6diag 的梯度文件里有 25 个没写入的空洞（取回断流），碰到的 5 个张量即 L3 里不可判的那 5 个；`tpu_grad_file_holes.py`
   t2b-step1-qpath-base2-exp: B 第 1 步 q 路与 norm 梯度在 sa_use_base2_exp 关（tqa-nb2）与现行（tb6diag）下各对 CPU FP64，含误差沿 FP64 方向的整体缩放；诊断（D22）
   t2b-step1-norm-scale-grad-fp32: B 第 1 步 RMSNorm 权重梯度在 rmsnorm_scale_grad_fp32 关 / 开下各对 CPU FP64（tnorm-base / tnorm-sg，只存 norm 权重）；诊断（D22）
   t2b-step1-attn-along-ref: B 第 1 步注意力投影与 norm 梯度误差里沿 FP64 方向的整体缩放（tb6diag）；诊断（D22）

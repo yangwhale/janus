@@ -8,10 +8,15 @@ train_hy4.py 在建好配置之后整份写下）对 GPU 运行的 meta.json 与
   TPU 记的 hf_config_sha256 必须等于本地 config.json 的 sha256（这两条也作为行列出）。
 - same_gpu：训练设置。TPU 的值必须等于 GPU meta.config 里记的值（经写明的换算）。
 - registered：两边都必须等于登记值（PROTOCOL 第 1.2 节的设置，如 dropout 0、权重衰减 0）。
-不在表里的项不判：MaxText 有几百个键，大部分和这次对齐无关（并行、调度、检查点、评估等）；精度开关逐项见开关表与
-config-alignment.md（人工对照），这里只核「两边语义设置相同」。
+不在表里的项不判：MaxText 有几百个键，大部分和这次对齐无关（并行、调度、检查点、评估等）。默认只核「两边语义设置相同」。
 
-  python l0_config_vs_gpu.py --tpu-meta <TPU 运行>/meta.json --gpu-meta <GPU 运行>/meta.json --hf-config <HF 目录>/config.json --out <结果 json>
+可选 --precision-switches：另加第四种规则 precision，逐项核 TPU 实际生效的精度开关等于 01-mini/config-alignment.md 登记的
+对齐配置值（「数值精度」表 TPU 一栏「默认 → T1」箭头右边的值，和「为对齐改过的代码」开关表里的开关）。这些开关 GPU 一侧
+没有对应的键（GPU 的舍入位置是写在代码里的），所以参照是登记值，不是 GPU meta。登记值抄在下面的 PRECISION 表里，改
+config-alignment.md 时要同步改这张表。
+
+  python l0_config_vs_gpu.py --tpu-meta <TPU 运行>/meta.json --gpu-meta <GPU 运行>/meta.json --hf-config <HF 目录>/config.json \
+      --out <结果 json> [--stage <阶段名>] [--precision-switches]
 """
 from __future__ import annotations
 
@@ -29,6 +34,59 @@ def tpu_full_layers(t: dict) -> list[int]:
     """MaxText 混元 4：稠密层都自带索引器；MoE 层按 indexer_share_interval 一组，组内第一层自带、其余复用（模型代码的规则）。"""
     fd, n, k = int(t["first_num_dense_layers"]), int(t["base_num_decoder_layers"]), int(t["indexer_share_interval"])
     return [i for i in range(n) if i < fd or (i - fd) % k == 0]
+
+
+_CA = "config-alignment.md"
+# (键, 登记的对齐配置值, 出处行)。值抄自 01-mini/config-alignment.md（2026-11-11 C 口径版：现行比较 tc-a 那一版；上一代 tz-off-rep 没有最后加的 M52、M58 两行）。
+PRECISION = [
+    ("dtype", "bfloat16", "数值精度「计算、主权重、梯度、优化器状态」"),
+    ("weight_dtype", "float32", "数值精度「计算、主权重、梯度、优化器状态」"),
+    ("grad_dtype", "float32", "数值精度「计算、主权重、梯度、优化器状态」"),
+    ("mu_dtype", "float32", "数值精度「计算、主权重、梯度、优化器状态」"),
+    ("matmul_precision", "default", "数值精度「矩阵乘默认精度」"),
+    ("dense_fp32_accumulation", True, "数值精度「GEMM 累加只舍一次」（M12）"),
+    ("rmsnorm_single_rounding", True, "数值精度「RMSNorm 舍入次数」（M9）"),
+    ("routed_gate_bf16_rounding", True, "数值精度「路由 GEMM」（M8）"),
+    ("float32_gate_logits", True, "数值精度「路由 GEMM」"),
+    ("router_matmul_precision", "highest", "数值精度「路由 GEMM」"),
+    ("mlp_activation_round_per_op", True, "数值精度「门控激活舍入」（M10）"),
+    ("indexer_fp32_scores", True, "数值精度「索引器打分」（M23）"),
+    ("indexer_weights_proj_bf16_weight", True, "数值精度「索引器打分」（M27）"),
+    ("hc_matmul_precision", "highest", "数值精度「iHC 混合系数」"),
+    ("ihc_stream_sum_unrolled", True, "数值精度「iHC 四路流加权和」（M28）"),
+    ("ihc_force_bf16_rounding", True, "数值精度「iHC 分支输入与更新后的流的 BF16 舍入」（M36）"),
+    ("ihc_stream_grad_gpu_order", True, "数值精度「iHC 与 hc_head 的流梯度、分支输出的 BF16 舍入」（M58，2026-11-11 起 C 口径）"),
+    ("hc_head_force_bf16_rounding", True, "数值精度「hc_head 收拢之后的 BF16 舍入」（M52，2026-11-11 起 C 口径）"),
+    ("logits_dot_in_fp32", True, "数值精度「输出头」（M13）"),
+    ("logits_matmul_precision", "highest", "数值精度「输出头」（M13）"),
+    ("transcendental_accuracy_highest", True, "数值精度「FP32 超越函数」（M33、M37）"),
+    ("accurate_sigmoid_attn_gate", None, "开关表 M38（默认 null，跟随 transcendental_accuracy_highest）"),
+    ("accurate_sigmoid_hc_head", None, "开关表 M38（同上）"),
+    ("accurate_sigmoid_ihc", None, "开关表 M38（同上）"),
+    ("accurate_sigmoid_router", None, "开关表 M38（同上）"),
+    ("accurate_silu_dense", None, "开关表 M38（同上）"),
+    ("accurate_silu_routed", None, "开关表 M38（同上）"),
+    ("accurate_silu_shared", None, "开关表 M38（同上）"),
+    ("muon_mcore_ns_bf16", True, "数值精度「Newton–Schulz 的矩阵乘」（M31）"),
+    ("muon_adam_accurate", True, "数值精度「Adam 的 FP32 除法、sqrt 与偏差修正」（M34）"),
+    ("rmsnorm_scale_grad_fp32", False, "数值精度「三个梯度 FP32 开关」（T1 不开）"),
+    ("logits_dense_wgrad_fp32", False, "数值精度「三个梯度 FP32 开关」（T1 不开）"),
+    ("embedding_grad_fp32", False, "数值精度「三个梯度 FP32 开关」（T1 不开）"),
+    ("moe_mcore_prob_before_fc2", True, "开关表 M40"),
+    ("mlp_fused_fc1_dgrad", True, "开关表 M41"),
+    ("splash_dsinks_fp32", False, "开关表 M42（对齐配置不开）"),
+    ("splash_dsinks_gpu_order", True, "开关表 M42b（M47）"),
+    ("sa_use_base2_exp", False, "开关表 M43；并行与确定性「注意力 实现」（2026-11-11 起关）"),
+    ("indexer_kd_generalized_kl", True, "开关表 M50（只改记录值）"),
+]
+
+
+def precision_rows(t: dict) -> list[dict]:
+    return [
+        {"category": "精度开关", "item": k, "rule": "precision", "tpu": t.get(k, "<缺>"), "ref": want,
+         "ref_source": f"{_CA} {src}", "equal": t.get(k, "<缺>") == want, "note": ""}
+        for k, want, src in PRECISION
+    ]
 
 
 def rows_for(t: dict, g: dict, h: dict, tm: dict, gm: dict, hf_sha: str):
@@ -144,21 +202,30 @@ def main():
     p.add_argument("--gpu-meta", required=True)
     p.add_argument("--hf-config", required=True)
     p.add_argument("--out", required=True)
+    p.add_argument("--stage", default="t1-l0-config", help="结果里记的阶段名（默认 t1-l0-config）")
+    p.add_argument("--precision-switches", action="store_true",
+                   help="另核精度开关：TPU 实际生效值对 config-alignment.md 登记的对齐配置值（规则 precision）")
     a = p.parse_args()
     tm = json.loads(Path(a.tpu_meta).read_text())
     gm = json.loads(Path(a.gpu_meta).read_text())
     h = json.loads(Path(a.hf_config).read_text())
     hf_sha = hashlib.sha256(Path(a.hf_config).read_bytes()).hexdigest()
     rows = rows_for(tm["maxtext_config_full"], gm, h, tm, gm, hf_sha)
+    rules = ["same_hf", "same_gpu", "registered"]
+    if a.precision_switches:
+        rows += precision_rows(tm["maxtext_config_full"])
+        rules.append("precision")
     bad = [f"{r['item']}：TPU {r['tpu']!r}，参照 {r['ref']!r}（{r['ref_source']}）" for r in rows if not r["equal"]]
-    res = {"schema_version": 1, "stage": "t1-l0-config", "model": "hunyuan4-mini",
+    res = {"schema_version": 1, "stage": a.stage, "model": "hunyuan4-mini",
            "inputs": {"tpu_run": tm["run_name"], "gpu_run": gm["run_name"], "hf_config_sha256": hf_sha},
            "checks": [{"id": "L0.config.items", "type": "config_diff", "level": "L0", "status": "fail" if bad else "pass",
                        "threshold": {"kind": "exact"},
                        "metrics": {"items": len(rows), "differ": len(bad),
-                                   "by_rule": {k: sum(r["rule"] == k for r in rows) for k in ("same_hf", "same_gpu", "registered")}},
+                                   "by_rule": {k: sum(r["rule"] == k for r in rows) for k in rules}},
                        "message": f"{len(rows)} 项（结构对 HF config {sum(r['rule'] == 'same_hf' for r in rows)}、训练设置对 GPU meta "
-                                  f"{sum(r['rule'] == 'same_gpu' for r in rows)}、登记值 {sum(r['rule'] == 'registered' for r in rows)}）：不同 {len(bad)}",
+                                  f"{sum(r['rule'] == 'same_gpu' for r in rows)}、登记值 {sum(r['rule'] == 'registered' for r in rows)}"
+                                  + (f"、精度开关对登记的对齐配置 {sum(r['rule'] == 'precision' for r in rows)}" if a.precision_switches else "")
+                                  + f"）：不同 {len(bad)}",
                        "details_inline": {"differ": bad, "rows": rows}}]}
     res["summary"] = {k: sum(c["status"] == k for c in res["checks"]) for k in ("pass", "fail", "inconclusive", "error")}
     Path(a.out).write_text(json.dumps(res, ensure_ascii=False, indent=1, default=str))

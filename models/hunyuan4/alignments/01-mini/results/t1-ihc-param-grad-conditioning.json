@@ -1,0 +1,1325 @@
+{
+ "what": "iHC 参数梯度对 token 长求和的条件数 κ（GPU g2s-a 第 1 步 rank 0 第 0 个 microbatch，一条 4096 token 序列）",
+ "definition": {
+  "kappa_per_element": "参数梯度第 i 个元素 = Σ_t c_t,i；κ_i = Σ_t |c_t,i| ÷ |Σ_t c_t,i|（同 t1-ihc-post-grad-conditioning.json 的定义，用到参数上）",
+  "kappa_tensor": "‖Σ_t |c_t|‖₂ ÷ ‖Σ_t c_t‖₂（整张量；R 按整张量相对 L2 算，对应这一项）",
+  "c_t": "hc_base：dL/dz_t（z = sigmoid 前的混合 logit）；hc_scale：Σ_k dL/dz_t,k · mixes_t,k（pre、post 各一个）；hc_fn：dL/dz_t,j · scale_j · rmsnorm(x_t)_i",
+  "scope": "只有一条序列；整批梯度是 16 条序列（8 rank × 2 microbatch）之和，κ 在整批上会不同（推断：多条序列再相消时更大，同号时接近），没有量"
+ },
+ "source": {
+  "run": "g2s-a",
+  "index_sha256": "ea625f76c1c026970e3ad05a41a7e4065365fef37e389af25ac2f3bf0093c553",
+  "constants": {
+   "hc_mult": 4,
+   "hidden": 1024,
+   "hc_eps": 1e-06,
+   "hc_magnitude": 2.0,
+   "rms_norm_eps": 1e-05
+  },
+  "precision": "FP64 重建；抓数本身是 BF16 激活与梯度、FP32 参数"
+ },
+ "self_check": {
+  "per_layer": {
+   "0": {
+    "fwd_input_layernorm_vs_capture": 0.0017246327649975903,
+    "fwd_pre_mlp_layernorm_vs_capture": 0.002370574075634123,
+    "fwd_layer_out_vs_capture": 0.002056814902292078
+   },
+   "1": {
+    "fwd_input_layernorm_vs_capture": 0.002388916020955366,
+    "fwd_pre_mlp_layernorm_vs_capture": 0.0024746271638117004,
+    "fwd_layer_out_vs_capture": 0.0022932296110538776,
+    "bwd_input_stream_grad_vs_capture": 0.0029620866143166007
+   },
+   "2": {
+    "fwd_input_layernorm_vs_capture": 0.00221148362764062,
+    "fwd_pre_mlp_layernorm_vs_capture": 0.00251617492408484,
+    "fwd_layer_out_vs_capture": 0.002333526955209957,
+    "bwd_input_stream_grad_vs_capture": 0.0028307275122687334
+   },
+   "3": {
+    "fwd_input_layernorm_vs_capture": 0.002206264091682109,
+    "fwd_pre_mlp_layernorm_vs_capture": 0.002497085895196086,
+    "fwd_layer_out_vs_capture": 0.0023260604225786847,
+    "bwd_input_stream_grad_vs_capture": 0.0026165778209074004
+   },
+   "4": {
+    "fwd_input_layernorm_vs_capture": 0.002319951104075102,
+    "fwd_pre_mlp_layernorm_vs_capture": 0.002471645880038592,
+    "fwd_layer_out_vs_capture": 0.0023375604251257838,
+    "bwd_input_stream_grad_vs_capture": 0.0024438532509907717
+   },
+   "5": {
+    "fwd_input_layernorm_vs_capture": 0.002244357887876751,
+    "fwd_pre_mlp_layernorm_vs_capture": 0.00257163820188636,
+    "fwd_layer_out_vs_capture": 0.0023427688912919064,
+    "bwd_input_stream_grad_vs_capture": 0.0024105187006154684
+   },
+   "6": {
+    "fwd_input_layernorm_vs_capture": 0.002221945962260222,
+    "fwd_pre_mlp_layernorm_vs_capture": 0.00248337941640272,
+    "fwd_layer_out_vs_capture": 0.0023350753019106656,
+    "bwd_input_stream_grad_vs_capture": 0.002398710577430017
+   }
+  },
+  "ffn_post_gate_kappa_reproduced": {
+   "1": {
+    "kappa_old": [
+     709.6429900892307,
+     1067.0456244539023,
+     1358.5791663162609,
+     719.8753917720323
+    ],
+    "kappa_recomputed": [
+     709.6429900892307,
+     1067.0456244539023,
+     1358.5791663162609,
+     719.8753917720323
+    ],
+    "max_rel_diff": 0.0
+   },
+   "2": {
+    "kappa_old": [
+     25.193859903000586,
+     24.88135472362562,
+     24.76445055027428,
+     25.284038092884217
+    ],
+    "kappa_recomputed": [
+     25.193859903000586,
+     24.88135472362562,
+     24.76445055027428,
+     25.284038092884217
+    ],
+    "max_rel_diff": 0.0
+   },
+   "3": {
+    "kappa_old": [
+     93.39957147864072,
+     96.3846844603412,
+     95.02423501683475,
+     93.1110950790171
+    ],
+    "kappa_recomputed": [
+     93.39957147864072,
+     96.3846844603412,
+     95.02423501683475,
+     93.1110950790171
+    ],
+    "max_rel_diff": 0.0
+   }
+  },
+  "split_check_max": 1.2440698570017343e-14
+ },
+ "six_mz_opt2": {
+  "model.layers.2.hc_attn_layer.hc_pre.hc_scale": {
+   "kappa_tensor": 21.29173480863083,
+   "kappa_per_element": [
+    14.951541339764386,
+    21.291812393632863
+   ],
+   "rank_of_42": 17
+  },
+  "model.layers.3.hc_mlp_layer.hc_pre.hc_base": {
+   "kappa_tensor": 94.43910432420417,
+   "kappa_per_element": [
+    46.21828712000505,
+    41.802344855550906,
+    132.24134252266364,
+    300.9845680249936,
+    93.39943994597493,
+    96.3828798537876,
+    95.02588644318827,
+    93.11084516365808
+   ],
+   "rank_of_42": 5
+  },
+  "model.layers.3.hc_attn_layer.hc_pre.hc_scale": {
+   "kappa_tensor": 761.747740843065,
+   "kappa_per_element": [
+    9.884805970546427,
+    772.759823225733
+   ],
+   "rank_of_42": 2
+  },
+  "model.layers.3.hc_mlp_layer.hc_pre.hc_fn": {
+   "kappa_tensor": 37.41189931983776,
+   "kappa_per_element_quantiles": {
+    "min": 6.531336860597,
+    "q10": 16.89577390686974,
+    "median": 46.024172651463644,
+    "q90": 248.51506877511926,
+    "max": 3438160.350622505
+   },
+   "rank_of_42": 8
+  },
+  "model.layers.4.hc_attn_layer.hc_pre.hc_base": {
+   "kappa_tensor": 10.585053824399429,
+   "kappa_per_element": [
+    3.3455010649166077,
+    3.159010506207818,
+    2.630416353956515,
+    24.023091143623276,
+    10.574796297509819,
+    10.615454611251353,
+    10.591248333460408,
+    10.559186725033234
+   ],
+   "rank_of_42": 23
+  },
+  "model.layers.4.hc_attn_layer.hc_pre.hc_scale": {
+   "kappa_tensor": 28.183355110936965,
+   "kappa_per_element": [
+    6.003777430580371,
+    28.187485541346376
+   ],
+   "rank_of_42": 10
+  }
+ },
+ "five_tz_off_rep": {
+  "model.layers.6.hc_mlp_layer.hc_pre.hc_base": {
+   "kappa_tensor": 7.779032544574287,
+   "kappa_per_element": [
+    9.774559801468355,
+    27.04867391661999,
+    10.67260560118849,
+    6.938487229011206,
+    7.778991520252875,
+    7.778980556987643,
+    7.778993460250535,
+    7.778984779113346
+   ],
+   "rank_of_42": 33
+  },
+  "model.layers.0.hc_attn_layer.hc_pre.hc_base": {
+   "kappa_tensor": 3.4420769873387598,
+   "kappa_per_element": [
+    6.255323234166043,
+    6.255323520663143,
+    6.255309147112798,
+    6.25529353995109,
+    3.4451449651513277,
+    3.446154421558143,
+    3.436740782339232,
+    3.4402048407638173
+   ],
+   "rank_of_42": 41
+  },
+  "model.layers.2.hc_attn_layer.hc_pre.hc_scale": {
+   "kappa_tensor": 21.29173480863083,
+   "kappa_per_element": [
+    14.951541339764386,
+    21.291812393632863
+   ],
+   "rank_of_42": 17
+  },
+  "model.layers.3.hc_attn_layer.hc_pre.hc_scale": {
+   "kappa_tensor": 761.747740843065,
+   "kappa_per_element": [
+    9.884805970546427,
+    772.759823225733
+   ],
+   "rank_of_42": 2
+  },
+  "model.layers.6.hc_mlp_layer.hc_pre.hc_fn": {
+   "kappa_tensor": 8.038330384205999,
+   "kappa_per_element_quantiles": {
+    "min": 5.2856620302088775,
+    "q10": 7.043112792407073,
+    "median": 9.646652855800285,
+    "q90": 34.435949002833944,
+    "max": 107368.98230030158
+   },
+   "rank_of_42": 32
+  }
+ },
+ "rank_by_kappa_tensor": {
+  "n": 42,
+  "order": [
+   [
+    "model.layers.5.hc_mlp_layer.hc_pre.hc_base",
+    2035.782376022727
+   ],
+   [
+    "model.layers.3.hc_attn_layer.hc_pre.hc_scale",
+    761.747740843065
+   ],
+   [
+    "model.layers.1.hc_mlp_layer.hc_pre.hc_base",
+    473.21193626420984
+   ],
+   [
+    "model.layers.3.hc_attn_layer.hc_pre.hc_base",
+    139.1086219696516
+   ],
+   [
+    "model.layers.3.hc_mlp_layer.hc_pre.hc_base",
+    94.43910432420417
+   ],
+   [
+    "model.layers.5.hc_mlp_layer.hc_pre.hc_fn",
+    80.3433518766951
+   ],
+   [
+    "model.layers.5.hc_mlp_layer.hc_pre.hc_scale",
+    70.3066740232221
+   ],
+   [
+    "model.layers.3.hc_mlp_layer.hc_pre.hc_fn",
+    37.41189931983776
+   ],
+   [
+    "model.layers.3.hc_mlp_layer.hc_pre.hc_scale",
+    31.456203590845274
+   ],
+   [
+    "model.layers.4.hc_attn_layer.hc_pre.hc_scale",
+    28.183355110936965
+   ],
+   [
+    "model.layers.2.hc_attn_layer.hc_pre.hc_base",
+    26.331483671275503
+   ],
+   [
+    "model.layers.2.hc_mlp_layer.hc_pre.hc_base",
+    25.033807155310154
+   ],
+   [
+    "model.layers.0.hc_mlp_layer.hc_pre.hc_base",
+    23.346665965689915
+   ],
+   [
+    "model.layers.1.hc_mlp_layer.hc_pre.hc_scale",
+    22.749015634087957
+   ],
+   [
+    "model.layers.1.hc_mlp_layer.hc_pre.hc_fn",
+    22.03201700333674
+   ],
+   [
+    "model.layers.2.hc_attn_layer.hc_pre.hc_fn",
+    21.73918167646917
+   ],
+   [
+    "model.layers.2.hc_attn_layer.hc_pre.hc_scale",
+    21.29173480863083
+   ],
+   [
+    "model.layers.3.hc_attn_layer.hc_pre.hc_fn",
+    20.95343105497537
+   ],
+   [
+    "model.layers.0.hc_attn_layer.hc_pre.hc_scale",
+    17.095956197208746
+   ],
+   [
+    "model.layers.2.hc_mlp_layer.hc_pre.hc_fn",
+    12.53761002440507
+   ],
+   [
+    "model.layers.4.hc_attn_layer.hc_pre.hc_fn",
+    11.494499443384607
+   ],
+   [
+    "model.layers.0.hc_mlp_layer.hc_pre.hc_fn",
+    10.590581692164799
+   ],
+   [
+    "model.layers.4.hc_attn_layer.hc_pre.hc_base",
+    10.585053824399429
+   ],
+   [
+    "model.layers.0.hc_mlp_layer.hc_pre.hc_scale",
+    10.451899910442396
+   ],
+   [
+    "model.layers.6.hc_attn_layer.hc_pre.hc_scale",
+    10.39849591664336
+   ],
+   [
+    "model.layers.0.hc_attn_layer.hc_pre.hc_fn",
+    9.858999033672555
+   ],
+   [
+    "model.layers.1.hc_attn_layer.hc_pre.hc_scale",
+    9.26860329705222
+   ],
+   [
+    "model.layers.6.hc_mlp_layer.hc_pre.hc_scale",
+    8.85333286922451
+   ],
+   [
+    "model.layers.4.hc_mlp_layer.hc_pre.hc_scale",
+    8.517419003423827
+   ],
+   [
+    "model.layers.6.hc_attn_layer.hc_pre.hc_fn",
+    8.205374728503731
+   ],
+   [
+    "model.layers.6.hc_attn_layer.hc_pre.hc_base",
+    8.16971486845139
+   ],
+   [
+    "model.layers.6.hc_mlp_layer.hc_pre.hc_fn",
+    8.038330384205999
+   ],
+   [
+    "model.layers.6.hc_mlp_layer.hc_pre.hc_base",
+    7.779032544574287
+   ],
+   [
+    "model.layers.2.hc_mlp_layer.hc_pre.hc_scale",
+    7.438952083293939
+   ],
+   [
+    "model.layers.1.hc_attn_layer.hc_pre.hc_fn",
+    7.346415054038602
+   ],
+   [
+    "model.layers.5.hc_attn_layer.hc_pre.hc_scale",
+    6.574684415027801
+   ],
+   [
+    "model.layers.5.hc_attn_layer.hc_pre.hc_fn",
+    6.170696472383143
+   ],
+   [
+    "model.layers.5.hc_attn_layer.hc_pre.hc_base",
+    5.85666586236288
+   ],
+   [
+    "model.layers.4.hc_mlp_layer.hc_pre.hc_fn",
+    5.7893699804923155
+   ],
+   [
+    "model.layers.4.hc_mlp_layer.hc_pre.hc_base",
+    5.456280704502374
+   ],
+   [
+    "model.layers.0.hc_attn_layer.hc_pre.hc_base",
+    3.4420769873387598
+   ],
+   [
+    "model.layers.1.hc_attn_layer.hc_pre.hc_base",
+    2.2470606750343123
+   ]
+  ]
+ },
+ "kappa_vs_R": {
+  "mz_opt2": {
+   "file": "t1zg-step1-train-grad-vs-fp64.json",
+   "n": 42,
+   "spearman_kappa_vs_R": 0.24771088242443887,
+   "R": {
+    "model.layers.0.hc_attn_layer.hc_pre.hc_base": 0.6766149848188634,
+    "model.layers.0.hc_attn_layer.hc_pre.hc_fn": 1.0174621890394322,
+    "model.layers.0.hc_attn_layer.hc_pre.hc_scale": 1.6165147767552812,
+    "model.layers.0.hc_mlp_layer.hc_pre.hc_base": 0.18297694251565408,
+    "model.layers.0.hc_mlp_layer.hc_pre.hc_fn": 0.8577036550290359,
+    "model.layers.0.hc_mlp_layer.hc_pre.hc_scale": 0.7529638913986451,
+    "model.layers.1.hc_attn_layer.hc_pre.hc_base": 0.5897535040954428,
+    "model.layers.1.hc_attn_layer.hc_pre.hc_fn": 0.8700551492569153,
+    "model.layers.1.hc_attn_layer.hc_pre.hc_scale": 0.6868810964023657,
+    "model.layers.1.hc_mlp_layer.hc_pre.hc_base": 0.35793782919520334,
+    "model.layers.1.hc_mlp_layer.hc_pre.hc_fn": 0.7600940417182398,
+    "model.layers.1.hc_mlp_layer.hc_pre.hc_scale": 1.1416477777713612,
+    "model.layers.2.hc_attn_layer.hc_pre.hc_base": 0.8013996657576887,
+    "model.layers.2.hc_attn_layer.hc_pre.hc_fn": 0.8291310823919753,
+    "model.layers.2.hc_attn_layer.hc_pre.hc_scale": 3.2954647052898833,
+    "model.layers.2.hc_mlp_layer.hc_pre.hc_base": 0.2860630808132069,
+    "model.layers.2.hc_mlp_layer.hc_pre.hc_fn": 0.9498194546877002,
+    "model.layers.2.hc_mlp_layer.hc_pre.hc_scale": 0.8423743374838379,
+    "model.layers.3.hc_attn_layer.hc_pre.hc_base": 0.9944908864675973,
+    "model.layers.3.hc_attn_layer.hc_pre.hc_fn": 1.0072441634390898,
+    "model.layers.3.hc_attn_layer.hc_pre.hc_scale": 4.634746217065925,
+    "model.layers.3.hc_mlp_layer.hc_pre.hc_base": 2.7445333338762072,
+    "model.layers.3.hc_mlp_layer.hc_pre.hc_fn": 1.5680691896091319,
+    "model.layers.3.hc_mlp_layer.hc_pre.hc_scale": 0.31237779671403904,
+    "model.layers.4.hc_attn_layer.hc_pre.hc_base": 2.8422236979303057,
+    "model.layers.4.hc_attn_layer.hc_pre.hc_fn": 1.187214634661968,
+    "model.layers.4.hc_attn_layer.hc_pre.hc_scale": 5.217969569793718,
+    "model.layers.4.hc_mlp_layer.hc_pre.hc_base": 0.8153164002278204,
+    "model.layers.4.hc_mlp_layer.hc_pre.hc_fn": 1.0762474921109038,
+    "model.layers.4.hc_mlp_layer.hc_pre.hc_scale": 0.09970668543127904,
+    "model.layers.5.hc_attn_layer.hc_pre.hc_base": 0.6816575948711923,
+    "model.layers.5.hc_attn_layer.hc_pre.hc_fn": 0.7825502931431003,
+    "model.layers.5.hc_attn_layer.hc_pre.hc_scale": 0.9481758060833397,
+    "model.layers.5.hc_mlp_layer.hc_pre.hc_base": 1.3801744575194392,
+    "model.layers.5.hc_mlp_layer.hc_pre.hc_fn": 1.331280103624132,
+    "model.layers.5.hc_mlp_layer.hc_pre.hc_scale": 0.4009858341790244,
+    "model.layers.6.hc_attn_layer.hc_pre.hc_base": 0.5333221995731127,
+    "model.layers.6.hc_attn_layer.hc_pre.hc_fn": 0.9011056650541838,
+    "model.layers.6.hc_attn_layer.hc_pre.hc_scale": 0.4034189061406062,
+    "model.layers.6.hc_mlp_layer.hc_pre.hc_base": 1.0508456807682838,
+    "model.layers.6.hc_mlp_layer.hc_pre.hc_fn": 0.9530517810041182,
+    "model.layers.6.hc_mlp_layer.hc_pre.hc_scale": 0.8855093844164615
+   }
+  },
+  "tz_off_rep": {
+   "file": "t1zo-step1-train-grad-vs-fp64.json",
+   "n": 42,
+   "spearman_kappa_vs_R": 0.2564621991734867,
+   "R": {
+    "model.layers.0.hc_attn_layer.hc_pre.hc_base": 1.3382436965622835,
+    "model.layers.0.hc_attn_layer.hc_pre.hc_fn": 1.0296664371126432,
+    "model.layers.0.hc_attn_layer.hc_pre.hc_scale": 0.7429717464597538,
+    "model.layers.0.hc_mlp_layer.hc_pre.hc_base": 0.28267844780823015,
+    "model.layers.0.hc_mlp_layer.hc_pre.hc_fn": 0.8493643691395233,
+    "model.layers.0.hc_mlp_layer.hc_pre.hc_scale": 0.1055015834980465,
+    "model.layers.1.hc_attn_layer.hc_pre.hc_base": 0.9348006651851885,
+    "model.layers.1.hc_attn_layer.hc_pre.hc_fn": 0.9399362040606882,
+    "model.layers.1.hc_attn_layer.hc_pre.hc_scale": 0.7651514988481106,
+    "model.layers.1.hc_mlp_layer.hc_pre.hc_base": 1.0155430498207298,
+    "model.layers.1.hc_mlp_layer.hc_pre.hc_fn": 0.9616341870597838,
+    "model.layers.1.hc_mlp_layer.hc_pre.hc_scale": 0.864527134088937,
+    "model.layers.2.hc_attn_layer.hc_pre.hc_base": 0.7590292624217185,
+    "model.layers.2.hc_attn_layer.hc_pre.hc_fn": 0.858950820957816,
+    "model.layers.2.hc_attn_layer.hc_pre.hc_scale": 3.052862045968773,
+    "model.layers.2.hc_mlp_layer.hc_pre.hc_base": 0.04355117178961449,
+    "model.layers.2.hc_mlp_layer.hc_pre.hc_fn": 0.9346423428370051,
+    "model.layers.2.hc_mlp_layer.hc_pre.hc_scale": 0.27759733087592386,
+    "model.layers.3.hc_attn_layer.hc_pre.hc_base": 1.1624719774630314,
+    "model.layers.3.hc_attn_layer.hc_pre.hc_fn": 1.1365518254731273,
+    "model.layers.3.hc_attn_layer.hc_pre.hc_scale": 5.971345535781668,
+    "model.layers.3.hc_mlp_layer.hc_pre.hc_base": 1.44240647823829,
+    "model.layers.3.hc_mlp_layer.hc_pre.hc_fn": 1.117487133895815,
+    "model.layers.3.hc_mlp_layer.hc_pre.hc_scale": 1.0629497102196006,
+    "model.layers.4.hc_attn_layer.hc_pre.hc_base": 0.879684872026097,
+    "model.layers.4.hc_attn_layer.hc_pre.hc_fn": 1.0173336273989286,
+    "model.layers.4.hc_attn_layer.hc_pre.hc_scale": 1.1431838439886648,
+    "model.layers.4.hc_mlp_layer.hc_pre.hc_base": 0.524357347956405,
+    "model.layers.4.hc_mlp_layer.hc_pre.hc_fn": 1.0105406959724648,
+    "model.layers.4.hc_mlp_layer.hc_pre.hc_scale": 0.6662412580527646,
+    "model.layers.5.hc_attn_layer.hc_pre.hc_base": 0.09869471496916567,
+    "model.layers.5.hc_attn_layer.hc_pre.hc_fn": 0.732064091039186,
+    "model.layers.5.hc_attn_layer.hc_pre.hc_scale": 1.5361884761148794,
+    "model.layers.5.hc_mlp_layer.hc_pre.hc_base": 2.2388161433727554,
+    "model.layers.5.hc_mlp_layer.hc_pre.hc_fn": 1.499809324364813,
+    "model.layers.5.hc_mlp_layer.hc_pre.hc_scale": 0.40954261788431373,
+    "model.layers.6.hc_attn_layer.hc_pre.hc_base": 0.0671210791534781,
+    "model.layers.6.hc_attn_layer.hc_pre.hc_fn": 0.7977295181294287,
+    "model.layers.6.hc_attn_layer.hc_pre.hc_scale": 0.1865616354834103,
+    "model.layers.6.hc_mlp_layer.hc_pre.hc_base": 2.206548972075751,
+    "model.layers.6.hc_mlp_layer.hc_pre.hc_fn": 1.6185836997324146,
+    "model.layers.6.hc_mlp_layer.hc_pre.hc_scale": 1.999149405466429
+   }
+  }
+ },
+ "all_tensors": {
+  "model.layers.0.hc_attn_layer.hc_pre.hc_base": {
+   "kappa_tensor": 3.4420769873387598,
+   "kappa_per_element": [
+    6.255323234166043,
+    6.255323520663143,
+    6.255309147112798,
+    6.25529353995109,
+    3.4451449651513277,
+    3.446154421558143,
+    3.436740782339232,
+    3.4402048407638173
+   ],
+   "elements": "前 4 个 pre、后 4 个 post",
+   "row_grad": [
+    -0.016767900711302183,
+    -0.0167678912111032,
+    -0.01676773751351576,
+    -0.01676769286151423,
+    4.994602289647698,
+    4.992084416480575,
+    5.047220617703287,
+    5.004059141875822
+   ],
+   "split_check": 0.0
+  },
+  "model.layers.0.hc_attn_layer.hc_pre.hc_scale": {
+   "kappa_tensor": 17.095956197208746,
+   "kappa_per_element": [
+    5.295450335676771,
+    17.09836500555968
+   ],
+   "elements": "[pre_scale, post_scale]",
+   "row_grad": [
+    -0.009752166765111992,
+    -0.5523495463901185
+   ],
+   "split_check": 1.6077531286536765e-15
+  },
+  "model.layers.0.hc_attn_layer.hc_pre.hc_fn": {
+   "kappa_tensor": 9.858999033672555,
+   "kappa_per_element_quantiles": {
+    "min": 2.82847762011038,
+    "q10": 5.6556977500298515,
+    "median": 13.577603953379787,
+    "q90": 77.91421981464433,
+    "max": 21659.292105898756
+   },
+   "kappa_tensor_pre_rows": 8.676249295591766,
+   "kappa_tensor_post_rows": 9.859021061140593,
+   "split_check": 2.1957432157102916e-16
+  },
+  "model.layers.0.hc_mlp_layer.hc_pre.hc_base": {
+   "kappa_tensor": 23.346665965689915,
+   "kappa_per_element": [
+    2201.7837490101897,
+    322.7242702424083,
+    153.3248299192382,
+    394.4324084622044,
+    23.316113570562102,
+    23.113216513231748,
+    23.32351436509878,
+    23.06689526941796
+   ],
+   "elements": "前 4 个 pre、后 4 个 post",
+   "row_grad": [
+    0.0012447676340419933,
+    -0.008502857496488131,
+    0.01784394522883251,
+    -0.006956534324552524,
+    1.0535187686303416,
+    1.064559418558132,
+    1.0583582663924584,
+    1.0651100561317044
+   ],
+   "split_check": 0.0
+  },
+  "model.layers.0.hc_mlp_layer.hc_pre.hc_scale": {
+   "kappa_tensor": 10.451899910442396,
+   "kappa_per_element": [
+    25.77556943753591,
+    10.411614650635427
+   ],
+   "elements": "[pre_scale, post_scale]",
+   "row_grad": [
+    -0.05677473836149536,
+    1.4591122713566873
+   ],
+   "split_check": 1.5206280519969345e-16
+  },
+  "model.layers.0.hc_mlp_layer.hc_pre.hc_fn": {
+   "kappa_tensor": 10.590581692164799,
+   "kappa_per_element_quantiles": {
+    "min": 3.7359949857789525,
+    "q10": 7.697399440036379,
+    "median": 18.359488378061634,
+    "q90": 94.86274190906998,
+    "max": 50370.29475032425
+   },
+   "kappa_tensor_pre_rows": 15.167271754894614,
+   "kappa_tensor_post_rows": 10.547184263819998,
+   "split_check": 2.1428331950982185e-16
+  },
+  "model.layers.1.hc_attn_layer.hc_pre.hc_base": {
+   "kappa_tensor": 2.2470606750343123,
+   "kappa_per_element": [
+    13.466823987273079,
+    9.363779357767562,
+    2.9829519021427893,
+    10.637888456216388,
+    2.2467718366046814,
+    2.250114260782759,
+    2.253097273802524,
+    2.2382441266083526
+   ],
+   "elements": "前 4 个 pre、后 4 个 post",
+   "row_grad": [
+    0.005244430189232083,
+    -0.00816110947816524,
+    0.038514420020047506,
+    -0.007291584207362791,
+    6.970589929400037,
+    6.952807018797568,
+    6.952897239540719,
+    6.996665880440114
+   ],
+   "split_check": 0.0
+  },
+  "model.layers.1.hc_attn_layer.hc_pre.hc_scale": {
+   "kappa_tensor": 9.26860329705222,
+   "kappa_per_element": [
+    18.39975082908218,
+    9.268491756784442
+   ],
+   "elements": "[pre_scale, post_scale]",
+   "row_grad": [
+    0.0027688850675196886,
+    -0.9678823983877649
+   ],
+   "split_check": 1.344210087225182e-18
+  },
+  "model.layers.1.hc_attn_layer.hc_pre.hc_fn": {
+   "kappa_tensor": 7.346415054038602,
+   "kappa_per_element_quantiles": {
+    "min": 2.1699518556917528,
+    "q10": 4.8666049339889375,
+    "median": 12.41943161041955,
+    "q90": 60.13902701915622,
+    "max": 681054.2659589251
+   },
+   "kappa_tensor_pre_rows": 7.086758215888915,
+   "kappa_tensor_post_rows": 7.346425878331091,
+   "split_check": 1.4466385574407258e-16
+  },
+  "model.layers.1.hc_mlp_layer.hc_pre.hc_base": {
+   "kappa_tensor": 473.21193626420984,
+   "kappa_per_element": [
+    26.19245343682688,
+    24.612362220307645,
+    36.137311548033885,
+    26.827791486705745,
+    709.6240447004664,
+    1066.999160448991,
+    1358.5607520638148,
+    719.8978074595991
+   ],
+   "elements": "前 4 个 pre、后 4 个 post",
+   "row_grad": [
+    0.017332791982782147,
+    0.01849245225753537,
+    0.012584406830226451,
+    0.016926295627976054,
+    0.013095988348764326,
+    0.008714178024382097,
+    0.006852869134686607,
+    0.012912806928790668
+   ],
+   "split_check": 0.0
+  },
+  "model.layers.1.hc_mlp_layer.hc_pre.hc_scale": {
+   "kappa_tensor": 22.749015634087957,
+   "kappa_per_element": [
+    19.6226208467782,
+    22.757162120651785
+   ],
+   "elements": "[pre_scale, post_scale]",
+   "row_grad": [
+    0.013591699239397334,
+    -0.25692888451488594
+   ],
+   "split_check": 1.3484675112178136e-17
+  },
+  "model.layers.1.hc_mlp_layer.hc_pre.hc_fn": {
+   "kappa_tensor": 22.03201700333674,
+   "kappa_per_element_quantiles": {
+    "min": 6.702980388224889,
+    "q10": 13.534370606718104,
+    "median": 31.963894038014473,
+    "q90": 172.86910529771208,
+    "max": 942072.735079147
+   },
+   "kappa_tensor_pre_rows": 22.60219680921705,
+   "kappa_tensor_post_rows": 22.031854221846046,
+   "split_check": 2.6142535344132685e-16
+  },
+  "model.layers.2.hc_attn_layer.hc_pre.hc_base": {
+   "kappa_tensor": 26.331483671275503,
+   "kappa_per_element": [
+    15.504419881122388,
+    9.360578091347989,
+    4.000123051293629,
+    4.134962194390824,
+    26.32904077218899,
+    26.747492906037436,
+    26.58354462235403,
+    25.71255561232207
+   ],
+   "elements": "前 4 个 pre、后 4 个 post",
+   "row_grad": [
+    0.004368647865492328,
+    0.0076120477344339904,
+    -0.019314406678091103,
+    0.01812428116295063,
+    -0.9436661312816799,
+    -0.9287508396893656,
+    -0.9346781898628667,
+    -0.9661223648094841
+   ],
+   "split_check": 0.0
+  },
+  "model.layers.2.hc_attn_layer.hc_pre.hc_scale": {
+   "kappa_tensor": 21.29173480863083,
+   "kappa_per_element": [
+    14.951541339764386,
+    21.291812393632863
+   ],
+   "elements": "[pre_scale, post_scale]",
+   "row_grad": [
+    0.0025917792477077907,
+    -0.6835230772055889
+   ],
+   "split_check": 3.2485326413710775e-16
+  },
+  "model.layers.2.hc_attn_layer.hc_pre.hc_fn": {
+   "kappa_tensor": 21.73918167646917,
+   "kappa_per_element_quantiles": {
+    "min": 2.2631940843789593,
+    "q10": 6.396522963615994,
+    "median": 21.42171042379879,
+    "q90": 120.52432251853466,
+    "max": 1623799.4733148133
+   },
+   "kappa_tensor_pre_rows": 7.348646494908968,
+   "kappa_tensor_post_rows": 21.73922734336181,
+   "split_check": 2.6105617120654406e-16
+  },
+  "model.layers.2.hc_mlp_layer.hc_pre.hc_base": {
+   "kappa_tensor": 25.033807155310154,
+   "kappa_per_element": [
+    57.126943428547534,
+    68.070635190707,
+    35.39161165953215,
+    49.09080232387166,
+    25.19385712345297,
+    24.88135270464359,
+    24.764437969860992,
+    25.284230500313942
+   ],
+   "elements": "前 4 个 pre、后 4 个 post",
+   "row_grad": [
+    0.0035663568225864123,
+    0.0030115462032024275,
+    0.005815872736034484,
+    0.004214375767968546,
+    0.32903754323729784,
+    0.3332268622786454,
+    0.33476088020394823,
+    0.3279439474456316
+   ],
+   "split_check": 0.0
+  },
+  "model.layers.2.hc_mlp_layer.hc_pre.hc_scale": {
+   "kappa_tensor": 7.438952083293939,
+   "kappa_per_element": [
+    89.02182963136617,
+    7.4336823587045
+   ],
+   "elements": "[pre_scale, post_scale]",
+   "row_grad": [
+    -0.001676925130711864,
+    -0.5313744403526284
+   ],
+   "split_check": 4.080726099259382e-19
+  },
+  "model.layers.2.hc_mlp_layer.hc_pre.hc_fn": {
+   "kappa_tensor": 12.53761002440507,
+   "kappa_per_element_quantiles": {
+    "min": 3.4003529333873423,
+    "q10": 7.206254861380746,
+    "median": 18.119618471269433,
+    "q90": 98.60213025037868,
+    "max": 219700.58204441567
+   },
+   "kappa_tensor_pre_rows": 16.057247794193827,
+   "kappa_tensor_post_rows": 12.508257477458452,
+   "split_check": 2.1670854622550946e-16
+  },
+  "model.layers.3.hc_attn_layer.hc_pre.hc_base": {
+   "kappa_tensor": 139.1086219696516,
+   "kappa_per_element": [
+    25.502066625014514,
+    21.28995687827278,
+    5.65973027410185,
+    7.85719564789821,
+    143.1197718731383,
+    134.6733594240738,
+    139.92937393531096,
+    139.32279765401023
+   ],
+   "elements": "前 4 个 pre、后 4 个 post",
+   "row_grad": [
+    -0.0019588753009035288,
+    -0.002351611726982607,
+    -0.010007848907079191,
+    -0.006620685276915871,
+    -0.21312924186414742,
+    -0.22632134724966635,
+    -0.21786550379271225,
+    -0.21904364426068834
+   ],
+   "split_check": 0.0
+  },
+  "model.layers.3.hc_attn_layer.hc_pre.hc_scale": {
+   "kappa_tensor": 761.747740843065,
+   "kappa_per_element": [
+    9.884805970546427,
+    772.759823225733
+   ],
+   "elements": "[pre_scale, post_scale]",
+   "row_grad": [
+    0.003049595895308595,
+    -0.01786889341494435
+   ],
+   "split_check": 1.2440698570017343e-14
+  },
+  "model.layers.3.hc_attn_layer.hc_pre.hc_fn": {
+   "kappa_tensor": 20.95343105497537,
+   "kappa_per_element_quantiles": {
+    "min": 2.2857653494663444,
+    "q10": 6.998884432502191,
+    "median": 20.20837454018911,
+    "q90": 110.72582522276929,
+    "max": 350388.76177119015
+   },
+   "kappa_tensor_pre_rows": 6.985939230527467,
+   "kappa_tensor_post_rows": 20.95343107957917,
+   "split_check": 2.5829920508327514e-16
+  },
+  "model.layers.3.hc_mlp_layer.hc_pre.hc_base": {
+   "kappa_tensor": 94.43910432420417,
+   "kappa_per_element": [
+    46.21828712000505,
+    41.802344855550906,
+    132.24134252266364,
+    300.9845680249936,
+    93.39943994597493,
+    96.3828798537876,
+    95.02588644318827,
+    93.11084516365808
+   ],
+   "elements": "前 4 个 pre、后 4 个 post",
+   "row_grad": [
+    0.001965393494696711,
+    -0.0022028803156982817,
+    0.0006996352773001336,
+    -0.0003010150844489026,
+    -0.07246566024420803,
+    -0.07020457918238951,
+    -0.07120757765226998,
+    -0.07270747420561907
+   ],
+   "split_check": 0.0
+  },
+  "model.layers.3.hc_mlp_layer.hc_pre.hc_scale": {
+   "kappa_tensor": 31.456203590845274,
+   "kappa_per_element": [
+    22.591192869947644,
+    31.457087655305635
+   ],
+   "elements": "[pre_scale, post_scale]",
+   "row_grad": [
+    -0.001345640932798166,
+    -0.12489442193741135
+   ],
+   "split_check": 3.3332911514161167e-16
+  },
+  "model.layers.3.hc_mlp_layer.hc_pre.hc_fn": {
+   "kappa_tensor": 37.41189931983776,
+   "kappa_per_element_quantiles": {
+    "min": 6.531336860597,
+    "q10": 16.89577390686974,
+    "median": 46.024172651463644,
+    "q90": 248.51506877511926,
+    "max": 3438160.350622505
+   },
+   "kappa_tensor_pre_rows": 39.253786426746636,
+   "kappa_tensor_post_rows": 37.411807546436926,
+   "split_check": 4.3439563781736576e-16
+  },
+  "model.layers.4.hc_attn_layer.hc_pre.hc_base": {
+   "kappa_tensor": 10.585053824399429,
+   "kappa_per_element": [
+    3.3455010649166077,
+    3.159010506207818,
+    2.630416353956515,
+    24.023091143623276,
+    10.574796297509819,
+    10.615454611251353,
+    10.591248333460408,
+    10.559186725033234
+   ],
+   "elements": "前 4 个 pre、后 4 个 post",
+   "row_grad": [
+    -0.009296293012171813,
+    -0.010938921161827537,
+    0.012683795210960847,
+    -0.001264542665742539,
+    3.1809271714963794,
+    3.167343094645604,
+    3.172856199258782,
+    3.1863802780079453
+   ],
+   "split_check": 0.0
+  },
+  "model.layers.4.hc_attn_layer.hc_pre.hc_scale": {
+   "kappa_tensor": 28.183355110936965,
+   "kappa_per_element": [
+    6.003777430580371,
+    28.187485541346376
+   ],
+   "elements": "[pre_scale, post_scale]",
+   "row_grad": [
+    -0.0064111359549161185,
+    -0.3658626286060358
+   ],
+   "split_check": 6.068185102074221e-16
+  },
+  "model.layers.4.hc_attn_layer.hc_pre.hc_fn": {
+   "kappa_tensor": 11.494499443384607,
+   "kappa_per_element_quantiles": {
+    "min": 1.9371172815877136,
+    "q10": 2.848006201353007,
+    "median": 11.22671212570734,
+    "q90": 48.530218680593855,
+    "max": 1902993.7865962174
+   },
+   "kappa_tensor_pre_rows": 3.5122226420716296,
+   "kappa_tensor_post_rows": 11.49455425249472,
+   "split_check": 1.4691624880384497e-16
+  },
+  "model.layers.4.hc_mlp_layer.hc_pre.hc_base": {
+   "kappa_tensor": 5.456280704502374,
+   "kappa_per_element": [
+    7.734198295150782,
+    4.900524229324958,
+    7.456702560517327,
+    6.69803150492246,
+    5.4587254615480845,
+    5.459509075057553,
+    5.460892903088892,
+    5.445826251652739
+   ],
+   "elements": "前 4 个 pre、后 4 个 post",
+   "row_grad": [
+    0.008268328902323662,
+    0.013288261155913212,
+    0.008033237496542299,
+    0.009215950640222959,
+    1.3055253277414842,
+    1.3054531425746665,
+    1.3048073704048804,
+    1.3088494043079133
+   ],
+   "split_check": 0.0
+  },
+  "model.layers.4.hc_mlp_layer.hc_pre.hc_scale": {
+   "kappa_tensor": 8.517419003423827,
+   "kappa_per_element": [
+    12.23883363289638,
+    8.51724858610643
+   ],
+   "elements": "[pre_scale, post_scale]",
+   "row_grad": [
+    0.0038435963177613796,
+    0.6269639631776251
+   ],
+   "split_check": 1.770772640614822e-16
+  },
+  "model.layers.4.hc_mlp_layer.hc_pre.hc_fn": {
+   "kappa_tensor": 5.7893699804923155,
+   "kappa_per_element_quantiles": {
+    "min": 2.9120718634393734,
+    "q10": 4.574429096272702,
+    "median": 6.961667816240052,
+    "q90": 23.013838402309894,
+    "max": 267693.30470151716
+   },
+   "kappa_tensor_pre_rows": 6.669053637515785,
+   "kappa_tensor_post_rows": 5.789360480093806,
+   "split_check": 1.3786652505274644e-16
+  },
+  "model.layers.5.hc_attn_layer.hc_pre.hc_base": {
+   "kappa_tensor": 5.85666586236288,
+   "kappa_per_element": [
+    8.095294502602775,
+    5.830967541465419,
+    2.752627476408444,
+    10.457698790357114,
+    5.86248469174931,
+    5.856067870072014,
+    5.849687920985246,
+    5.858448458060766
+   ],
+   "elements": "前 4 个 pre、后 4 个 post",
+   "row_grad": [
+    -0.002889112074667955,
+    0.0044900309365765185,
+    -0.009543483739969593,
+    0.002211271950378494,
+    -5.427382308047188,
+    -5.433851034741345,
+    -5.438629010435062,
+    -5.431597065915726
+   ],
+   "split_check": 0.0
+  },
+  "model.layers.5.hc_attn_layer.hc_pre.hc_scale": {
+   "kappa_tensor": 6.574684415027801,
+   "kappa_per_element": [
+    3.795124069050308,
+    6.574719154445674
+   ],
+   "elements": "[pre_scale, post_scale]",
+   "row_grad": [
+    -0.005869560707464302,
+    -1.474397971220678
+   ],
+   "split_check": 1.5060013905007748e-16
+  },
+  "model.layers.5.hc_attn_layer.hc_pre.hc_fn": {
+   "kappa_tensor": 6.170696472383143,
+   "kappa_per_element_quantiles": {
+    "min": 1.5772186206656358,
+    "q10": 4.104282120202288,
+    "median": 6.883927711515527,
+    "q90": 26.236760390937665,
+    "max": 1949911.8014187582
+   },
+   "kappa_tensor_pre_rows": 4.886734234014776,
+   "kappa_tensor_post_rows": 6.170697319189724,
+   "split_check": 1.3070638285044568e-16
+  },
+  "model.layers.5.hc_mlp_layer.hc_pre.hc_base": {
+   "kappa_tensor": 2035.782376022727,
+   "kappa_per_element": [
+    10.82539916919234,
+    11.271808302738231,
+    25.042078903808505,
+    21.208187634694116,
+    10495.302892150314,
+    65282.8281378585,
+    16556.041710908084,
+    29790.668975643217
+   ],
+   "elements": "前 4 个 pre、后 4 个 post",
+   "row_grad": [
+    -0.003969797275099822,
+    0.004161777576932212,
+    0.0017469668390968937,
+    -0.001975996917145266,
+    -0.0006181713957132406,
+    -9.939667786953987e-05,
+    -0.0003918238906307908,
+    -0.00021778998290408746
+   ],
+   "split_check": 0.0
+  },
+  "model.layers.5.hc_mlp_layer.hc_pre.hc_scale": {
+   "kappa_tensor": 70.3066740232221,
+   "kappa_per_element": [
+    102.5679837811331,
+    70.30495589778381
+   ],
+   "elements": "[pre_scale, post_scale]",
+   "row_grad": [
+    0.0003676868443143322,
+    -0.05586588722264596
+   ],
+   "split_check": 3.726158168224116e-16
+  },
+  "model.layers.5.hc_mlp_layer.hc_pre.hc_fn": {
+   "kappa_tensor": 80.3433518766951,
+   "kappa_per_element_quantiles": {
+    "min": 7.475335101712714,
+    "q10": 11.42416063460903,
+    "median": 35.52031117791102,
+    "q90": 259.04900812611726,
+    "max": 1848676.1853855154
+   },
+   "kappa_tensor_pre_rows": 14.144852929138374,
+   "kappa_tensor_post_rows": 80.35224304529554,
+   "split_check": 6.299892837277106e-16
+  },
+  "model.layers.6.hc_attn_layer.hc_pre.hc_base": {
+   "kappa_tensor": 8.16971486845139,
+   "kappa_per_element": [
+    4.4281820289716665,
+    1.5943136464587793,
+    3.2010290405641877,
+    3.198652942755333,
+    8.167946381004196,
+    8.175629041275018,
+    8.166413734278507,
+    8.168960300774966
+   ],
+   "elements": "前 4 个 pre、后 4 个 post",
+   "row_grad": [
+    0.0042145803120942765,
+    -0.017194532405620976,
+    0.0066825329530058155,
+    0.005815123756131032,
+    -4.203589997424946,
+    -4.200595542281728,
+    -4.20414264071348,
+    -4.2028168606352345
+   ],
+   "split_check": 0.0
+  },
+  "model.layers.6.hc_attn_layer.hc_pre.hc_scale": {
+   "kappa_tensor": 10.39849591664336,
+   "kappa_per_element": [
+    1.6867435254860137,
+    10.398703884286498
+   ],
+   "elements": "[pre_scale, post_scale]",
+   "row_grad": [
+    0.011165069273835353,
+    1.7419733085109665
+   ],
+   "split_check": 1.274685548318085e-16
+  },
+  "model.layers.6.hc_attn_layer.hc_pre.hc_fn": {
+   "kappa_tensor": 8.205374728503731,
+   "kappa_per_element_quantiles": {
+    "min": 1.3202500399316124,
+    "q10": 2.3517148847160683,
+    "median": 7.592566061502156,
+    "q90": 15.773698906843675,
+    "max": 959429.2703307844
+   },
+   "kappa_tensor_pre_rows": 2.194416382856374,
+   "kappa_tensor_post_rows": 8.205375036373722,
+   "split_check": 1.3221522290283518e-16
+  },
+  "model.layers.6.hc_mlp_layer.hc_pre.hc_base": {
+   "kappa_tensor": 7.779032544574287,
+   "kappa_per_element": [
+    9.774559801468355,
+    27.04867391661999,
+    10.67260560118849,
+    6.938487229011206,
+    7.778991520252875,
+    7.778980556987643,
+    7.778993460250535,
+    7.778984779113346
+   ],
+   "elements": "前 4 个 pre、后 4 个 post",
+   "row_grad": [
+    -0.004417887784795483,
+    -0.0015256783009900158,
+    -0.0038738886487837835,
+    -0.00716316478334382,
+    -0.9284733369580253,
+    -0.9284628836420759,
+    -0.9284877191341713,
+    -0.9284881539864311
+   ],
+   "split_check": 0.0
+  },
+  "model.layers.6.hc_mlp_layer.hc_pre.hc_scale": {
+   "kappa_tensor": 8.85333286922451,
+   "kappa_per_element": [
+    15.760736747440571,
+    8.852310087733636
+   ],
+   "elements": "[pre_scale, post_scale]",
+   "row_grad": [
+    0.0018147385564093183,
+    0.17583929047244537
+   ],
+   "split_check": 6.313526505378276e-16
+  },
+  "model.layers.6.hc_mlp_layer.hc_pre.hc_fn": {
+   "kappa_tensor": 8.038330384205999,
+   "kappa_per_element_quantiles": {
+    "min": 5.2856620302088775,
+    "q10": 7.043112792407073,
+    "median": 9.646652855800285,
+    "q90": 34.435949002833944,
+    "max": 107368.98230030158
+   },
+   "kappa_tensor_pre_rows": 9.61486657249535,
+   "kappa_tensor_post_rows": 8.038321290049016,
+   "split_check": 1.3971296438035522e-16
+  }
+ },
+ "ffn_post_gate_kappa_all_layers": {
+  "0": {
+   "sum": [
+    2.107034284243092,
+    2.1291164462000776,
+    2.1167104191104578,
+    2.130224830199948
+   ],
+   "kappa": [
+    23.316266980746693,
+    23.113263470871793,
+    23.323801611885052,
+    23.066901545039265
+   ]
+  },
+  "1": {
+   "sum": [
+    0.026191450888291,
+    0.01742769899851737,
+    0.013705560450944176,
+    0.025826564853332457
+   ],
+   "kappa": [
+    709.6429900892307,
+    1067.0456244539023,
+    1358.5791663162609,
+    719.8753917720323
+   ]
+  },
+  "2": {
+   "sum": [
+    0.6580778012412338,
+    0.6664537029712392,
+    0.6695240268650196,
+    0.6559001472032833
+   ],
+   "kappa": [
+    25.193859903000586,
+    24.88135472362562,
+    24.76445055027428,
+    25.284038092884217
+   ]
+  },
+  "3": {
+   "sum": [
+    -0.14493142114042712,
+    -0.14040718468390878,
+    -0.1424194737551261,
+    -0.14541539464653397
+   ],
+   "kappa": [
+    93.39957147864072,
+    96.3846844603412,
+    95.02423501683475,
+    93.1110950790171
+   ]
+  },
+  "4": {
+   "sum": [
+    2.6110617557069418,
+    2.6109119274717614,
+    2.609616376756776,
+    2.6177160574015943
+   ],
+   "kappa": [
+    5.458726279718202,
+    5.459508952009739,
+    5.460894687603208,
+    5.445817060427433
+   ]
+  },
+  "5": {
+   "sum": [
+    -0.0012364465105747513,
+    -0.00019868136473633058,
+    -0.0007819040633876284,
+    -0.0004354110878921347
+   ],
+   "kappa": [
+    10494.45586599995,
+    65319.73168728168,
+    16593.791744716174,
+    29802.24440428626
+   ]
+  },
+  "6": {
+   "sum": [
+    -1.8569791012703583,
+    -1.856979060892165,
+    -1.85697766609308,
+    -1.856979235896766
+   ],
+   "kappa": [
+    7.778987172540774,
+    7.7789872565350136,
+    7.7789940107985895,
+    7.778986629318548
+   ]
+  }
+ }
+}

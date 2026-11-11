@@ -155,7 +155,7 @@ flowchart TD
     - grad_norm 改用两边均值作分母，被测与噪声两侧同样算。
     - param_norm 的被测改读 `param_norm_from_groups`（分组平方和 FP64 相加后开方）。golden 与噪声一侧读 GPU 自己的 `param_norm`：GPU 的 `rcc` 运行没有记分组范数，两列不同。GPU 原始列与它自己的分组合成值单步最多差 8.2e-8，小于噪声上限 2.27e-7。
   - 补跑 `rcc-f..j` 5 份，凑成 10 份 45 对。补跑是看到待定后决定的，事先没有写停止规则；跑完 f..j 后没有再加。
-- 原口径（两侧都读原始列、grad_norm 以 golden 为分母）在 45 对下也全部过，最差 0.84（v7x grad_norm MARE 0.844）。
+- 原口径（两侧都读原始列、grad_norm 以 golden 为分母）对基线 `rcc-a`、45 对下也全部过，最差 0.84（v7x grad_norm MARE 0.844）；换基线时原口径也会出待定（见第 0 节「换基线」一条）。
 - 两批分开看（N 分别取批内 10 对、批间 25 对）：
   - f..j 批内的 N 在全部 12 个统计量上比 a..e 宽 1.04 – 3.06 倍；45 对的最大值都出在含 `rcc-j` 的配对上。
   - 只用 f..j 批内 10 对当 N：最差 r 不变（v5p 0.846、v7x 0.851）。
@@ -202,7 +202,7 @@ flowchart TD
 - 已关闭：BF16 张量核分段在 1000 步训练里同样让 L4 通过，和 `rcc` 不可分，步时只多 6%（第 0 节「便宜的等价修法 `rcb`：BF16 张量核分段 1000 步」行）。最终 golden 仍是 `rcc`。
 - 其他 GPU 型号与 cuBLAS 版本：长累加偏差只在 B200 / cuBLAS 13.8 上量过。
 - v7x 的 TPU 执行扰动系综缺两份（`-vmem40` 与关窗口化），结案不依赖（附录「TPU 执行扰动系综」）。
-- `rcc` 各份的逐步序列没有入库：换一份当基线 r 会挪多少，只对 `rcc-a..e` 五份算过 param_norm 与 loss 尾段（注 31）。
+- 换基线：`rcc-a..j` 十份每份都当一次基线重判过（[`case01-rebaseline-rcc.json`](../results/case01-rebaseline-rcc.json)）。四条检查的最差 r 在十份之间相差最多 0.47；v7x 当前配置有三份基线落进待定（grad_norm 1.11、1.01，loss 301–1000 步 1.08），没有不过，其余三个配置全过。只报的原口径（读原始 param_norm）下 v5p 当前配置也有三份基线待定：`rcc-f` 1.18、`rcc-g` 1.00、`rcc-h` 1.01（未舍入值都略大于 1；JSON 的 `L4.param_norm.raw`）；v7x 以 golden 为分母的原口径（`L4.grad_norm.golden_den`）下 `rcc-e` 1.00、`rcc-j` 1.11 待定。
 
 ## 排查过程的注记
 
@@ -486,7 +486,7 @@ flowchart TD
 17. 验收
     - 假设：〔已被取代〕（见第 0 节「最终 golden：第一层换成 rcc」行 / 「一页看完」）：正式迁移验收第一层的基线改成精确轨迹（2026-11-05 晚定，即「方案 A」，已退役）
     - 测试：
-      - 只对 `rce-a` 比；噪声带例外地取 GPU 生产程序重跑 `rcx-a..e` 5 份重跑两两配对的 10 对比较（当时的理由：`rce-a` 对 `rce-b` 的散布 6.9e-9 比 `rcx` 两两 1.24e-7 小约 18 倍，以为扰动发散太慢、代表不了执行噪声。已被取代：五份齐了以后，`rce` 两两上限 1.07e-7 与 `rcx` 同量级，见附录「rce 五份的散布」）；交叉核对把噪声换成 TPU 执行噪声（回归 T1 标定的 8 份 TPU 运行两两配对的 28 对比较，当前配置重标）。
+      - 只对 `rce-a` 比；噪声带例外地取 GPU 生产程序重跑 `rcx-a..e` 5 份重跑两两配对的 10 对比较（当时的理由：`rce-a` 对 `rce-b` 的散布 6.9e-9 比 `rcx` 两两 1.24e-7 小约 18 倍，以为扰动发散太慢、代表不了执行噪声。已被取代：五份齐了以后，`rce` 两两上限 1.07e-7 与 `rcx` 同量级，见附录「rce 五份的散布」）；交叉核对把噪声换成 TPU 执行噪声（回归 T1 标定的 8 份 TPU 运行两两配对的 28 对比较，当前配置重标）。这是历史做法，已不用：现行尺子只来自参照一侧（GPU），TPU 执行噪声只作诊断。
       - 目录 `phase2-acceptance-rce{,-on}{,-tpunoise}`、02 `phase2-v7x-acceptance-rce`。
     - 关键结果：
       - v5p 当前配置 `t-rmap-on-1000`：param_norm 带符号均值 4.27e-7（N 1.24e-7，3.45 倍）不过；loss 全程 8.62e-5（N 4.48e-5，1.92 倍）、301–1000 步 7.23e-5（N 5.62e-5，1.29 倍）待定；grad_norm 待定（1.14 倍）；lr 过。
@@ -500,7 +500,7 @@ flowchart TD
 18. 并行方式
     - 假设：TPU 对精确轨迹剩下的那一份（param_norm 约 +2.4e-3）是不是并行方式带来的：TPU 现在非专家参数 FSDP 切 8 份、专家不切，GPU 是 DP8 + EP8
     - 测试：
-      - TPU 生产配置只改并行方式为 EP=8（`ici_fsdp_parallelism=1`、`ici_expert_parallelism=8`：批按 expert 轴切 8 份；非专家参数不是整份复制，MaxText 的逻辑轴规则把 `embed` 维也映射到 expert 轴，等于沿 expert 轴做 FSDP 8，见下面判定末条），1000 步：v7x `t-v7x-ep8-1000`、v5p `t-ep8-1000`；按第一层目录判（`phase2-v7x-acceptance-rce-ep8`、`phase2-acceptance-rce-ep8`）。
+      - TPU 生产配置只改并行方式为 EP=8（`ici_fsdp_parallelism=1`、`ici_expert_parallelism=8`：批按 expert 轴切 8 份；非专家参数不是整份复制：读 HLO 核过的只有词嵌入表（逻辑轴 `embed_vocab` 映射到 expert 轴，沿 expert 轴切 8 份，见下面判定末条），其余非专家参数按同一组逻辑轴规则推断同样沿 expert 轴切），1000 步：v7x `t-v7x-ep8-1000`、v5p `t-ep8-1000`；按第一层目录判（`phase2-v7x-acceptance-rce-ep8`、`phase2-acceptance-rce-ep8`）。
       - GPU 反过来换成 Megatron-FSDP（`g-fsdp-1k-a/b`）在 rce 跑完后做。
     - 关键结果：
       - v7x EP=8：第 1 步 loss 11.465963（FSDP 版 11.465931，相对差 3e-6）。
@@ -514,11 +514,11 @@ flowchart TD
       - 301–1000 步 loss +5.9e-5（FSDP 版 +7.2e-5）。
       - 判定 param_norm 不过（2.8 倍）、loss 两项待定、grad_norm 过（FSDP 版待定）。
     - 判定：
-      - 🟡 并行方式只占一小部分：换成和 GPU 一样的 EP=8，param_norm 带符号均值 v5p 少 18%（3.52e-7 对 4.27e-7），v7x 反而多 17%（3.74e-7 对 3.19e-7）。
+      - 🟡 并行方式只占一小部分：换成专家并行度和 GPU 相同的 EP=8（词嵌入表沿 expert 轴切、读 HLO 核过，其余非专家参数按逻辑轴规则推断同样切，≈ FSDP 8），param_norm 带符号均值 v5p 少 18%（3.52e-7 对 4.27e-7），v7x 反而多 17%（3.74e-7 对 3.19e-7）。
         - 两个平台方向相反，差值 7.5e-8、5.5e-8 都在 GPU 精确五份两两的上限 1.07e-7 以内（下面「GPU 精确 + 分段 dgrad：1000 步」行）。
         - EP = 8 仍是 2.8 – 3.0 倍噪声，不过；剩下的大部分不是切分方式带来的。
       - GPU 一侧换 Megatron-FSDP 的对照没做成（Megatron-FSDP 载入 `torch_dist` 检查点报缺 `sharded_state_dict`，torch FSDP2 在专家权重上报 `Invalid sharding pattern`，见 [`config-alignment.md`](../../../config-alignment.md)「切分方式」行），是已知限制。
-      - EP = 8 的词嵌入切法（2026-11-11 读优化后 HLO 核实，[`../results/ep8-embed-scatter-hlo.json`](../results/ep8-embed-scatter-hlo.json)）：词嵌入表沿隐藏维按 expert 轴切 8 份，每卡 [120832, 512]；反向 scatter-add 每卡收全部 32768 个 token，超过排序门槛 15104，v5p 上被排序，v7x 上交给 SparseCore；没有整表 all-reduce。所以 EP = 8 对词嵌入和 FSDP 8 是同一种切法，不是纯数据并行，混元 4 [案例 14](../../../../hunyuan4/cases/14-ddp-fsdp-embedding.md) 那种不排序、每加一次舍一次的问题在这里不出现（libtpu 0.0.46，CPU 离线编译）。
+      - EP = 8 的词嵌入切法（2026-11-11 读优化后 HLO 核实，[`../results/ep8-embed-scatter-hlo.json`](../results/ep8-embed-scatter-hlo.json)）：词嵌入表沿隐藏维按 expert 轴切 8 份，每卡 [120832, 512]；反向 scatter-add 每卡收全部 32768 个 token，超过 15104（表行数的 1/8），v5p 上被排序；v7x 上交给 SparseCore，按什么精度累加没有实测（推断）；没有整表 all-reduce。所以 EP = 8 对词嵌入和 FSDP 8 是同一种切法，不是纯数据并行，混元 4 [案例 14](../../../../hunyuan4/cases/14-ddp-fsdp-embedding.md) 那种不排序、每加一次舍一次的问题在这里不出现（libtpu 0.0.46，CPU 离线编译）。
       - 它是确认性实验，结案不依赖它：对最终 golden `rcc-a`，TPU 的 FSDP 8 与 EP = 8 两种切分在 v5p、v7x 上 L4 都过（「最终 golden：第一层换成 rcc」行）。
 19. TPU 自己的一成：拆分臂（v7x）
     - 测试：当前对齐配置 `t-v7x-on-1000`（同提交重跑 `t-v7x-on-b-1000` 1000 步逐位相同）上一次改一处，1000 步：注意力 FP32 点积 `attn32`、输出头 logits 在 FP32 里乘 `logit32`、`matmul_precision=highest` `mmhi`，两两组合与三项合并；对 `rce-a` 量 param_norm 带符号均值、第 1000 步差、loss
@@ -527,7 +527,7 @@ flowchart TD
       - loss 尾段在 −4e-6 – +1.4e-4 之间。
       - 原始数字在 [`../results/case01-v7x-split-arms.json`](../results/case01-v7x-split-arms.json)。
     - 判定：
-      - 🟡 单项臂都在 TPU 执行噪声附近（param_norm 带符号均值的噪声上限 9e-8；mmhi 少 1.0e-7 约 1 倍噪声，其余多 0.3e-7 – 0.7e-7），分辨不出哪一处是 TPU 那一成的来源；loss 各臂之间的差（≤ 1.5e-4）也在 TPU 执行噪声 5.9e-5 的 1 – 2.5 倍内，loss 分辨不了这么小的效应。
+      - 🟡 单项臂都在噪声附近：param_norm 带符号均值以 GPU 精确五份两两的上限 1.07e-7 为尺子（尺子只来自参照一侧），mmhi 少 1.0e-7 约 1 倍，其余多 0.3e-7 – 0.7e-7，分辨不出哪一处是 TPU 那一成的来源。loss 各臂之间的差（≤ 1.5e-4）是 TPU 执行噪声 5.9e-5 的 1 – 2.5 倍，loss 分辨不了这么小的效应。TPU 执行噪声（param_norm 上限 9e-8、loss 5.9e-5）只作诊断，不当尺子。
       - 合并变差的原因已定位：变差只出在「logits 在 FP32 里乘 + highest」这一对。
       - `logits_dot_in_fp32` 把输出头的输入和权重升到 FP32，DEFAULT 精度下 MXU 仍按单遍 BF16 乘（等于用 BF16 权重），highest 下才真按 FP32 乘——输出头用的变成了 FP32 主权重，不再是 BF16 舍入后的权重。
       - 当时推断：这是改了权重语义（和全程 FP32 训练学得更快同一回事），不是「更精确」，所以 param_norm 漂得更多。

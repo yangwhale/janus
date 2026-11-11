@@ -1,7 +1,7 @@
 # 02 · B200×8 → TPU v7x-4（截 4 层）· 设置
 
 - 配置对照见 [`../../config-alignment.md`](../../config-alignment.md)。
-- golden 与 01 相同（`g1k-a` / `g1k-b` / `g1k-c`：第一阶段 GPU golden，不开重算，1000 步，3 份），两边的设置写法照 [`../01-v5p-acceptance/setup.md`](../01-v5p-acceptance/setup.md)。
+- golden 与 01 相同：正式验收对最终 golden `rcc-a`，第 1 步比较对 `g1k-a` / `g1k-b` / `g1k-c`（第一阶段 GPU golden，不开重算，1000 步，3 份），角色见 01 [README「golden 的分工」](../01-v5p-acceptance/README.md#golden-的分工)；两边的设置写法照 [`../01-v5p-acceptance/setup.md`](../01-v5p-acceptance/setup.md)。
 - 运行目录在 POC 桶里，不对外；清单见 `runs.yaml`。
 - GPU golden（`g1k` / `rc` / `rcx` / `rce` / `rcec` 和最终的 `rcc`）每一份是怎么产生的、和上游默认差在哪，见 [`../../goldens.md`](../../goldens.md)。
   - `g1k`（第一阶段 GPU golden）、`rc`（GPU 生产 golden，整层重算加路由回放，即原版生产程序，5 份）；
@@ -40,11 +40,14 @@
 | TPU | 镜像 | `tpu_pre_training`，digest `b152355a…`（同 01） | `t-v7x-on-1000` 的 `meta.json` 的 `image` |
 | TPU | MaxText / janus | `hunyuan` 分支 `0622774a` / `958d173e`（同 01 的 `t-rmap-on-1000`） | `meta.json` 的 `code` |
 | TPU | jax / jaxlib | 0.11.1 / 0.11.1 | `meta.json` 的 `versions` |
-| TPU | libtpu | 0.0.46（推断；TPU7x 版，构建 `cl/963683785`） | `meta.json` 只记构建号；推断同 01 |
+| TPU | libtpu | 0.0.46（TPU7x 版，构建 `cl/963683785`；按构建号认） | `meta.json` 只记构建号。同一构建号的 v7x 运行实测记的是 `libtpu==0.0.46`（device_kind TPU7x，混元 4 [`jit-miscompile-probe-v7x.json`](../../../hunyuan4/results/jit-miscompile-probe-v7x.json)） |
+| TPU | tokamax | 0.0.14（镜像自带的包） | `meta.json` 不记；同 01（同一镜像 digest，01 读镜像层核过） |
 | TPU | 配置 | `hy3-4layers.yml` sha256 `a238883b…`，命令行另加 `mtp_num_layers=0` 与 remat 覆盖（同 01 `t-rmap-on-1000`） | `meta.json` 的 `config`；登记见 [`runs.yaml`](runs.yaml) |
 | GPU | 全部 | 同 01（golden 是同一批 `rcc-*`） | — |
 
 结果文件 [`phase2-v7x-acceptance-rcc.results.json`](results/phase2-v7x-acceptance-rcc.results.json) 记着 `t-v7x-on-1000` 的 `meta_sha256`。**结论在这些版本上测得**；换 libtpu 或 jax 要按混元 4 [`libtpu-052.md`](../../../hunyuan4/alignments/04-tpu-self/libtpu-052.md) 的做法重测。
+
+v5p 上实测 libtpu 0.0.46、0.0.48、0.0.51、0.0.52 有 jit 静默算错的已知问题（0.0.47、0.0.49 没测）（[环境「已定的」](../../../../docs/reference/environment.md#已定的)）。存档优化后 HLO 的扫描（混元 4 [`jit-miscompile-hlo-scan.json`](../../../hunyuan4/results/jit-miscompile-hlo-scan.json)）里混元 3 有 72 份运行，全是 v5p 上的回归与标定程序，没有一份带它的特征；正式被测 `t-rmap-on-1000`、`t-v7x-on-1000` 和 EP = 8 的运行不在扫描范围内，没有扫。
 
 ## 在哪跑
 
@@ -119,6 +122,7 @@
 - **v7x 与 v5p 之间**：
   - 301–1000 步 loss 平均差 −1.6e-4（v7x 低），最大单步 2.5e-3；
   - param_norm 第 1000 步差 −2.4e-4。
+  - 这组数没有记出处与口径（绝对差还是相对差没写），推断出自换代前配置的运行；v7x 那份逐步序列不在仓库，无法复算，不作判定依据。当前配置 v7x 对 v5p 的比较见[对齐报告](../../ALIGNMENT-REPORT.md)第 3 节（grad_norm、param_norm 都在 `rcc` 45 对的噪声内）。
 
 ## L0（`phase2-v7x-t-loss30`、`phase2-v7x-l0-state`）
 
@@ -165,8 +169,8 @@
    - 其余都与 v5p 相当：单独的 RMSNorm 1.16、qk_norm 1.00、输出投影 1.00、路由 GEMM 0.02、门控激活 + down 1.00、注意力核 1.01、MoE 1.15。
    - 原因与 v5p 相同（收缩维被 FSDP 切开的投影编成窗口化 collective matmul，分片部分积在 BF16 里累加），v7x 上偏差更大。
    - 验证：`r-v7x-wcoff` = 同一份回放加 `LIBTPU_INIT_ARGS=--xla_jf_spmd_threshold_for_windowed_einsum_mib=1000000`（关掉窗口化）。
-     - qkv 1.000、fc1 1.104，四层前向 1.059 / 1.010 / 1.012 / 1.015 全过；
-     - 与 v5p 关窗口化（`phase2-l1-ops-wcoff`）到第三位相同。
+     - qkv 1.000、fc1 1.104，四层前向 1.059 / 1.010 / 1.012 / 1.015 都过；但同一次回放里单独的 MLP 前 RMSNorm（mlp_norm）是 1.64、超线，v5p 关窗口化同样 1.64（[README](README.md)）；
+     - 单算子里 qkv、qk_norm、注意力输出投影、fc1、稠密层激活与 fc2、注意力核与 v5p 关窗口化（`phase2-l1-ops-wcoff`）到第三位相同；路由 GEMM（0.017 对 0.022）、MoE 核（0.983 对 0.924）不同，都远在 1.2 以内（README 第 5 条）。
    - 整网前向的 logits / 逐 token loss R 0.999 / 1.025（v5p 0.957 / 0.981），过。
 2. **第 1 步更新后的 expert_bias**：第 1 层 65 号专家的更新方向反了（TPU +1e-3、GPU −1e-3），其余 575 个逐位；v5p 三层全部逐位。
    - 这个更新只看负载与均值的大小关系，负载贴着均值的专家一个 token 的路由不同就会翻号。

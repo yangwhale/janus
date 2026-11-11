@@ -1,0 +1,50 @@
+# 混元 4 · T1 前 300 步，验证：生产建议组合整体跑一次。TPU x5-prod = 现行对齐配置（tz-off-rep 那份 yml），按 01-mini DETAILS「生产配置建议」改：
+# 开 splash_dsinks_fp32（M42，代替 M42b）、embedding_grad_fp32、rmsnorm_scale_grad_fp32；关只为对齐的 M8、M10、M27、M30、M36、M42b；「看情况」各行照对齐配置。
+# 判法与噪声同 t1zo300-l4（被测换掉，其余逐字相同）。
+schema_version: 1
+model: hunyuan4-mini
+stage: t1zp300-l4
+description: T1 L4 前 300 步，TPU x5-prod（生产建议组合）被测，GPU g2-a 为基线，GPU 噪声 28 对
+runs:
+  test: x5-prod
+  golden: [g2-a]
+  noise:
+    - [g2-a, g2-b]
+    - [g2-a, g2-c]
+    - [g2-a, g2-d]
+    - [g2-a, g2-e]
+    - [g2-a, g2-f]
+    - [g2-a, g2-g]
+    - [g2-a, g2-h]
+    - [g2-b, g2-c]
+    - [g2-b, g2-d]
+    - [g2-b, g2-e]
+    - [g2-b, g2-f]
+    - [g2-b, g2-g]
+    - [g2-b, g2-h]
+    - [g2-c, g2-d]
+    - [g2-c, g2-e]
+    - [g2-c, g2-f]
+    - [g2-c, g2-g]
+    - [g2-c, g2-h]
+    - [g2-d, g2-e]
+    - [g2-d, g2-f]
+    - [g2-d, g2-g]
+    - [g2-d, g2-h]
+    - [g2-e, g2-f]
+    - [g2-e, g2-g]
+    - [g2-e, g2-h]
+    - [g2-f, g2-g]
+    - [g2-f, g2-h]
+    - [g2-g, g2-h]
+  root: /data/janus-runs
+checks:
+  - {id: L4.loss, type: multi_golden, level: L4, select: {kind: metrics, field: lm_loss, window: "1:301"}, params: {baseline: g2-a}, threshold: calibrated}
+  - {id: L4.loss.tail, type: multi_golden, level: L4, select: {kind: metrics, field: lm_loss, window: "101:301"}, params: {baseline: g2-a}, threshold: calibrated}
+  - {id: L4.mtp_loss, type: loss_series, level: L4, select: {kind: metrics, field: mtp_loss_mt, window: "1:301"}, threshold: calibrated}
+  - {id: L4.mtp_loss.tail, type: loss_series, level: L4, select: {kind: metrics, field: mtp_loss_mt, window: "101:301"}, threshold: calibrated}
+  - {id: L4.indexer_loss, type: loss_series, level: L4, select: {kind: metrics, field: indexer_loss, window: "1:301"}, threshold: calibrated}
+  - {id: L4.grad_norm, type: loss_series, level: L4, select: {kind: metrics, field: grad_norm, window: "1:301"}, threshold: calibrated}
+  - {id: L4.param_norm, type: loss_series, level: L4, select: {kind: metrics, field: param_norm_fp64, test_field: param_norm_exact, window: "1:301"}, threshold: calibrated}
+  - {id: L4.router.bias_mean, type: router_stats, level: L4, select: {kind: metrics, prefix: "router.bias_mean.", window: "1:301"}, threshold: calibrated}
+  - {id: L4.router.bias_std, type: router_stats, level: L4, select: {kind: metrics, prefix: "router.bias_std.", window: "1:301"}, threshold: calibrated}

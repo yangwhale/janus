@@ -1,8 +1,8 @@
 """hy4-mini 训练曲线（L4）的三张图：主 loss 与 GPU 波动带、七项三个量各自的比值（三个并排小图）、其余六个量的逐步相对差。
 
-数据：GPU g3-a … g3-p（16 份同设置，g3-a 是基线）与 TPU 现行一代 tz-off-rep（2026-11-11 起，base2 关）的 metrics.jsonl；
-判定数（图 2）读 alignments/01-mini/results/t1zo-l4.results.json，不另算。
-逐步相对差 = (TPU − GPU 基线) / GPU 基线（分母一律是 GPU 基线，与判定同口径，见 catalogs/t1zo-l4.yaml；2026-11-10 前梯度范数用两边均值）；
+数据：GPU g3-a … g3-p（16 份同设置，g3-a 是基线）与 TPU 现行一代 tc-a（2026-11-11 起，C 口径）的 metrics.jsonl；
+判定数（图 2）读 alignments/01-mini/results/t1zc-l4.results.json，不另算。上一代 tz-off-rep 的图（后缀 -t1zo）保留。
+逐步相对差 = (TPU − GPU 基线) / GPU 基线（分母一律是 GPU 基线，与判定同口径，见 catalogs/t1zc-l4.yaml；2026-11-10 前梯度范数用两边均值）；
 GPU 波动带 = 每一步 GPU 16 份两两 120 对的相对差绝对值的最大值，画成 ±包络。
 
 用法：
@@ -22,11 +22,11 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 MINI = HERE.parent / "alignments" / "01-mini"
-RESULTS = MINI / "results" / "t1zo-l4.results.json"
+RESULTS = MINI / "results" / "t1zc-l4.results.json"
 OUT = MINI / "figures"
 GPU = [f"g3-{c}" for c in "abcdefghijklmnop"]
-TPU = "tz-off-rep"
-SUFFIX = "-t1zo"  # 现行比较换代时换后缀，已提交的旧图（上一代 t1zg-a 无后缀）不覆盖
+TPU = "tc-a"
+SUFFIX = "-t1zc"  # 现行比较换代时换后缀，已提交的旧图（上一代 t1zg-a 无后缀）不覆盖
 
 # 图 3 的六个小图：(标题, GPU 字段, TPU 字段, 分母, 灰带取哪些字段)。
 # 路由偏置按层判、各层取最差（janus/checks/extra.py 的 router_stats），所以红线画最差的一层、灰带取各层的最大值。
@@ -189,7 +189,7 @@ def fig_small(plt, gpu, tpu, step):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--root", type=Path, required=True, help="运行目录的上一级（含 g3-a … g3-p 与 tz-off-rep）")
+    ap.add_argument("--root", type=Path, required=True, help="运行目录的上一级（含 g3-a … g3-p 与 tc-a）")
     a = ap.parse_args()
     from janus.report.html import setup_fonts
 

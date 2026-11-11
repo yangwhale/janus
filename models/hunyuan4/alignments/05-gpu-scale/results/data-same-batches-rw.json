@@ -1,0 +1,496 @@
+{
+ "reference": "g3-a",
+ "runs": {
+  "rws-a": {
+   "parallelism": {
+    "dp": 8,
+    "ep": 8,
+    "tp": 1,
+    "pp": 1,
+    "pp_stage_layers": [
+     [
+      0,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 2,
+    "gbs": 16,
+    "nodes": 1
+   },
+   "samples": 480,
+   "compared": 480,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rws-b": {
+   "parallelism": {
+    "dp": 8,
+    "ep": 8,
+    "tp": 1,
+    "pp": 1,
+    "pp_stage_layers": [
+     [
+      0,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 2,
+    "gbs": 16,
+    "nodes": 1
+   },
+   "samples": 480,
+   "compared": 480,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rws-c": {
+   "parallelism": {
+    "dp": 8,
+    "ep": 8,
+    "tp": 1,
+    "pp": 1,
+    "pp_stage_layers": [
+     [
+      0,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 2,
+    "gbs": 16,
+    "nodes": 1
+   },
+   "samples": 480,
+   "compared": 480,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rws-d": {
+   "parallelism": {
+    "dp": 8,
+    "ep": 8,
+    "tp": 1,
+    "pp": 1,
+    "pp_stage_layers": [
+     [
+      0,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 2,
+    "gbs": 16,
+    "nodes": 1
+   },
+   "samples": 480,
+   "compared": 480,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rws-e": {
+   "parallelism": {
+    "dp": 8,
+    "ep": 8,
+    "tp": 1,
+    "pp": 1,
+    "pp_stage_layers": [
+     [
+      0,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 2,
+    "gbs": 16,
+    "nodes": 1
+   },
+   "samples": 480,
+   "compared": 480,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rws-f": {
+   "parallelism": {
+    "dp": 8,
+    "ep": 8,
+    "tp": 1,
+    "pp": 1,
+    "pp_stage_layers": [
+     [
+      0,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 2,
+    "gbs": 16,
+    "nodes": 1
+   },
+   "samples": 480,
+   "compared": 480,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rw-a": {
+   "parallelism": {
+    "dp": 16,
+    "ep": 16,
+    "tp": 1,
+    "pp": 1,
+    "pp_stage_layers": [
+     [
+      0,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 1,
+    "gbs": 16,
+    "nodes": 2
+   },
+   "samples": 800,
+   "compared": 800,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rw-b": {
+   "parallelism": {
+    "dp": 16,
+    "ep": 16,
+    "tp": 1,
+    "pp": 1,
+    "pp_stage_layers": [
+     [
+      0,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 1,
+    "gbs": 16,
+    "nodes": 2
+   },
+   "samples": 480,
+   "compared": 480,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rw-c": {
+   "parallelism": {
+    "dp": 16,
+    "ep": 16,
+    "tp": 1,
+    "pp": 1,
+    "pp_stage_layers": [
+     [
+      0,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 1,
+    "gbs": 16,
+    "nodes": 2
+   },
+   "samples": 480,
+   "compared": 480,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rw-d": {
+   "parallelism": {
+    "dp": 16,
+    "ep": 16,
+    "tp": 1,
+    "pp": 1,
+    "pp_stage_layers": [
+     [
+      0,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 1,
+    "gbs": 16,
+    "nodes": 2
+   },
+   "samples": 480,
+   "compared": 480,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rw-e": {
+   "parallelism": {
+    "dp": 16,
+    "ep": 16,
+    "tp": 1,
+    "pp": 1,
+    "pp_stage_layers": [
+     [
+      0,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 1,
+    "gbs": 16,
+    "nodes": 2
+   },
+   "samples": 480,
+   "compared": 480,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rw1k-a": {
+   "parallelism": {
+    "dp": 16,
+    "ep": 16,
+    "tp": 1,
+    "pp": 1,
+    "pp_stage_layers": [
+     [
+      0,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 1,
+    "gbs": 16,
+    "nodes": 2
+   },
+   "samples": 16000,
+   "compared": 16000,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rw1k-b": {
+   "parallelism": {
+    "dp": 16,
+    "ep": 16,
+    "tp": 1,
+    "pp": 1,
+    "pp_stage_layers": [
+     [
+      0,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 1,
+    "gbs": 16,
+    "nodes": 2
+   },
+   "samples": 16000,
+   "compared": 16000,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rw1k-c": {
+   "parallelism": {
+    "dp": 16,
+    "ep": 16,
+    "tp": 1,
+    "pp": 1,
+    "pp_stage_layers": [
+     [
+      0,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 1,
+    "gbs": 16,
+    "nodes": 2
+   },
+   "samples": 16000,
+   "compared": 16000,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rw1k-d": {
+   "parallelism": {
+    "dp": 16,
+    "ep": 16,
+    "tp": 1,
+    "pp": 1,
+    "pp_stage_layers": [
+     [
+      0,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 1,
+    "gbs": 16,
+    "nodes": 2
+   },
+   "samples": 16000,
+   "compared": 16000,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rw1k-e": {
+   "parallelism": {
+    "dp": 16,
+    "ep": 16,
+    "tp": 1,
+    "pp": 1,
+    "pp_stage_layers": [
+     [
+      0,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 1,
+    "gbs": 16,
+    "nodes": 2
+   },
+   "samples": 16000,
+   "compared": 16000,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rw1k-f": {
+   "parallelism": {
+    "dp": 16,
+    "ep": 16,
+    "tp": 1,
+    "pp": 1,
+    "pp_stage_layers": [
+     [
+      0,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 1,
+    "gbs": 16,
+    "nodes": 2
+   },
+   "samples": 16000,
+   "compared": 16000,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rw1k-g": {
+   "parallelism": {
+    "dp": 16,
+    "ep": 16,
+    "tp": 1,
+    "pp": 1,
+    "pp_stage_layers": [
+     [
+      0,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 1,
+    "gbs": 16,
+    "nodes": 2
+   },
+   "samples": 16000,
+   "compared": 16000,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rw1k-h": {
+   "parallelism": {
+    "dp": 16,
+    "ep": 16,
+    "tp": 1,
+    "pp": 1,
+    "pp_stage_layers": [
+     [
+      0,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 1,
+    "gbs": 16,
+    "nodes": 2
+   },
+   "samples": 16000,
+   "compared": 16000,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rw-pp2": {
+   "parallelism": {
+    "dp": 8,
+    "ep": 8,
+    "tp": 1,
+    "pp": 2,
+    "pp_stage_layers": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      2
+     ]
+    ],
+    "mbs": 1,
+    "ga": 2,
+    "gbs": 16,
+    "nodes": 2
+   },
+   "samples": 800,
+   "compared": 800,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  },
+  "rw4-pp2": {
+   "parallelism": {
+    "dp": 16,
+    "ep": 16,
+    "tp": 1,
+    "pp": 2,
+    "pp_stage_layers": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      3
+     ]
+    ],
+    "mbs": 1,
+    "ga": 1,
+    "gbs": 16,
+    "nodes": 4
+   },
+   "samples": 800,
+   "compared": 800,
+   "differ": 0,
+   "first_differ": [],
+   "same": true
+  }
+ }
+}

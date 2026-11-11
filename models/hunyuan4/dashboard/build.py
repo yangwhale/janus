@@ -168,13 +168,13 @@ def kd_attribution():
 
 
 # 第 1 步全部参数梯度对 GPU 第 1 步噪声、超出的对参照定责（PROTOCOL.md 第 5 节）。逐张量：
-#   r = TPU 对最近一份 GPU 的 rel_L2 ÷ GPU 三份两两的最大 rel_L2；
+#   r = TPU 对最近一份 GPU 的 rel_L2 ÷ GPU 第 1 步参照各份两两的最大 rel_L2（mini 现行 6 份 15 对，之前各代 3 份 3 对）；
 #   R = rel_L2(TPU, CPU FP64) ÷ rel_L2(GPU, CPU FP64)：CPU 上的 FP64 整网重算（*-step1-grad-vs-fp64.json，
 #   frameworks/megatron/step1_ref.py，GPU golden 同一套 Megatron-Core 代码，与 TPU 不同源）；
 #   *-step1-grad-vs-ref.json 是对同设置 TPU FP32 版的比较，不作判定。
 # 超出噪声（r > 1）的张量要定责：R ≤ 1.2 即 TPU 不比 GPU 离精确算术远，算已定责。
 #   有 r > 2 且 R > 1.2 的张量 → 不过（待定责）；只有 1 < r ≤ 2 且 R > 1.2 的 → 待定；否则过。
-#   GPU 三份逐位相同（N = 0）的张量量不出噪声：两边对参照的 rel_L2 都小于 u = 2^-8 的记「低于分辨率（按下限过）」，
+#   GPU 各份逐位相同（N = 0）的张量量不出噪声：两边对参照的 rel_L2 都小于 u = 2^-8 的记「低于分辨率（按下限过）」，
 #   其余看 R ≤ 1.2（PROTOCOL.md 第 5 节「分辨率下限」）。
 STEP1_SOURCE = "PROTOCOL.md 第 5 节：超出 GPU 第 1 步噪声的张量对参照定责（R ≤ 1.2）"
 
@@ -231,6 +231,12 @@ def _step1_judge(rows):
     return st, un2, un1, zbad, over2, over1
 
 
+def _fen(rows):
+    """GPU 第 1 步参照的份数（每行 gpu_vs_ref_each 的长度）：3 份照旧写「三份」，其余写数字。"""
+    n = len(rows[0]["gpu_vs_ref_each"]) if rows and "gpu_vs_ref_each" in rows[0] else 3
+    return "三份" if n == 3 else f"{n} 份"
+
+
 def _names(rs):
     """未定责张量的四件事：超出 N 的倍数（N = 0 写明），两边对参照的 rel_L2，R。"""
 
@@ -245,9 +251,10 @@ def _names(rs):
     return "、".join(one(r) for r in rs)
 
 
-# 接受的张量：{张量名: 出处}。只用于现行一代的定责，接受的张量算已定责（不进未定责计数），消息里写明。
+# 另列的张量：{张量名: 出处}。不进未定责计数，消息里写明「另列」。按 D11 豁免规则单列，豁免规则与 base2 开时的接受
+# 是否沿用待复核（2026-11-11），所以消息不写「已接受」。
 STEP1_ACCEPTED = {
-    "model.mtp_layers.0.enorm.weight": "对齐细节 D13，PROTOCOL 变更记录 2026-11-09",
+    "model.mtp_layers.0.enorm.weight": "接受理由见对齐细节 D13、PROTOCOL 变更记录 2026-11-09",
 }
 
 
@@ -262,7 +269,7 @@ def step1_vs_ref(fname, tpu, gpu, res=None, accepted=None):
             if r["tensor"] in accepted and r["R_vs_ref"] > R_LIMIT:
                 acc.append(r)
                 r["R_vs_ref_raw"], r["R_vs_ref"] = r["R_vs_ref"], 0.0
-    # TPU 梯度文件落盘损坏的张量（文件里的平方和对不上设备上算的，见 step1_vs_fp64.py）不可判：不进判定，整体至少待定
+    # TPU 梯度文件取回损坏的张量（文件里的平方和对不上设备上算的，见 step1_vs_fp64.py）不可判：不进判定，整体至少待定
     bad = [r["tensor"] for r in allrows if r.get("tpu_file_corrupt")]
     rows = [r for r in allrows if not r.get("tpu_file_corrupt")]
     st, un2, un1, zbad, over2, over1 = _step1_judge(rows)
@@ -270,7 +277,7 @@ def step1_vs_ref(fname, tpu, gpu, res=None, accepted=None):
         st = "inconclusive"
     msg = (
         (
-            f"TPU 梯度文件 {len(bad)} 个张量落盘损坏、不可判（{', '.join(f'`{b}`' for b in bad)}），以下只算其余；"
+            f"TPU 梯度文件 {len(bad)} 个张量取回损坏、不可判（{', '.join(f'`{b}`' for b in bad)}），以下只算其余；"
             if bad
             else ""
         )
@@ -281,11 +288,11 @@ def step1_vs_ref(fname, tpu, gpu, res=None, accepted=None):
         + (
             "；另 "
             + "、".join(f"`{r['tensor']}`（R {r['R_vs_ref_raw']:.2f}）" for r in acc)
-            + f" 已接受（{'；'.join(accepted[r['tensor']] for r in acc)}），算已定责"
+            + f" 另列，不进未定责计数（按 D11 豁免规则单列（豁免规则与沿用待复核）；{'；'.join(accepted[r['tensor']] for r in acc)}）"
             if acc
             else ""
         )
-        + f"；GPU 三份逐位相同（N = 0）的 {sum(r['gpu_noise_max'] == 0 for r in rows)} 个张量里"
+        + f"；GPU {_fen(rows)}逐位相同（N = 0）的 {sum(r['gpu_noise_max'] == 0 for r in rows)} 个张量里"
         + f" {sum(_below_floor(r) for r in rows)} 个低于分辨率（按下限过），其余对参照的 R "
         + ("有超过 1.2 的" if zbad else "都不超过 1.2")
     )
@@ -303,6 +310,7 @@ def step1_vs_ref(fname, tpu, gpu, res=None, accepted=None):
                 "tensors": len(rows),
                 "n_tpu_file_corrupt": len(bad),
                 "n_accepted": len(acc),
+                "n_over_n": len(over1),
             },
             "message": msg,
         }
@@ -325,11 +333,11 @@ def step1_vs_ref(fname, tpu, gpu, res=None, accepted=None):
         if gun2 or gun1 or gz:
             m += "；未定责：" + _names(gun2 + gun1 + gz)
         if gacc:
-            m += "；已接受：" + "、".join(
+            m += "；另列（按 D11 豁免规则单列（豁免规则与沿用待复核））：" + "、".join(
                 f"`{r['tensor']}`（R {r['R_vs_ref_raw']:.2f}，{accepted[r['tensor']]}）" for r in gacc
             )
         if gbad:
-            m += f"；另 {len(gbad)} 个 TPU 文件落盘损坏、不可判"
+            m += f"；另 {len(gbad)} 个 TPU 文件取回损坏、不可判"
             gst = "inconclusive" if gst == "pass" else gst
         out.append(
             {
@@ -434,6 +442,28 @@ def determinism():
     ]
 
 
+def resume_bitwise():
+    """t1-resume-bitwise.json：TPU 存档续跑对不断开逐位（x4-full / x4-s1 / x4-s2，现行配置 1000 步）。"""
+    d = _load("t1-resume-bitwise.json")
+    ps, fs = d["per_step"], d["final_state"]
+    n = sum(w["compared_steps"] for w in (ps["steps_1_500"], ps["steps_501_1000"]))
+    bad = ps["steps_1_500"]["differ_steps"] + ps["steps_501_1000"]["differ_steps"]
+    ok = all(fs["state_sha"].values())
+    return [
+        _exact(
+            "DET.tpu.resume",
+            "determinism",
+            "L4",
+            ok,
+            "steps",
+            n,
+            bad + (0 if ok else 1),
+            f"第 500 步存档、新进程换切片续跑到 1000 步，对不断开的同一运行：{n} 步 × {ps['steps_1_500']['fields']} 个逐步量逐位比，"
+            f"最终 {fs['state_sha_tensors']} 个状态张量 sha256 {'全同' if ok else '有不同'}（{' / '.join(d['runs'])}）",
+        )
+    ]
+
+
 def l0_extras():
     smoke = json.loads((TINY / "results" / "hy4-cpu-smoke.json").read_text())
     neg = next(c for c in smoke["checks"] if c["id"] == "A.negative_control_unpatched_rope_fails")
@@ -489,7 +519,45 @@ def l0_extras():
                 )
             ],
         ),
+        **tiny_qkclip_scan(),
     }
+
+
+def tiny_qkclip_scan():
+    """hy4-tiny11 的 QK-Clip 扫描层检查（qk_clip_scan_check.py，台账 J1 / M1）：每层每头实测 √scale 与按该层最大 logit 算的期望逐位比。
+    修前（hy4-tiny11-qk-clip-scan.json）扫描块各层共用一个缩放，修后（-postfix，MaxText b87a55aa）复跑。"""
+    out = {}
+    for name in ("hy4-tiny11-qk-clip-scan", "hy4-tiny11-qk-clip-scan-postfix"):
+        f = ROOT / "results" / f"{name}.json"
+        if not f.exists():
+            continue
+        d = json.loads(f.read_text())
+        n = bad = 0
+        for leaf in d["wq_b"]:
+            got, exp = leaf["sqrt_scale_per_layer_head"], leaf["expected_sqrt_scale_per_layer_head"]
+            if not isinstance(got[0], list):  # 余数块（不扫描）只有一层：[头]
+                got, exp = [got], [exp]
+            for g, e in zip(got, exp, strict=True):
+                for x, y in zip(g, e, strict=True):
+                    n += 1
+                    bad += x != y
+        tag = "修后（MaxText b87a55aa）" if name.endswith("postfix") else "修前"
+        out[name] = (
+            f,
+            [
+                _exact(
+                    "T0.qkclip.scan_per_layer",
+                    "artifact_check",
+                    "L0",
+                    True,
+                    "objects",
+                    n,
+                    bad,
+                    f"{tag}：{len(d['wq_b'])} 个 wq_b 叶子、{n} 个层 × 头的实测 √scale 对期望逐位比，不同 {bad} 个",
+                )
+            ],
+        )
+    return out
 
 
 # ---- TPU 一侧的单算子、优化器、QK-Clip、逐层回放（文件不在时不出这几条）
@@ -587,7 +655,7 @@ def tpu_qk_clip():
             "threshold": {
                 "kind": "numeric",
                 "values": {"resid_over_clip": 1e-3},
-                "source": "analysis/qk_clip_compare.py 开头（推断）",
+                "source": "analysis/qk_clip_compare.py 开头：推断（一次更新约 1e-5、裁剪改变量约 6e-4，比值约 1e-4，取 10 倍余量）",
             },
             "metrics": {"resid_over_clip": w["tpu_resid_over_clip"], "cases": len(d["formula_rows"])},
             "message": f"TPU 裁剪后 = GPU 裁剪前 × f(η_TPU)：最差第 {w['step']} 步第 {w['layer']} 层 {w['proj']}，残差 ÷ 裁剪改变量 "
@@ -725,6 +793,15 @@ def virtual():
                 accepted=STEP1_ACCEPTED,
             ),
         ),
+        "t1zo-step1-train-grad-vs-fp64-n6": (
+            RES / "t1zo-step1-train-grad-vs-fp64-n6.json",
+            step1_vs_ref(
+                "t1zo-step1-train-grad-vs-fp64-n6.json",
+                "tz-off-rep（训练步梯度）",
+                "g2s-a … g2s-f（6 份）",
+                accepted=STEP1_ACCEPTED,
+            ),
+        ),
         "t1zg-step1-grad-vs-fp64": (
             RES / "t1zg-step1-grad-vs-fp64.json",
             step1_vs_ref("t1zg-step1-grad-vs-fp64.json", "mz-diag1", "g2s-a/b/c", accepted=STEP1_ACCEPTED),
@@ -742,6 +819,7 @@ def virtual():
             step1_vs_ref("t1t-step1-grad-vs-fp64.json", "t1diag17", "g2s-a/b/c"),
         ),
         "hy4-mini-tpu-determinism": (RES / "hy4-mini-tpu-determinism.json", determinism()),
+        "t1-resume-bitwise": (RES / "t1-resume-bitwise.json", resume_bitwise()),
         **(
             {
                 "mid-tm2-step1-grad-vs-fp64": (
@@ -820,7 +898,8 @@ def route_agree():
                     "cases": len(rs["routing"]) + len(rs["dsa"]),
                 },
                 "message": f"第 {step} 步（TPU {'、'.join(sorted({x[2] for x in rs['routing']}))}）：路由各层 R {min(rs['routing'])[0]:.2f}–{max(rs['routing'])[0]:.2f}，"
-                f"DSA 各层 R {min(rs['dsa'])[0]:.2f}–{max(rs['dsa'])[0]:.2f}（TPU 对 CPU FP64 的翻转率 ÷ GPU 三份对 FP64 的最大值）",
+                f"DSA 各层 R {min(rs['dsa'])[0]:.2f}–{max(rs['dsa'])[0]:.2f}（TPU 对 CPU FP64 的翻转率 ÷ GPU 三份对 FP64 的最大值）；"
+                f"最差 {'DSA' if worst in rs['dsa'] else '路由'} 第 {worst[1]} 层（`{worst[2]}`）",
             }
         )
     return out
@@ -846,6 +925,7 @@ def flip_stats_diag():
 # 同一运行的第二个窗口在总览里与主窗口合成一格：检查 id 加后缀，说明里「取最差」能看出是哪个窗口。
 # 别名 → (原结果名, id 后缀)；检查清单核对时按原结果名核。
 WINDOW_ALIAS = {
+    "t1zc300-w": ("t1zc300-l4", "@前300步"),
     "t1zo300-w": ("t1zo300-l4", "@前300步"),
     "t1zo300qk-w": ("t1zo300-l4-qkclip", "@前300步"),
     "t1zga300-w": ("t1zga300-l4", "@前300步"),
@@ -879,7 +959,7 @@ L4_COLS = [  # (表头, 检查 id)
 # 每张表：(小标题, 说明, [(结果名, 被测, 设置), …])，按时间先后；结果名带 * 取最后一个匹配的文件
 HISTORY = [
     (
-        "mini · 1000 步（对 GPU g3-a；噪声 g3 两两：现行 tz-off-rep 16 份 120 对，其余各代 8 份 28 对，两种 N 下的 r 不能直接比）",
+        "mini · 1000 步（对 GPU g3-a；噪声 g3 两两：现行 tc-a 与上一代 tz-off-rep 16 份 120 对，其余各代 8 份 28 对，两种 N 下的 r 不能直接比）",
         "M 编号是开关台账的行；「诊断」是只为拆开某个开关效果的运行，不当现行。",
         [
             ("t1u-l4", "t1u-a", "M28 之前"),
@@ -902,7 +982,13 @@ HISTORY = [
                 "t1zg-b",
                 "t1zg-a 的开关、M50 修订版代码（MaxText fd30fbfb）：KD 记录值逐位相同，其余最多差 2 ulp",
             ),
-            ("t1zo-l4", "tz-off-rep", "**现行**：t1zg 再关 base2（2026-11-11 起；噪声换 g3 16 份 120 对）"),
+            ("t1zo-l4", "tz-off-rep", "上一代：t1zg 再关 base2（噪声换 g3 16 份 120 对）"),
+            ("t1zc-l4", "tc-a", "**现行**：C 口径，tz-off-rep 再开 M52、M58（2026-11-11 起；同配置 5 份取第一份）"),
+            (
+                "t1zp-l4",
+                "x5-prod",
+                "验证：生产建议组合（现行再开 M42、嵌入与 RMSNorm scale 梯度 FP32，关 M8、M10、M27、M30、M36、M42b）",
+            ),
         ],
     ),
     (
@@ -926,7 +1012,9 @@ HISTORY = [
             ("t1zw300-l4", "t1zw-a", "上一代：t1zu + M42b（前 300 步）"),
             ("t1zga300-l4", "t1zg-a", "上一代（前 300 步）"),
             ("t1zla300-l4", "t1zl-a", "验证：+M51（前 300 步）"),
-            ("t1zo300-l4", "tz-off-rep", "**现行**：再关 base2（前 300 步）"),
+            ("t1zo300-l4", "tz-off-rep", "上一代：再关 base2（前 300 步）"),
+            ("t1zc300-l4", "tc-a", "**现行**：C 口径，再开 M52、M58（前 300 步）"),
+            ("t1zp300-l4", "x5-prod", "验证：生产建议组合（前 300 步）"),
         ],
     ),
     (
@@ -965,9 +1053,18 @@ HISTORY_L3 = [
     ("t1t-step1-grad-vs-fp64", "t1diag17", "t1t 设置，对 g2s 三份"),
     ("t1v-step1-grad-vs-fp64", "t1vdiag", "t1v 设置（+M28），对 g2s 三份"),
     ("t1z-step1-grad-vs-fp64", "t1zdiag2", "上一代：t1z 设置（+M30、M32），对 g2s 三份"),
-    ("t1zg-step1-grad-vs-fp64", "mz-diag1", "旁证：现行配置的诊断程序梯度，对 g2s 三份"),
+    ("t1zg-step1-grad-vs-fp64", "mz-diag1", "旁证：base2 开那一代配置的诊断程序梯度，对 g2s 三份"),
     ("t1zg-step1-train-grad-vs-fp64", "mz-opt2", "上一代：base2 开的配置训练步实际用的梯度，对 g2s 三份"),
-    ("t1zo-step1-train-grad-vs-fp64", "tz-off-rep", "**现行**：现行配置（base2 关）训练步实际用的梯度，对 g2s 三份"),
+    (
+        "t1zo-step1-train-grad-vs-fp64",
+        "tz-off-rep",
+        "现行配置（base2 关）训练步实际用的梯度，对 g2s 三份（2026-11-11 前的尺子）",
+    ),
+    (
+        "t1zo-step1-train-grad-vs-fp64-n6",
+        "tz-off-rep",
+        "**现行**：同上，尺子换成 g2s 6 份 15 对（2026-11-11 补 g2s-d … f）",
+    ),
 ]
 
 
@@ -1027,7 +1124,7 @@ def history_md(v):
     md += [
         "## mini · 第 1 步整网（L3）",
         "",
-        "全部参数梯度对 GPU 第 1 步三份的噪声，超出的对 CPU FP64 整网重算定责（规则见总览 L3 一组）。",
+        "全部参数梯度对 GPU 第 1 步参照的噪声（现行 6 份 15 对，之前各代 3 份 3 对），超出的对 CPU FP64 整网重算定责（规则见总览 L3 一组）。",
         "",
         "| 被测 | 设置 | 判定 | 张量 | 超出 N 而未定责 | 其中超出 2N |",
         "|---|---|---|---|---|---|",
@@ -1042,28 +1139,122 @@ def history_md(v):
     (ROOT / "dashboard" / "history.md").write_text("\n".join(md) + "\n")
 
 
-PLAIN_LEGEND = [
-    "**现状：还不能签字**（签字＝正式宣布两边对齐了）。以现行比较 tz-off-rep 为准（2026-11-11 起对齐配置关 splash 的 base2 指数，1000 步的波动上限换成 GPU 16 份）："
-    "hy4-mini（混元 4 全部结构、缩小尺寸的随机初始化模型）在 TPU 和 GPU 上用同一份权重、同一份数据训练 1000 步，"
-    "9 项曲线 7 项对上、2 项略超（主 loss 全程与第 101 步起；带符号均值，即逐步相对差的平均：全程 TPU +7.21e-6、GPU 自己重跑的波动上限 4.65e-6，1.55 倍，第 101 步起 1.52 倍；后段根因待查），没有不过；"
-    "梯度范数（0.81 倍）、路由偏置标准差（0.77 倍）都已对上（路由偏置是 MoE 给每个专家加的负载平衡偏置）。"
-    "同一运行前 300 步梯度范数略超（平均绝对相对误差 1.23 倍）；另一份同配置运行的每步最大注意力打分 1000 步略超（平均绝对相对误差 1.09 倍）。"
-    "这两项在 base2 开的上一代已接受，关 base2 后没有重做同一状态的证据，状态待定（base2 开时的接受是否沿用尚未决定）。"
-    "挡签字的还有：第一步整网 205 个梯度里 177 个超出 GPU 的波动（171 个离精确值不超过 GPU 的 1.2 倍、算已查明来源；另 6 个比 GPU 远，1 个已接受，5 个超连接小参数未定责，其中 3 个是关 base2 后新出现的），"
-    "低阈值下第一步第 4 层每头最大注意力打分离精确值是 GPU 的 1.55 倍（未定责），GPU 第一步参照只有 3 份，"
-    "参照答案（GPU 上同设置的标准训练）没和 GPU 生产程序比过，三条事后改的判法要在真实权重上做前瞻验证（判法事先固定，再看新结果）。",
-    "",
-    "为什么、生产怎么配、还差什么，见[对齐报告](../alignments/01-mini/ALIGNMENT-REPORT.md)。",
-    "",
-    "TPU 自己只改一样东西（并行方式、编译开关、代码写法、版本、硬件）结果变不变、变多少，见 [TPU 自比](../alignments/04-tpu-self/README.md)；真有影响的几件逐件讲在 [`impacts/`](../alignments/04-tpu-self/impacts/README.md)。",
-    "",
-    "| 符号 | 意思 |",
-    "|---|---|",
-    "| ✅ / 🟡 / ❌ | 对上 / 略超或只看不判（GPU 列是做过、没写成结果文件）/ 没对上 |",
-    "| ⬜ / — | 还没做 / 不适用 |",
-    "| 对上 | 差别不超过 GPU 自己重跑的波动；量不出波动的地方，TPU 离精确值（CPU 上 64 位计算）不超过 GPU 的 1.2 倍 |",
-    "| 细节 | 每一格的数字、门槛与推导在[总览细节](detail.md)，术语见[知识库的术语对照表](../knowledge.md#术语对照表) |",
-]
+# 总览头条的数字一律从结果文件读（plain_legend），这里只放文字骨架
+L4_NAME = {
+    "L4.loss": "主 loss 全程",
+    "L4.loss.tail": "主 loss 第 101 步起",
+    "L4.mtp_loss": "MTP loss",
+    "L4.mtp_loss.tail": "MTP loss 第 101 步起",
+    "L4.indexer_loss": "索引器 KD",
+    "L4.grad_norm": "梯度范数",
+    "L4.param_norm": "参数范数",
+    "L4.router.bias_mean": "路由偏置均值",
+    "L4.router.bias_std": "路由偏置标准差",
+}
+METRIC_NAME = {"signed_mean": "带符号均值", "mare": "平均绝对相对误差", "max_step": "单步最大"}
+HEAD_L4, HEAD_L4_300, HEAD_QK, HEAD_STEP1, HEAD_STEP1_N3, HEAD_QK_L1 = (
+    "t1zc-l4",
+    "t1zc300-l4",
+    "t1zo-l4-qkclip",
+    "t1zo-step1-train-grad-vs-fp64-n6",
+    "t1zo-step1-train-grad-vs-fp64",
+    "t1zo-qkclip-maxlogit",
+)
+
+
+def _e(x, sign=False):
+    """3.5e-4 写法（指数不补零）。"""
+    t = f"{x:+.2e}" if sign else f"{x:.2e}"
+    return re.sub(r"e([+-])0*(\d)", lambda m: "e" + ("-" if m.group(1) == "-" else "") + m.group(2), t)
+
+
+def _pairs_to_runs(k):
+    """两两配对数 → 份数（n(n−1)/2 = k）。"""
+    n = round((1 + (1 + 8 * k) ** 0.5) / 2)
+    if n * (n - 1) // 2 != k:
+        raise SystemExit(f"噪声对数 {k} 不是 n(n−1)/2")
+    return n
+
+
+def plain_legend(v):
+    """总览头条：L4 读 t1zc-l4 / t1zc300-l4（C 口径）与 t1zo-l4-qkclip（C 口径之前），L3 读 6 份尺子的 t1zo-step1-train-grad-vs-fp64-n6，
+    低阈值 QK-Clip 读 t1zo-qkclip-maxlogit。改了结果文件，make dashboard 后头条跟着变。"""
+
+    def checks(name):
+        return {c["id"]: c for c in json.loads(_resolve(name).read_text())["checks"]}
+
+    l4, l4s, qk = checks(HEAD_L4), checks(HEAD_L4_300), checks(HEAD_QK)
+    cnt = {k: sum(c["status"] == k for c in l4.values()) for k in ("pass", "inconclusive", "fail")}
+    inco = [cid for cid, c in l4.items() if c["status"] == "inconclusive"]
+    lo = l4["L4.loss"]
+    sm, up = lo["metrics"]["signed_mean_max"], lo["threshold"]["noise"]["upper"]["signed_mean"]
+
+    def rr(c):
+        r, k = _r_of(c)
+        return f"{METRIC_NAME[k]} {r:.2f} 倍"
+
+    s1 = next(c for c in v[HEAD_STEP1][1] if c["id"] == "L3.step1.grads.vs_gpu")
+    s3 = next(c for c in v[HEAD_STEP1_N3][1] if c["id"] == "L3.step1.grads.vs_gpu")
+    rows = [r for r in json.loads((RES / f"{HEAD_STEP1}.json").read_text())["rows"] if not r.get("tpu_file_corrupt")]
+    over = [r for r in rows if r["gpu_noise_max"] > 0 and r["tpu_vs_gpu_min"] / r["gpu_noise_max"] > 1]
+    far = [r for r in over if r["R_vs_ref"] > R_LIMIT]
+    un = [r for r in far if r["tensor"] not in STEP1_ACCEPTED]
+    acc = [r for r in far if r["tensor"] in STEP1_ACCEPTED]
+    if s1["metrics"]["n_unattributed_over_n"] != len(un):
+        raise SystemExit("头条的 L3 未定责计数和结果对不上")
+
+    def one(r):
+        return (
+            f"`{r['tensor'].removeprefix('model.')}`（超出波动 {r['tpu_vs_gpu_min'] / r['gpu_noise_max']:.2f} 倍，"
+            f"离精确值 GPU {_e(r['gpu_vs_ref'], False)}、TPU {_e(r['tpu_vs_ref'], False)}，R {r['R_vs_ref']:.2f}）"
+        )
+
+    ql = next(c for c in json.loads(_resolve(HEAD_QK_L1).read_text())["checks"] if c["id"] == "L1.qkclip.max_logit")
+    qm = ql["metrics"]
+    n_fen = _fen(rows)
+    return [
+        "**现状：还不能签字**（签字＝正式宣布两边对齐了）。以现行比较 tc-a 为准（2026-11-11 起对齐配置改 C 口径：TPU 在超连接与 hc_head 一带"
+        f"照 GPU 的写法舍 16 位，GPU 不改；同配置 5 份取第一份；1000 步的波动上限是 GPU {_pairs_to_runs(l4['L4.loss']['threshold']['noise']['refs'])} 份）："
+        "hy4-mini（混元 4 全部结构、缩小尺寸的随机初始化模型）在 TPU 和 GPU 上用同一份权重、同一份数据训练 1000 步，"
+        f"9 项曲线 {cnt['pass']} 项对上、{cnt['inconclusive']} 项略超（"
+        + "、".join(f"{L4_NAME[i]}：{rr(l4[i])}" for i in inco)
+        + "），"
+        + ("没有不过；" if not cnt["fail"] else f"{cnt['fail']} 项不过；")
+        + f"主 loss {'对上' if lo['status'] == 'pass' else '略超'}（带符号均值，即逐步相对差的平均：TPU {_e(sm, True)}、GPU 自己重跑的波动上限 {_e(up, False)}，{sm / up:.2f} 倍；"
+        f"三个量里最差的 {rr(lo)}）。C 口径之前（tz-off-rep）主 loss 略超，后段偏高的主因是超连接里流的梯度怎么舍，TPU、GPU 两头各改一处都验证了；"
+        "C 口径下第 551–1000 步还剩约 +6.6e-6，机制待查（同配置 5 份的读数见对齐报告）。"
+        f"同一运行前 300 步梯度范数{'略超' if l4s['L4.grad_norm']['status'] == 'inconclusive' else '对上'}（{rr(l4s['L4.grad_norm'])}）。"
+        "下面几项是 C 口径之前那一代的读数（C 口径改了第一步的梯度，要重判）："
+        f"另一份同配置运行的每步最大注意力打分 1000 步{'略超' if qk['L4.qkclip.max_logit']['status'] == 'inconclusive' else '见下表'}（{rr(qk['L4.qkclip.max_logit'])}，"
+        "base2 开的上一代已接受，关 base2 后没有重做同一状态的证据，是否沿用尚未决定）；"
+        f"第一步整网 {len(rows)} 个梯度里 {len(over)} 个超出 GPU {n_fen}之间的波动"
+        f"（{len(over) - len(far)} 个离精确值不超过 GPU 的 1.2 倍、算已查明来源；另 {len(far)} 个比 GPU 远："
+        + "、".join(one(r) for r in un)
+        + f"，计 {len(un)} 个未定责"
+        + (
+            "（超出波动都不到 2 倍，所以这一项是略超不是没对上）；"
+            if not s1["metrics"]["n_unattributed_over_2n"]
+            else "；"
+        )
+        + "、".join(one(r) for r in acc)
+        + "，另列；超连接（iHC）小参数与 MTP enorm 都按 D11 豁免规则单列（豁免规则与沿用待复核）。"
+        f"GPU 第一步参照 2026-11-11 从 3 份补到 6 份，3 份时是 {s3['metrics']['n_over_n']} 个超出、{s3['metrics']['n_unattributed_over_n']} 个未定责），"
+        f"低阈值下第一步第 {qm['worst_layer']} 层每头最大注意力打分离精确值 GPU {_e(qm['rel_l2_gpu_vs_ref'], False)}、TPU {_e(qm['rel_l2_tpu_vs_ref'], False)}，"
+        f"{qm['r_ratio']:.2f} 倍（未定责），"
+        "参照答案（GPU 上同设置的标准训练）没和 GPU 生产程序比过，三条事后改的判法要在真实权重上做前瞻验证（判法事先固定，再看新结果）。",
+        "",
+        "为什么、生产怎么配、还差什么，见[对齐报告](../alignments/01-mini/ALIGNMENT-REPORT.md)。",
+        "",
+        "TPU 自己只改一样东西（并行方式、编译开关、代码写法、版本、硬件）结果变不变、变多少，见 [TPU 自比](../alignments/04-tpu-self/README.md)；真有影响的几件逐件讲在 [`impacts/`](../alignments/04-tpu-self/impacts/README.md)。",
+        "",
+        "| 符号 | 意思 |",
+        "|---|---|",
+        "| ✅ / 🟡 / ❌ | 对上 / 略超或只看不判（GPU 列是做过、没写成结果文件）/ 没对上 |",
+        "| ⬜ / — | 还没做 / 不适用 |",
+        "| 对上 | 差别不超过 GPU 自己重跑的波动；量不出波动的地方，TPU 离精确值（CPU 上 64 位计算）不超过 GPU 的 1.2 倍 |",
+        "| 细节 | 每一格的数字、门槛与推导在[总览细节](detail.md)，术语见[知识库的术语对照表](../knowledge.md#术语对照表) |",
+    ]
+
 
 HOW_TO_READ = [
     "知识库页：[总览](dashboard.md)每一格的推导。术语见[知识库的术语对照表](../knowledge.md#术语对照表)。",
@@ -1076,7 +1267,7 @@ HOW_TO_READ = [
     "",
     "| 术语 | 含义 | 判定线 |",
     "|---|---|---|",
-    "| N | 噪声上限：GPU 同设置重跑之间的差。L4 取两两配对里这个量的最大值（mini 前 300 步 8 份 28 对、1000 步 16 份 120 对；其他尺寸 8 份 28 对），L3 取第 1 步三份两两的最大 rel_L2 | — |",
+    "| N | 噪声上限：GPU 同设置重跑之间的差。L4 取两两配对里这个量的最大值（mini 前 300 步 8 份 28 对、1000 步 16 份 120 对；其他尺寸 8 份 28 对），L3 取第 1 步参照两两的最大 rel_L2（mini 现行 6 份 15 对） | — |",
     "| r | TPU 对 GPU 的差 ÷ N；只量两边差多大，不定责。L4 每项取带符号均值、MARE、最大单步里最差的一个 | ≤ 1 过，> 2 不过，之间待定 |",
     "| 带符号均值 | L4 判定量：窗口内逐步相对差的平均（带符号，看系统偏差） | 对 N 判 |",
     "| MARE | L4 判定量：逐步相对差绝对值的平均（看整体离多远） | 对 N 判 |",
@@ -1116,9 +1307,9 @@ GOLDEN_NOTE = [
     "|---|---|",
     "| golden | GPU 一侧（B200 × 8，Megatron-Core）的结果；TPU（MaxText，v5p 8 个设备）是被测。语义以 MaxText 的混元 4 实现为准，优化器与 loss 的细节 MaxText 加默认关的开关对上原版 Megatron-Core（`PROTOCOL.md` 第 1.2 节） |",
     "| 基线与噪声 | GPU 同设置重跑（1000 步 `g3-a…p` 16 份 120 对，前 300 步 `g2-a…h` 8 份 28 对）；TPU 只和 `g3-a` / `g2-a` 逐步比，其余各份只用来量 N；TPU 对各份各比一次只作诊断 |",
-    "| 第 1 步（L3） | 逐张量对 GPU 三份第 1 步的噪声，超出的对 CPU FP64 整网重算看 R |",
+    "| 第 1 步（L3） | 逐张量对 GPU 第 1 步参照（mini 现行 6 份）的噪声，超出的对 CPU FP64 整网重算看 R |",
     "| 学习率 | 登记的常数 1e-5，归 L0 设置核对，不计入 L4 |",
-    "| 单次运行 r 的分辨率 | 只改一个按理不改数值的开关（M51 精确 log：CPU 上逐位相同），TPU 上融合方式变了，第 1 步 10 个梯度张量不逐位，1000 步主 loss 带符号均值 r 0.36 → 1.44；诊断程序与训练步分开编译，第 1 步梯度相对差中位数 2.9e-4。r 在 1 附近的差别不用来比较各代好坏，判定只看过 / 待定 / 不过与定责证据 |",
+    "| 单次运行 r 的分辨率 | 只开一个只把 FP32 log 的误差从 3 ULP 收到 ≤ 1 ULP 的开关（M51；它在 TPU 上本身改数值，CPU 上梯度写法逐位不变），第 1 步 10 个索引器梯度张量不逐位（差 ≤ 2.3e-4），1000 步主 loss 带符号均值 r 0.36 → 1.44；诊断程序与训练步分开编译，第 1 步梯度相对差中位数 2.9e-4。r 在 1 附近的差别不用来比较各代好坏，判定只看过 / 待定 / 不过与定责证据 |",
     "| 其余 | 开关、GPU 参照的修正、测量口径见 [mini 对齐报告](../alignments/01-mini/ALIGNMENT-REPORT.md)；根源与修法见 [`ROOT-CAUSES.md`](../ROOT-CAUSES.md)；代号见 mini 对齐细节第 1 节 |",
 ]
 
@@ -1134,7 +1325,7 @@ OTHER_NOTE = [
     "- **B、D1**（真实权重截层）：B 测 MoE（第 0 层稠密 + 第 1 层 MoE），D1 测 MTP（第 0 层稠密 + 1 层 MTP）"
     "（[报告](../alignments/02-real-weight/ALIGNMENT-REPORT.md)）。",
     "- **tiny**（hy4-tiny，5.4M）：只做 TPU 一侧的 CPU 冒烟（[报告](../alignments/00-tiny/ALIGNMENT-REPORT.md)）。",
-    "- 判法同 mini：每个尺寸 GPU 同设置 8 份两两 28 对量噪声上限 N，TPU 只和指定的一份比；L3 对 CPU FP64 看 R。",
+    "- 判法同 mini：每个尺寸用 GPU 同设置多份两两之差量噪声上限 N（这里各尺寸都是 8 份 28 对；mini 现行 1000 步是 16 份 120 对），TPU 只和指定的一份比；L3 对 CPU FP64 看 R。",
 ]
 
 SIZES = ["00-tiny", "01-mini", "02-real-weight", "03-mid"]
@@ -1215,7 +1406,7 @@ def main():
         virtual=v,
         prefer=("mini", "gpu"),
         detail_stem="detail",
-        plain_legend=PLAIN_LEGEND,
+        plain_legend=plain_legend(v),
     ).main()
     Overview(
         ROOT,

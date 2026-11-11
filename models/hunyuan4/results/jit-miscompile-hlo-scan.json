@@ -1,0 +1,3559 @@
+{
+ "tool": "models/hunyuan4/analysis/hlo_mof_dus_scan.py",
+ "n_files": 292,
+ "n_with_71_signature": 0,
+ "summary": [
+  {
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "accelerator": "TPU v5",
+   "has_mof_with_dus": false,
+   "with_71_signature": 0,
+   "n_runs": 1
+  },
+  {
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "accelerator": "TPU v5",
+   "has_mof_with_dus": true,
+   "with_71_signature": 0,
+   "n_runs": 71
+  },
+  {
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "accelerator": "TPU v5",
+   "has_mof_with_dus": false,
+   "with_71_signature": 0,
+   "n_runs": 33
+  },
+  {
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "accelerator": "TPU7x",
+   "has_mof_with_dus": true,
+   "with_71_signature": 0,
+   "n_runs": 3
+  },
+  {
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "957406610",
+   "accelerator": "TPU v5",
+   "has_mof_with_dus": false,
+   "with_71_signature": 0,
+   "n_runs": 5
+  },
+  {
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "accelerator": "TPU v5",
+   "has_mof_with_dus": false,
+   "with_71_signature": 0,
+   "n_runs": 162
+  },
+  {
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "accelerator": "TPU v5",
+   "has_mof_with_dus": true,
+   "with_71_signature": 0,
+   "n_runs": 5
+  },
+  {
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "accelerator": "TPU7x",
+   "has_mof_with_dus": true,
+   "with_71_signature": 0,
+   "n_runs": 8
+  },
+  {
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "972931731",
+   "accelerator": "TPU v5",
+   "has_mof_with_dus": false,
+   "with_71_signature": 0,
+   "n_runs": 2
+  },
+  {
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "981334199",
+   "accelerator": "TPU v5",
+   "has_mof_with_dus": false,
+   "with_71_signature": 0,
+   "n_runs": 2
+  }
+ ],
+ "runs": [
+  {
+   "run": "cal-cmoff-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 5,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,1536] 8,128",
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-combo-ar2",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-combo-b",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-combo-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-rematqkv-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "cal-sabwd1k-a",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-sabwd1k-b",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-sabwd1k-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-sabwd256-a",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-sabwd256-b",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-sabwd256-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-safwd1k-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-vmem24-a",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-vmem24-b",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-vmem24-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-vmem32-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-vmem40-a",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-vmem40-b",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-vmem40-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-vmem48-a",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-vmem48-b",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-vmem48-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-vmem56-a",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-vmem56-b",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-vmem56-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-vmem64-a",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-vmem64-b",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-vmem64-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "cal-vmem80-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-combo-a",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-combo-b",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-combo-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-sabwd1k-a",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-sabwd1k-b",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-sabwd1k-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-sabwd256-a",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-sabwd256-b",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-sabwd256-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-vmem40-a",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-vmem40-br2",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-vmem40-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-vmem48-a",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-vmem48-b",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-vmem48-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-vmem56-a",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-vmem56-b",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-vmem56-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-vmem64-a",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-vmem64-b",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fa-vmem64-t1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "fz46-g",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "fz46-r",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "fz52-d",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "fz52-g",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "fz52-r",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "reg-t0-fa-a",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t0-fa-b",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t0-fa-c",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t0-fa-d",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t0-fa-e",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t0-lkg1-a",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t0-lkg1-b",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t0-r2",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t0-r3",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t0-r4",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t0-st1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t0-st2",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t1-fa-a",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t1-fa-b",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t1-fa-c",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t1-fa-d",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t1-fa-e",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t1-lkg2-a",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t1-lkg2-b",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t1-st1",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t1-st2",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "reg-t1-st3",
+   "model": "hunyuan3-4l",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 2,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[3,2,4096,64,128] 8,128",
+    "bf16[3,2,4096,8,128] 8,128"
+   ]
+  },
+  {
+   "run": "ts-a-8c",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-a-8f",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-a-shared",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-autorp-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-autorp",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-crsbf16b",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-mfags",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-mmhigh",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-noacf",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-nobf16p",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-nocopy",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-nodd-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-nodd",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-nodparb",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-noexcess",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-nolhs-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-nolhs",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-noovl",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-norwb",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-nosrb",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-nowe-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-nowe",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-scag-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-scag",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-scar-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-scar",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-scf32",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-scrs",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c-vmem",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-c300",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-cp2-f32",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-cp2b",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-cp2c",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-d-ckname",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-d-clip",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-d-commute",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-d-dotattn-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-d-dotattn",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-d-einsum-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-d-einsum",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-d-helper",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-d-lossdiv",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-d-meansum",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-d-metrics-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-d-metrics",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-d-qklog",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-d-rsqrt-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-d-rsqrt",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-d-square-1ks",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-d-square",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-dense-moe-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-dense-moe",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-dotattn-f32e",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-dp2f4-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-dp2f4",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-dp8-embf32-ga1",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-dp8-embf32",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-dp8-ga1",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-dp8",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-e-adameps",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-e-approx-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-e-approx",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-e-bf16acc-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-e-bf16acc",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-e-embf32",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-e-eps",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-e-idx32-1ks",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-e-idx32",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-e-ihcr-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-e-ihcr",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-e-lossorder",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-e-nsfp32-1ks",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-e-nsfp32",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-e-rms2r",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-e-rmsfd",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-e-rmsfdb",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-e-swiglu-1ks",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-e-swiglu",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-ebc-dp8-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-ebc-dp8",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-ebc-g",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-ep-base",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-ep2",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-ep4",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-ep8",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-esd-dp8-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-esd-dp8",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-esd-g",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-f-ltpu45-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "957406610",
+   "libtpu_pip": "libtpu==0.0.45",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-f-ltpu45",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "957406610",
+   "libtpu_pip": "libtpu==0.0.45",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-f-ltpu47-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "972931731",
+   "libtpu_pip": "libtpu==0.0.47",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-f-ltpu47",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "972931731",
+   "libtpu_pip": "libtpu==0.0.47",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-f-ltpu48-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "981334199",
+   "libtpu_pip": "libtpu==0.0.48",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-f-ltpu48",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "981334199",
+   "libtpu_pip": "libtpu==0.0.48",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-f-sc45-1ks",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "957406610",
+   "libtpu_pip": "libtpu==0.0.45",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-f-sc45b",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "957406610",
+   "libtpu_pip": "libtpu==0.0.45",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-f-sc45s2",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "957406610",
+   "libtpu_pip": "libtpu==0.0.45",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-f16-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x4",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-f16-dp16",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x4",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-f16-dp2-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x4",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-f16-dp2",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x4",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-f16-scar",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x4",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-f16-tp2",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x4",
+   "mof_with_dus": 16,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "f32[128] ",
+    "f32[4] ",
+    "f32[8] "
+   ]
+  },
+  {
+   "run": "ts-f16",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x4",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-f16b",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x4",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-fx-dp16-embf32-1ks",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x4",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-fx-dp16-embf32",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x4",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-fx-dp8-embf32-1ks2",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-fx-dp8-embf32",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-fx-g",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-g52-a",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-g52-b",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-g52-c",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-h-v7-1k3",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU7x",
+   "topology": "2x2x1",
+   "mof_with_dus": 6,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "f32[2,1,8] 1,128",
+    "s32[2,1,16] 1,128"
+   ]
+  },
+  {
+   "run": "ts-h-v7-dp8-ga1",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU7x",
+   "topology": "2x2x1",
+   "mof_with_dus": 16,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[2,8,4096,256] 16,128"
+   ]
+  },
+  {
+   "run": "ts-h-v7-dp8b",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU7x",
+   "topology": "2x2x1",
+   "mof_with_dus": 10,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "f32[2,1,1,8] 1,128",
+    "f32[2,1,8] 1,128",
+    "s32[2,1,16] 1,128"
+   ]
+  },
+  {
+   "run": "ts-h-v7-noexcess3",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU7x",
+   "topology": "2x2x1",
+   "mof_with_dus": 6,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "f32[2,1,8] 1,128",
+    "s32[2,1,16] 1,128"
+   ]
+  },
+  {
+   "run": "ts-h-v7-scar2",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU7x",
+   "topology": "2x2x1",
+   "mof_with_dus": 6,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "f32[2,1,8] 1,128",
+    "s32[2,1,16] 1,128"
+   ]
+  },
+  {
+   "run": "ts-h-v7b",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU7x",
+   "topology": "2x2x1",
+   "mof_with_dus": 6,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "f32[2,1,8] 1,128",
+    "s32[2,1,16] 1,128"
+   ]
+  },
+  {
+   "run": "ts-h-v7c",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU7x",
+   "topology": "2x2x1",
+   "mof_with_dus": 6,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "f32[2,1,8] 1,128",
+    "s32[2,1,16] 1,128"
+   ]
+  },
+  {
+   "run": "ts-mb2-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-mb2",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-cp2f32qk",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-cp2f32w-300",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-cp2f32w",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-cp4",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-dein-noexc",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-dense-round",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-dot-dp2f4",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-dot-ga1",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-dotf32qk",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-dotf32w-300",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-dotf32w",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-dotw",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-hcdef-noexc",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-hcdef",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-hi",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-ihc-inA",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-ihc-r1",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-ihc-r2",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-ihc-stB",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-ihcpk-noexc",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 42,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[128,4096] 8,128"
+   ]
+  },
+  {
+   "run": "ts-n2-ihcpk",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 42,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[128,4096] 8,128"
+   ]
+  },
+  {
+   "run": "ts-n2-ihcr-kdl",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-ihcr-noexc",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-ihcr-remall2",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-k1-noexc",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 42,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[128,4096] 8,128"
+   ]
+  },
+  {
+   "run": "ts-n2-k1",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 42,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[128,4096] 8,128"
+   ]
+  },
+  {
+   "run": "ts-n2-k2-noexc",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-k2",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-kdl",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-noexc-ga1",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-noexc-hi",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-noexc-remall",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-noexc",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-nosrb-hi",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-q-round",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-v7-hi3",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU7x",
+   "topology": "2x2x1",
+   "mof_with_dus": 6,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "f32[2,1,8] 1,128",
+    "s32[2,1,16] 1,128"
+   ]
+  },
+  {
+   "run": "ts-n2-xfg-noexc",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n2-xfg",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n3-d3-nomtploss",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n3-d3final-barrier",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n3-d3final",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n3-d3nonfinal",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n3-dlo-prodround",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-n3-nomtploss",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-remat-all-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-remat-all",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-remat-full-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-remat-full",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-remat-min-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-remat-min",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-s-loss101",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-s-loss2",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-s-lr1e-1",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-s-lr1e-2",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-s-lr1e-3",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-s-lr1e-4",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-s-lr1e-5",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-s-lr3e-5",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-s-mtp1e-1",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-s-mtp1e-2",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-s-mtp1e-3",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-tp2-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-tp2",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-c-crsbf16",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-c-noacf",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-c-noexcess",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-c-nosrb",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-cp2b",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-d-dotattn-r2",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-dp8",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-e-ihcr-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-e-ihcr",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-e-rms2r-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-e-rms2r-b",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-e-rms2r-fs",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-e-rms2r-fsb",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-e-rms2r",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-e-rmsfd",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-e-rmsfdb",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-ebc-dp8-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-ebc-dp8",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-esd-dp8-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-esd-dp8",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-esd-g",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-fx-dp8-embf32-1k",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-fx-dp8-embf32",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-g-snap",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-g-snapb",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-h-v7-dp8-ga1-r1",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU7x",
+   "topology": "2x2x1",
+   "mof_with_dus": 16,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "bf16[2,8,4096,256] 16,128"
+   ]
+  },
+  {
+   "run": "ts52-h-v7-rms2r",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU7x",
+   "topology": "2x2x1",
+   "mof_with_dus": 6,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "f32[2,1,8] 1,128",
+    "s32[2,1,16] 1,128"
+   ]
+  },
+  {
+   "run": "ts52-h-v7b-r1",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU7x",
+   "topology": "2x2x1",
+   "mof_with_dus": 6,
+   "with_71_signature": 0,
+   "mof_dus_targets": [
+    "f32[2,1,8] 1,128",
+    "s32[2,1,16] 1,128"
+   ]
+  },
+  {
+   "run": "ts52-n2-cp2f32w",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-n2-dotf32w",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  }
+ ]
+}

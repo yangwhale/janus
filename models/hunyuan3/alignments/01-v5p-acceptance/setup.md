@@ -2,9 +2,8 @@
 
 - 配置对照见 [`../../config-alignment.md`](../../config-alignment.md)（模型一层，所有实践共用）。这里只写本实践特有的东西。
 - 数字出自 golden `g1k-a`（第一阶段 GPU golden 的第 1 份，不开重算，1000 步）与被测 `t-loss30`（TPU 30 步冒烟，只看 loss）两个运行目录的 `meta.json`。
-- 本实践的结果都是对 `g1k`（第一阶段 GPU golden，不开重算，1000 步，3 份）算的。
-  - 开整层重算 + 路由回放的生产近似 golden `rc-*`（GPU 生产 golden，5 份）在 [`03`](../03-gpu-remat-golden/setup.md)；
-  - `t-a`（TPU 早期 1000 步运行，第 1 步全量抓数）对它的比较见那里的结论 6。
+- 正式验收（L4 第一层）对最终 golden `rcc-a`；L0–L3 的第 1 步比较对 `g1k`（第一阶段 GPU golden，不开重算，1000 步，3 份）；GPU 生产 golden `rc-*` 只做第二层对照。各自的角色见 [README「golden 的分工」](README.md#golden-的分工)。
+  - `rc-*`（整层重算 + 路由回放，5 份）在 [`03`](../03-gpu-remat-golden/setup.md)；`t-a`（TPU 早期 1000 步运行，第 1 步全量抓数）对它的比较见那里的结论 6。
 - 运行目录在 POC 桶里，不对外；清单见 `runs.yaml`。
 - GPU golden（`g1k` / `rc` / `rcx` / `rce` / `rcec` 和最终的 `rcc`）每一份是怎么产生的、和上游默认差在哪，见 [`../../goldens.md`](../../goldens.md)。
   - 代号：`g1k` 第一阶段 GPU golden；`rc` GPU 生产 golden；`rcx` 生产 golden，输出头 dgrad 换 FP32 一次累加；`rce` 精确轨迹，BF16 权重、全程 FP32 计算；`rcec` 真精确轨迹，精确轨迹加输出头 dgrad 分段累加；`rcc` 最终 golden，GPU 生产程序只把输出头 dgrad 改成分段 FP32 累加。
@@ -45,9 +44,9 @@
 | TPU | MaxText | `maxtext` `hunyuan` 分支 `0622774a` | `meta.json` 的 `code` |
 | TPU | janus（打进 Pod 的程序） | `958d173e` | `meta.json` 的 `code` |
 | TPU | jax / jaxlib | 0.11.1 / 0.11.1 | `meta.json` 的 `versions` |
-| TPU | libtpu | 0.0.46（推断；构建 `cl/963683785`，2026-08-12） | `meta.json` 只记了构建号，没记 pip 版本号。推断：混元 4 同一构建号的运行记了 `libtpu==0.0.46`（混元 4 [mini 设置「软件版本」](../../../hunyuan4/alignments/01-mini/setup.md#软件版本)），jax 0.11.1 的 `tpu` 依赖也钉 0.0.46.* |
+| TPU | libtpu | 0.0.46（构建 `cl/963683785`，2026-08-12；按构建号认，映射已核） | `meta.json` 只记了构建号，没记 pip 版本号。构建号到 pip 版本的对应已核：同一构建号的探针运行在 v5p 上读到 `libtpu_pip` 0.0.46（混元 4 [`jit-miscompile-probe-v5p.json`](../../../hunyuan4/results/jit-miscompile-probe-v5p.json) 的 `runs[0]`），混元 4 同一构建号的训练运行也记了 `libtpu==0.0.46`（[mini 设置「软件版本」](../../../hunyuan4/alignments/01-mini/setup.md#软件版本)），jax 0.11.1 的 `tpu` 依赖也钉 0.0.46.*（PyPI 上 jax 0.11.1 包元数据：`Requires-Dist: libtpu==0.0.46.*; extra == "tpu"`，2026-11-11 核） |
 | TPU | flax / optax / orbax-checkpoint | 0.12.9 / 0.2.8 / 0.12.4 | `meta.json` 的 `versions` |
-| TPU | tokamax | 0.0.14（镜像自带的包） | `meta.json` 不记；读镜像层里的 `tokamax-0.0.14.dist-info` 核过（2026-11-11） |
+| TPU | tokamax | 0.0.14（镜像自带的包） | `meta.json` 不记；读镜像层里的 `tokamax-0.0.14.dist-info` 核过（2026-11-11；读取输出没有入库） |
 | GPU | 镜像 | NeMo 26.10，digest `fc75bf51…` | `rcc-*` 的 `meta.json` 的 `image`（10 份相同） |
 | GPU | torch / CUDA / NCCL | 2.14.0a0+b2c75dd062.nv26.09 / 13.4 / 2.31.2 | `meta.json` 的 `versions` |
 | GPU | Megatron-Core / Megatron-Bridge | 0.20.0 / 0.7.0（容器自带，提交未登记） | `meta.json` 的 `versions` 与 `code` |
@@ -57,6 +56,7 @@
 - 运行目录的 `meta.json` 在 POC 桶里，不入库；结果文件 [`phase2-acceptance-rcc-on.results.json`](results/phase2-acceptance-rcc-on.results.json) 的 `runs.*.meta_sha256` 记着每份的 sha256。
 - 本页上面「两边」表是早期运行 `t-loss30` 的，版本与这里相同，MaxText 提交不同。
 - **结论在这些版本上测得。** 换 libtpu 或 jax 不能假定只换了求和顺序，要按混元 4 [`libtpu-052.md`](../../../hunyuan4/alignments/04-tpu-self/libtpu-052.md) 的做法重建 golden、重测。
+- v5p 上实测 libtpu 0.0.46、0.0.48、0.0.51、0.0.52 有 jit 静默算错的已知问题（0.0.47、0.0.49 没测）（[环境「已定的」](../../../../docs/reference/environment.md#已定的)）。存档优化后 HLO 的扫描（混元 4 [`jit-miscompile-hlo-scan.json`](../../../hunyuan4/results/jit-miscompile-hlo-scan.json)）里混元 3 有 72 份运行，全是 v5p 上的回归与标定程序，没有一份带它的特征；正式被测 `t-rmap-on-1000`、`t-v7x-on-1000` 和 EP = 8 的运行不在扫描范围内，没有扫。
 
 ## 配置文件版本
 
@@ -75,7 +75,7 @@
 | `66a03bf31d35…` | 改名后到 `6549396` | `per_device_batch_size: 2`、GA 1；不开精度开关 | `t-loss30`、`t-a`、`t-nohooks`、`t-hlo`、`t-hlo2`；`t-ga2-30`（命令行改成 1 + 2） |
 | `7704115ba7a7…` | `67208dd` | 改成 `per_device_batch_size: 1`、GA 2 | `r-l2-*`（逐层回放）、`t-fix-*-30`（精度开关走命令行）、`r-l2-noexcess`、`t-ga2-noexcess-30`；`t-vmem24-1000`（命令行改回 2 + 1，与 `t-a` 相同） |
 | `2a76c7590866…` | `3a5f03f` | 打开三个精度开关（见表下）；要 maxtext hunyuan@4d4ffac 或更新 | `t-rmap-1000`、`r-l2-*` 之后到 2026-11-05 的运行 |
-| `a238883b7f91…` | 本 PR | 再打开 `dense_fp32_accumulation`（见表下）；要 maxtext hunyuan@0622774 或更新 | `t-st-on-100`、`r-l2-on`、`t-rmap-on-1000` 及之后 |
+| `a238883b7f91…` | `4db01d7` | 再打开 `dense_fp32_accumulation`（见表下）；要 maxtext hunyuan@0622774 或更新 | `t-st-on-100`、`r-l2-on`、`t-rmap-on-1000` 及之后 |
 
 - **`2a76c7590866…`**：
   - 打开 `routed_gate_bf16_rounding`（路由核先舍 BF16 再乘）、`rmsnorm_single_rounding`（RMSNorm 在 FP32 里算完只舍一次）、`mlp_activation_round_per_op`（门控激活按 GPU 的两个算子分别舍入）；
@@ -93,7 +93,7 @@
 |---|---|---|
 | 切分：GPU DP 8 + EP 8，TPU FSDP 8 | 规约顺序不同。第一阶段只换 EP 度，反向就不逐位 | L2 逐层比，看差从哪层、哪个张量开始 |
 | 累加分组：GPU 每卡 2 个 microbatch 分两次；`t-loss30`（30 步冒烟）/ `t-a`（早期 1000 步）时 TPU 每设备一次 2 行 | 第一阶段改累加分组后，embedding 梯度差到噪声上限的 31 倍 | 已改成和 GPU 一样的 1 + 2（`t-ga2-30`（30 步，只改累加分组）起）；30 步只改这一项没有变好（`results/phase2-precision-fixes.md`） |
-| TF32：GPU 路由反向是 TF32，TPU 没有 | 影响路由反向的梯度，30 步 loss 看不出来 | GPU 侧补一组 `TF32=off` 的 golden 再比 |
+| TF32：GPU 路由反向是 TF32，TPU 没有 | 影响路由反向的梯度，30 步 loss 看不出来 | 最终 golden `rcc` 保留 TF32；GPU 关 TF32 的 `g-notf32` 跑 400 步看不出影响（[`goldens.md`](../../goldens.md)「TF32」行） |
 | 注意力 kernel：cuDNN 与 splash | 末位不同 | L1 注意力回放 |
 
 ## config_diff

@@ -1,0 +1,18 @@
+{
+ "issue": "一次实际排查",
+ "what": "关掉 multi-output fusion（LIBTPU_INIT_ARGS=--xla_jf_enable_multi_output_fusion=false）对步时的影响，作为案例 16 workaround ① 的代价参考",
+ "image": "us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf",
+ "maxtext": "镜像自带的 /deps/src/maxtext（未改动）",
+ "libtpu": "镜像自带 0.0.46（Built on Aug 12 2026，changelist 963683785）",
+ "hardware": "v5p 单主机 4 片（TPU_CHIPS_PER_PROCESS_BOUNDS=2,2,1、TPU_PROCESS_BOUNDS=1,1,1），FSDP 4",
+ "command": "python3 -m maxtext.trainers.pre_train.train maxtext/configs/base.yml run_name=<名> base_output_directory=/tmp/mtout dataset_type=synthetic steps=40 enable_checkpointing=false max_target_length=2048 per_device_batch_size=4 log_period=100 model_name=<模型>",
+ "metric": "第 11–40 步每步 seconds 的中位数（日志 completed step 行）",
+ "date": "2026-11-11",
+ "rows": [
+  {"model_name": "llama3.1-8b", "mof": "默认（开）", "median_step_s": [1.785, 1.785]},
+  {"model_name": "llama3.1-8b", "mof": "关", "median_step_s": [1.794, 1.795]},
+  {"model_name": "deepseek3-tiny", "mof": "默认（开）", "median_step_s": [0.891, 0.891]},
+  {"model_name": "deepseek3-tiny", "mof": "关", "median_step_s": [0.870, 0.870]}
+ ],
+ "summary": "llama3.1-8b 慢 0.5%；deepseek3-tiny 快 2.4%。每种各跑两次，两次中位数相差不超过 0.001 s。混元 3 / 混元 4 没量"
+}

@@ -83,8 +83,9 @@ flowchart LR
   - 训练循环、数据回放、抓数都在 janus 里，**不改 MaxText 源码**。
 - **镜像**：MaxText 官方 `tpu_pre_training` 0.2.5，按 digest 钉死在 `run.sh` 里。
   - 实际的 jax / jaxlib / libtpu 版本在运行时读出来写进 `meta.json`；在 Pod 里另装 libtpu 时以 `meta.versions.libtpu_pip` 为准。
-  - 这个镜像带 jax 0.11.1、libtpu 0.0.46，两个模型的对齐都在它上面测（[环境「两个模型实测用的版本」](../reference/environment.md#两个模型实测用的版本)）。
+  - 这个镜像带 jax 0.11.1、libtpu 0.0.46，两个模型的对齐都在它上面测；混元 3 的运行只记了构建号 `cl/963683785`，按构建号认作 0.0.46，构建号到 pip 版本的对应已由同构建号的探针运行核过（[环境「两个模型实测用的版本」](../reference/environment.md#两个模型实测用的版本)）。
   - **libtpu 版本会改数值，不只改求和顺序**：混元 4 上 0.0.46 → 0.0.52，「RMSNorm 多舍一次」的影响从 r 1.06 变成 5.50，词嵌入 scatter 插排序的门槛也变了。换版本前先看 [`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md)：先建新 golden、重测已知敏感项，再做别的。0.0.50 / 0.0.50.1 不用（[环境](../reference/environment.md#tpu-侧)）。
+  - **v5p 上 0.0.46、0.0.48、0.0.51、0.0.52 都有一个 jit 静默算错的编译器 bug**（多输出 fusion 含 DUS，[混元 4 案例 16](../../models/hunyuan4/cases/16-jit-miscompile-sub8-row-block.md)）。存档的 292 份训练步程序扫出 0 处，覆盖混元 3 截 4 层与混元 4 mini 存了 HLO 的运行；mini 现行比较 `tz-off-rep` 与推荐组合 `x5-prod` 没存 HLO，在 CPU 上按 `meta.json` 重编后扫也是 0 处（离线程序与上卡程序是同一份是推断）；混元 3 正式被测不在内；新形状、新切分上线前先用 `models/hunyuan4/analysis/hlo_mof_dus_scan.py` 扫一遍训练步的优化后程序（[差异清单 F8](../reference/tpu-vs-gpu-differences.md#f8-jit-静默算错dus-和读同一缓冲的算子被合进一颗多输出-fusion)）。
 - **对齐阶段不加性能类 libtpu 参数**（`LIBTPU_INIT_ARGS` 默认空）。
   - 要加，先用「同程序、只改这一个开关」证明它不改数学（[方法详解：环境](../reference/environment.md#tpu-侧)「TPU 侧」）。
 - **把 GPU 侧的产物搬到桶里**：
@@ -165,7 +166,7 @@ TPU 一侧的配置文件 [`hy3-4layers.yml`](../../models/hunyuan3/frameworks/m
 |---|---|---|
 | 权重衰减 | **实际 0.033**（调度器覆盖了配置里的 0.1）；一维参数不衰减 | `adam_weight_decay=0.033`，`adamw_mask: ["norm/scale"]` |
 | 学习率 | 1e-5 常数，无预热 | `wsd`，预热与衰减都为 0 → 常数 1e-5 |
-| 路由 | sigmoid + `expert_bias`，top-8，FP32 出，偏置更新率 1e-3，缩放 2.826 | 同值；`float32_gate_logits: True`；`matmul_precision=default`（BF16 乘、FP32 累加）。这是混元 3 的取值；新模型按[差异清单 B3](../reference/tpu-vs-gpu-differences.md#b3-路由-logits-的精度决定选哪个专家) 设 `router_matmul_precision: highest`（混元 4 已设：默认精度下 top-k 有 1%–2% 的 token 与 FP64 不同） |
+| 路由 | sigmoid + `expert_bias`，top-8，FP32 出，偏置更新率 1e-3，缩放 2.826 | 同值；`float32_gate_logits: True`；`matmul_precision=default`（BF16 乘、FP32 累加）。这是混元 3 的取值；新模型按[差异清单 B3](../reference/tpu-vs-gpu-differences.md#b3-路由-logits-的精度决定选哪个专家) 设 `router_matmul_precision: highest`（混元 4 已设，L1 路由 logits 对 FP64 R 0.106；默认精度下 top-k 约 1%–2% 的 token 与 FP64 不同是测试模型上的测量，不是混元 4 的读数，见[环境「测试模型上的答案」注 1](../reference/environment.md#测试模型上的答案换到被测模型要再核)） |
 | microbatch | gbs 16、每卡 2 个 microbatch 分两次前反向再累加 | `per_device_batch_size=1`、`gradient_accumulation_steps=2` |
 | 重算 | 整层重算 + 路由回放（`rc` / `rcc`） | 命令行覆盖，见 3.4「生产配置」 |
 | MTP / dropout | 关 / 0 | `mtp_num_layers=0`（`train_hy3.py` 自动加）/ `dropout_rate=0` |
@@ -178,7 +179,7 @@ TPU 一侧的配置文件 [`hy3-4layers.yml`](../../models/hunyuan3/frameworks/m
 | 开关 | 作用 | 去掉哪一处差（量级） | 对齐必需？ | 对照行 |
 |---|---|---|---|---|
 | `dense_fp32_accumulation` | 切开的收缩维部分和改用 FP32 相加（见表下） | 不开时 qkv、稠密层 fc1 的前向 R-ratio 超线（v5p 1.24 / 1.29，v7x 1.57 / 1.58） | 必需 | [「收缩维被 FSDP 切开的投影的累加精度」](../../models/hunyuan3/config-alignment.md#数值精度) |
-| `rmsnorm_single_rounding` | RMSNorm 在 FP32 里算完只舍一次 | 见表下 | 必需（对齐、生产都开） | [「RMSNorm 舍入次数」](../../models/hunyuan3/config-alignment.md#数值精度) |
+| `rmsnorm_single_rounding` | RMSNorm 在 FP32 里算完只舍一次 | 见表下 | 混元 3 推荐（显式保证，对齐、生产都开；libtpu 0.0.46 上不开前向也逐位不变）；换 libtpu 时必需（混元 4 在 0.0.52 上不开时主 loss 系统性偏高，见表下） | [「RMSNorm 舍入次数」](../../models/hunyuan3/config-alignment.md#数值精度) |
 | `mlp_activation_round_per_op` | 门控激活 silu(gate)·up 按 GPU 的两个算子分别舍入 | 默认写法与 GPU 只有 73.7% 元素逐位，打开后 100% | 推荐 | [「门控激活舍入」](../../models/hunyuan3/config-alignment.md#数值精度) |
 | `routed_gate_bf16_rounding` | 路由权重按 GPU 的写法先舍成 BF16 | 路由默认精度下开和不开编出同一个程序（混元 3）；路由设 `highest` 后开关有差别（[精度边界第 8 类](../reference/precision-boundaries.md)） | 可选（显式保证） | [「路由核 BF16 舍入」](../../models/hunyuan3/config-alignment.md#数值精度) |
 
@@ -335,7 +336,7 @@ python -m janus run models/hunyuan3/alignments/01-v5p-acceptance/catalogs/phase2
 
 - 验证办法：同一份代码包、同一条命令跑两次，比两份 `metrics.jsonl`。
 - 混元 3：v7x 上生产配置 1000 步跑两次，loss、梯度范数、参数范数逐步逐位相同。
-  - 结果文件 `phase2-v7x-rmap-repro`。
+  - 结果文件 `phase2-v7x-rmap-repro`。这是 2026-11-05 配置换代之前的配置；当前对齐配置在 v7x 上没有逐步逐位的结果文件（v5p 有日常回归 LKG 双跑）。
   - [02 README](../../models/hunyuan3/alignments/02-v7x-acceptance/README.md#排查与补齐记录2026-11-05--11-06)「排查与补齐记录」第 1 条另记了 `metrics.jsonl` 全部 60 个字段相同。
 - 不逐位就先查数据顺序、随机数有没有钉住。
 

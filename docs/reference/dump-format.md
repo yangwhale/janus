@@ -57,6 +57,8 @@
 | `fault` | obj | 否 | 故障注入运行才有：埋了什么错（只用于验证检查会报警） |
 | `created_at` | str | 是 | ISO 8601，带时区 |
 
+缺项怎么处理：janus 读写运行目录时只查必填的键在不在（`janus/store.py` 的 `META_REQUIRED`），缺键就报错、打不开；不查内容。`image` 只记了 tag 没有 digest、`versions` 少了某个库（如 libtpu 的 pip 版本号）都不报错。这种运行引用时把缺的那一项写成「推断」并给出依据（例：混元 3 的 libtpu 按构建号认作 0.0.46，见[环境「两个模型实测用的版本」](environment.md#两个模型实测用的版本)）。
+
 注 1（`steps.convention`）：
 - 写明本侧步号与 golden 步号的换算（如 `golden_step = step + 1`）；
 - `janus run` 取被测的逐步序列时按它换算。

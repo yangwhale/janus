@@ -6,7 +6,7 @@
 
 - 页面由 `models/hunyuan3/dashboard/build.py` 按 [`dashboard/checks.yaml`](dashboard/checks.yaml) 从各对齐实践的结果文件生成，数字和判定都不手写。
 - 结论和偏差的机制在[对齐报告](ALIGNMENT-REPORT.md)；每一级为什么这样比、不过时先查什么，在[用户指南第 4 章](../../docs/guide/04-level-by-level.md)。
-- 被测是两个平台各自的当前对齐配置（MaxText `hy3-4layers.yml` 版本 `a238883b`，开关见对齐报告第 6 节）；用了换代前配置的两行在行内注明（对 `rc-a` 的 L4、v7x 同程序重跑）。参照是 GPU golden（定义见[`goldens.md`](goldens.md)）。
+- 被测是两个平台各自的当前对齐配置（MaxText `hy3-4layers.yml` 版本 `a238883b`，开关见对齐报告第 6 节）；用了换代前配置的有这几处：对 `rc-a` 的 L4、v7x 同程序重跑（行内注明）；L1 优化器连续 8 步重放（v7x `t-v7x-st8-prod` 是 maxtext `237a3270`，打开 `dense_fp32_accumulation` 之前；v5p `t-st8-prod` 同为生产配置，没登记提交）；L0 配置与输入指纹（`t-loss30`，maxtext `64cd9a64`、yml `66a03bf`）。参照是 GPU golden（定义见[`goldens.md`](goldens.md)）。
 
 ## 规模
 
@@ -79,7 +79,7 @@ L0 共 11 项检查，检查条数 29 / 28（v5p / v7x），张量级比较 4,84
 | dtype 清单<br>`L0.dtype.manifest`<br>`L0.dtype.state` | 每个参数与训练状态的 dtype 是否符合规则 | 参数清单（expert_bias 为 FP32，其余 BF16）；训练状态（主权重、两个动量、路由偏置必须 FP32，只在 v5p 的回归运行上读）<br>比较单元：TPU v5p-8 3,142 项 dtype；TPU v7x-4 2,960 项 dtype<br>聚合：逐项核 dtype，数不合规的个数 | 逐位｜参考：无 | 生产程序（第 1 步训练前读状态） | [0 / 3,142 不同 ✅](alignments/01-v5p-acceptance/results/phase2-l0-state.report.md) | [0 / 2,960 不同 ✅](alignments/02-v7x-acceptance/results/phase2-v7x-l0-state.report.md) |
 | 模型结构<br>`L0.model.structure` | TPU 实例化出来的模型和 HF 配置是否一致 | 15 条规则：1 层稠密 + 3 层 MoE、192 个专家、专家中间维 1536、1 个共享专家、64 个 q 头 / 8 个 kv 头 × 128、稠密 MLP 13312、词表 120832、输出层不与词表共享、主权重全部 FP32、没有 MTP<br>比较单元：15 条规则<br>聚合：逐条规则核，数不满足的条数 | 按规则｜参考：无 | 生产程序（第 1 步训练前读状态） | [全部规则满足 ✅](alignments/01-v5p-acceptance/results/phase2-l0-state.report.md) | [全部规则满足 ✅](alignments/02-v7x-acceptance/results/phase2-v7x-l0-state.report.md) |
 | 权重转换<br>`L0.ckpt.convert.bitwise`<br>`L0.ckpt.convert.dtype`<br>`L0.ckpt.source.dtype` | HF 权重转成 MaxText 检查点后，逐张量转回 HF 对原件。v5p、v7x 用同一份检查点 | 全部 1781 个 HF 张量逐位，加转换前后两份 dtype 清单<br>比较单元：1,781 个参数张量、3,562 项 dtype<br>聚合：逐张量比 sha256，数不同的个数；逐项核 dtype，数不合规的个数 | 逐位｜参考：无 | 离线核对（CPU，检查点文件） | [0 / 1,781 不同 ✅](alignments/01-v5p-acceptance/results/phase2-ckpt-convert.report.md) | [0 / 1,781 不同 ✅](alignments/01-v5p-acceptance/results/phase2-ckpt-convert.report.md) |
-| 续训的数据位置<br>`L0.resume.data` | 从存档恢复后，数据是否从正确的位置接着读。TPU 侧数据是按步号回放 golden 的 batch，这一项只验证回放的步号索引，不覆盖原生加载器（Grain 迭代器）状态的存取 | 恢复后各步、各 rank 的输入指纹<br>比较单元：650 个数据单元<br>聚合：逐单元比 sha256，数不同的个数 | 逐位｜参考：无 | 生产程序（存档与续训） | [0 / 650 不同 ✅](alignments/01-v5p-acceptance/results/phase2-resume.report.md) | [0 / 650 不同 ✅](alignments/02-v7x-acceptance/results/phase2-v7x-resume.report.md) |
+| 续训的数据位置<br>`L0.resume.data` | 从存档恢复后，数据是否从正确的位置接着读。TPU 侧数据是按步号回放 golden 的 batch，这一项只验证回放的步号索引，不覆盖原生加载器（Grain 迭代器）状态的存取 | 恢复后各步、各 rank 的输入指纹<br>比较单元：650 个数据单元<br>聚合：逐单元比 sha256，数不同的个数 | 逐位｜参考：无 | 生产配置的训练步 + 本仓库 `train_hy3.py` 的 orbax 存档（不是 MaxText 原生存档；配置同 `t-rmap-1000`，早于 `dense_fp32_accumulation`） | [0 / 650 不同 ✅](alignments/01-v5p-acceptance/results/phase2-resume.report.md) | [0 / 650 不同 ✅](alignments/02-v7x-acceptance/results/phase2-v7x-resume.report.md) |
 | TPU 原生数据加载器（只报）<br>`L0.native.gpu_integrity`<br>`L0.native.index`<br>`L0.native.stream`<br>`L0.native.device_map.native`<br>… | 不回放 GPU 的 batch、改用 MaxText 自己的数据管线时，读出的样本是否与 Megatron 相同 | 14 条：三个索引表、样本流、每步非 padding token 数、字段约定、读取进程数、多 host、多 epoch、文档边界合成用例、pad id、3 个负对照、覆盖率；分配到设备与 microbatch 的布局。加载器与 TPU 型号无关，只在 CPU 上跑了一次，v7x 列引用同一份结果<br>比较单元：80,000 个数据单元、2,000 步、64,000 个名字<br>聚合：逐条规则核，数不满足的条数；逐单元比 sha256，数不同的个数；逐步、逐张量比两次运行，数不可复现的项；逐用例看埋的错有没有被抓到；比名字清单，数缺的个数 | 逐位｜参考：无 | 离线核对（CPU，数据管线） | [14,000 / 16,000 不同 ❌](alignments/01-v5p-acceptance/results/phase2-native-loader.report.md) | [14,000 / 16,000 不同 ❌](alignments/01-v5p-acceptance/results/phase2-native-loader.report.md) |
 | 设置核对：学习率逐步<br>`L4.lr` | 逐步学习率两边逐位相同。学习率是设置的常数（1e-5，无 warmup、无衰减），不是观测量，所以归设置核对，不算 L4 的比较项（报告口径，判定不变，见对齐报告「判法变更记录」） | `lr`，第 1–1000 步（检查 id 仍是 `L4.lr`，取自 L4 的验收结果文件）<br>比较单元：1,000 步<br>聚合：逐步比，任一步超出容差就不过 | rtol ≤ 0、abs_ulp ≤ 0｜参考：无 | 生产程序 | [逐步在容差内 ✅](alignments/01-v5p-acceptance/results/phase2-acceptance-rcc-on.report.md) | [逐步在容差内 ✅](alignments/02-v7x-acceptance/results/phase2-v7x-acceptance-rcc.report.md) |
 
@@ -237,7 +237,7 @@ L3 共 17 项检查，检查条数 34 / 22（v5p / v7x），张量级比较 1,54
 - **全部参数梯度**（TPU v5p-8 ❌、TPU v7x-4 ❌）：由路由近似平局主导（台账 #5），同 L2「各层参数梯度」。最差的张量是 MoE 层 0 号专家的 fc1 / fc2 梯度。
 - **梯度分布**（TPU v5p-8 ❌、TPU v7x-4 ❌）：同「全部参数梯度」：被路由翻转的专家梯度把逐元素相对误差 p99 推到 1.68，GPU 3 对的上限只有 0.043（约 39 倍；当时并集的上限是 1.6，1.05 倍）。
 - **优化器状态**（TPU v5p-8 ❌、TPU v7x-4 ❌）：动量由梯度直接决定，原因同「全部参数梯度」。
-- **更新后主权重**（TPU v5p-8 🟡、TPU v7x-4 🟡）：v5p 是梯度差的下游，量级很小（rel_L2 5e-5；最差的 1−cos 是 N 的 1.11 倍）；对 FP64 按能量算 R 0.92，TPU 的更新量更接近精确值。参考档（rel_L2 ≤ 0.02、cos ≥ 0.9999）两平台都过。
+- **更新后主权重**（TPU v5p-8 🟡、TPU v7x-4 🟡）：v5p 是梯度差的下游，量级很小（rel_L2 5e-5，是 N 的 1.28 倍；最差的 1−cos 是 N 的 1.63 倍，v7x 1.61 倍）；对 FP64 按能量算 R 0.92，TPU 的更新量更接近精确值。参考档（rel_L2 ≤ 0.02、cos ≥ 0.9999）两平台都过。
 - **更新后路由偏置**（TPU v7x-4 ❌）：v7x 第 1 层 65 号专家的偏置更新方向和 GPU 相反（192 个里 1 个，台账 #17）。GPU 第 1 步重跑 3 对里没有一对翻号（撤回前的并集 24 对里也没有），所以 N = 0，任何翻号都判不过。按 FP64 这个专家选中 2730 个 token，比平均 2730.67 少 0.67，偏置应当加：v7x 和精确算术一致，GPU 三份与 v5p 都减。
 - **激活逐位**（TPU v5p-8 ❌、TPU v7x-4 ❌）：两种硬件的舍入顺序不同，按定义不会逐位；这条 `hard: false`，不参与验收，数值上的判定看 L2 前向的 R。
 
@@ -256,7 +256,7 @@ L3 共 17 项检查，检查条数 34 / 22（v5p / v7x），张量级比较 1,54
 
 - **各层参数梯度对 FP64**（TPU v5p-8 ❌、TPU v7x-4 ❌）：超线的是两类张量：一维 norm 权重、输出层与 embedding 的梯度 TPU 先以 BF16 落地（R 最高 2.20，v7x 2.70，台账 #20）；经过路由的专家梯度随近似平局翻转变（台账 #5）。投影、共享专家、稠密 MLP 的梯度 R 0.45 – 0.96，TPU 更接近精确值。
 - **全部参数梯度对 FP64**（TPU v5p-8 ❌、TPU v7x-4 ❌）：同上。按梯度能量加权整网 R 1.20（v7x 1.21）；打开台账 #20 的三个可选开关后 0.67（v7x 0.72），见下一表。
-- **更新后主权重与动量对 FP64**（TPU v5p-8 ❌、TPU v7x-4 ❌）：超线的是几个 128 维的 q / k norm：Adam 第 1 步的更新量近似 lr · sign(g)，小张量上少数元素的符号就决定比值。按能量算整体，更新后主权重 0.92（v7x 0.94）；两个动量 1.20（v7x 1.21），和梯度同源（台账 #20），打开三个可选开关后降到 0.67。
+- **更新后主权重与动量对 FP64**（TPU v5p-8 ❌、TPU v7x-4 ❌）：逐张量最差：更新后主权重 6.42（v7x 51.3），第 1 层 q norm；动量 7.95（v7x 7.86），第 2 层 q norm 的二阶动量。q / k norm 只有 128 维，Adam 第 1 步的更新量近似 lr · sign(g)，小张量上少数元素的符号就决定比值。超线的不止 q / k norm：动量里还有一维 norm 权重、输出层与个别专家权重（2.66–4.41），更新后主权重里有最后的 RMSNorm（1.54 / 1.62）；结果文件每项只存最差 5 个，完整名单没有入库。按能量算整体，更新后主权重 0.92（v7x 0.94）；两个动量 1.20（v7x 1.21），和梯度同源（台账 #20），打开三个可选开关后降到 0.67。
 
 ### 可选开关：梯度以 FP32 落地
 
@@ -269,14 +269,14 @@ L3 共 17 项检查，检查条数 34 / 22（v5p / v7x），张量级比较 1,54
 
 非 ✅ 格子的原因：
 
-- **全部参数梯度对 FP64（开关打开）**（TPU v5p-8 ❌）：剩下的超线张量是第 2 层 MLP 前 RMSNorm（1.79）与第 2 层 1 号专家的 fc2（1.32），都经过路由，随近似平局翻转变（台账 #5）。
+- **全部参数梯度对 FP64（开关打开）**（TPU v5p-8 ❌）：剩下的超线张量是第 2 层 MLP 前 RMSNorm（1.79）与第 2 层 1 号专家的 fc2（1.32）。fc2 开关前后都是 1.32，随近似平局翻转变（台账 #5）；MLP 前 RMSNorm 开关前 1.43、开关后反升到 1.79，开关前向不变、路由翻转前后相同，#5 解释不了这次上升，原因没查。
 - **第 1 步整步（开关打开）**（TPU v5p-8 ❌）：只用 GPU 3 对作尺子（2026-11-08 起）：第 0 层参数梯度 10.6 → 5.41 倍 N（仍不过），更新后主权重 1.63 → 1.30 倍 N（仍待定）；其余格子由路由近似平局主导（台账 #5）。并集尺子下（历史）是 2.12 → 1.34、1.11 → 1.001。
 
 ### 续训
 
 | 检查 | 比什么 | 对象 | 判法（严格｜参考） | 证据来源 | TPU v5p-8 | TPU v7x-4 |
 |---|---|---|---|---|---|---|
-| 存档恢复后的状态<br>`L3.resume.state`<br>`L3.resume.step11`<br>`L3.resume.coverage` | 存档再恢复后的训练状态，对不中断的运行逐位比 | 恢复时的状态张量；恢复后第 11 步全量张量<br>比较单元：91 个参数张量、256 个张量、256 个名字<br>聚合：逐张量比 sha256，数不同的个数；逐张量按字节比，数不同的个数；比名字清单，数缺的个数 | 逐位｜参考：无 | 生产程序（存档与续训） | [0 / 91 不同 ✅](alignments/01-v5p-acceptance/results/phase2-resume.report.md) | [0 / 91 不同 ✅](alignments/02-v7x-acceptance/results/phase2-v7x-resume.report.md) |
+| 存档恢复后的状态<br>`L3.resume.state`<br>`L3.resume.step11`<br>`L3.resume.coverage` | 存档再恢复后的训练状态，对不中断的运行逐位比 | 恢复时的状态张量；恢复后第 11 步全量张量<br>比较单元：91 个参数张量、256 个张量、256 个名字<br>聚合：逐张量比 sha256，数不同的个数；逐张量按字节比，数不同的个数；比名字清单，数缺的个数 | 逐位｜参考：无 | 生产配置的训练步 + 本仓库 `train_hy3.py` 的 orbax 存档（不是 MaxText 原生存档；配置同 `t-rmap-1000`，早于 `dense_fp32_accumulation`） | [0 / 91 不同 ✅](alignments/01-v5p-acceptance/results/phase2-resume.report.md) | [0 / 91 不同 ✅](alignments/02-v7x-acceptance/results/phase2-v7x-resume.report.md) |
 
 ## L4 · 多步训练
 
@@ -286,6 +286,7 @@ L4 共 17 项检查，检查条数 30 / 34（v5p / v7x）。
 
 - 参照：TPU 只和最终 golden 的基线 `rcc-a`（GPU 生产程序只把输出头 dgrad 改成分段 FP32 累加，见[对齐报告](ALIGNMENT-REPORT.md)第 2 节）逐步比。
 - 噪声上限 N：`rcc-a..j` 10 份重跑两两配对的 45 对比较里的最大差。
+- 换基线：十份 golden 每份轮流当基线各判一遍，v7x 当前配置有三份落进待定（`rcc-j` grad_norm 1.11、`rcc-e` grad_norm 1.01、`rcc-d` loss 后段 1.08），没有不过；只报的 v5p 原始 param_norm 在 `rcc-f`、`rcc-g`、`rcc-h` 时 1.18、1.00、1.01（[对齐报告](ALIGNMENT-REPORT.md)第 3 节，[`case01-rebaseline-rcc.json`](alignments/01-v5p-acceptance/results/case01-rebaseline-rcc.json)）。下表是对事先定下的 `rcc-a` 的判定。
 - 每条序列算三个判定量：带符号均值、MARE（平均绝对相对差）、最大单步；三个都对 N 判，取最差。首步差只报。
 
 ### 正式验收（对最终 golden `rcc-a`）
@@ -303,7 +304,7 @@ L4 共 17 项检查，检查条数 30 / 34（v5p / v7x）。
 
 ### 换并行方式
 
-TPU 改成和 GPU 一样的专家并行 EP = 8（当前对齐配置是非专家参数 FSDP 8、专家不切），同样对 `rcc-a` 比。
+TPU 改成和 GPU 相同的专家并行度 EP = 8（当前对齐配置是非专家参数 FSDP 8、专家不切；EP = 8 时词嵌入表沿 expert 轴切 8 份（读 HLO 核过），其余非专家参数按逻辑轴规则推断同样切，≈ FSDP 8，和 GPU 的 DP 8 不是同一种切法，见对齐报告注 11），同样对 `rcc-a` 比。
 
 | 检查 | 比什么 | 对象 | 判法（严格｜参考） | 证据来源 | TPU v5p-8 | TPU v7x-4 |
 |---|---|---|---|---|---|---|
@@ -342,8 +343,8 @@ TPU 改成和 GPU 一样的专家并行 EP = 8（当前对齐配置是非专家�
 |---|---|---|---|---|---|---|
 | 梯度 NaN 先于 loss 报警（演练）<br>`L4.health.grad_norm` | 第 5 步故意让梯度变成 NaN，健康检查必须在 grad_norm 上先报，不能等到 loss | 8 步的演练运行<br>比较单元：1 个字段<br>聚合：逐步看 NaN / Inf 与突跳 | 期望报警｜参考：— | 生产程序（埋错演练） | [按期望报警 ✅](alignments/01-v5p-acceptance/results/phase2-t-nan8.report.md) | [按期望报警 ✅](alignments/02-v7x-acceptance/results/phase2-v7x-t-nan8.report.md) |
 | 加抓数不改数值（只报）<br>`DET.hooks.noop` | 同一个 TPU 程序加不加抓数输出，逐步标量是否逐位相同 | 6 个逐步标量<br>比较单元：6 个字段<br>聚合：逐步、逐张量比两次运行，数不可复现的项 | 逐位｜参考：无 | 观测构建对生产程序 | [不可复现：['lm_loss@1', 'grad_norm@1', 'param_norm@2']，张量不同 0 ❌](alignments/01-v5p-acceptance/results/phase2-obs-gate.report.md) | [不可复现：['lm_loss@1', 'grad_norm@1', 'param_norm@12']，张量不同 0 ❌](alignments/02-v7x-acceptance/results/phase2-v7x-obs-gate.report.md) |
-| 续训重叠步<br>`L4.resume.overlap` | 存档恢复后与不中断的运行重叠的步，逐步标量逐位相同 | 10 个重叠步<br>比较单元：10 步<br>聚合：逐步比重叠的步，数不同的步 | 逐位｜参考：无 | 生产程序（存档与续训） | [重叠步全部逐位相同 ✅](alignments/01-v5p-acceptance/results/phase2-resume.report.md) | [重叠步全部逐位相同 ✅](alignments/02-v7x-acceptance/results/phase2-v7x-resume.report.md) |
-| TPU 自己重跑逐位（v7x）<br>`L4.repro.lm_loss`<br>`L4.repro.grad_norm`<br>`L4.repro.param_norm`<br>`L0.repro.data.fingerprint` | 同一份代码包、配置、数据在 v7x 上跑两次（各占一个切片），1000 步的逐步 loss、grad_norm、param_norm 与输入指纹逐位相同。用的是换代前配置（`t-v7x-rmap-1000-a/-b`，打开 `dense_fp32_accumulation` 之前）；v5p 的同程序双跑在日常回归里（`reg-t0-fa-a`、`reg-t1-fa-a`），不在本页 | 第 1–1000 步<br>比较单元：65,000 个数据单元、3,000 步<br>聚合：逐步比，任一步超出容差就不过；逐单元比 sha256，数不同的个数 | rtol ≤ 0、abs_ulp ≤ 0｜参考：无 | 生产程序 | — | [逐步在容差内 ✅](alignments/02-v7x-acceptance/results/phase2-v7x-rmap-repro.report.md) |
+| 续训重叠步<br>`L4.resume.overlap` | 存档恢复后与不中断的运行重叠的步，逐步标量逐位相同 | 10 个重叠步<br>比较单元：10 步<br>聚合：逐步比重叠的步，数不同的步 | 逐位｜参考：无 | 生产配置的训练步 + 本仓库 `train_hy3.py` 的 orbax 存档（不是 MaxText 原生存档；配置同 `t-rmap-1000`，早于 `dense_fp32_accumulation`） | [重叠步全部逐位相同 ✅](alignments/01-v5p-acceptance/results/phase2-resume.report.md) | [重叠步全部逐位相同 ✅](alignments/02-v7x-acceptance/results/phase2-v7x-resume.report.md) |
+| TPU 自己重跑逐位（v7x）<br>`L4.repro.lm_loss`<br>`L4.repro.grad_norm`<br>`L4.repro.param_norm`<br>`L0.repro.data.fingerprint` | 同一份代码包、配置、数据在 v7x 上跑两次（各占一个切片），1000 步的逐步 loss、grad_norm、param_norm 与输入指纹逐位相同。用的是换代前配置（`t-v7x-rmap-1000-a/-b`，打开 `dense_fp32_accumulation` 之前）；v5p 的同程序重跑在日常回归里（`reg-t0-fa-a…e`、`reg-t1-fa-a…e` 各 5 次逐位），回归程序是累积 1、不重算，不是验收程序；验收程序本身在 v5p 上没有双跑，不在本页 | 第 1–1000 步<br>比较单元：65,000 个数据单元、3,000 步<br>聚合：逐步比，任一步超出容差就不过；逐单元比 sha256，数不同的个数 | rtol ≤ 0、abs_ulp ≤ 0｜参考：无 | 生产程序 | — | [逐步在容差内 ✅](alignments/02-v7x-acceptance/results/phase2-v7x-rmap-repro.report.md) |
 
 非 ✅ 格子的原因：
 
@@ -394,22 +395,30 @@ GPU 一侧把抓到的算子输入重新喂给同一个 kernel、对 CPU 复现�
 
 ## 已知的覆盖缺口
 
-下面几处这一版没有覆盖或只覆盖了一部分。前两条是适用范围上的限制；接着五条是对照同类 GPU→TPU 迁移项目的检查范围找出来的；后几条是这次验收自己的限制。它们不改变上面任何一格的判定（判定只针对比到的对象），但限定了结论覆盖的范围。
+下面几处这一版没有覆盖或只覆盖了一部分。前两条是适用范围上的限制；接着五条是对照同类 GPU→TPU 迁移项目的检查范围找出来的；再往后是这次验收自己的限制；最后几条是搬到 TPU 时没覆盖的维度（对齐报告「适用范围」后的表）。它们不改变上面任何一格的判定（判定只针对比到的对象），但限定了结论覆盖的范围。
 
 | 缺口 | 现状 | 补做的办法 |
 |---|---|---|
 | 80 层生产形状没有验证 | 全部检查都在截 4 层的模型上做；日常回归的 T3 生产形状档位待定（生产配置与切片资源未定） | 在 80 层、生产切分与数据管线上至少跑 L0 与 L4 |
-| EP = 8 只验了 L4 的四个量与学习率 | TPU 改成和 GPU 一样的 EP = 8 时，只对 `rcc-a` 比了 loss、loss 后段、grad_norm、param_norm 与学习率；路由偏置曲线、健康信号与 L0–L3 只在 FSDP 8 上做 | EP = 8 下补跑路由偏置与健康信号，必要时补第 1 步 |
+| EP = 8 只验了 L4 的四个量与学习率 | TPU 改成和 GPU 相同的专家并行度 EP = 8 时，只对 `rcc-a` 比了 loss、loss 后段、grad_norm、param_norm 与学习率；路由偏置曲线、健康信号与 L0–L3 只在 FSDP 8 上做 | EP = 8 下补跑路由偏置与健康信号，必要时补第 1 步 |
 | 第 1 步专家参数只比 2 / 192 个 | GPU 抓数默认每层只留 0、1 号专家的参数张量（`janus/dump/megatron.py` 的 `DEFAULT_SKIP`），L0 的初始参数清单与 L4 的 param_norm 覆盖全部专家 | GPU 侧去掉这条跳过规则重抓第 1 步，TPU 状态读本来就是全量 |
 | TPU 上没有单独的输出端算子检查 | 词嵌入、最后的 RMSNorm、输出层、交叉熵只在 L3 整网链路里整体比 | 用 golden 的 `final_norm.out` 等输入在 TPU 上单独回放，对 FP64 判 R |
 | TPU 上没有算子级反向 | 反向只比到层（L2 各层反向）与第 1 步整网梯度 | 对各主要算子做随机或真实余切的反向回放，对 FP64 VJP 判 R |
 | 逐元素函数、极端输入、平局、padding / 因果的合成用例只在 GPU 上做过 | v5p 只核对了门控激活（`L1.ops.act`），v7x 没有这一组 | 在 TPU 上跑同样的合成用例，单芯片即可 |
 | grad_norm 没有参考档 | 参考档只有 loss、param_norm、算子与优化器几类线 | 并列报告 grad_norm 的平均相对误差 |
-| 换基线的敏感度没有逐份算 | L4 只对 `rcc-a` 比；换一份当基线，r 最多挪动 1，但实际挪动多少没算，`rcc` 各份的逐步序列没有入库 | 入库 `rcc-a..j` 的 `metrics.jsonl`，以每一份当基线各算一遍 |
-| v7x 当前配置 1000 步的逐步序列没有入库 | v7x 对 `rc` 的 loss 偏移只能用推导值（对齐报告第 3 节） | 入库 `t-v7x-on-1000` 的 `metrics.jsonl` |
 | 第 1 步比较的 GPU golden 不开重算，TPU 被测开重算 | GPU 上开整层重算加路由回放后，第 1 步激活已和不重算的 `g1k` 不逐位（`remat-vs-g1k` 的 `L3.step1.act.bitwise`，26 / 46 个张量不同），这部分差没有单独进第 1 步的尺子；1000 步时 `rc` 对 `g1k` 的 loss 在噪声内 | 第 1 步改用开重算的 GPU golden 做参照与噪声 |
 | TPU 侧的故障演练只做了梯度 NaN 一种 | 9 种埋错的演练都在 GPU 上做 | 在 TPU 上照 GPU 的故障矩阵埋错 |
 | v7x 上 TPU 自己的执行噪声没有标定 | 日常回归的 TPU 执行噪声只在 v5p 上标定（第 1 步整步的 7 份扰动运行两平台都有） | 照 v5p 的做法在 v7x 上标定 |
+| GPU 一侧换 FSDP 的对照没做成 | Megatron-FSDP 载入 `torch_dist` 检查点失败，torch FSDP2 在专家权重上分片校验不过；「切分方式只占一小部分」只由 TPU 一侧（EP = 8 对 FSDP 8）推出 | 按 DTensor 分片灌入参数后跑 GPU FSDP，与 EP 8 比 L4（[goldens.md](goldens.md) 注 14） |
+| v7x 与 `rcc` 的逐步序列不在仓库 | 仓库里只有 v5p `t-rmap-on-1000` 的逐步序列；`t-v7x-on-1000` 与 `rcc-a..j` 只在运行目录，结果文件记了 `meta.json` 的 sha256 | 把这 11 份 `metrics.jsonl` 入库到 `results/series/` |
+| TPU 的 CP、TP、PP 一次都没测 | TPU 只测了 FSDP 8 与 EP = 8；GPU 侧 TP 2、CP 2 只比了前 3 步标量。据 一次实际排查 生产在用 CP | 只改切分的 TPU 对照，L4，超了做第 1 步 |
+| 训练中途从 GPU 接到 TPU | 检查点只测了从 HF（第 0 步）转 MaxText；Megatron 存档（主权重、两个动量、路由偏置、步数、数据位置）直转 MaxText 没实现 | 实现带全部训练状态的转换，L0 逐位，再从 GPU 第 N 步接 TPU 比第 1 步张量与 L4 |
+| TPU 存档只测了本仓库的 orbax 存取、同一拓扑 | MaxText 原生存档、换拓扑、换切片大小、v5p ↔ v7x 恢复没测 | 换成要用的存档方式和拓扑，再做一次「20 步」对「10 步存档再续 10 步」逐位 |
+| 多切片没测 | 只有单切片 v5p 2x2x2、v7x 2x2x1 | 同一起点只改执行方式比单切片（L4），超了做第 1 步张量 |
+| TPU 原生数据管线没进过 TPU 训练 | 只在 CPU 上对拍过；所有 TPU 训练都原样回放 GPU 的 batch | 在 TPU 上用原生加载器跑首步 loss 和一次存档续训，L0 输入指纹逐位 |
+| 只测了一个 libtpu 构建 | 构建 `cl/963683785`（按构建号认作 0.0.46）、jax 0.11.1；混元 4 换到 0.0.52 时结论变了 | 换版本先重建 golden，再重跑 L4 |
+| 正式被测没扫已知的 jit 静默算错 | v5p 上 libtpu 0.0.46 实测有这个编译器 bug（DUS 和读同一缓冲的算子被合进一颗多输出 fusion，读的那颗输出可能算丢）。存档 HLO 扫描只覆盖混元 3 的 72 份回归与标定程序（0 处）；正式被测 `t-rmap-on-1000`、`t-v7x-on-1000`、EP = 8 的运行和 L2、L3 的第 1 步被测都没扫（[01 设置「软件版本」](alignments/01-v5p-acceptance/setup.md#软件版本)） | 对这几份训练步的优化后 HLO 跑 `models/hunyuan4/analysis/hlo_mof_dus_scan.py`（CPU 上离线编即可） |
+| 日常回归守的不是验收程序 | 回归 T0 / T1 是累积 1、yml 默认存储不重算；验收是累积 2 + rmap 重算覆盖，重算会换舍入点 | 给验收程序单独建回归变体与 LKG（建不建待定） |
 
 ## 未列入本页的结果文件
 

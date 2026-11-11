@@ -2,17 +2,18 @@
 
 # 混元 4 · mid（hy4-mid）· 运行登记
 
-完整清单在 [`runs.yaml`](runs.yaml)，作业规格在 [README](README.md)。数据位置都在 `gs://<POC 桶>/janus/hunyuan4/` 下。
+完整清单在 [`runs.yaml`](runs.yaml)，GPU golden 的作业规格在 [`setup.md`](setup.md#gpu-golden-的作业规格)。数据位置都在 `gs://<POC 桶>/janus/hunyuan4/` 下。
 
 | 运行 | 侧 | 步数 | 用途 | 结果 |
 |---|---|---|---|---|
-| `gm-a` | GPU | 300 | 基线；`--save-batches` 写下全部 batch | `tm-l4`、`tm-l0-settings` 的基线 |
+| `gm-a` | GPU | 300 | 基线；`--save-batches` 写下全部 batch | `tmb-l4`、`tmb-l0-settings`（现行判定）与 `tm-l4`、`tm-l0-settings` 的基线 |
 | `gm-b … gm-h` | GPU | 300 | 同设置重跑：与 `gm-a` 两两 28 对是 L4 噪声尺子 | GPU 8 份载入自检：[`hy4-mid-gpu-load-check.json`](results/hy4-mid-gpu-load-check.json) |
 | `gms-a … gms-c` | GPU | 1 | 第 1 步全量抓数参照（L3 噪声） | — |
 | `tm-a` | TPU | 300 | 被测，回放 `gm-a`；MaxText `469dbb85`，每步约 2.8 s，峰值每设备 9.57 GB | [`tm-l4`](results/tm-l4.report.md)、[`tm-l0-settings`](results/tm-l0-settings.report.md) |
 | `tm-b` | TPU | 300 | 最近一代被测，回放 `gm-a`，开关含 M39–M41 与 M42b；base2 开、没有 M50；MaxText `2c28a4f4`、janus `9c0f19a`。现行对齐配置在 mid 上尚无运行 | [`tmb-l4`](results/tmb-l4.report.md) |
 | `tmdiag` | TPU | 1 | 第 1 步诊断（`--diag-step1`，不更新），回放 `gms-a` | [`mid-step1-grad-vs-fp64.json`](results/mid-step1-grad-vs-fp64.json) |
 | `tm2diag` | TPU | 1 | 第 1 步诊断，当时的 yml（MaxText `3741e818`，含 M39–M41，没有 M42b、M50，base2 开），回放 `gms-a`；梯度文件 9 个张量取回时一段被写成 0（设备上的平方和与 grad_norm 不受影响），这 9 个不可判 | [`mid-tm2-step1-grad-vs-fp64.json`](results/mid-tm2-step1-grad-vs-fp64.json) |
+| `tm3diag` | TPU | 1 | 第 1 步诊断，梯度文件完好；MaxText `2306c7a5`、janus `3ed31f8`，含 M42（`splash_dsinks_fp32` 开，之后撤下），base2 开，不是 `tm2diag` 的同配置重跑。还没用来比 | — |
 
 TPU 一侧检查点的 L0（离线）：[`hy4-mid-l0-ckpt-convert`](results/hy4-mid-l0-ckpt-convert.report.md)、`results/hy4-mid-l0-rope.results.json`。
 

@@ -1,0 +1,215 @@
+{
+ "tool": "models/hunyuan4/analysis/jit_miscompile_offline_scan.py",
+ "scanner": "models/hunyuan4/analysis/hlo_mof_dus_scan.py",
+ "note": "CPU 上按运行的 meta.json 重编训练步（hlo_screen.compile_spec），扫 #71 特征；calib 是存了 HLO 的运行，cpu_vs_tpu_program_equal = CPU 重编的程序与 TPU 上存下的规范化后逐行相同",
+ "calib": [
+  {
+   "spec_hash": "c3f164da66498b62",
+   "compile_seconds": 111.0,
+   "max_rss_gib": 15.13,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "device_kind": "TPU v5",
+   "devices": 8,
+   "mesh": {
+    "diloco": 1,
+    "data": 1,
+    "stage": 1,
+    "fsdp": 8,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "error": null,
+   "run": "ts-g-a",
+   "spec": {
+    "maxtext": "b87a55aad08b9f223cb4e248f2877fde9c51ac33",
+    "yml": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+    "yml_rev": "57be82b8cd3af337f13448cd5905f296da2173b0",
+    "yml_sha256": "b244939e2fecc0a2250fbd0db3fb57cfdd2a1ff89d52f93a2fc88504d85b07e6",
+    "stage": "mini",
+    "platform": "v5p",
+    "steps": 1000,
+    "args": [],
+    "xla_flags": [],
+    "libtpu_args": [
+     "--xla_tpu_use_enhanced_launch_barrier=true"
+    ],
+    "libtpu": "cl/963683785",
+    "image": "us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf"
+   },
+   "cpu_vs_tpu_program_equal": true,
+   "program_fp": {
+    "cpu": "70bd4939bd437d1e53324dd83d1eeb016b76a1d2a65b58c14eaa856b86fce4a6",
+    "tpu": "70bd4939bd437d1e53324dd83d1eeb016b76a1d2a65b58c14eaa856b86fce4a6"
+   },
+   "scan_cpu": {
+    "mof_with_dus": 0,
+    "with_71_signature": 0,
+    "mof_dus_targets": []
+   },
+   "scan_tpu": {
+    "mof_with_dus": 0,
+    "with_71_signature": 0,
+    "mof_dus_targets": []
+   }
+  }
+ ],
+ "runs": [
+  {
+   "spec_hash": "1efe1d253d4934b2",
+   "compile_seconds": 108.6,
+   "max_rss_gib": 15.4,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "device_kind": "TPU v5",
+   "devices": 8,
+   "mesh": {
+    "diloco": 1,
+    "data": 1,
+    "stage": 1,
+    "fsdp": 8,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "error": null,
+   "run": "tz-off-rep",
+   "spec": {
+    "maxtext": "b87a55aad08b9f223cb4e248f2877fde9c51ac33",
+    "yml": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+    "yml_rev": "b2bc099f04c43cece18b6012e7e4dc481c193708",
+    "yml_sha256": "b244939e2fecc0a2250fbd0db3fb57cfdd2a1ff89d52f93a2fc88504d85b07e6",
+    "stage": "mini",
+    "platform": "v5p",
+    "steps": 1000,
+    "args": [
+     "sa_use_base2_exp=false"
+    ],
+    "xla_flags": [],
+    "libtpu_args": [
+     "--xla_tpu_use_enhanced_launch_barrier=true"
+    ],
+    "libtpu": "0.0.46 cl/963683785",
+    "image": "us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf"
+   },
+   "delta_vs_calib": {
+    "ts-g-a": {
+     "args": [
+      "sa_use_base2_exp=false"
+     ]
+    }
+   },
+   "has_tpu_hlo": false,
+   "program_fp_cpu": "aca16f1ef4f89912f4dc1fbfde69c99042da05e17982d51698b050f8eef73b2c",
+   "scan": {
+    "mof_with_dus": 0,
+    "with_71_signature": 0,
+    "mof_dus_targets": [],
+    "hits": []
+   }
+  },
+  {
+   "spec_hash": "01e9ff2c969d7d43",
+   "compile_seconds": 98.5,
+   "max_rss_gib": 15.66,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "device_kind": "TPU v5",
+   "devices": 8,
+   "mesh": {
+    "diloco": 1,
+    "data": 1,
+    "stage": 1,
+    "fsdp": 8,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "error": null,
+   "run": "x5-prod",
+   "spec": {
+    "maxtext": "b87a55aad08b9f223cb4e248f2877fde9c51ac33",
+    "yml": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+    "yml_rev": "2a1d08e7081c2d82511e7ed978736ee38e9af1fc",
+    "yml_sha256": "86beb9e56c490cb9d8f4bbb472538971c17f3442ca2a82a76f73a8356b42a650",
+    "stage": "mini",
+    "platform": "v5p",
+    "steps": 1000,
+    "args": [
+     "splash_dsinks_fp32=true",
+     "splash_dsinks_gpu_order=false",
+     "embedding_grad_fp32=true",
+     "rmsnorm_scale_grad_fp32=true",
+     "routed_gate_bf16_rounding=false",
+     "mlp_activation_round_per_op=false",
+     "indexer_weights_proj_bf16_weight=false",
+     "ihc_force_bf16_rounding=false",
+     "muon_mcore_ns_bf16=false"
+    ],
+    "xla_flags": [],
+    "libtpu_args": [
+     "--xla_tpu_use_enhanced_launch_barrier=true"
+    ],
+    "libtpu": "0.0.46 cl/963683785",
+    "image": "us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf"
+   },
+   "delta_vs_calib": {
+    "ts-g-a": {
+     "yml": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+     "yml_rev": "2a1d08e7081c2d82511e7ed978736ee38e9af1fc",
+     "yml_sha256": "86beb9e56c490cb9d8f4bbb472538971c17f3442ca2a82a76f73a8356b42a650",
+     "args": [
+      "splash_dsinks_fp32=true",
+      "splash_dsinks_gpu_order=false",
+      "embedding_grad_fp32=true",
+      "rmsnorm_scale_grad_fp32=true",
+      "routed_gate_bf16_rounding=false",
+      "mlp_activation_round_per_op=false",
+      "indexer_weights_proj_bf16_weight=false",
+      "ihc_force_bf16_rounding=false",
+      "muon_mcore_ns_bf16=false"
+     ]
+    }
+   },
+   "has_tpu_hlo": false,
+   "program_fp_cpu": "510bd925dca4c96a2e2df0c56e864cf68da3e2614f54c15f2b876d550492bc9e",
+   "scan": {
+    "mof_with_dus": 0,
+    "with_71_signature": 0,
+    "mof_dus_targets": [],
+    "hits": []
+   }
+  }
+ ]
+}

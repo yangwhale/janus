@@ -9,11 +9,11 @@
 | 配置 | 主 loss | L4 判定 | 步时 |
 |---|---|---|---|
 | 默认（对齐开关全关） | 300 步最大单步：N（GPU 重跑波动上限，8 份 28 对）4.53e-5，TPU 2.68e-4，r 5.91 | 不过 | 基准 |
-| 按本清单逐条处理后（现行 `tz-off-rep`，base2 关） | 1000 步带符号均值：N（16 份 120 对）4.65e-6，TPU +7.21e-6，r 1.55；第 101 步起 r 1.52 | 9 项过 7、待定 2（主 loss 全程与第 101 步起；原因在查，没有接受，见 U22）；grad_norm 0.81、路由偏置标准差 0.77 都过 | 全开比全关 +44.6%（不含 M42b、M50；mid +46.8%，量法不同），大头 B1 |
+| 按本清单逐条处理后（现行 `tz-off-rep`，base2 关） | 1000 步带符号均值：N（16 份 120 对）4.65e-6，TPU +7.21e-6，r 1.55；第 101 步起 r 1.52 | 9 项过 7、待定 2（主 loss 全程与第 101 步起；原因在查，没有接受，见 U22）；grad_norm 0.81、路由偏置标准差 0.77 都过。前 300 步另判一套，也是过 7、待定 2：主 loss r 1.10、grad_norm r 1.23 待定（U5；[`t1zo300-l4`](../../models/hunyuan4/alignments/01-mini/results/t1zo300-l4.report.md)） | 全开比全关 +44.6%（不含 M42b、M50；mid +46.8%，量法不同），大头 B1 |
 
 读数出自 [`t1zo-l4`](../../models/hunyuan4/alignments/01-mini/results/t1zo-l4.report.md)。上一代（base2 开的 `t1zg-a`，8 份尺子：主 loss MARE r 0.98，grad_norm、路由偏置标准差待定）见[历代比较](../../models/hunyuan4/dashboard/history.md)。下文各条的「量到」多数是 base2 开那几代、8 份尺子下的单开关 A/B：1000 步主 loss 带符号均值写 N 3.78e-6 的都是 8 份 28 对的上限，16 份 120 对时是 4.65e-6。
 
-**范围**：GPU B200 × 8（混元 4 Megatron-Core 0.20 + TE，混元 3 Megatron-Bridge v0.7.0）；TPU MaxText（v5p 2x2x2，混元 3 另有 v7x-4），开关在 `maxtext` 混元 4 分支、默认关；BF16 混合精度、FP32 主权重、无 FP8。数字以 hy4-mini 为主。
+**范围**：GPU B200 × 8（混元 4 Megatron-Core 0.20 + TE，混元 3 Megatron-Bridge v0.7.0）；TPU MaxText（v5p 2x2x2，混元 3 另有 v7x-4；混元 4 的 v7x 只有 TPU 自比，外加一次 1000 步直接对 GPU 16 份，9 项都在噪声内，base2 开、libtpu 0.0.46，见 [04 README](../../models/hunyuan4/alignments/04-tpu-self/README.md)「v7x 直接对 GPU 比」），开关在 `maxtext` 混元 4 分支、默认关；BF16 混合精度、FP32 主权重、无 FP8。数字以 hy4-mini 为主。例外：06 真实宽度三层（A11、U25 引的回放）是 GPU B200 × 16（2 台，DP 16 + EP 16，多机代码包）对 TPU v5p 2x2x4（FSDP 16），见 [06 setup](../../models/hunyuan4/alignments/06-rw3/setup.md)。
 
 **适用条件**：现行 mini 的读数对应 MaxText `b87a55aa`、jax 0.11.1、libtpu 0.0.46（`tz-off-rep` 的 `meta.json`）；GPU 数据并行 8 + 专家并行 4、整层重算，TPU FSDP 8；序列 4096、全局批 16、1000 步、hy4-mini 随机初始化。换 libtpu 版本、换 TPU 一侧的并行切法都可能改结论（[F7](#f7-libtpu-版本改的不只是求和顺序)、[A12](#a12-纯数据并行时词嵌入梯度在-bf16-里-scatter不排序)、[A14](#a14-上下文并行时-sink-梯度在-bf16-里算float32_logits-没接到-mla)），结论只对实测过的组合成立。
 
@@ -42,14 +42,14 @@
 | A9 | 注意力缩放常数在 BF16 里舍过 | 舍入位置 | 不处理 | 不涉及 | — |
 | A10 | splash 反向 sink 梯度在 BF16 里累加 | 类 3 | M42；对齐 M42b | 开 M42 | M42b +3.9% |
 | A11 | splash base2 指数把注意力 logits 放大 1.0018 倍、q 多舍一次 | 舍入位置（常数舍成 BF16） | `sa_use_base2_exp: false`（M43） | 关 base2 | 无（用 base2 反而慢 0.1%）；对齐配置 2026-11-11 起也关 |
-| A12 | 纯数据并行时词嵌入梯度在 BF16 里 scatter、不排序 | 编译器（后端排不排序） | `embedding_shard_over_data`（M54）或 `embedding_grad_fp32` | 用纯数据并行就开 | M54 步时不增加 |
+| A12 | 纯数据并行时词嵌入梯度在 BF16 里 scatter、不排序 | 编译器（后端排不排序） | `embedding_shard_over_data`（M54）或 `embedding_grad_fp32`（梯度累积下要带 M55，否则静默丢梯度） | 用纯数据并行就开 | M54 步时不增加 |
 | A13 | hc_head 收拢之后没舍 BF16 | 编译器 | `hc_head_force_bf16_rounding`（M52） | 不开 | 未测 |
 | A14 | 上下文并行时 sink 梯度在 BF16 里算 | 类 1 | `float32_logits`（+ `float32_qk_product`） | 用上下文并行就开 | +12.4%（上下文并行 2） |
 | A15 | GPU 参照的索引器 RoPE 在 BF16 里算 | 舍入位置 | 不修（GPU 一侧） | 不涉及 | — |
 | B1 | FP32 矩阵乘默认单遍 BF16（输出头） | 类 7 | `logits_matmul_precision: highest`（M13） | 看情况 | +23.7% |
 | B2 | 索引器打分单遍 BF16 | 类 7 | `indexer_fp32_scores`（M23） | 看情况 | +6.3% |
 | B3 | 路由 logits 精度决定选哪个专家 | 类 6 | `float32_gate_logits` 等 | 开 | 波动内 |
-| B4 | 乘 FP32 主权重还是 BF16 权重 | 类 8 | M27、M8 | 不开 | ≤ +0.1% |
+| B4 | 乘 FP32 主权重还是 BF16 权重 | 类 8 | M27、M8 | 不开（组合里关 M27 时前 300 步 KD 不过，推断） | ≤ +0.1% |
 | B5 | iHC 加权和的相加顺序 | 舍入位置 | `ihc_stream_sum_unrolled`（M28） | 看情况 | +0.2% |
 | B6 | 格点上的权重 HIGHEST 与 default 逐位同 | 机理 | — | 不涉及 | — |
 | B7 | GPU 上 TF32 悄悄打开 | 类 9 | GPU 实测 `tf32_probe` | 不涉及 | — |
@@ -83,6 +83,7 @@
 | F5 | 单算子逐位不变不能证明开关无效 | 编译器 | 整网里验 | 不涉及 | — |
 | F6 | 关小矩阵乘改写，RMSNorm 乘法走单遍 BF16 | 编译器 | 保持默认开 | 保持默认 | 关了更慢 |
 | F7 | libtpu 版本改的不只是求和顺序 | 后端 | 换版本先建 golden、重测 | 钉版本 | — |
+| F8 | jit 静默算错：DUS 和读同一缓冲的算子被合进一颗多输出 fusion（v5p，实测 libtpu 0.0.46、0.0.48、0.0.51、0.0.52 都错） | 编译器 bug | `hlo_mof_dus_scan.py` 自查；`optimization_barrier` 隔开读写，或关 multi-output fusion | 扫到特征就修那一处 | 屏障：只挡一处；全局关：−2.4% ～ +0.5%（MaxText 两个模型） |
 | G1 | 真值是 CPU FP64 整网重算 | 判法 | `step1_ref.py` | 不涉及 | — |
 | G2 | 噪声尺子只用 GPU 重跑 | 判法 | GPU 重跑（1000 步 16 份 120 对） | 不涉及 | — |
 | G3 | r 只量差，不定责 | 判法 | 三种定责依据 | 不涉及 | — |
@@ -127,26 +128,26 @@
 ### A4 路由权重在 fc2 之前乘，还是在 wo 之后乘
 
 - **原理**：GPU 在 fc2 之前乘路由权重再舍一次，各专家输出逐个加进 BF16；TPU 在 wo 之后的 FP32 加权和里乘。
-- **量到**：1000 步主 loss 带符号均值（M41 开）：N 3.78e-6，TPU 7.20e-6 → 2.45e-6，r 1.91 → 0.65。
+- **量到**：1000 步主 loss 带符号均值（M41 开）：N 3.78e-6，TPU 7.20e-6 → 2.45e-6，r 1.91 → 0.65。这只是开、关各一份 1000 步（8 份尺子）：同一配置只改执行方式的 4 份重复，主 loss 带符号均值的 r 就能在 0.36–2.08 之间（base2 开；关 0.62–1.91。按同一把 8 份尺子推算：[`mini-base2-loo.json`](../../models/hunyuan4/alignments/01-mini/gpu-noise/results/mini-base2-loo.json) 的 `loss_signed_mean` ÷ N 3.78e-6），base2 开关 r 挪 1.55 也已查明是轨迹偶然（见 A11），这里挪 1.26 分不清是开关还是轨迹。
 - **开关与生产**：`moe_mcore_prob_before_fc2: true`（M40）。看情况：对 FP64 未测。（详见 [r19]、[D25]）
 
-### A5 SwiGLU 两个上投影的输入梯度舍一次还是两次（单算子已对上；整网单开变差，待查，见 U3）
+### A5 SwiGLU 两个上投影的输入梯度舍一次还是两次（单算子已对上；整网单开的效果没分清，见 U3）
 
 - **原理**：GPU 的 gate | up 是一个融合 GEMM，dX 舍一次；TPU 两个矩阵乘各舍一次再相加。
-- **量到**：CPU 单测 dX 对 GPU 写法：GPU 0，TPU 3.1e-3 → 0；但不开 A4 单开时整网变差（U3）。
-- **开关与生产**：`mlp_fused_fc1_dgrad: true`（M41）。看情况：对 FP64 未测；单开时整网离 GPU 更远（U3）。「更远」只基于开、关各一份 1000 步：同一配置只改执行方式的重复，主 loss r 就能在 0.90–1.69 之间（[`mini-base2-loo.json`](../../models/hunyuan4/alignments/01-mini/gpu-noise/results/mini-base2-loo.json)），一份运行分不清是开关还是轨迹。（详见 [r20]、[D25]）
+- **量到**：CPU 单测 dX 对 GPU 写法：GPU 0，TPU 3.1e-3 → 0；不开 A4 单开时整网那一份离 GPU 更远（U3）。
+- **开关与生产**：`mlp_fused_fc1_dgrad: true`（M41）。看情况：对 FP64 未测；单开时整网离 GPU 更远（U3）。「更远」只基于开、关各一份 1000 步：同一配置只改执行方式的 4 份重复，主 loss 带符号均值的 r 就能在 0.36–2.08 之间（base2 开；关 0.62–1.91。按同一把 8 份尺子推算：[`mini-base2-loo.json`](../../models/hunyuan4/alignments/01-mini/gpu-noise/results/mini-base2-loo.json) 的 `loss_signed_mean` ÷ N 3.78e-6），一份运行分不清是开关还是轨迹。（详见 [r20]、[D25]）
 
 ### A6 编译器省掉了 GPU 一定会做的 BF16 往返（后端省；长跑归因见 U12）
 
 - **原理**：GPU（eager）每次把 iHC 分支输入与更新后的流存成 BF16；TPU 写了 astype，excess precision 下这次往返在后端被省掉一部分：融合内部的来回 convert 不产生舍入指令，跨融合边界的值按声明的 BF16 写回内存（实验确认）。训练步优化后 HLO 里 convert(bf16)→convert(f32) 都在（14 个前向融合逐一核过），所以 HLO 看不出；v5p 最小复现的 LLO 里，RMSNorm 均方那颗 kernel 用的是没舍的 FP32（`vpack.i.bf16` 0 条），归一化那颗读的是舍过的 BF16，同一个值两处不一致；加 `reduce_precision` 后两处都真舍（[TPU 自比影响逐件「iHC 不强制舍成 BF16」](../../models/hunyuan4/alignments/04-tpu-self/impacts/05-ihc-bf16-rounding.md)）。
-- **量到**：1000 步主 loss 带符号均值：N 3.78e-6，TPU 7.99e-6 → 2.87e-6，r 2.12 → 0.76。
+- **量到**：1000 步主 loss 带符号均值：N 3.78e-6，TPU 7.99e-6 → 2.87e-6，r 2.12 → 0.76。这条曲线也只是开、关各一份（8 份尺子），挪 1.36 比 base2 那次轨迹偶然的 1.55 还小，单看曲线分不清是开关还是轨迹（见 A4）；开关改了舍入点：最小复现的 LLO 已核（上面）；整网训练步的后端没核，整网里起作用的证据是 TPU 自比只关它时第 1 步 `k_norm` 梯度变远（F5）。
 - **开关与生产**：`ihc_force_bf16_rounding: true`（M36）。不开（只为照 GPU），+0.1%。**规则：要和 GPU 的舍入点一致，用 `reduce_precision`，不用 astype**（F5）。hc_head 收拢后是同一类，见 A13。（详见 [r16]）
 
 ### A7 FP32 参数的梯度先以 BF16 落地
 
 - **原理**：MaxText 的 norm scale、输出层、embedding 表以 BF16 参与计算，梯度先以 BF16 落地再累加；GPU 直接累加进 FP32。
 - **量到**：hy4-mini embed 梯度对 FP64：GPU 中位数 4.17e-3，TPU 4.02e-3 → 3.83e-3，R 0.96 → 0.92。
-- **开关与生产**：`embedding_grad_fp32` 开（无代价）；`rmsnorm_scale_grad_fp32` 开（代价待测；只在真实权重 B 上超线，R 中位数 1.60 → 0.98）；`logits_dense_wgrad_fp32` 看情况（混元 3 三个一起 v5p +0.79%、v7x +1.6%）。对齐配置都不开。另有 M48 `rmsnorm_scale_grad_gpu_order`（dγ 照 GPU 的顺序求和），CPU 上逐位对上，TPU 整网结果作废、待查，不进任何配置（[台账](../../models/hunyuan4/CHANGES-LEDGER.md) M48）。（详见 [r22]、[r23]、[D22]、混元 3 #20）
+- **开关与生产**：`embedding_grad_fp32` 开（无代价；数据并行＋梯度累积下要 MaxText `d5c9b113`（[台账](../../models/hunyuan4/CHANGES-LEDGER.md) M55）之后的代码：之前的代码里三者同时成立时，XLA 把 FP32 词嵌入梯度的 all-reduce 挪出累积循环并清零累加器，静默丢掉前面微批的梯度（第 1 步词嵌入梯度范数只有正确值的 0.51 倍，300 步 r 611）；移植这个开关要连 M55 一起移植）；`rmsnorm_scale_grad_fp32` 开（代价待测；只在真实权重 B 上超线，R 中位数 1.60 → 0.98）；`logits_dense_wgrad_fp32` 看情况（混元 3 三个一起 v5p +0.79%、v7x +1.6%）。对齐配置都不开。另有 M48 `rmsnorm_scale_grad_gpu_order`（dγ 照 GPU 的顺序求和），CPU 上逐位对上，TPU 整网结果作废、待查，不进任何配置（[台账](../../models/hunyuan4/CHANGES-LEDGER.md) M48）。（详见 [r22]、[r23]、[D22]、混元 3 #20）
 
 ### A8 GPU 参照自己把 q·k 先存成 BF16
 
@@ -169,14 +170,15 @@
 - **原理**：base2 模式下内核写 `q *= LOG2E`，q 是 BF16，JAX 把 Python 常数也转成 BF16：乘的是 1.4453125，比 log2(e) 大 1.81e-3；之后 exp2、换回自然底的 logsumexp 与 sink 都按精确值。结果是 logits（不含 sink）整体乘 1.0018，再加 q 多舍一次 BF16（前向、反向各一处）。系统性的那一半来自常数，和 logits 的大小成正比：mini 第 1 步全局最大 logit 0.129，看不出；真实权重截层 B 第 1 步逐头最大 logit 最大 14.5、中位数约 7，第 1 步主 loss 就偏低约 1e-4。
 - **真实宽度**：06 截层 D3 第 1 步主 loss 对 FP64，TPU 只关这个开关 −9.87e-5 → −1.24e-6（R 1.85 → 0.02），CPU FP64 前向只加这一处放大事先预测移动 −9.69e-5；逐张量梯度对 FP64 的中位数 2.03e-3 → 1.72e-3，注意力一组 2.44e-3 → 1.78e-3。截层 B 只关这个开关，TPU −8.06e-5 → +7.3e-6。
 - **量到**：hy4-mini 前向 logsumexp 对 FP64 最大绝对差：base2 8.5e-5–1.5e-4，自然指数 3.6e-6–4.3e-6；截层 B 第 0 层 `q_a_layernorm` 梯度 R 2.89 → 0.88。
-- **开关与生产**：`sa_use_base2_exp`（MaxText 默认 true，M43）。生产关（更准，无代价）。对齐配置 2026-11-11 起所有尺寸都关（四份对齐 yml 都是 `false`，PROTOCOL 变更记录同日）：真实宽度第 1 步关掉后对 FP64 与对 GPU 都更近（主 loss 对 GPU 的差 −1.52e-4 → −5.45e-5），D3 250 步回放关掉后对 GPU 9 项过 2 → 4、不过 5 → 3（主 loss 后段两臂相同、索引器 KD 变坏，是 GPU 一侧偏高）；mini 上「关掉后整网离 GPU 更远」查明是轨迹偶然（开、关各 4 份，16 份尺子下主 loss r 开 0.90–1.69、关 0.93–1.55，两组交叠，[D30]）。TPU 自比的 golden `ts-g-a` 仍是开 base2 的一代，不改（06 README「对齐配置要不要关 base2」）。（详见 [r24]、[D22]）
+- **开关与生产**：`sa_use_base2_exp`（MaxText 默认 true，M43）。生产关（更准，无代价）。对齐配置 2026-11-11 起所有尺寸都关（四份对齐 yml 都是 `false`，PROTOCOL 变更记录同日）：真实宽度第 1 步关掉后对 FP64 与对 GPU 都更近（主 loss 对 GPU 的差 −1.52e-4 → −5.45e-5），D3 250 步回放关掉后对 GPU 9 项过 2 → 4、不过 5 → 3（主 loss 后段两臂相同、索引器 KD 变坏，是 GPU 一侧偏高），1000 步回放过 2 → 3、不过 3 → 0（主 loss 1–1000 步 r 1.87 → 1.20，后段 1.24 → 1.02，都是三量最差，后段关那臂由最大单步领头、带符号均值是 0.86，[`rw3-1k-replay.json`](../../models/hunyuan4/alignments/06-rw3/results/rw3-1k-replay.json)）；mini 上「关掉后整网离 GPU 更远」查明是轨迹偶然（开、关各 4 份，16 份尺子下主 loss r 开 0.90–1.69、关 0.93–1.55，两组交叠，[D30]）。TPU 自比的 golden `ts-g-a` 仍是开 base2 的一代，不改（06 README「对齐配置要不要关 base2」）。（详见 [r24]、[D22]）
 
 ### A12 纯数据并行时词嵌入梯度在 BF16 里 scatter，不排序
 
 - **原理**：词嵌入的反向是对 BF16 表的一次 scatter-add。后端在一次 scatter 的下标数超过词表行数的 1/8 时插排序（libtpu 0.0.46 上二分所得），排好序时同一个词在片上 FP32 缓冲里加完只舍一次，不排序时加一次舍一次。FSDP 下每张卡收 8 张卡的 32768 个下标，过线；纯数据并行每张卡只有自己的 4096 个，不过线，高频词的梯度在 BF16 里累积误差。
-- **量到**：TPU 自比（对 TPU golden，FSDP 8）纯数据并行曲线 r 2.62，第 1 步词嵌入梯度 R 3.62（libtpu 0.0.46）；0.0.52 上 r 2.82、R 3.60。三种修法都和 GPU 重跑分不开。
-- **版本**：门槛随 libtpu、列宽和芯片代际变；0.0.52 上 v5p 这两种并行排不排序不变，v7x 上纯数据并行不做梯度累积时开始排序（[`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md)）。
-- **开关与生产**：用纯数据并行时开 `embedding_shard_over_data`（M54，只把词嵌入表沿数据并行轴切开，词嵌入通信少 93%，步时不增加）；不能切表时用 `embedding_grad_fp32`（A7）。FSDP 不涉及。（详见 [案例 14]、[TPU 自比「纯数据并行」](../../models/hunyuan4/alignments/04-tpu-self/impacts/01-data-parallel.md)）
+- **量到**：TPU 自比（对 TPU golden，FSDP 8）纯数据并行曲线 r 2.62，第 1 步词嵌入梯度 R 3.62（libtpu 0.0.46）；0.0.52 上 r 2.82、R 3.60。三种修法都和 GPU 重跑分不开（在 GPU 留一法最大值以内），但 0.0.52 上三种修法前 300 步主 loss 都同向偏高（r 1.55 / 1.20 / 1.23，0.0.46 上三份都略低），扣掉 golden 自身的差后仍比 0.0.46 上同一修法高约 2.4e-6–4.8e-6，原因没查；修法① 1000 步回到 0.92（[`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md)）。
+- **版本**：门槛随 libtpu、列宽和芯片代际变；0.0.52 上 v5p 这两种并行排不排序不变，v7x 上纯数据并行不做梯度累积时开始排序（mini 的表 120832 × 1024，每卡 8192 个下标；[`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md)）。
+- **生产形状**（词表 120832、隐藏维 6144，纯数据并行每卡整张表；单算子离线编译，[`emb-scatter-sort-hy4-prod.json`](../../models/hunyuan4/alignments/04-tpu-self/results/emb-scatter-sort-hy4-prod.json)）：0.0.52 上 v5p、v7x 每卡 4096 / 8192 / 16384 个下标都不排序（门槛 v5p 65536 以内都不排、v7x 43648）；0.0.46 上门槛 15105，16384 才排序。所以 mini 上「v7x 0.0.52 不累积就排序」搬不到生产形状，纯数据并行照样要修；修法 `embedding_shard_over_data` 在生产形状上仍过线（[案例 14]「先看结论」末尾的表）。
+- **开关与生产**：用纯数据并行时开 `embedding_shard_over_data`（M54，只把词嵌入表沿数据并行轴切开，词嵌入通信少 93%，步时不增加）；不能切表时用 `embedding_grad_fp32`（A7；数据并行＋梯度累积下要 MaxText `d5c9b113`（[台账](../../models/hunyuan4/CHANGES-LEDGER.md) M55）之后的代码：之前的代码里三者同时成立时，XLA 把 FP32 词嵌入梯度的 all-reduce 挪出累积循环并清零累加器，静默丢掉前面微批的梯度（第 1 步词嵌入梯度范数只有正确值的 0.51 倍，300 步 r 611）；移植这个开关要连 M55 一起移植）。这两个开关只在 `maxtext` 混元 4 集成分支上，上游没有（[MaxText 说明「这些开关在哪个分支」](../../models/hunyuan4/frameworks/maxtext/README.md#这些开关在哪个分支)）。FSDP 在 mini 上过线（每卡收齐 8 张卡共 32768 个下标），不用修；FSDP 每卡下标数 = 序列长 × 每卡微批 × FSDP 组卡数，太少时同样不排序（推断，没跑过），要按同一办法核（[04 README「落到实践」](../../models/hunyuan4/alignments/04-tpu-self/README.md#一页看完六件真有影响的和三条规律)）。（详见 [案例 14]、[TPU 自比「纯数据并行」](../../models/hunyuan4/alignments/04-tpu-self/impacts/01-data-parallel.md)）
 
 ### A13 hc_head 收拢之后没舍 BF16
 
@@ -187,8 +189,8 @@
 ### A14 上下文并行时 sink 梯度在 BF16 里算（float32_logits 没接到 MLA）
 
 - **原理**：MaxText 对混元 4 的上下文并行只能配普通注意力；建 MLA 时没把 `float32_qk_product`、`float32_logits` 传下去，配置里打开也不生效，打分与 softmax 都在 BF16，sink 梯度整条在 BF16 里算，对求和顺序敏感。MaxText `56492817` 起接上。
-- **量到**：TPU 自比上下文并行 2 对普通注意力的底，曲线 r 1.27，第 6 层 sink 梯度 R 1.27（libtpu 0.0.46）；0.0.52 上这次在噪声内（r 0.95）。这个张量只换顺序就在离 FP64 2.1e-2 到 4.2e-2 之间跳。只开 `float32_logits` 跑 300 步，上下文并行 2 对不切 r 1.00。
-- **开关与生产**：用上下文并行时开 `float32_logits`（最好加 `float32_qk_product`），要 MaxText `56492817` 之后的代码；上下文并行 2 时 +12.4%。不用上下文并行不涉及。（详见 [TPU 自比「上下文并行」](../../models/hunyuan4/alignments/04-tpu-self/impacts/06-context-parallel.md)）
+- **量到**：TPU 自比上下文并行 2 对普通注意力的底，曲线 r 1.27，第 6 层 sink 梯度 R 1.27（libtpu 0.0.46）；0.0.52 上这次在噪声内（r 0.95）。这个张量只换顺序就在离 FP64 2.1e-2 到 4.2e-2 之间跳，所以判「超」是一个张量压线（R 1.27，刚过 1.2）判出来的，曲线在 GPU 重跑范围内，影响逐件判「能忍」，不能当作上下文并行算错了的证据。只开 `float32_logits` 跑 300 步，上下文并行 2 对不切 r 1.00；修法没跑 1000 步。
+- **开关与生产**：用上下文并行时开 `float32_logits`（最好加 `float32_qk_product`），要 MaxText `56492817` 之后的代码（混元 4 集成分支；上游有这两个键，但在 MLA 上静默不生效，见 [MaxText 说明「这些开关在哪个分支」](../../models/hunyuan4/frameworks/maxtext/README.md#这些开关在哪个分支)）；上下文并行 2 时 +12.4%。不用上下文并行不涉及。（详见 [TPU 自比「上下文并行」](../../models/hunyuan4/alignments/04-tpu-self/impacts/06-context-parallel.md)）
 
 ### A15 GPU 参照的索引器 RoPE 在 BF16 里算
 
@@ -222,7 +224,7 @@ TPU 矩阵单元原生 BF16 × BF16、FP32 累加：FP32 操作数默认先截�
 
 - **原理**：GPU 索引器 `weights_proj`、路由 GEMM 乘 BF16 模型权重；MaxText 乘 FP32 主权重，`highest` 下低位参与计算。
 - **量到**：训练后权重重放，`weights_proj` 输出对 FP64（BF16 权重）：关 9.6e-4–1.24e-3 → 开 8e-8。
-- **开关与生产**：`indexer_weights_proj_bf16_weight`（M27）、`routed_gate_bf16_rounding`（M8）。不开（多舍一次）。M8 +0.1%，M27 +0.1%。（详见 [r5]、[案例 13]）
+- **开关与生产**：`indexer_weights_proj_bf16_weight`（M27）、`routed_gate_bf16_rounding`（M8）。不开（多舍一次）。M8 +0.1%，M27 +0.1%。推荐组合里关 M27 时前 300 步索引器 KD 对 GPU 不过（r 4.78–5.23），推断主要来自关 M27，组合里开回 M27 的对照没做；这只说明离 GPU 远，对 FP64 没比（[mini 对齐细节「推荐组合整体跑一次」](../../models/hunyuan4/alignments/01-mini/DETAILS.md#推荐组合整体跑一次)）。（详见 [r5]、[案例 13]）
 
 ### B5 iHC 四路流加权和的相加顺序（机制待查，见 U11）
 
@@ -276,7 +278,7 @@ TPU 默认的 FP32 超越函数、除法、开方是快速近似。GPU：CUDA �
 ### C3 精确 sigmoid / silu 的反向式子要与 GPU 相同
 
 - **原理**：GPU 反向用 PyTorch 解析式、FP32 里舍一次；C2 写法自动微分出的式子与舍入点不同。
-- **量到**：1000 步路由偏置均值带符号均值：N 0.501，TPU 1.27 → 0.444，r 2.54 → 0.89。
+- **量到**：1000 步路由偏置均值带符号均值（8 份尺子，上一代）：N 0.501，TPU 1.27 → 0.444，r 2.54 → 0.89。
 - **开关与生产**：M39随 C1 的开关。**前向更准不等于整网更近，反向也要对上。**（详见 [r18]）
 
 ### C4 病态标量：一格误差被放大成大差
@@ -342,7 +344,7 @@ TPU 默认的 FP32 超越函数、除法、开方是快速近似。GPU：CUDA �
 ### D9 QK-Clip 的最大 logit 含不含 sink
 
 - **原理**：splash 带 sink 时 running max 从 sink 起算；sink 不是 q·k，缩 q / k 降不了它，原版不含 sink。
-- **量到**：T1 里 QK-Clip 从不触发（τ 100）；第 1 步单开关主 loss 逐位相同；但只关它的 300 步主 loss 带符号均值 0.48 → 0.93 倍（推断：编译结果变了）。
+- **量到**：T1 里 QK-Clip 从不触发（τ 100）；第 1 步单开关主 loss 逐位相同；但只关它的 300 步主 loss 带符号均值 0.48 → 0.93 倍（推断：编译结果变了；升幅 0.45 在只改执行方式的波动线 1.07 以内，单看曲线归不到开关。波动线 = 8 份只改执行方式的运行截前 300 步、任取同组两份，「升得最多的一项」的最大值，[`exec-spread-300.json`](../../models/hunyuan4/alignments/01-mini/gpu-noise/results/exec-spread-300.json)）。
 - **开关与生产**：`qk_clip_max_logit_exclude_sink: true`（M25），**必须与 D10 一起用**。开，+0.9%。**详见**：[r12]。
 
 ### D10 最大 logit 不是正数时开负数的根号
@@ -364,7 +366,7 @@ TPU 默认的 FP32 超越函数、除法、开方是快速近似。GPU：CUDA �
 
 - **原理**：TPU 每步把路由偏置更新减去均值，不减时共同分量漂移；减均值不改 top-k。
 - **量到**：路由偏置均值带符号均值：N 0.799，差 15.3 → 0.135，r 19.1 → 0.17。
-- **开关与生产**：对齐时两边都不减（G14）。生产**两边都开**（漂移吃掉偏置分辨率）；原版 Megatron-Core 不减均值。（详见 [r1]）
+- **开关与生产**：对齐时两边都不减（G14）。生产**两边都开**（漂移吃掉偏置分辨率）；原版 Megatron-Core 不减均值。两边都开的实测：混元 4 mini 的生产配方臂 P1（学习率 cosine 峰值 2e-5、warmup 200，YaRN 8，路由偏置零均值两边都开）1000 步，对同配方 GPU 8 份两两 28 对的尺子 9 项全过（[`t1pr-l4-gpu8`](../../models/hunyuan4/alignments/01-mini/results/t1pr-l4-gpu8.results.json)，[知识库「生产配方臂」](../../models/hunyuan4/knowledge.md#生产配方臂与-qk-clip-梯度累积要点与出处)）；TPU 只有 1 份。（详见 [r1]）
 
 ### E3 eod 掩码下 aux loss 的权重
 
@@ -372,7 +374,7 @@ TPU 默认的 FP32 超越函数、除法、开方是快速近似。GPU：CUDA �
 
 ### E4 路由与 DSA 的近似平局在两边各落一边
 
-- **原理**：两种舍入把平局各推一边；翻转不累积（证据只到混元 3 截 4 层、1000 步、常数学习率 1e-5，更长的训练和生产学习率没测）。
+- **原理**：两种舍入把平局各推一边；翻转不累积（混元 3 的证据只到截 4 层、1000 步、常数学习率 1e-5，更长的训练和生产学习率没测；混元 4 mini 的生产配方臂 P1（学习率 cosine 峰值 2e-5、warmup 200，YaRN 8，路由偏置零均值两边都开）1000 步，对同配方 GPU 8 份两两 28 对的尺子 9 项全过（[`t1pr-l4-gpu8`](../../models/hunyuan4/alignments/01-mini/results/t1pr-l4-gpu8.results.json)，[知识库「生产配方臂」](../../models/hunyuan4/knowledge.md#生产配方臂与-qk-clip-梯度累积要点与出处)）；TPU 只有 1 份，更长的训练没测）。
 - **量到**：混元 3 第 1 步每层 0.44%–0.56% 的路由槽位翻转，1000 步在噪声内；hy4-mini 第一行对 FP64 的 DSA 翻转 GPU 7,913 行、TPU 7,901 行。
 - **生产**：不涉及。正式判定按各自的选择对 FP64 自选比（G12、G13）。**详见**：混元 3 #5、#17。
 
@@ -411,7 +413,7 @@ XLA 的改写会让舍入点和代码字面不一样。
 
 ### F5 单算子回放逐位不变，不能证明开关无效
 
-- A6 的开关单算子回放逐位不变，整网里起作用（只关它的 300 步主 loss 带符号均值 N 3.01e-6，TPU 1.43e-6 → 3.03e-6，r 0.48 → 1.01）。省不省这次往返取决于后端怎么切融合（整网里均方那颗省、归一化那颗不省，A6），推断单独编译时没省。编译相关的开关要在整网编译里验。**详见**：[r16]。
+- A6 的开关单算子回放逐位不变，整网里起作用：TPU 自比只关它，第 1 步第 1 层索引器 `k_norm` 的权重梯度离 FP64 1.08e-3（golden 4.83e-4，GPU 6.69e-4），只把分支输入那次舍入补回去就回到 golden（[TPU 自比影响逐件「iHC 不强制舍成 BF16」](../../models/hunyuan4/alignments/04-tpu-self/impacts/05-ihc-bf16-rounding.md)）。省不省这次往返取决于后端怎么切融合（最小复现的 LLO 里均方那颗省、归一化那颗不省，A6；整网编译里是否同样省、各层是否一致没核），推断单独编译时没省。曲线读数不作依据：只关它的 300 步主 loss 带符号均值 N 3.01e-6，TPU 1.43e-6 → 3.03e-6，r 0.48 → 1.01，单份，升幅 0.53 在只改执行方式的波动线 1.07 以内；1000 步 r 2.12 → 0.76 是 8 份尺子（上一代）上的单份。编译相关的开关要在整网编译里验。**详见**：[r16]。
 
 ### F6 关小矩阵乘改写：RMSNorm 的乘法改走单遍 BF16
 
@@ -422,6 +424,18 @@ XLA 的改写会让舍入点和代码字面不一样。
 - **原理**：换 libtpu 时后端代码生成一起换了，HLO 相同也不代表机器码相同，离线编译比程序指纹判不了。新版本可能改默认行为。
 - **量到**：0.0.46 → 0.0.52，golden 配置（v5p，FSDP 8）300 步、1000 步都在噪声内；但「RMSNorm 多舍一次」从 r 1.06 变成 5.50（A2），词嵌入 scatter 插排序的门槛随列宽和芯片代际变（A12）。本清单的读数都在 0.0.46 上（「适用条件」）。0.0.50、0.0.50.1 有 scatter 正确性问题，不用（[环境](environment.md#tpu-侧)）。
 - **生产**：钉版本。换版本先建新 golden、和旧 golden 比，再把已知敏感项（TPU 自比的六件）重测；结论只对实测过的版本对和配置成立（[`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md)）。
+
+### F8 jit 静默算错：DUS 和读同一缓冲的算子被合进一颗多输出 fusion
+
+- **现象**：v5p 上 jit 的结果错到 0.47（相对），逐算子执行（`jax.disable_jit()`）是对的，没有报错。不是精度问题。
+- **原理**：multi-output fusion 把「用 DUS 原地改写一块缓冲」的 kernel 和「读同一块缓冲」的 kernel 合成一颗。v5p 为这颗 kernel 生成的代码把后者的输出算丢。出错的组合是：目标缓冲按 8 行一块存，读出的小块只有 2 行或 4 行。v7x 上同样的 kernel 算对。每个 pass 之后的 HLO 在 CPU 上都算对，错在代码生成。
+- **版本**：0.0.46、0.0.48、0.0.51、0.0.52 都错；nightly 0.0.53.dev20261106 起不再这样合并，算对。截至 2026-11-11 没有带修复的正式版。
+- **开关与生产**：
+  - 用 `hlo_mof_dus_scan.py` 扫训练步的优化后程序；混元 3、混元 4 存档的 292 份是 0 处。这 292 份只有混元 3 截 4 层与混元 4 mini 存了 HLO 的程序（混元 3 正式被测不在内）；mini 现行比较 `tz-off-rep` 与推荐组合 `x5-prod` 没存 HLO，在 CPU 上按 `meta.json` 重编后扫，也是 0 处（离线程序与上卡程序是同一份是推断），混元 4 mid、真实宽度截层和生产尺寸的程序没扫，所以不能完全排除（待做：扫这几类程序）；
+  - 扫到特征时，对被改写缓冲的读取加 `jax.lax.optimization_barrier`（只挡这一处）；
+  - 找不到位置时，`LIBTPU_INIT_ARGS=--xla_jf_enable_multi_output_fusion=false` 全局关（会改别处数值）。
+
+  （详见 [案例 16]）
 
 ## 8. G 测量方法
 
@@ -477,7 +491,7 @@ XLA 的改写会让舍入点和代码字面不一样。
 
 ### G13 路由一致率：TPU 选得离真值是否比 GPU 远
 
-- 按层统计自选的路由与 DSA top-k 对 FP64 的翻转率，R = TPU ÷ GPU 各份最大值，阈值同 L3；对 GPU 的翻转率照报不判（GPU 重跑前几层逐位相同，N 为 0）。hy4-mini 第 1、8、30、100 步各层 R 0.87–1.00，过：第 1 步是现行配置（base2 关，`tw-ra1z`）0.87–0.99；第 8、30、100 步沿用 base2 开的一代 0.90–1.00，关 base2 后没有重测（[`t1-route-agree-s1.json`](../../models/hunyuan4/alignments/01-mini/results/t1-route-agree-s1.json) 等四份）。
+- 按层统计自选的路由与 DSA top-k 对 FP64 的翻转率，R = TPU ÷ GPU 各份最大值，≤ 1.2 过、1.2–2 待定、> 2 不过（1.2 这条线同 L3 的 R；L3 的 R 只有 ≤ 1.2 一条线，待定这一档是路由一致率自己的，PROTOCOL 第 5 节）；对 GPU 的翻转率照报不判（GPU 重跑前几层逐位相同，N 为 0）。hy4-mini 第 1、8、30、100 步各层 R 0.87–1.00，过：第 1 步是现行配置（base2 关，`tw-ra1z`）0.87–0.99；第 8、30、100 步沿用 base2 开的一代 0.90–1.00，关 base2 后没有重测（[`t1-route-agree-s1.json`](../../models/hunyuan4/alignments/01-mini/results/t1-route-agree-s1.json) 等四份）。
 
 ### G14 TPU 对每份 GPU 各判一遍
 
@@ -502,14 +516,14 @@ XLA 的改写会让舍入点和代码字面不一样。
 | # | 项 | 读数 | 状态 |
 |---|---|---|---|
 | U1 | sink 梯度余量 | mid R 1.23–1.47，真实权重 D1 第 0 层 R 2.66（mini 已收拢） | 带 M42b 的第 1 步没跑（[D24]、[D22]） |
-| U2 | iHC 小参数梯度 | mid 第 1 步 3 个（mini 的 6 个已定责、已接受） | 带 M42b 的第 1 步没跑（[D11]） |
-| U3 | A4 / A5 耦合 | 单开 M41 时 1000 步主 loss 带符号均值（8 份尺子）N 3.78e-6，TPU 7.20e-6，r 1.91 | 前向逐位不变（[D25]）；只有一份运行，只改执行方式的重复 r 就能在 0.90–1.69 之间，分不清是开关还是轨迹 |
+| U2 | iHC 小参数梯度 | mid 第 1 步 3 个；mini 上一代（base2 开）6 个已定责、已接受，现行 `tz-off-rep` 5 个未定责，见 U24 | 带 M42b 的第 1 步没跑（[D11]） |
+| U3 | A4 / A5 耦合 | 单开 M41 时 1000 步主 loss 带符号均值（8 份尺子）N 3.78e-6，TPU 7.20e-6，r 1.91 | 前向逐位不变（[D25]）；只有一份运行，只改执行方式的重复，主 loss 带符号均值的 r 就能在 0.36–2.08 之间（8 份尺子推算，见 A4），分不清是开关还是轨迹 |
 | U4 | 真实权重 D1 索引器 KD | 带符号均值 N 8.67e-4，TPU +2.01e-3，r 2.32 | 那一代没有 M50（[D21]） |
 | U5 | grad_norm 前 300 步待定 | 现行前 300 步 MARE：N 3.85e-4，TPU 4.74e-4，r 1.23；1000 步过（0.81） | base2 开的上一代已接受（同一状态 6 次里 5 次 TPU 更近 FP64，[D2]）；那套证据是在开 base2 的状态上做的，关后没有重做 |
 | U7 | 真实权重 D1 第 1 步主 loss | 对 FP64：GPU +9.24e-4，TPU −2.23e-4 | 差在 GPU 一侧（[D19]） |
 | U8 | mid 第 1 步主 loss | 对 FP64：GPU +1.68e-4，TPU +2.8e-6 | 推断差在 GPU |
 | U11 | B5 对第 1 步 iHC 梯度的改善 | 11 → 8 个 | 后一代没复现（[r6]） |
-| U12 | A6 的往返被省掉，能不能解释长跑偏高 | 机制已核到 HLO 与后端（A6）；第 1 步只有三处一起模拟才对上第 0、1 层 KD 的变化，第 5 层模拟 −2.2e-4、TPU +1.55e-3 | 第 5 层原因没查；1000 步偏高归到它是推断（[r16]） |
+| U12 | A6 的往返被省掉，能不能解释长跑偏高 | 机制已核到训练步 HLO 与最小复现的 LLO（A6），整网训练步的后端没核；第 1 步只有三处一起模拟才对上第 0、1 层 KD 的变化，第 5 层模拟 −2.2e-4、TPU +1.55e-3 | 第 5 层原因没查；1000 步偏高归到它是推断（[r16]） |
 | U14 | 没量步时的开关 | A7 两个开关、M42、D1–D3、D6、E2、E3 | — |
 | U15 | 索引器 KD 记录值偏高 | M50 前后 1000 步带符号均值 N 1.83e-4，TPU +1.93e-4 → −1.27e-4，r 1.06 → 0.69 | 已修（C4、[r25]、[D1]）；GPU 记录值也偏高 |
 | U16 | param_norm 真实漂移 | — | 现行配置没重做逐张量定位（[D12]） |
@@ -519,16 +533,17 @@ XLA 的改写会让舍入点和代码字面不一样。
 | U22 | mini 主 loss 全部偏高 | 现行 1000 步带符号均值 N 4.65e-6，TPU +7.21e-6，r 1.55（第 101 步起 1.52）；8 份 TPU 对 GPU 16 份逐步均值平均 +4.3e-6，几乎全来自第 501–1000 步 | 在查。是训练轨迹的差，不是前向的差；与 base2 无关；前段小鼓包定到 A13，后段根因未定（[D30]） |
 | U23 | 关 base2 后低阈值 QK-Clip 第 1 步逐头最大 logit | 第 4 层对 FP64：GPU 2.97e-3，TPU 4.61e-3，R 1.55（base2 开时 0.94） | 差在 BF16 舍入单位的量级，没查（[D31]） |
 | U24 | 现行配置第 1 步新出现的 3 个 iHC 张量 | 205 个梯度里 6 个比 GPU 离 FP64 远（5 个 iHC＋MTP `enorm`），其中 3 个 iHC 是关 base2 后新出现的 | 没有接受（[`t1zo-step1-train-grad-vs-fp64.json`](../../models/hunyuan4/alignments/01-mini/results/t1zo-step1-train-grad-vs-fp64.json)） |
-| U25 | 真实宽度三层 250 步主 loss 后段偏低 | 第 101–250 步带符号均值：N 9.22e-6，TPU base2 开 −2.60e-5、关 −2.51e-5，r 2.82 / 2.72 | 不是前向的差，是轨迹的差；已排除 base2、权重侧精度、GPU 索引器 RoPE、iHC 舍入（[06 README](../../models/hunyuan4/alignments/06-rw3/README.md#后段主-loss-偏低不是前向的差是轨迹的差)） |
+| U25 | 真实宽度三层主 loss 后段偏低 | 第 101–250 步带符号均值：N 9.22e-6，TPU base2 开 −2.60e-5、关 −2.51e-5，r 2.82 / 2.72；1000 步回放第 101–1000 步：N 2.10e-5，开 −2.60e-5、关 −1.80e-5，带符号均值 r 1.24 / 0.86；按三量最差 1.24 / 1.02（关那臂领头的是最大单步）（[`rw3-1k-replay.json`](../../models/hunyuan4/alignments/06-rw3/results/rw3-1k-replay.json)） | 不是前向的差，是轨迹的差；已排除 base2、权重侧精度、GPU 索引器 RoPE、iHC 舍入（[06 README](../../models/hunyuan4/alignments/06-rw3/README.md#后段主-loss-偏低不是前向的差是轨迹的差)） |
 
 ## 10. 怎么用这份清单
 
 | 场景 | 做法 |
 |---|---|
 | 对齐 | TPU 照 [T1 配置](../../models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml)（含 B3、E1、关 base2；A4、A5 一起开；A10 用 M42b；不含 A7），回放 GPU 的 batch；GPU 实测 TF32（B7）、dgrad 分段（B8）、自写内核查精度边界（A8）、关分布式优化器（E5）、存每步 batch（E6）、偏置更新一致（E2） |
-| 生产 | 看第 1 节「生产建议」：对真值的误差加代价。这些建议是在 T1 上逐个关开关得到的，推荐的组合整体还没有对 GPU 跑过 L4；生产切法与验收不同时看 E5，换 libtpu 看 F7 |
-| 新开关 | 前向、反向、配套开关整套对上再上整网，先在单算子上对 GPU 写法逐元素比（C2、A10 只修一半时整网离 GPU 更远） |
+| 生产 | 看第 1 节「生产建议」：对真值的误差加代价。这些建议是在 T1 上逐个关开关得到的；推荐组合整体在 hy4-mini 上跑过一次 1000 步（`x5-prod`，3 份）：1000 步没有不过项，主 loss 与现行对齐配置交叠，但索引器 KD 三份都待定（r 1.23–1.26，现行对齐配置 `tz-off-rep` 0.77，[`t1zp-repeats.json`](../../models/hunyuan4/alignments/01-mini/results/t1zp-repeats.json)）；前 300 步三份的索引器 KD 都不过（r 4.78–5.23，推断来自关 M27，见 B4），见 [mini 对齐细节「推荐组合整体跑一次」](../../models/hunyuan4/alignments/01-mini/DETAILS.md#推荐组合整体跑一次)；生产切法与验收不同时看 E5，换 libtpu 看 F7 |
+| 新开关 | 前向、反向、配套开关整套对上再上整网，先在单算子上对 GPU 写法逐元素比（例：C2 只换了前向的精确写法时，1000 步路由偏置均值 r 2.54，C3 把反向也对上后 0.89） |
 | 验证顺序 | L0 逐位 → L1（G9）→ L3（G1、G4、G8、G12、G13）→ 权重侧重放（G5）→ L4（G2、G17）；编译相关开关在整网里验（F5） |
+| 差大得不像舍入 | 相对误差 1e-2 以上、或只在某些形状下错：先在 TPU 上用 `jax.disable_jit()` 逐算子跑同一函数。逐算子对、jit 错就是编译 bug，不查精度开关；再扫一遍 F8 的特征 |
 
 ## 证据索引
 
@@ -585,3 +600,4 @@ XLA 的改写会让舍入点和代码字面不一样。
 [案例 12]: ../../models/hunyuan4/cases/12-param-norm-fp32-sum-and-drift.md
 [案例 13]: ../../models/hunyuan4/cases/13-weight-side-switch-step1-blind-spot.md
 [案例 14]: ../../models/hunyuan4/cases/14-ddp-fsdp-embedding.md
+[案例 16]: ../../models/hunyuan4/cases/16-jit-miscompile-sub8-row-block.md

@@ -1,0 +1,73 @@
+{
+ "what": "metrics.jsonl 第 1 步主 loss 对 CPU FP64 参照的相对差 (x − FP64) ÷ FP64",
+ "reference": {
+  "file": "models/hunyuan4/alignments/03-mid/results/mid-tm2-step1-grad-vs-fp64.json",
+  "lm_loss": 11.81886298469976
+ },
+ "gpu": {
+  "gm-a": {
+   "lm_loss": 11.819089889526367,
+   "loss": null,
+   "rel_vs_fp64": 1.919853262548717e-05,
+   "meta_sha256": "91cf1cd8137965d39f89f7f73b177ad477ca2a3fd918b77a98fc92a16d840af7"
+  },
+  "gm-b": {
+   "lm_loss": 11.819045066833496,
+   "loss": null,
+   "rel_vs_fp64": 1.5406061815975334e-05,
+   "meta_sha256": "2e8dcbe7852f0496f0bdd3fbe3bca1cb08b5fce374762a0ec7e554dfee929bb2"
+  },
+  "gm-c": {
+   "lm_loss": 11.819010734558105,
+   "loss": null,
+   "rel_vs_fp64": 1.2501190557625846e-05,
+   "meta_sha256": "9e570a3075532b5d98d66f455c0061d1953c7a9a1f92103eac2dbc4e3b37330a"
+  },
+  "gm-d": {
+   "lm_loss": 11.819014549255371,
+   "loss": null,
+   "rel_vs_fp64": 1.2823954030775789e-05,
+   "meta_sha256": "95ae383ae3a4fd7ee073f97e53f1138f4c7faa9a68dcf8a6d0fcaab9e46ce0ca"
+  },
+  "gm-e": {
+   "lm_loss": 11.819019317626953,
+   "loss": null,
+   "rel_vs_fp64": 1.3227408372213218e-05,
+   "meta_sha256": "e83c821a9eac8996e431f206644d5f1bc87569b2a4d8001a99743cea314645ca"
+  },
+  "gm-f": {
+   "lm_loss": 11.819011688232422,
+   "loss": null,
+   "rel_vs_fp64": 1.2581881425913332e-05,
+   "meta_sha256": "5be7f945617fd218891d9e82ff6799dcd2affce879d33503ed2ae9e8c5eb8996"
+  },
+  "gm-g": {
+   "lm_loss": 11.818979263305664,
+   "loss": null,
+   "rel_vs_fp64": 9.838391904138813e-06,
+   "meta_sha256": "17f1a9c8219b64c61dedcc38482b78b6dc3b3fef5d0387a05672b18c61ca9f65"
+  },
+  "gm-h": {
+   "lm_loss": 11.818981170654297,
+   "loss": null,
+   "rel_vs_fp64": 9.999773640713785e-06,
+   "meta_sha256": "1a3ba8cb99ca3dadd18d43b86b910f6869d7fb94e8be0f226e9457923a0d4f64"
+  }
+ },
+ "gpu_spread_rel": 9.360140721348357e-06,
+ "tpu": {
+  "tm-b": {
+   "lm_loss": 11.818910598754883,
+   "loss": 13.000202178955078,
+   "rel_vs_fp64": 4.028649387439832e-06,
+   "meta_sha256": "fd13582e9fb0ed4861f951e93db9014c31d514c4c3c4463015eea52cf8f29c2b"
+  },
+  "tm-a": {
+   "lm_loss": 11.818865776062012,
+   "loss": 13.00015926361084,
+   "rel_vs_fp64": 2.3617857792799817e-07,
+   "meta_sha256": "54934257162b49aa4cd619c3def761318f313e37aa1e96ac0b1d097a1a05169d"
+  }
+ },
+ "note": "参照取 mid-tm2-step1-grad-vs-fp64.json 的 reference.lm_loss（CPU FP64 整网重算）。tm-b 是现行判定的 300 步运行（base2 开、早于 M50），它第 1 步的训练目标 loss 与第 1 步诊断 tm2diag 的 objective 逐位相同（13.000202178955078）；tm-a 是上一代。GPU 8 份是 gm-a … gm-h 训练运行第 1 步；对齐报告里 GPU 的 +1.42e-5 是第 1 步全量抓数参照（同一结果文件 loss_vs_gpu.lm_loss），不是这 8 份。"
+}

@@ -1,0 +1,80 @@
+{
+ "what": "注意力最大 logit（QK-Clip 统计量）：训练运行全程、第 1 步诊断逐层逐头",
+ "threshold": 100.0,
+ "train": {
+  "gb2-a": {
+   "steps": 300,
+   "max_attention_logit_min": 13.218782424926758,
+   "min_at_step": 237,
+   "max_attention_logit_max": 16.388671875,
+   "max_at_step": 109,
+   "clipped_heads_total": 0.0,
+   "meta_sha256": "ae1e1696a2f9a2ecd8eb661497991f46dab45f275eb1ba99ac53b2c2078ab3ff"
+  },
+  "gd2-a": {
+   "steps": 300,
+   "max_attention_logit_min": 35.3949089050293,
+   "min_at_step": 10,
+   "max_attention_logit_max": 59.97406768798828,
+   "max_at_step": 248,
+   "clipped_heads_total": 0.0,
+   "meta_sha256": "4e4ef41802c75fec56412f7dc5521e5bca8600a7b8a2241f99884804c2dce2f9"
+  },
+  "gb3-a": {
+   "steps": 1000,
+   "max_attention_logit_min": 11.953131675720215,
+   "min_at_step": 900,
+   "max_attention_logit_max": 16.338706970214844,
+   "max_at_step": 109,
+   "clipped_heads_total": 0.0,
+   "meta_sha256": "7576beb856fb885f3ed15e76bde7cf8f3c943d9d848e5fd277f980820010aa1b"
+  },
+  "gd3-a": {
+   "steps": 1000,
+   "max_attention_logit_min": 35.41697692871094,
+   "min_at_step": 10,
+   "max_attention_logit_max": 60.90314865112305,
+   "max_at_step": 935,
+   "clipped_heads_total": 0.0,
+   "meta_sha256": "293015a4cba43cfc8e95d452dfcef7f4ee8b1118ddcd01709d04a03014b440d0"
+  },
+  "tb5b-a": {
+   "steps": 1000,
+   "max_attention_logit_min": null,
+   "min_at_step": null,
+   "max_attention_logit_max": null,
+   "max_at_step": null,
+   "clipped_heads_total": 0.0,
+   "meta_sha256": "05301acb70d519522fa6f80657a6fd174bf98d0e6c8a5b2d68208911d9eb5330"
+  },
+  "td5b-b": {
+   "steps": 1000,
+   "max_attention_logit_min": null,
+   "min_at_step": null,
+   "max_attention_logit_max": null,
+   "max_at_step": null,
+   "clipped_heads_total": 0.0,
+   "meta_sha256": "517e6d4341e0558595b57430810bbec03d48b5804f43d490d6a9fd408d5b2f53"
+  }
+ },
+ "diag": {
+  "tb6diag": {
+   "per_layer": {
+    "qk.max_logit.0": {
+     "heads": 64,
+     "max": 13.308956146240234,
+     "median": 6.916210889816284
+    },
+    "qk.max_logit.1": {
+     "heads": 64,
+     "max": 14.458016395568848,
+     "median": 7.215235710144043
+    }
+   },
+   "max": 14.458016395568848,
+   "median": 7.076841115951538,
+   "meta_sha256": "fb8fdbaa0db47f02c953c24e61fa3d51d554eb6df625d824f8d2a67c23bcb6db"
+  }
+ },
+ "note": "GPU 是 02 的 golden 基线；TPU tb5b-a / td5b-b（最近一代 1000 步）的 metrics.jsonl 不记 max_attention_logit（qk_clip_log_per_head 关），全程最大 logit 没有记录。tb6diag 是 B 的第 1 步诊断（L3 判定证据），qk.max_logit.0 / .1 是第 0、1 层的 64 个头。"
+}

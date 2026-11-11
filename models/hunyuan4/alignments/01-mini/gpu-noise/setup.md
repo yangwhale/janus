@@ -9,7 +9,7 @@
 | | 设置 | 出处 |
 |---|---|---|
 | 硬件与规模 | NVIDIA B200 × 8，单机 | `PROTOCOL.md` 第 1.2 节「序列 / 批」行 |
-| 程序 | Megatron-Core 0.20 + TE（NeMo 26.10 镜像所带；`meta.json` 不记 TE 版本，按同一镜像推断是 TE 2.20.2，见[软件版本](../setup.md#软件版本)）之上的 janus 程序（`hy4_mcore.py`、`train_hy4mg.py`） | `PROTOCOL.md` 第 1.2 节「GPU 一侧的舍入位置」行 |
+| 程序 | Megatron-Core 0.20 + TE（NeMo 26.10 镜像所带；`meta.json` 不记 TE 版本，2026-11-11 在同一镜像的训练 Pod 里实测是 TE 2.20.2，见[软件版本](../setup.md#软件版本)）之上的 janus 程序（`hy4_mcore.py`、`train_hy4mg.py`） | `PROTOCOL.md` 第 1.2 节「GPU 一侧的舍入位置」行 |
 | 镜像 | NeMo 26.10（digest 见各运行的 `meta.json`） | `CHANGES-LEDGER.md` GPU 一侧表头 |
 | 并行切分 | 数据并行 8、专家并行 4，TP / CP 1 | `PROTOCOL.md` 第 1.2 节 |
 | 模型 | hy4-mini（427,783,489 参数，7 层 + 1 层 MTP），从共同的随机初始化 HF 目录载入（清单 sha256 见 `PROTOCOL.md` 第 1.1 节）；载入后逐参数自检 | 台账 G7 |
@@ -22,5 +22,5 @@
 **两种设置**（确定性 / 默认）
 
 - 含义见 [`../../../../../docs/reference/environment.md`](../../../../../docs/reference/environment.md)。
-- 现有的 GPU 运行都是默认设置；确定性设置的两份是计划（[`catalogs/t1-gpu-determinism.yaml`](catalogs/t1-gpu-determinism.yaml)）。
+- 本实践现有的 GPU 运行都是默认设置；确定性设置的两份 300 步是计划（hy4-mini 确定性模式两次 20 步逐位已在 05 做过，`05-gpu-scale/results/ckpt-rerun-dp8.json`）（[`catalogs/t1-gpu-determinism.yaml`](catalogs/t1-gpu-determinism.yaml)）。
 - 噪声参照只用同一种设置的运行对。

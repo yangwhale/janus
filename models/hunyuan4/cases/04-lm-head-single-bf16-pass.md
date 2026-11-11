@@ -35,4 +35,4 @@ MaxText 的 `logits_dot_in_fp32` 只把操作数转成 FP32，矩阵乘精度仍
 
 - **修法**：台账 M13 `logits_matmul_precision`（提交 `352014df`），默认跟 `matmul_precision`；T1 设 `highest`（[`hy4-mini-t1.yml`](../frameworks/maxtext/hy4-mini-t1.yml)）。GPU 一侧输出头 dgrad 的分段累加另见台账 G19（[`CHANGES-LEDGER.md`](../CHANGES-LEDGER.md)）。
 - **定责依据**：读代码，对照的语义标准是「GPU 输出头是真 FP32 矩阵乘」（台账 G1）；只改 TPU 一边后两边的差收拢：主 loss 最大单步 r 6.03 → 0.61、param_norm 带符号均值 r 2.48 → 0.57（上表）。
-- **生产建议**：看情况（取舍，C）。代价：hy4-mini 步时 0.3854 → 0.4767 s（+24%），hy4-mid 2.2610 → 2.8125 s。见[根源一览第 5 行](../ROOT-CAUSES.md#r5)、对齐报告 [D8](../alignments/01-mini/DETAILS.md#d8)。`t1t-*` 一代同时改了 M13、M25、M26、M27 与 GPU 的 G17，合在一起的前后数字见[案例 06](06-gpu-attn-scores-bf16.md)。
+- **生产建议**：看情况（取舍，C）。代价：hy4-mini 步时 0.3854 → 0.4767 s（+24%），hy4-mid 2.2610 → 2.8125 s（未核：运行没有登记、无结果文件，见 [mid 对齐报告](../alignments/03-mid/ALIGNMENT-REPORT.md)）。见[根源一览第 5 行](../ROOT-CAUSES.md#r5)、对齐报告 [D8](../alignments/01-mini/DETAILS.md#d8)。`t1t-*` 一代同时改了 M13、M25、M26、M27 与 GPU 的 G17，合在一起的前后数字见[案例 06](06-gpu-attn-scores-bf16.md)。

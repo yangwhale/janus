@@ -18,19 +18,30 @@ how_to_read: []
 
 evidence_sources:
   - {match: "hy4-*-smoke*", source: "TPU 一侧 CPU 冒烟（`frameworks/maxtext/cpu_smoke.py`）"}
+  - {match: "hy4-tiny11-*", source: "TPU 一侧 CPU（`frameworks/maxtext/qk_clip_scan_check.py`）"}
 
 levels:
   - id: L0
     title: L0 · 地基：权重、数据、设置
     purpose: 转换与链路逐位
     lead:
-      - "L0 共 {rows} 项检查，检查条数 {checks}。一条检查是冒烟脚本的一步（`ok` 为真才过）。"
+      - "L0 共 {rows} 项检查，检查条数 {checks}。冒烟一行里一条检查是冒烟脚本的一步（`ok` 为真才过）。Muon 分区表（每个参数走 Muon 还是 Adam）是写出的表、不判，见 [README](README.md)。"
     tables:
       - rows:
           - name: CPU 冒烟各步
-            what: hy4-tiny 维度、8 个假 CPU 设备，四个阶段（A–D）各走一遍：生成 HF 目录、转换、往返逐位、RoPE 去交错与负对照、训练、初始权重等于 HF、索引器冻结、数据指纹、学习率常数
+            what: hy4-tiny 维度、8 个假 CPU 设备，四个阶段（A–D）各走一遍：生成 HF 目录、转换、往返逐位、RoPE 去交错与负对照、训练、初始权重等于 HF、索引器冻结、数据指纹（8 个 rank 的 data/rank*.jsonl 与假 golden 逐字节相同；结果文件里 detail 为空，比法见 cpu_smoke.py）、学习率常数
             objects: 冒烟脚本的每一步
             src: {tiny: "hy4-tiny-smoke:*"}
+          - name: QK-Clip 在扫描层下按层缩放（修后，M1）
+            what: hy4-tiny 的 11 层变体 hy4-tiny11（1 稠密 + 10 MoE，扫描长度 2，另有 2 层余数块），τ 1e-3 下每层每头实测的 √scale 与按该层最大 logit 算的期望逐位比（`qk_clip_scan_check.py`，台账 J1；覆盖根源一览第 8 行）
+            objects: 7 个 wq_b 叶子、11 层 × 4 头
+            src: {tiny: "hy4-tiny11-qk-clip-scan-postfix:*"}
+          - name: QK-Clip 在扫描层下按层缩放（修前）
+            what: 同一脚本、同一参数在修复 M1 之前的读数：扫描块里两层共用一个缩放（等于两层期望的逐头最小值）
+            objects: 7 个 wq_b 叶子、11 层 × 4 头
+            info: true
+            src: {tiny: "hy4-tiny11-qk-clip-scan:*"}
+            why: 修前的 bug 读数，留作对照；修后见上一行
   - id: L1
     title: L1–L4 · GPU 对 TPU
     purpose: 两边逐层与多步比较

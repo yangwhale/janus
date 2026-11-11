@@ -1,0 +1,96 @@
+{
+ "what": "GPU 第 1 步参照补到 6 份：新跑的 g2s-d / e / f 与 g2s-a / b / c 的设置核对（meta.json 逐字段对 g2s-a，不比 run_name、side、created_at、load_seconds）",
+ "setting": "同一代码包 janus-hy4-37ccee82cf33（hy4_mcore 4dab75aa、train 1763d7ed）、同一 pod_run.sh（取自该代码包）、同镜像 digest fc75bf51…、同附加参数（与 g2s-b、g2s-c 的 RUN_START 行逐字相同：--mtp --ep=4 --optimizer=muon --opt-kv=muon_scale_mode=shape_scaling --qk-clip --qk-clip-threshold=100 --wd=0 --lr=1e-5 --adam-eps=1e-10 --adam-beta2=0.95 --attn-scores-fp32=on --dump-steps=1 --full --dump-all-experts；g2s-a 另带 --save-batches，只多写 batch，不改数值）；单机 B200 × 8，DP 8 + EP 4，默认设置（非确定性）",
+ "dates_utc": {
+  "g2s-a..c": "2026-11-07",
+  "g2s-d..f": "2026-11-11"
+ },
+ "meta_sha256": {
+  "g2s-a": "0dc1d45ff823a935617a1b07ec2a7100596fb9452f6ac0386adae6cec12d7d93",
+  "g2s-b": "9d5e5f0f1305c6a652861ec8c346af1d6380d1291912cfcabcd2e93197996ce2",
+  "g2s-c": "c4489c36b4fe69631a5f0e852cfde682fd6d7424ddddd20c36b2be9780b01225",
+  "g2s-d": "0c5a5e088adcda8b6f8d5066889d81d4f62bcae0b6dd598f8480f74085bb3f12",
+  "g2s-e": "72e859480b105d1e4fa50fbe5fd89f578952d73355fa21967235ff69517f1979",
+  "g2s-f": "03aed516f4e9900e400fda9dd312e54fd56e56d0a747ccc466a4d96057e36caf"
+ },
+ "differences_vs_g2s_a": {
+  "g2s-b": [
+   {
+    "field": "tf32.fp32_gemm_rel_err_vs_fp64",
+    "g2s-a": 1.1452550890851235e-06,
+    "g2s-b": 1.1457202747528884e-06
+   }
+  ],
+  "g2s-c": [
+   {
+    "field": "tf32.fp32_gemm_rel_err_vs_fp64",
+    "g2s-a": 1.1452550890851235e-06,
+    "g2s-c": 1.1456097050503314e-06
+   }
+  ],
+  "g2s-d": [
+   {
+    "field": "tf32.fp32_gemm_rel_err_vs_fp64",
+    "g2s-a": 1.1452550890851235e-06,
+    "g2s-d": 1.1459683461338279e-06
+   }
+  ],
+  "g2s-e": [
+   {
+    "field": "tf32.fp32_gemm_rel_err_vs_fp64",
+    "g2s-a": 1.1452550890851235e-06,
+    "g2s-e": 1.145254621741777e-06
+   }
+  ],
+  "g2s-f": [
+   {
+    "field": "tf32.fp32_gemm_rel_err_vs_fp64",
+    "g2s-a": 1.1452550890851235e-06,
+    "g2s-f": 1.1454801279982422e-06
+   }
+  ]
+ },
+ "differences_note": "只有启动时 TF32 探针（tf32.fp32_gemm_rel_err_vs_fp64，随机矩阵对 FP64 的实测）不同；配置、代码指纹、镜像、并行、版本、数据指纹逐项相同",
+ "step1_metrics_new": {
+  "g2s-d": {
+   "lm_loss": 11.718031883239746,
+   "grad_norm": 6.363362779557504,
+   "mtp_loss": 11.71238899230957,
+   "indexer_loss": 8.479689313389827e-06
+  },
+  "g2s-e": {
+   "lm_loss": 11.718031883239746,
+   "grad_norm": 6.363201817625005,
+   "mtp_loss": 11.712389945983887,
+   "indexer_loss": 8.479481948597822e-06
+  },
+  "g2s-f": {
+   "lm_loss": 11.718034744262695,
+   "grad_norm": 6.363772509716224,
+   "mtp_loss": 11.71238899230957,
+   "indexer_loss": 8.479795724269934e-06
+  }
+ },
+ "export": {
+  "tool": "frameworks/megatron/export_hf_grads.py --step 1（同 g2s-a … c；对 g2s-c 原始抓数重导，与当时导出的文件逐字节相同）",
+  "sumsq_fp64_total_exported": {
+   "g2s-a": 40.36888662432704,
+   "g2s-b": 40.37434494717218,
+   "g2s-c": 40.37193489334475,
+   "g2s-d": 40.37085078971207,
+   "g2s-e": 40.368791113545896,
+   "g2s-f": 40.376047703805554
+  }
+ },
+ "batch_effect_check": {
+  "what": "新旧两批（a–c 2026-11-07，d–f 2026-11-11）之间有没有批次差：205 个张量的 GPU 两两 rel_L2（分母 ‖FP64‖）按组取中位数；各份对 FP64 的 rel_L2 新批平均比旧批小的张量占比",
+  "source": "t1zo-step1-train-grad-vs-fp64-n6.json 的 rows（gpu_noise_each 按 a…f 两两组合顺序）",
+  "pairwise_rel_l2_median": {
+   "old_old": 0.002478539545524213,
+   "new_new": 0.0024796099353904056,
+   "cross": 0.0024751291384638805
+  },
+  "frac_tensors_new_closer_to_fp64": 0.5219512195121951,
+  "conclusion": "跨批的两两差与批内相同（中位数 2.475e-3 对 2.479e-3、2.480e-3），新批离 FP64 更近的张量占 0.52；没有批次差，六份可以当同一设置的重跑合用"
+ }
+}

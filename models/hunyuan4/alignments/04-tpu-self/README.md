@@ -4,10 +4,10 @@
 
 同一个模型（hy4-mini）、同一份权重和数据，每次只改一样东西（并行方式、编译开关、代码写法、精度设置、软件版本、硬件），跑一次，和一次确认过的 TPU 运行（golden）比。尺子是 GPU 同设置自己重跑的噪声上限 N，r = 差 ÷ N；r 怎么算见[尺子](../../../../docs/guide/ruler.md)。
 
-自比的 golden 仍是开 base2 的一代（`ts-g-a`），对齐配置 2026-11-11 起已改成关 base2。自比比的是只改一样东西前后的差，golden 和各臂都开 base2，比较内部一致；但「结论不依赖 base2」没有实测，是推断。base2 改的是 splash 注意力里的指数（logits 多一次 BF16 舍入），和注意力路径相关的结论（第 6 件的 sink 梯度、注意力换普通实现）最可能受影响（[setup](setup.md#golden)）。
+自比的 golden 仍是开 base2 的一代（`ts-g-a`），对齐配置 2026-11-11 起已改成关 base2。自比比的是只改一样东西前后的差，golden 和各臂都开 base2，比较内部一致；但「结论不依赖 base2」没有实测，是推断。base2 只作用于 splash 注意力：logits 多一次 BF16 舍入，而且常数 log2 e 被舍成 BF16，logits（不含 sink）整体乘 1.0018。所以受影响最大的是对 golden 比、注意力从 splash 换成普通实现的臂（D12、V9、G3a、G4a、V11）；第 6 件内部的比较两边都是普通注意力，不经过 base2（[setup](setup.md#golden)）。
 
 <!-- BEGIN:overview -->
-一共 **120 种改动**（其中 33 种另外跑到 1000 步）：逐位相同 34 种；变了、但跟 GPU 重跑一样大 46 种；真有影响 14 种，归成 6 件；动了精度、但这把尺子量不出来 5 种；故意改坏、用来证明工具抓得到的 15 种；登记了、没出结果的 6 种。34 + 46 + 14 + 5 + 15 + 6 = 120。另有 22 次是同一批改动在 libtpu 0.0.52 上的重测（V 类，[`libtpu-052.md`](libtpu-052.md)）：逐位相同 5 次，跟 GPU 重跑一样大 9 次，真有影响 6 次；下面各表里标「libtpu 0.0.52」的就是它们。
+一共 **120 种改动**（其中 33 种另外跑到 1000 步）：逐位相同 34 种；变了、但跟 GPU 重跑一样大 46 种；真有影响 14 种，归成 6 件；动了精度、但这把尺子量不出来 5 种；故意改坏、用来证明工具抓得到的 15 种；登记了、没出结果的 6 种。34 + 46 + 14 + 5 + 15 + 6 = 120。另有 22 次是同一批改动在 libtpu 0.0.52 上的重测（V 类，[`libtpu-052.md`](libtpu-052.md)）：逐位相同 5 次，跟 GPU 重跑一样大 9 次，真有影响 6 次，量不出来 2 次，5 + 9 + 6 + 2 = 22。下面各表里标「libtpu 0.0.52」的改动是它们，另加 A7、A8（0.0.52 基准自身的校准，算在上面 120 种里）。
 <!-- END:overview -->
 
 ## 一页看完：六件真有影响的，和三条规律
@@ -16,11 +16,11 @@
 
 | # | 件 | 机理一句话 | 影响（libtpu 0.0.46） | libtpu 0.0.52 上实测 | 怎么做 |
 |---|---|---|---|---|---|
-| 1 | [纯数据并行](impacts/01-data-parallel.md) | 每张卡一次 scatter 的下标数没过后端插排序的门槛（libtpu 0.0.46 上，v5p 与 v7x 列数 1024 的表是超过表行数的 1/8；v7x 列数 128 的表交给 SparseCore，另算），高频词的词嵌入梯度在 BF16 里加一次舍一次 | 曲线 r 2.62，超 | v5p 不变：r 2.82，词嵌入梯度 R 3.60；三种修法都和 GPU 重跑分不开。v7x 上不累积的跑法 0.0.52 开始排序，词嵌入梯度不再变远（R 1.10）；但这次判「在噪声内」靠 iHC 豁免：`hc_head` 三个张量离 FP64 0.56–0.62，对照 0.014–0.045（[MATRIX V 节](MATRIX.md#v--libtpu-0052-上重测)） | **要修**：首选 `embedding_shard_over_data`（只把词嵌入表沿数据并行轴切开，通信还少 93%）；过不了门槛用 `embedding_grad_fp32` |
+| 1 | [纯数据并行](impacts/01-data-parallel.md) | 每张卡一次 scatter 的下标数没过后端插排序的门槛（libtpu 0.0.46 上，v5p 与 v7x 列数 1024 的表是超过表行数的 1/8；v7x 列数 128 的表交给 SparseCore，另算），高频词的词嵌入梯度在 BF16 里加一次舍一次 | 曲线 r 2.62，超 | 以下是 mini 形状（列数 1024）。v5p 不变：r 2.82，词嵌入梯度 R 3.60；三种修法都和 GPU 重跑分不开。v7x 上不累积的跑法 0.0.52 开始排序，词嵌入梯度不再变远（R 1.10）；但这次判「在噪声内」靠 iHC 豁免：`hc_head` 三个张量离 FP64 0.56–0.62，对照 0.014–0.045，按 D11 豁免规则单列（豁免规则与沿用待复核；[MATRIX V 节](MATRIX.md#v--libtpu-0052-上重测)）。生产形状（列数 6144）不一样：不开修法、整表的纯数据并行 0.0.52 上 v5p 不排序，见下「落到实践」 | **要修**：首选 `embedding_shard_over_data`（只把词嵌入表沿数据并行轴切开，词嵌入那部分通信还少 93%，每步全部集合通信少约 34%；生产形状、数据并行 8 时 0.0.46 / 0.0.52 都排序，单算子离线编译）；过不了门槛用 `embedding_grad_fp32` |
 | 2 | [关掉编译器的省舍入](impacts/02-excess-precision.md) | v5p 上 FSDP 那次排好序的 scatter 从「FP32 里加完只舍一次」退回「加一次舍一次」；v7x 上词嵌入走 SparseCore 不受影响，超的是主干梯度整体变小（在 v5p 上定位到 iHC 残差更新反向的一颗 kernel） | v5p 曲线 r 13.3，词嵌入梯度 R 26.1；v7x r 3.43 | v5p 上不变：r 12.6，R 26.1；v7x 没在 0.0.52 上重测 | **别关**：`--xla_allow_excess_precision` 保持默认开，关过的要重新打开 |
-| 3 | [关小矩阵乘改写](impacts/03-small-matmul-rewrite.md) | RMSNorm 的乘法改走矩阵单元单遍 BF16 | 曲线在噪声内，两个张量变远 | 不变：r 1.00，同一张量 R 1.35 | 能忍；别关（关了还更慢） |
-| 4 | [RMSNorm 多舍一次](impacts/04-rmsnorm-double-rounding.md) | MaxText 默认先把归一化值舍成 BF16、乘完 γ 再舍一次；TPU 上实际舍几次看融合：归一化值留在融合里时中间那次被省掉 | 曲线 r 1.06，一个张量压线（最后一层被融进下游，只舍了一次） | **变强**：主 loss 系统性偏高，r 5.50（1000 步 3.68）。0.0.52 让最后一层 RMSNorm 的归一化值单独写回内存，两次舍入都真的发生，输出头的输入被整体缩小约 1.5e-4，同一份权重上主 loss 高 3.2e-5；只把最后一层改回舍一次就回到噪声内 | 0.0.46 上能忍，0.0.52 上不能忍；开 `rmsnorm_single_rounding`（对齐、生产都要开）。换版本先用同一份权重比前向 |
-| 5 | [iHC 不强制舍成 BF16](impacts/05-ihc-bf16-rounding.md) | 同一个分支输入，RMSNorm 的分母用了没舍的 FP32、分子用了舍过的 BF16 | 曲线 r 1.09（1000 步 1.36），只动第 1 层 KD | 不变：r 1.18（1000 步 1.02），同一张量 R 1.61 | 能忍；对齐时开强制舍入，生产不用 |
+| 3 | [关小矩阵乘改写](impacts/03-small-matmul-rewrite.md) | RMSNorm 的乘法改走矩阵单元单遍 BF16 | 曲线在噪声内；MTP `enorm` 梯度变远（R 1.40）；`hc_head` 三个张量也偏，被 iHC 豁免 | 不变：r 1.00，同一张量 R 1.35 | 能忍；别关（关了还更慢） |
+| 4 | [RMSNorm 多舍一次](impacts/04-rmsnorm-double-rounding.md) | MaxText 默认先把归一化值舍成 BF16、乘完 γ 再舍一次；TPU 上实际舍几次看融合：归一化值留在融合里时中间那次被省掉 | 曲线 r 1.06（最后一层被融进下游，只舍了一次）；第 1 步第 0 层 `input_layernorm` 压线（R 1.20） | **变强**（v5p FSDP 8）：主 loss 系统性偏高，r 5.50（1000 步 3.68）。0.0.52 让最后一层 RMSNorm 的归一化值单独写回内存，两次舍入都真的发生，输出头的输入被整体缩小约 1.5e-4，同一份权重上主 loss 高 3.2e-5；只把最后一层改回舍一次就回到噪声内 | 0.0.46 上能忍；0.0.52 在 v5p FSDP 8 上不能忍（v7x 0.0.52 上略超 r 1.22、和 GPU 重跑分不开，V21；原因见 [impacts/04](impacts/04-rmsnorm-double-rounding.md)）；开 `rmsnorm_single_rounding`（对齐、生产都要开）。换版本先用同一份权重比前向 |
+| 5 | [iHC 不强制舍成 BF16](impacts/05-ihc-bf16-rounding.md) | 同一个分支输入，RMSNorm 的分母用了没舍的 FP32、分子用了舍过的 BF16 | 曲线 r 1.09（1000 步 1.36），第 1、5 层 KD 都变远，定不了责的只有第 1 层索引器 `k_norm` | 不变：r 1.18（1000 步 1.02），同一张量 R 1.61 | 能忍；对齐时开强制舍入，生产不用 |
 | 6 | [上下文并行](impacts/06-context-parallel.md) | sink 梯度整条在 BF16 里算，对求和顺序敏感；根子是 MLA 没接上 FP32 开关 | 曲线 r 1.27，一个本来就随顺序跳一倍的张量 | 这次在噪声内（r 0.95，sink R 0.69）；这个张量本来就随顺序跳，只能说没超 | 能忍；开 `float32_logits`（最好加 `float32_qk_product`） |
 
 **三条规律**
@@ -31,10 +31,14 @@
 
 **落到实践**
 
-- 生产：excess precision 保持默认开；RMSNorm 开单次舍入；纯数据并行开 `embedding_shard_over_data`。
+- 生产：excess precision 保持默认开；RMSNorm 开单次舍入；纯数据并行开 `embedding_shard_over_data`。后两个开关只在 `maxtext` 的混元 4 集成分支上，上游 MaxText 没有，用上游的见 [MaxText 说明「这些开关在哪个分支」](../../frameworks/maxtext/README.md#这些开关在哪个分支)。
 - 测过的范围：全部来自 hy4-mini（7 层、4.3e8 参数、序列 4096、随机初始化），v5p 8 / 16 片与 v7x 8 / 16 设备，学习率恒定 1e-5，最长 1000 步，libtpu 0.0.46 / 0.0.52、jax 0.11.1。`embedding_shard_over_data` 只在 v5p 8 卡上训练过，v7x 和 16 卡以上没测。生产尺寸、更长训练、带调度的学习率都没测。
-- 判断自己过没过插排序的门槛（纯数据并行要看；FSDP 也要看：它不出问题，是因为每卡那次 scatter 收齐了 8 张卡的 token、有 32768 个下标，过了门槛。每卡 token 太少时 FSDP 也会落到不排序那一边，推断，没跑过）：用生产的词表、列宽、每卡下标数（纯数据并行是序列长 × 每卡微批，FSDP 再乘 FSDP 组的卡数）离线编译，看 HLO 里词嵌入那次 scatter 前有没有 `sort`、有没有标 `indices_are_sorted=true`。有就是过了；没有就用 `embedding_grad_fp32`。门槛随 libtpu 版本、芯片代际、列宽变（[`libtpu-052.md`](libtpu-052.md#词嵌入那次-scatter排不排序)）；卡数多了每卡列数变小（1024 ÷ 数据并行份数）的情况没测。
-- 换到 v7x：libtpu 0.0.46 上 v7x 默认配置第 1 步 `hc_head` 三个张量离 FP64 偏 18–46 倍、`hc_head_base` 前三个元素符号反了，靠 iHC 豁免才判「略超」（曲线和 GPU 重跑分不开）；0.0.52 上同一配置回到 FP64 附近（`hc_head_base` 1.267 → 0.014，V16）。根因的因果验证只在 v5p 上做过，v7x 上是同一机制是推断（[MATRIX「hc_head」](MATRIX.md#hc_head被-ihc-豁免盖住的三个张量)）。iHC 豁免是否收窄待定（见 PROTOCOL 变更记录 2026-11-11）。
+- 判断自己过没过插排序的门槛（纯数据并行要看；FSDP 也要看：它不出问题，是因为每卡那次 scatter 收齐了 8 张卡的 token、有 32768 个下标，过了门槛。每卡 token 太少时 FSDP 也会落到不排序那一边，推断，没跑过）：用生产的词表、列宽、每卡下标数（纯数据并行是序列长 × 每卡微批，FSDP 再乘 FSDP 组的卡数）离线编译，看 HLO 里词嵌入那次 scatter 前有没有 `sort`、有没有标 `indices_are_sorted=true`。有就是过了；没有就用 `embedding_grad_fp32`。门槛随 libtpu 版本、芯片代际、列宽变（[`libtpu-052.md`](libtpu-052.md#词嵌入那次-scatter排不排序)）；`embedding_shard_over_data` 在更多卡上每卡列数变小（1024 ÷ 数据并行份数）的情况没训练过；FSDP 下每卡列数本来就随卡数变小，FSDP 16 每卡 120832 × 64 的表照样排序，训练在噪声内（B2）。
+- 生产形状（词表 120832 × 隐藏维 6144）下排不排序，只做了单算子离线编译（[`emb-scatter-sort-hy4-prod.json`](results/emb-scatter-sort-hy4-prod.json)，CPU 上为单设备交叉编译词嵌入反向那一个 scatter；整步训练程序没在生产形状上编过，也没上卡）：
+  - 修法③ `embedding_shard_over_data`、数据并行 8：每卡 6144 ÷ 8 = 768 列，那次 scatter 收齐 8 张卡的下标（序列长 × 每卡微批 × 8，序列 4096、每卡微批 1 时 32768 个）。v5p 上 0.0.46 达到 15105 个排序，0.0.52 达到 10815 个排序；v7x 上这张表交给 SparseCore，两个版本都排序。所以这个修法在生产形状上照样排序。
+  - 不开修法、整表的纯数据并行：每卡下标数是序列长 × 每卡微批，列数 6144。0.0.46 上 v5p、v7x 达到 15105 个排序；0.0.52 上 v5p 到 65536 个都不排序，v7x 要到 43648 个。所以 0.0.52 的 v5p 上，这种跑法不管每卡多少 token 都落在不排序那一边，要修。
+  - 数据并行不是 8 时：修法③每卡列数是 6144 ÷ 数据并行份数，下标数是序列长 × 每卡微批 × 数据并行份数。门槛随列数变，上面只量了 768 列，别的列数自己编一次（训练镜像里，libtpu 就是当前装的版本；看输出的 `"sorted"`，v7x 上标 `"sparsecore"` 的也是排序）：`JAX_PLATFORMS=cpu python models/hunyuan4/analysis/emb_scatter_sort_probe.py check --vocab 120832 --dim <6144 ÷ 数据并行份数> --n <下标数> --bisect`。
+- 换到 v7x：libtpu 0.0.46 上 v7x 默认配置第 1 步 `hc_head` 三个张量离 FP64 偏 18–46 倍、`hc_head_base` 前三个元素符号反了，靠 iHC 豁免才判「略超」（曲线和 GPU 重跑分不开）；0.0.52 上同一配置回到 FP64 附近（`hc_head_base` 1.267 → 0.014，V16）；但 0.0.52 上 v7x 纯数据并行不累积（V17）`hc_head` 又偏到 0.56–0.62，所以升 0.0.52 不等于 v7x 上的 `hc_head` 偏差解决了。V17 离线核过和 H2 是同一型：主输出头卷积 kernel 里并进了末层 RMSNorm 的行和，LLO 里省掉了同一次舍入；会不会切成这样随版本和切分变。根因的因果上卡验证只在 v5p 上做过，v7x 上是同一机制是推断（[MATRIX「hc_head」](MATRIX.md#hc_head被-ihc-豁免盖住的三个张量)）。这些 iHC 张量按 D11 豁免规则单列（豁免规则与沿用待复核，见 PROTOCOL 变更记录 2026-11-11）。
 - 对齐：在此之上再开 iHC 强制舍入和 FP32 logits（完整清单见 [mini 对齐报告「生产配置建议」](../01-mini/ALIGNMENT-REPORT.md#生产配置建议)）。
 - 改代码之后：先离线编译比程序指纹，相同就不用再跑；不同再按尺子跑 300 步、看第 1 步定责（见下面「怎么用」）。
 - 换 libtpu 版本：离线筛判不了（后端代码生成一起换了），也不能假定「只换了求和顺序」。新版本先建 golden、和旧 golden 比，再把六件重测一遍；结论只对实测过的版本对和配置成立。0.0.46 → 0.0.52 的做法和结果见 [`libtpu-052.md`](libtpu-052.md)；0.0.52 是在 jax 0.11.1 上换装的，这个组合不是官方配套（jax 0.11.1 的 tpu 依赖钉的是 0.0.46.*），换官方配套组合要重测。
@@ -86,7 +90,7 @@
 | 版本 | 基准运行用加开关后的代码重跑 | 新开关不碰默认路径 |
 | 版本 | libtpu 0.0.47 → 0.0.48 | 升版本 |
 | 版本 | libtpu 0.0.52：基准运行用加开关后的代码重跑 | 抽查「程序相同就不用上卡」 |
-| 版本 | libtpu 0.0.52：基准运行用加开关后的代码重跑 | 抽查「程序相同就不用上卡」 |
+| 版本 | libtpu 0.0.52：基准运行用加开关后的代码重跑 | 给同一份权重上的前向对照存快照，顺带核新开关关着时不碰默认路径 |
 <!-- END:same -->
 
 ## 变了，但跟 GPU 重跑一样大：可以容忍，不用修
@@ -165,9 +169,9 @@
 | [纯数据并行](impacts/01-data-parallel.md) | FSDP 改成纯数据并行 2.62；纯数据并行 + 词嵌入梯度用 FP32 累加（修复前，有 bug） 611.29；纯数据并行、不做梯度累积 3.69；16 卡纯数据并行 2.65；v7x 上 FSDP 改纯数据并行 2.21；v7x 上纯数据并行、不做梯度累积 4.06；libtpu 0.0.52：FSDP 改成纯数据并行 2.82 | `model.embed_tokens.weight`，R 3.62 | 不能忍 | 开 `embedding_grad_fp32`、`embedding_grad_fp32_local_bf16_comm`，或只把词嵌入表沿数据并行轴切开的 `embedding_shard_over_data` | 纯数据并行 + 词嵌入梯度用 FP32 累加（修复后） 0.98（1000 步 1.09）；纯数据并行 + 词嵌入梯度本地 FP32 累加、BF16 跨卡求和 0.93（1000 步 1.07）；纯数据并行 + 只把词嵌入表按 FSDP 的方式切开 1.02（1000 步 1.15）；16 卡纯数据并行 + 词嵌入梯度用 FP32 累加 0.99（1000 步 1.30）；libtpu 0.0.52：纯数据并行 + 词嵌入梯度用 FP32 累加 1.55（1000 步 0.92）；libtpu 0.0.52：纯数据并行 + 词嵌入梯度本地 FP32 累加、BF16 跨卡求和 1.20（1000 步 1.28）；libtpu 0.0.52：纯数据并行 + 只把词嵌入表按 FSDP 的方式切开 1.23（1000 步 0.97） |
 | [关掉编译器的省舍入（excess precision）](impacts/02-excess-precision.md) | 关掉编译器的省舍入 13.28；v7x 上关掉编译器的省舍入 3.43；libtpu 0.0.52：关掉编译器的省舍入 12.56 | `model.embed_tokens.weight`，R 26.13 | 不能忍 | 别关（默认开着） | 默认即 golden，逐位相同 |
 | [关小矩阵乘改写](impacts/03-small-matmul-rewrite.md) | 关小矩阵乘改写 0.94；libtpu 0.0.52：关小矩阵乘改写 1.00 | `model.mtp_layers.0.enorm.weight`，R 1.40 | 能忍 | 别关（默认开着） | 默认即 golden，逐位相同 |
-| [RMSNorm 多舍一次](impacts/04-rmsnorm-double-rounding.md) | RMSNorm 多舍一次 1.06；只让最后一层 RMSNorm 真的舍两次 6.83；libtpu 0.0.52：RMSNorm 多舍一次 5.50（1000 步 3.68）；libtpu 0.0.52：只让最后一层 RMSNorm 真的舍两次 6.97 | `model.layers.0.input_layernorm.weight`，R 1.20 | libtpu 0.0.46 上能忍；0.0.52 上不能忍 | 开着 `rmsnorm_single_rounding`（对齐、生产都要开） | 默认即 golden，逐位相同；libtpu 0.0.52：RMSNorm 多舍一次，只有最后一层改回舍一次 0.84 |
+| [RMSNorm 多舍一次](impacts/04-rmsnorm-double-rounding.md) | RMSNorm 多舍一次 1.06；只让最后一层 RMSNorm 真的舍两次 6.83；libtpu 0.0.52：RMSNorm 多舍一次 5.50（1000 步 3.68）；libtpu 0.0.52：只让最后一层 RMSNorm 真的舍两次 6.97 | `model.layers.0.input_layernorm.weight`，R 1.20 | libtpu 0.0.46 上能忍；0.0.52 在 v5p FSDP 8 上不能忍（v7x 0.0.52 上略超、和 GPU 重跑分不开，V21） | 开着 `rmsnorm_single_rounding`（对齐、生产都要开） | 默认即 golden，逐位相同 |
 | [iHC 不强制舍成 BF16](impacts/05-ihc-bf16-rounding.md) | iHC 不强制舍成 BF16 1.09（1000 步 1.36）；libtpu 0.0.52：iHC 不强制舍成 BF16 1.18（1000 步 1.02） | `model.layers.1.self_attn.indexer.k_norm.weight`，R 1.61 | 能忍 | 对齐时开着 `ihc_force_bf16_rounding`；生产不开 | 默认即 golden，逐位相同 |
-| [上下文并行](impacts/06-context-parallel.md) | 加上下文并行（写了 float32_logits，旧代码不生效） 1.27；加上下文并行（不做负载均衡） 1.27 | `model.layers.6.self_attn.learnable_sink_param`，R 1.27 | 能忍 | MaxText `56492817` 起打开 `float32_logits`（上下文并行目前只能配普通注意力） | 加上下文并行（softmax 真走 FP32） 1.00 |
+| [上下文并行](impacts/06-context-parallel.md) | 加上下文并行（写了 float32_logits，旧代码不生效） 1.27；加上下文并行（不做负载均衡） 1.27 | `model.layers.6.self_attn.learnable_sink_param`，R 1.27 | 能忍（判超是一个随求和顺序跳一倍的张量压线，按事先分类算规则误判） | MaxText `56492817` 起打开 `float32_logits`（上下文并行目前只能配普通注意力） | 加上下文并行（softmax 真走 FP32） 1.00 |
 <!-- END:issues -->
 
 ## 故意改坏、用来证明工具抓得到的
@@ -196,7 +200,7 @@
 
 ## 量不出来的
 
-这几种改动动了精度，但 300 步和 1000 步都和 GPU 重跑分不开，第 1 步也没有离精确值更远的梯度。这是尺子的局限：量不出它们，不等于它们没有影响。
+这几种改动在写法上确实改了舍入（`arms.yaml` 里记为 `kind: precision`），但跑过的窗口都和 GPU 重跑分不开（1000 步一栏是「—」的只跑了 300 步），第 1 步也没有离精确值更远的梯度。这是尺子的局限：量不出它们，不等于它们没有影响。
 
 <!-- BEGIN:blind -->
 | 改了什么 | 300 步 r | 1000 步 r |

@@ -71,7 +71,7 @@ RUNS="mg-a:1:10: mg-c:3:10:" EQUIV="1:fwdbwd" BRIDGE=2 bash pod_run.sh
 
 ## 多机、并行与存档
 
-一句话：2 台、4 台，试过的 DP / EP / PP 切法，训练曲线都没有超出单机重跑的波动；存档续跑与不断开逐位相同。
+一句话：2 台、4 台，试过的 DP / EP / PP 切法，训练曲线都没有超出单机重跑的波动（hy4-mini 前 300 步、真实宽度截层前 30 步）；存档续跑与不断开逐位相同（只在确定性模式、同一并行设置、存 1 次续 10 步上核过，换并行设置续跑没测）。适用范围见 [05](../../alignments/05-gpu-scale/README.md#适用范围)。
 
 ![多机与换并行对单机 golden 的逐步相对差](../../alignments/05-gpu-scale/figures/loss-param-norm-vs-single-node.png)
 
@@ -124,7 +124,7 @@ TP 不支持。完整模型每卡一份的非专家参数靠 PP 分段放下（�
 | 正对照 | 2 台，学习率大 10% | 7 项超出噪声上限（工具判得出来） |
 | 存档续跑 | 确定性模式，2 台 PP 2 + DP 8 + EP 8；1 台 DP 8 + EP 4；2 台真实宽度截层 DP 16 + EP 16 | 「跑 20 步」与「跑 10 步、存、续跑 10 步」逐位相同（真实宽度时 16 个 rank 共 14512 个状态张量） |
 | 真实宽度 | hy4-preview 第 0–2 层 + MTP，2 台 DP 16 + EP 16 对单机 DP 8 + EP 8（前 30 步，各 5–6 份） | 没有超出：3 份 7 项全在噪声内，2 份各 1 项 1.03 倍；2.12 s / 步（单机 3.68 s），每卡 91.5 GiB（单机 115.3 GiB） |
-| 长跑 | 同上截层，2 台 DP 16 + EP 16，1000 步（`rw1k-a`） | 一个作业 37 分钟跑完；主 loss 12.0 → 5.61；每步的 batch 存下，是以后 TPU 回放的多机 golden（放在哪、怎么回放见 [05](../../alignments/05-gpu-scale/README.md#真实宽度截层)） |
+| 长跑 | 同上截层，2 台 DP 16 + EP 16，1000 步（`rw1k-a`） | 一个作业 37 分钟跑完；主 loss 12.0 → 5.61；每步的 batch 存下，是 TPU 回放的多机 golden（放在哪见 [05](../../alignments/05-gpu-scale/README.md#真实宽度截层)；TPU 回放已在 [06](../../alignments/06-rw3/README.md) 做完） |
 
 | 步时（hy4-mini） | 1 台 DP 8 + EP 4 | 2 台 DP 16 + EP 4 | 2 台 DP 16 + EP 16 | 2 台 PP 2 + DP 8 + EP 4 | 4 台 PP 2 + DP 16 + EP 16 |
 |---|---|---|---|---|---|
@@ -148,11 +148,11 @@ TP 不支持。完整模型每卡一份的非专家参数靠 PP 分段放下（�
 - 每层：`in0` / `out0`（层输入 / 输出，4 路流）、`attn_hc` / `ffn_hc` 的 `in` / `post` / `out`、两个 RMSNorm 的输出、注意力内部（`self_attn.core.{query,key,value,qr,x,out}`、`gate_proj.out`、`topk`）、MLP（稠密层 `fc1.out` / `fc2.in`；MoE 层路由 `mlp.gate.{in,logits,probs,routing_map,expert_bias}`、共享专家、路由专家 `fc1.out` / `fc2.in` / `permuted_probs` / `tokens_per_expert` / `out`）。
 - 层的真正输入是 `in0`；janus 抓数里的 `layers.<L>.in` 是 input_layernorm 的输出，不是层输入。
 - FP64 标准答案：`analysis/fp64_l1_gpu.py --hf <HF 目录> --l1 <运行目录>/l1 --mtp --json … --save …`，每个算子取 GPU 抓到的输入在 CPU 上 FP64 重算，与 GPU 输出比 rel_L2；路由用 GPU 当时的 `expert_bias`，选中集合不同的 token 单独计数。
-- 抓数前后输出逐位一致这一条**未验证**：GPU 重跑本身不逐位一致（见 mini 的 [`goldens.md`](../../alignments/01-mini/goldens.md) 的噪声），只能核在噪声内。
+- 抓数前后输出逐位一致这一条**还没做**。golden 的设置下 GPU 重跑本身不逐位（见 mini 的 [`goldens.md`](../../alignments/01-mini/goldens.md) 的噪声）；但确定性模式（`--deterministic`）下同设置重跑逐位（[05「存档续跑」](../../alignments/05-gpu-scale/README.md#存档续跑逐位)），可以在这个模式下逐位核。这样核出的结论只覆盖确定性内核：golden 没开确定性模式（`deterministic_mode` False，见 mini 的 [`config-alignment.md`](../../alignments/01-mini/config-alignment.md)），它用的非确定性内核路径上只能核到「在噪声内」。确定性模式换没换内核、和 golden 的数值路径差多少，没查。
 
 ## sigmoid / silu 各处的实际算法
 
-T1 的 g2 / g3 设置（代码 `hy4_mcore.py` sha256 `4dab75aa…`，Megatron-Core 0.20.0，TE 2.20.2（推断：各运行的 `meta.json` 没有记，按同一镜像 digest 推，见 [mini 的「软件版本」](../../alignments/01-mini/setup.md#软件版本)；下面 sigmoid / silu 探针在训练镜像里读到 `2.20.2+44f31bbe`，torch 构建与各运行 `meta.json` 记的相同），镜像 NeMo 26.10）。「实际执行」一栏的依据是源码路径，加上 L1 抓数里挂在 `linear_fc1` / `linear_fc2` 模块上的钩子都触发了（TE op fuser 的融合路径不经过这两个模块）。
+T1 的 g2 / g3 设置（代码 `hy4_mcore.py` sha256 `4dab75aa…`，Megatron-Core 0.20.0，TE 2.20.2+44f31bbe（各运行的 `meta.json` 没有记；2026-11-11 在同一镜像 digest 的训练 Pod 里实测，[`version_probe.py`](version_probe.py)，见 [mini 的「软件版本」](../../alignments/01-mini/setup.md#软件版本)），镜像 NeMo 26.10）。「实际执行」一栏的依据是源码路径，加上 L1 抓数里挂在 `linear_fc1` / `linear_fc2` 模块上的钩子都触发了（TE op fuser 的融合路径不经过这两个模块）。
 
 | # | 位置 | 输入 dtype | 计算 dtype | 实际执行 | 输出 dtype；舍入成 BF16 的地方 |
 |---|---|---|---|---|---|

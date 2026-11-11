@@ -12,7 +12,7 @@
 
 ### 曲线：对单机 `g3-a` 前 300 步
 
-8 项检查，每项取三个判定量里对尺子倍数最大的那个；下表 14 份 mini 运行都与 `g3-a` 逐样本吃同一批数据（[核对](results/data-same-batches.json)）。真实宽度截层的运行没有做这项核对。
+8 项检查，每项取三个判定量里对尺子倍数最大的那个；下表 14 份 mini 运行都与 `g3-a` 逐样本吃同一批数据（[核对](results/data-same-batches.json)）。真实宽度截层的 21 份运行（`rws-a … f`、`rw-a … e`、`rw1k-a … h`、`rw-pp2`、`rw4-pp2`；`rw1k-b … h` 是 06 的 GPU 尺子，登记在 [06 的 `runs.yaml`](../06-rw3/runs.yaml)）同样核过，也都与 `g3-a` 逐样本相同，0 处不同（[核对](results/data-same-batches-rw.json)）。
 
 | 被测 | 机器 | 并行 | 步时 | 在噪声内 | 1–2 倍 | 超出 | 最大倍数（哪项） |
 |---|---|---|---|---|---|---|---|
@@ -45,8 +45,8 @@
 
 | 设置 | 两次 20 步重跑 | 续跑的第 11–20 步 | 比了什么 |
 |---|---|---|---|
-| 2 台，PP 2 + DP 8 + EP 8 | [逐位相同](results/ckpt-rerun-pp2.json) | [逐位相同](results/ckpt-resume-pp2.json) | 750 个记录量；16 个 rank 的 1752 个参数与 buffer、8760 个状态张量（FP32 主权重、Muon 动量、Adam 两个矩与步数） |
-| 1 台，DP 8 + EP 4 | [逐位相同](results/ckpt-rerun-dp8.json) | [逐位相同](results/ckpt-resume-dp8.json) | 810 个记录量；8 个 rank 的 1968 个参数与 buffer（这一组没比状态张量） |
+| 2 台，PP 2 + DP 8 + EP 8 | [逐位相同](results/ckpt-rerun-pp2.json) | [逐位相同](results/ckpt-resume-pp2.json) | 记录量：重跑比全程 20 步 1500 个，续跑比第 11–20 步 750 个；16 个 rank 的 1752 个参数与 buffer、8760 个状态张量（FP32 主权重、Muon 动量、Adam 两个矩与步数） |
+| 1 台，DP 8 + EP 4 | [逐位相同](results/ckpt-rerun-dp8.json) | [逐位相同](results/ckpt-resume-dp8.json) | 记录量：重跑比全程 20 步 1620 个，续跑比第 11–20 步 810 个；8 个 rank 的 1968 个参数与 buffer（这一组没比状态张量） |
 | 2 台，真实宽度第 0–2 层 + MTP，DP 16 + EP 16 | 没有单跑（续跑逐位相同已经包含确定性） | [逐位相同](results/ckpt-resume-rw.json) | 480 个记录量；16 个 rank 的 3152 个参数与 buffer、14512 个状态张量 |
 
 负对照（故意拿不同的东西比，确认工具认得出）：跑 10 步与跑 20 步的最终参数清单 1968 个里 1680 个不同（[结果](results/ckpt-negative-control.json)），比较工具认得出不同。
@@ -65,7 +65,7 @@ hy4-preview 第 0–2 层 + MTP（真实权重，`hf/hy4-4l`），设置同上�
 
 两组（单机 5 份、多机 5 份对 `rws-a`）的带符号均值同样没有系统偏移：5 条曲线 Welch \|t\| ≤ 1.7（[结果](results/groups-rw-single-vs-multi.json)）。
 
-`rw1k-a` 是 2 台的 1000 步长跑，一个作业 37 分钟跑完，没有用到分段续跑；主 loss 从 12.0 降到 5.61，全程最大注意力 logit 76.9，QK-Clip（阈值 100）没有触发（[概况](results/rw1k-a-summary.json)）。它是以后 TPU 回放的多机 golden：
+`rw1k-a` 是 2 台的 1000 步长跑，一个作业 37 分钟跑完，没有用到分段续跑；主 loss 从 12.0 降到 5.61，全程最大注意力 logit 76.9，QK-Clip（阈值 100）没有触发（[概况](results/rw1k-a-summary.json)）。它是 TPU 回放（[06](../06-rw3/README.md)）用的多机 golden：
 
 | 项 | 值 |
 |---|---|
@@ -77,7 +77,6 @@ hy4-preview 第 0–2 层 + MTP（真实权重，`hf/hy4-4l`），设置同上�
 ## 下一步
 
 - 真实宽度截层的 TPU 回放已在 [06](../06-rw3/README.md) 做完；后续在那里跟。
-- 真实宽度截层的运行补逐样本数据核对（`gpu_scale_compare.py data`）。
 - 规模往上：更多层用 PP 分段，切分点落在 full 索引器层上（完整模型可切在第 1 + 4k 层前）。
 
 ## 适用范围

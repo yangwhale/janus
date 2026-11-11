@@ -50,7 +50,7 @@ dₜ = (aₜ − bₜ) ÷ \|bₜ\|
 混元 4 的所有曲线（loss、梯度范数、参数范数、路由偏置）都用这一个公式，分母一律是参照。
 
 - dₜ 是相对差，单位是 1。写成百分比就是乘 100：dₜ = 1e-5 即 0.001%。全文用 e 记法，不换成百分比。它也不是 ULP（按浮点格子数差几格）。
-- 混元 3 第一层的梯度范数用过两边均值 \|aₜ + bₜ\| ÷ 2 作分母，理由是对称（交换两边只差一个符号）和避开以参照为分母时带符号均值里 +E[dₜ²] 的偏置（[`judging.md`](../reference/judging.md#逐步涨落大的量用均值作分母)）。混元 4 上实测这个偏置远小于噪声（纯数据并行那次实验约 4e-7，N 约 9.9e-5），2026-11-10 起统一用参照作分母；重判前后的对照见 [`grad-norm-denominator-rejudge.md`](../../models/hunyuan4/results/grad-norm-denominator-rejudge.md)。
+- 混元 3 第一层的梯度范数用过两边均值 \|aₜ + bₜ\| ÷ 2 作分母，理由是对称（交换两边只差一个符号）和避开以参照为分母时带符号均值里 +E[dₜ²] 的偏置（[`judging.md`](../reference/judging.md#逐步涨落大的量用均值作分母)）。混元 4 上实测这个偏置多数情况下远小于噪声（换分母重判 262 份，最差 r 在 5 以内的 252 份里带符号均值的 r 之差中位数 1.3e-3），个别到 0.43，改判 1 项（历史比较 `t1zz-l4` 的梯度范数过 → 待定，0.917 → 1.006）；2026-11-10 起统一用参照作分母；重判前后的对照见 [`grad-norm-denominator-rejudge.md`](../../models/hunyuan4/results/grad-norm-denominator-rejudge.md)。
 
 ### 1.3 窗口与三个统计量
 
@@ -273,7 +273,7 @@ R = rel_L2(被测, FP64) ÷ max(rel_L2(参照, FP64), 中位数_i rel_L2(GPU_i, 
 
 - 门槛 1.2 的来历：只差舍入顺序时 R ≈ 1；多一次同量级的独立舍入，误差方差约翻倍，R ≈ √2 ≈ 1.41。1.2 取在两者之间（[`metrics.md`](../reference/metrics.md#fp64-r-比单算子逐层前向与反向整网输出)）。
 - 分母取「参照离 FP64」和「GPU 三份离 FP64 的中位数」中较大的，即被测只要不比这两者中较差的那个更差就算定责。
-- iHC 的几个小参数病态，超出噪声上限又定不了责时单列，不挡判档（与 GPU ↔ TPU 第 1 步已接受的是同一批）。
+- iHC 的几个小参数病态，超出噪声上限又定不了责时单列，不挡判档（base2 开那一代 GPU ↔ TPU 第 1 步已接受的是同一批；现行比较 `tz-off-rep` 对 GPU 第 1 步参照 3 份时有 5 个 iHC 张量未定责，其中 3 个是新出现的；参照补到 6 份 15 对后只剩 1 个（第 3 层注意力前 `hc_scale`，1.05 N），接受是否沿用、豁免是否收窄都待定，见混元 4 [`PROTOCOL.md`](../../models/hunyuan4/PROTOCOL.md) 变更记录 2026-11-11）。「病态」在 mini 第 1 步一条序列上量过：iHC 42 个张量的条件数 κ 从 3 到 2000 不等，和 R 只弱相关，现行比较里新出现的几个未定责张量 κ 反而很小（混元 4 [`ROOT-CAUSES.md`](../../models/hunyuan4/ROOT-CAUSES.md#u-mini-step1)「mini 第 1 步 iHC 小参数」行）。所以单列只是没证据定责时的处理，不等于逐个证明了病态。
 - 整次比较：没有「丢了精度」的张量，第 1 步这一项才算在噪声内。
 
 **FP64 精确梯度从哪来。** [`step1_ref.py`](../../models/hunyuan4/frameworks/megatron/step1_ref.py) 在 CPU 上用 GPU golden 的同一套模型代码和 loss 语义，把第 1 步整网全部改成 FP64 重算（参数、激活、梯度都是 FP64，代码里写死的低精度在算子层改写成 FP64，另有审计确认没有漏网的低精度算子），TPU 一侧的代码一行不用。原则是**裁判不能来自被测一侧**：被测是 TPU 时，TPU 产出的数不能当参照，否则 TPU 自己的系统偏差会被当成真值（PROTOCOL 第 5 节；差异清单 [G1](../reference/tpu-vs-gpu-differences.md#g1-真值是-cpu-上的-fp64-整网重算与被测不同源)）。
@@ -298,7 +298,7 @@ GPU ↔ TPU 对齐的第 1 步用同一套办法，有两处不同（[`step1_vs_
 
 - 纯数据并行时词嵌入梯度离精确值是 GPU 的 3.6 倍；其余 204 个张量离 FP64 和参照一样近，比值 rel_L2(被测, FP64) ÷ rel_L2(参照, FP64) 的中位数 0.99。问题只在这一个张量上。
 - 修复后词嵌入梯度仍超出噪声上限 1.36 倍，但离精确值比参照和 GPU 都近，R 0.91，记「换了顺序」。这正是用法一和用法二要一起看的原因。
-- 机制（[B1 梯度的跨卡归约](../../models/hunyuan4/alignments/04-tpu-self/b1-grad-reduction.md)）：FSDP 下每张卡只算自己那一部分列的词嵌入梯度，先按 token 号排序再 scatter，没有跨卡求和；纯数据并行下每张卡对自己的 token 做不排序的 BF16 scatter，再以 BF16 加法跨卡 all-reduce。排不排序由后端按门槛定（libtpu 0.0.46 上是一次 scatter 的下标数超过词表行数的 1/8），门槛随 libtpu 版本、列宽和芯片代际变：0.0.52 上 v5p 不变，v7x 上纯数据并行不做梯度累积时开始排序、不再丢精度（[`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md)）。多出来的误差集中在高频 token，随每张卡累加的 token 数涨、与跨卡路数无关，主因是本卡那次 BF16 累加。
+- 机制（[B1 梯度的跨卡归约](../../models/hunyuan4/alignments/04-tpu-self/b1-grad-reduction.md)）：FSDP 下每张卡只算自己那一部分列的词嵌入梯度，先按 token 号排序再 scatter，没有跨卡求和；纯数据并行下每张卡对自己的 token 做不排序的 BF16 scatter，再以 BF16 加法跨卡 all-reduce。排不排序由后端按门槛定（libtpu 0.0.46 上是一次 scatter 的下标数超过词表行数的 1/8），门槛随 libtpu 版本、列宽和芯片代际变：0.0.52 上 v5p 不变，v7x 上纯数据并行不做梯度累积时开始排序、不再丢精度（[`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md)）。这只在 mini 的形状上成立：生产形状（词表 120832、隐藏维 6144）单算子离线编译，0.0.52 上 v5p、v7x 每卡 4096 / 8192 / 16384 个下标都不排序，纯数据并行照样要修（[差异清单 A12](../reference/tpu-vs-gpu-differences.md#a12-纯数据并行时词嵌入梯度在-bf16-里-scatter不排序)、[混元 4 案例 14](../../models/hunyuan4/cases/14-ddp-fsdp-embedding.md)）。多出来的误差集中在高频 token，随每张卡累加的 token 数涨、与跨卡路数无关，主因是本卡那次 BF16 累加。
 
 ### 2.5 两类尺子怎么配合
 
@@ -317,7 +317,7 @@ GPU ↔ TPU 对齐的第 1 步用同一套办法，有两处不同（[`step1_vs_
 | 类 | 是什么 | 怎么处理 | 本仓库的例子 |
 |---|---|---|---|
 | 16 / 32 位转换点与累加分段 | 一个值在哪一步从 FP32 落回 BF16、部分和在什么精度里加、长求和分不分段。大头在这里 | 找出两边走法不同的那一格，对上 | 纯数据并行时词嵌入梯度在 BF16 里跨卡求和（上面的算例；修法是在 FP32 里累加，见 [TPU 自比 README](../../models/hunyuan4/alignments/04-tpu-self/README.md)）；混元 3 输出头 dgrad 沿 12 万词表的长 FP32 求和在 B200 上有偏，起作用的是分段累加而不是升精度（[混元 3 案例 01](../../models/hunyuan3/alignments/01-v5p-acceptance/cases/01-loss-offset-param-norm.md)） |
-| 求和顺序 | 同一精度、同一算法，只是加的先后不同 | 是噪声，不修；用第 1 节的尺子确认它在噪声内 | FSDP 内换切分、专家并行、重算策略、换到 v7x，以及 libtpu 0.0.46 → 0.0.48：都不逐位，300 步曲线最差 r 0.8–1.3，第 1 步变了的梯度离精确值不比原来远（[TPU 自比实验矩阵「要点」](../../models/hunyuan4/alignments/04-tpu-self/MATRIX.md#要点)第 1 条）。例外：纯数据并行改的是精度路径（1.7）；升 libtpu 不能假定只换了顺序，0.0.52 上「RMSNorm 多舍一次」变成 r 5.50（[TPU 自比「一页看完」](../../models/hunyuan4/alignments/04-tpu-self/README.md#一页看完六件真有影响的和三条规律)） |
+| 求和顺序 | 同一精度、同一算法，只是加的先后不同 | 是噪声，不修；用第 1 节的尺子确认它在噪声内 | FSDP 内换切分、专家并行、重算策略，以及 libtpu 0.0.46 → 0.0.48：都不逐位，300 步曲线最差 r 0.8–1.3，第 1 步变了的梯度离精确值不比原来远。换到 v7x、einsum 换广播乘这两种曲线同样在噪声内，但不能算只换了顺序：`hc_head` 三个张量偏了 18–46 倍，靠 iHC 豁免才不算（见 [MATRIX「iHC 豁免」](../../models/hunyuan4/alignments/04-tpu-self/MATRIX.md#ihc-豁免定义与受影响的运行)；[TPU 自比实验矩阵「要点」](../../models/hunyuan4/alignments/04-tpu-self/MATRIX.md#要点)第 1 条）。例外：纯数据并行改的是精度路径（1.7）；升 libtpu 不能假定只换了顺序，0.0.52 上「RMSNorm 多舍一次」变成 r 5.50（[TPU 自比「一页看完」](../../models/hunyuan4/alignments/04-tpu-self/README.md#一页看完六件真有影响的和三条规律)） |
 | 语义不同 | 两边算的根本不是同一个式子 | 必须对齐 | 路由偏置的零均值更新：TPU 每步减均值、原版 Megatron-Core 不减，路由偏置均值 r 19.1（[混元 4 案例 09](../../models/hunyuan4/cases/09-router-bias-zero-mean.md)）；梯度累积把 QK-Clip 的最大 logit 也求和了（[混元 4 案例 07](../../models/hunyuan4/cases/07-qk-clip-bugs.md)） |
 
 每一类边界的完整清单和开关见[精度边界](../reference/precision-boundaries.md)，TPU 与 GPU 的逐条差异见[差异清单](../reference/tpu-vs-gpu-differences.md)。

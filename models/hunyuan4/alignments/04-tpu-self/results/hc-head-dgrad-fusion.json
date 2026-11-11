@@ -1,0 +1,915 @@
+{
+ "what": "hc_head 第 1 步梯度偏差与「主输出头 dgrad 卷积 kernel 里有没有并进末层 RMSNorm 反向的每 token 行和 S」的对照。tpu_hlo：各运行 TPU 上存下的训练步优化后 HLO；hc_head 数字为第 1 步训练梯度（从动量反推）对 CPU FP64（mini-fp64）；cpu_aot_llo：CPU 上整步 AOT（hlo_screen.compile_spec + LIBTPU_INIT_ARGS --xla_jf_dump_to --xla_jf_dump_llo_text=true）后，输出头 dgrad 卷积 kernel 的 final_bundles 向量指令静态条数；cpu_vs_tpu：CPU 编出的程序与该运行 TPU 上存下的规范化后是否逐行相同",
+ "how": [
+  "python models/hunyuan4/analysis/hc_head_dgrad_fusion.py --root <运行目录根> <运行>…",
+  "python models/hunyuan4/analysis/step1_probe.py --root <运行目录根> --fp64 <mini-fp64> --match hc_head <运行>…",
+  "python models/hunyuan4/analysis/hc_head_dgrad_fusion.py --hlo <缓存>/aot/<哈希>/train_step.after_optimizations.txt --llo <缓存>/aot/<哈希>/jf"
+ ],
+ "fp64_hc_head_base_head": [
+  6.8689445845231025e-06,
+  8.10985450832767e-06,
+  9.028557390794521e-06,
+  1.1184199001466694e-05
+ ],
+ "tpu_hlo": [
+  {
+   "run": "ts-g-a",
+   "what": "golden v5p 0.0.46",
+   "S_in_main_head_conv_kernel": false,
+   "main_head_fusion": "fusion.19784",
+   "main_head_n_instructions": 45,
+   "main_head_n_reduce_precision": 0,
+   "hc_head_rel_l2_vs_fp64": {
+    "hc_head_base": 0.061266744134495565,
+    "hc_head_fn": 0.07046040410057014,
+    "hc_head_scale": 0.027122338136993888
+   },
+   "hc_head_base_head": [
+    6.017924716744029e-06,
+    7.755246030907979e-06,
+    9.61822109272043e-06,
+    1.1226559777865222e-05
+   ],
+   "hc_head_base_minus_fp64": [
+    -8.510198677790731e-07,
+    -3.5460847741969054e-07,
+    5.896637019259095e-07,
+    4.236077639852797e-08
+   ]
+  },
+  {
+   "run": "ts-h-v7b",
+   "what": "H2 v7x 0.0.46 FSDP 8",
+   "S_in_main_head_conv_kernel": true,
+   "main_head_fusion": "fusion.18486",
+   "main_head_n_instructions": 59,
+   "main_head_n_reduce_precision": 0,
+   "hc_head_rel_l2_vs_fp64": {
+    "hc_head_base": 1.2674053410787725,
+    "hc_head_fn": 1.2984343716997144,
+    "hc_head_scale": 1.2525367491121395
+   },
+   "hc_head_base_head": [
+    -4.3500435963313974e-06,
+    -3.079636059672349e-06,
+    -2.104836916042964e-06,
+    -5.750868361744864e-07
+   ],
+   "hc_head_base_minus_fp64": [
+    -1.12189881808545e-05,
+    -1.1189490568000018e-05,
+    -1.1133394306837485e-05,
+    -1.1759285837641181e-05
+   ]
+  },
+  {
+   "run": "ts-h-v7c",
+   "what": "H1 H2 重跑",
+   "S_in_main_head_conv_kernel": true,
+   "main_head_fusion": "fusion.18486",
+   "main_head_n_instructions": 59,
+   "main_head_n_reduce_precision": 0,
+   "hc_head_rel_l2_vs_fp64": {
+    "hc_head_base": 1.2674053410787725,
+    "hc_head_fn": 1.2984343716997144,
+    "hc_head_scale": 1.2525367491121395
+   },
+   "hc_head_base_head": [
+    -4.3500435963313974e-06,
+    -3.079636059672349e-06,
+    -2.104836916042964e-06,
+    -5.750868361744864e-07
+   ],
+   "hc_head_base_minus_fp64": [
+    -1.12189881808545e-05,
+    -1.1189490568000018e-05,
+    -1.1133394306837485e-05,
+    -1.1759285837641181e-05
+   ]
+  },
+  {
+   "run": "ts-h-v7-noexcess3",
+   "what": "H4b v7x 0.0.46 关 excess precision",
+   "S_in_main_head_conv_kernel": true,
+   "main_head_fusion": "fusion.18486",
+   "main_head_n_instructions": 59,
+   "main_head_n_reduce_precision": 0,
+   "hc_head_rel_l2_vs_fp64": {
+    "hc_head_base": 0.04121068600814453,
+    "hc_head_fn": 0.07651210724397259,
+    "hc_head_scale": 0.00816545923916153
+   },
+   "hc_head_base_head": [
+    6.579273391648974e-06,
+    8.778009497909666e-06,
+    9.05309930882383e-06,
+    1.1292647893903e-05
+   ],
+   "hc_head_base_minus_fp64": [
+    -2.896711928741283e-07,
+    6.681549895819962e-07,
+    2.4541918029309196e-08,
+    1.084488924363054e-07
+   ]
+  },
+  {
+   "run": "ts-h-v7-dp8b",
+   "what": "H4c v7x 0.0.46 纯数据并行 8（累积 2）",
+   "S_in_main_head_conv_kernel": false,
+   "main_head_fusion": "fusion.14117",
+   "main_head_n_instructions": 69,
+   "main_head_n_reduce_precision": 0,
+   "hc_head_rel_l2_vs_fp64": {
+    "hc_head_base": 0.01054945463626165,
+    "hc_head_fn": 0.048770282512465214,
+    "hc_head_scale": 0.030992523004114637
+   },
+   "hc_head_base_head": [
+    6.8983012263897e-06,
+    8.113885879248888e-06,
+    9.17592102850899e-06,
+    1.1070316177730852e-05
+   ],
+   "hc_head_base_minus_fp64": [
+    2.935664186659754e-08,
+    4.031370921218168e-09,
+    1.4736363771446867e-07,
+    -1.1388282373584286e-07
+   ]
+  },
+  {
+   "run": "ts-h-v7-dp8-ga1",
+   "what": "H4d v7x 0.0.46 纯数据并行 8、不累积",
+   "S_in_main_head_conv_kernel": false,
+   "main_head_fusion": "fusion.1038",
+   "main_head_n_instructions": 65,
+   "main_head_n_reduce_precision": 0,
+   "hc_head_rel_l2_vs_fp64": {
+    "hc_head_base": 0.021060502690644047,
+    "hc_head_fn": 0.04252687553548884,
+    "hc_head_scale": 0.0017381197592026964
+   },
+   "hc_head_base_head": [
+    6.719228967353801e-06,
+    8.145001109311792e-06,
+    9.261544844367561e-06,
+    1.0931606461814752e-05
+   ],
+   "hc_head_base_minus_fp64": [
+    -1.4971561716930137e-07,
+    3.5146600984123054e-08,
+    2.3298745357304007e-07,
+    -2.525925396519427e-07
+   ]
+  },
+  {
+   "run": "ts-c-nosrb",
+   "what": "C15 v5p 0.0.46 关小矩阵乘改写",
+   "S_in_main_head_conv_kernel": true,
+   "main_head_fusion": "fusion.20148",
+   "main_head_n_instructions": 58,
+   "main_head_n_reduce_precision": 0,
+   "hc_head_rel_l2_vs_fp64": {
+    "hc_head_base": 1.2553936700017023,
+    "hc_head_fn": 1.2900118627266373,
+    "hc_head_scale": 1.2490754251798044
+   },
+   "hc_head_base_head": [
+    -5.045453259747665e-06,
+    -3.313935906009587e-06,
+    -1.4455490987108203e-06,
+    1.6342483255550488e-07
+   ],
+   "hc_head_base_minus_fp64": [
+    -1.1914397844270767e-05,
+    -1.1423790414337255e-05,
+    -1.0474106489505341e-05,
+    -1.1020774168911189e-05
+   ]
+  },
+  {
+   "run": "ts-d-einsum",
+   "what": "D3 v5p 0.0.46 einsum 改广播乘",
+   "S_in_main_head_conv_kernel": true,
+   "main_head_fusion": "fusion.19728",
+   "main_head_n_instructions": 59,
+   "main_head_n_reduce_precision": 0,
+   "hc_head_rel_l2_vs_fp64": {
+    "hc_head_base": 1.2577253531304917,
+    "hc_head_fn": 1.2928083416167644,
+    "hc_head_scale": 1.253619318379301
+   },
+   "hc_head_base_head": [
+    -5.0785728222171325e-06,
+    -3.3333507377634423e-06,
+    -1.4654000669302107e-06,
+    1.5335636090156262e-07
+   ],
+   "hc_head_base_minus_fp64": [
+    -1.1947517406740234e-05,
+    -1.144320524609111e-05,
+    -1.0493957457724732e-05,
+    -1.1030842640565132e-05
+   ]
+  },
+  {
+   "run": "ts-c-noexcess",
+   "what": "C1 v5p 0.0.46 关 excess precision",
+   "S_in_main_head_conv_kernel": false,
+   "main_head_fusion": "fusion.19784",
+   "main_head_n_instructions": 45,
+   "main_head_n_reduce_precision": 0,
+   "hc_head_rel_l2_vs_fp64": {
+    "hc_head_base": 0.04489901102209209,
+    "hc_head_fn": 0.07570853942386353,
+    "hc_head_scale": 0.08727549281479952
+   },
+   "hc_head_base_head": [
+    6.670609527402161e-06,
+    8.127605388104488e-06,
+    9.767110470409072e-06,
+    1.0941131684895606e-05
+   ],
+   "hc_head_base_minus_fp64": [
+    -1.9833505712094178e-07,
+    1.7750879776818438e-08,
+    7.385530796145509e-07,
+    -2.4306731657108896e-07
+   ]
+  },
+  {
+   "run": "ts-n3-d3final-barrier",
+   "what": "D3 只改末层 + 余切 barrier（v5p 0.0.46）",
+   "S_in_main_head_conv_kernel": false,
+   "main_head_fusion": "fusion.19676",
+   "main_head_n_instructions": 7,
+   "main_head_n_reduce_precision": 0,
+   "hc_head_rel_l2_vs_fp64": {
+    "hc_head_base": 0.061265349071538806,
+    "hc_head_fn": 0.07045729541642061,
+    "hc_head_scale": 0.027122633430490043
+   },
+   "hc_head_base_head": [
+    6.017967226237744e-06,
+    7.755252860116808e-06,
+    9.61825696071954e-06,
+    1.1226326236427013e-05
+   ],
+   "hc_head_base_minus_fp64": [
+    -8.509773582853588e-07,
+    -3.5460164821086124e-07,
+    5.896995699250185e-07,
+    4.212723496031883e-08
+   ]
+  },
+  {
+   "run": "ts-g52-a",
+   "what": "F5 golden v5p 0.0.52",
+   "S_in_main_head_conv_kernel": false,
+   "main_head_fusion": "fusion.19452",
+   "main_head_n_instructions": 48,
+   "main_head_n_reduce_precision": 0,
+   "hc_head_rel_l2_vs_fp64": {
+    "hc_head_base": 0.0502829961573218,
+    "hc_head_fn": 0.06407308630074507,
+    "hc_head_scale": 0.08580553593663684
+   },
+   "hc_head_base_head": [
+    6.7394128475809705e-06,
+    7.664236221991811e-06,
+    8.276459804699864e-06,
+    1.134835490227119e-05
+   ],
+   "hc_head_base_minus_fp64": [
+    -1.29531736942132e-07,
+    -4.4561828633585795e-07,
+    -7.520975860946571e-07,
+    1.6415590080449555e-07
+   ]
+  },
+  {
+   "run": "ts52-c-nosrb",
+   "what": "V6 v5p 0.0.52 关小矩阵乘改写",
+   "S_in_main_head_conv_kernel": false,
+   "main_head_fusion": "fusion.19705",
+   "main_head_n_instructions": 6,
+   "main_head_n_reduce_precision": 0,
+   "hc_head_rel_l2_vs_fp64": {
+    "hc_head_base": 0.051988736199830646,
+    "hc_head_fn": 0.06683157258367312,
+    "hc_head_scale": 0.08916800709671717
+   },
+   "hc_head_base_head": [
+    6.83826135466599e-06,
+    7.687137624156643e-06,
+    8.209815910798306e-06,
+    1.1301370586532634e-05
+   ],
+   "hc_head_base_minus_fp64": [
+    -3.068322985711224e-08,
+    -4.2271688417102616e-07,
+    -8.187414799962155e-07,
+    1.1717158506593989e-07
+   ]
+  },
+  {
+   "run": "ts52-dp8",
+   "what": "V1 v5p 0.0.52 纯数据并行 8",
+   "S_in_main_head_conv_kernel": false,
+   "main_head_fusion": "fusion.16240",
+   "main_head_n_instructions": 53,
+   "main_head_n_reduce_precision": 0,
+   "hc_head_rel_l2_vs_fp64": {
+    "hc_head_base": 0.02962045263235146,
+    "hc_head_fn": 0.054253117853644596,
+    "hc_head_scale": 0.05969835294106644
+   },
+   "hc_head_base_head": [
+    7.329997084554216e-06,
+    8.039476978775159e-06,
+    8.788208583417627e-06,
+    1.1112946567213014e-05
+   ],
+   "hc_head_base_minus_fp64": [
+    4.6105250003111383e-07,
+    -7.03775295525106e-08,
+    -2.4034880737689384e-07,
+    -7.125243425368096e-08
+   ]
+  },
+  {
+   "run": "ts52-h-v7b-r1",
+   "what": "V16 v7x 0.0.52 FSDP 8",
+   "S_in_main_head_conv_kernel": false,
+   "main_head_fusion": "fusion.18031",
+   "main_head_n_instructions": 6,
+   "main_head_n_reduce_precision": 0,
+   "hc_head_rel_l2_vs_fp64": {
+    "hc_head_base": 0.014335406251099013,
+    "hc_head_fn": 0.04475320978152063,
+    "hc_head_scale": 0.02401122120507313
+   },
+   "hc_head_base_head": [
+    6.819974960958739e-06,
+    7.98529575076474e-06,
+    8.858730828919359e-06,
+    1.1046665476584665e-05
+   ],
+   "hc_head_base_minus_fp64": [
+    -4.896962356436313e-08,
+    -1.2455875756292946e-07,
+    -1.6982656187516265e-07,
+    -1.3753352488202982e-07
+   ]
+  },
+  {
+   "run": "ts52-h-v7-dp8-ga1-r1",
+   "what": "V17 v7x 0.0.52 纯数据并行 8、不累积",
+   "S_in_main_head_conv_kernel": true,
+   "main_head_fusion": "fusion.1303",
+   "main_head_n_instructions": 60,
+   "main_head_n_reduce_precision": 0,
+   "hc_head_rel_l2_vs_fp64": {
+    "hc_head_base": 0.560691590614474,
+    "hc_head_fn": 0.5806774285937667,
+    "hc_head_scale": 0.6175314077450226
+   },
+   "hc_head_base_head": [
+    2.6106820000409187e-06,
+    2.600694278151791e-06,
+    3.967786617531324e-06,
+    6.049557928771391e-06
+   ],
+   "hc_head_base_minus_fp64": [
+    -4.258262584482184e-06,
+    -5.509160230175878e-06,
+    -5.060770773263197e-06,
+    -5.134641072695304e-06
+   ]
+  }
+ ],
+ "cpu_aot_llo": {
+  "V17": {
+   "spec": "ts52-h-v7-dp8-ga1-r1 的规格",
+   "S_in_main_head_conv_kernel": true,
+   "kernels": [
+    {
+     "fusion": "fusion.1264",
+     "main_head": false,
+     "per_token_reduce_on_conv": [
+      "reduce.5675"
+     ],
+     "n_reduce_precision": 0,
+     "llo_final_bundles": {
+      "vld": 4982,
+      "vst": 2708,
+      "vand.u32": 2288,
+      "vmatmul.mubr.f32.gmra.mrb": 2280,
+      "vsub.f32": 1280,
+      "vadd.f32": 1170,
+      "vmatprep.mubr.f32.mxu0": 1152,
+      "vmatprep.mubr.f32.mxu1": 1152,
+      "vsel": 896,
+      "vpop.f32.mrb": 768,
+      "vmul.f32": 768,
+      "vpack.c.f32.bf16": 704,
+      "vweird.f32": 384,
+      "vmatprep.subr.bf16.mxu0": 192,
+      "vmatpush1.bf16.xpose.msra.mxu0": 192,
+      "vmatprep.subr.bf16.mxu1": 192,
+      "vmatpush1.bf16.xpose.msra.mxu1": 192,
+      "vunpack.c.l.bf16.f32": 192,
+      "vunpack.c.u.bf16.f32": 192,
+      "vpop.trf.xlu1": 48,
+      "vpop.trf.xlu0": 48,
+      "vxpose.xlu1.b32.cont": 42,
+      "vxpose.xlu0.b32.cont": 42,
+      "vmatmul.mubr.f32.vlgmr.msra.gmra.mrb": 24,
+      "vrot.slane": 18,
+      "vstv": 17,
+      "vcmp.lt.s32.totalorder": 16,
+      "vsyncpa": 12,
+      "vsyncadd": 5,
+      "vxpose.xlu1.b32.start": 3,
+      "vxpose.xlu0.b32.start": 3,
+      "vxpose.xlu1.b32.end": 3,
+      "vxpose.xlu0.b32.end": 3,
+      "vmov": 1,
+      "vcmp.ne.s32.totalorder": 1
+     }
+    },
+    {
+     "fusion": "fusion.1303",
+     "main_head": true,
+     "per_token_reduce_on_conv": [
+      "reduce.5704.clone.1"
+     ],
+     "n_reduce_precision": 0,
+     "llo_final_bundles": {
+      "vld": 6138,
+      "vst": 3237,
+      "vmul.f32": 3072,
+      "vand.u32": 2390,
+      "vmatmul.mubr.f32.gmra.mrb": 2268,
+      "vadd.f32": 1572,
+      "vsub.f32": 1280,
+      "vmatprep.mubr.f32.mxu0": 1152,
+      "vmatprep.mubr.f32.mxu1": 1152,
+      "vpack.c.f32.bf16": 768,
+      "vunpack.c.l.bf16.f32": 514,
+      "vpop.f32.mrb": 512,
+      "vsel": 512,
+      "vunpack.c.u.bf16.f32": 510,
+      "vweird.f32": 256,
+      "vmatprep.subr.bf16.mxu0": 240,
+      "vmatprep.subr.bf16.mxu1": 240,
+      "vmatpush1.bf16.xpose.msra.mxu0": 192,
+      "vmatpush1.bf16.xpose.msra.mxu1": 192,
+      "vbcast.lane.b32.xlu1": 96,
+      "vbcast.lane.b32.xlu0": 96,
+      "vpop.permute.xlu0": 96,
+      "vpop.permute.xlu1": 96,
+      "vpop.trf.xlu0": 96,
+      "vpop.trf.xlu1": 96,
+      "vxpose.xlu0.b32.cont": 84,
+      "vxpose.xlu1.b32.cont": 84,
+      "vmatpush3.bf16.xpose.msra.mxu0": 48,
+      "vmatpush3.bf16.xpose.msra.mxu1": 48,
+      "vmatmul.mubr.f32.vlgmr.msra.gmra.mrb": 36,
+      "vrot.slane": 36,
+      "vsyncpa": 16,
+      "vsyncadd": 8,
+      "vxpose.xlu0.b32.start": 6,
+      "vxpose.xlu1.b32.start": 6,
+      "vxpose.xlu0.b32.end": 6,
+      "vxpose.xlu1.b32.end": 6,
+      "vmov": 1,
+      "vstv": 1,
+      "vcmp.ne.s32.totalorder": 1
+     }
+    }
+   ]
+  },
+  "V17-noexc": {
+   "spec": "V17 再关 excess precision（没上卡）",
+   "S_in_main_head_conv_kernel": true,
+   "kernels": [
+    {
+     "fusion": "fusion.1264",
+     "main_head": false,
+     "per_token_reduce_on_conv": [
+      "reduce.5672"
+     ],
+     "n_reduce_precision": 0,
+     "llo_final_bundles": {
+      "vld": 4983,
+      "vst": 2708,
+      "vand.u32": 2288,
+      "vmatmul.mubr.f32.gmra.mrb": 2280,
+      "vsub.f32": 1280,
+      "vadd.f32": 1170,
+      "vmatprep.mubr.f32.mxu0": 1152,
+      "vmatprep.mubr.f32.mxu1": 1152,
+      "vsel": 896,
+      "vpop.f32.mrb": 768,
+      "vmul.f32": 768,
+      "vpack.c.f32.bf16": 704,
+      "vweird.f32": 384,
+      "vpack.i.f32.bf16": 384,
+      "vmatprep.subr.bf16.mxu0": 192,
+      "vmatpush1.bf16.xpose.msra.mxu0": 192,
+      "vmatprep.subr.bf16.mxu1": 192,
+      "vmatpush1.bf16.xpose.msra.mxu1": 192,
+      "vunpack.c.l.bf16.f32": 192,
+      "vunpack.c.u.bf16.f32": 192,
+      "vpop.trf.xlu1": 48,
+      "vpop.trf.xlu0": 48,
+      "vxpose.xlu1.b32.cont": 42,
+      "vxpose.xlu0.b32.cont": 42,
+      "vmatmul.mubr.f32.vlgmr.msra.gmra.mrb": 24,
+      "vrot.slane": 18,
+      "vstv": 17,
+      "vcmp.lt.s32.totalorder": 16,
+      "vsyncpa": 12,
+      "vsyncadd": 5,
+      "vxpose.xlu1.b32.start": 3,
+      "vxpose.xlu0.b32.start": 3,
+      "vxpose.xlu1.b32.end": 3,
+      "vxpose.xlu0.b32.end": 3,
+      "vmov": 2,
+      "vcmp.ne.s32.totalorder": 1
+     }
+    },
+    {
+     "fusion": "fusion.1303",
+     "main_head": true,
+     "per_token_reduce_on_conv": [
+      "reduce.5701.clone.1"
+     ],
+     "n_reduce_precision": 0,
+     "llo_final_bundles": {
+      "vld": 6088,
+      "vst": 3200,
+      "vmul.f32": 3072,
+      "vand.u32": 2390,
+      "vmatmul.mubr.f32.gmra.mrb": 2268,
+      "vadd.f32": 1572,
+      "vsub.f32": 1280,
+      "vmatprep.mubr.f32.mxu0": 1152,
+      "vmatprep.mubr.f32.mxu1": 1152,
+      "vpack.c.f32.bf16": 768,
+      "vpack.i.f32.bf16": 768,
+      "vunpack.c.l.bf16.f32": 514,
+      "vpop.f32.mrb": 512,
+      "vsel": 512,
+      "vunpack.c.u.bf16.f32": 510,
+      "vweird.f32": 256,
+      "vmatprep.subr.bf16.mxu0": 240,
+      "vmatprep.subr.bf16.mxu1": 240,
+      "vmatpush1.bf16.xpose.msra.mxu0": 192,
+      "vmatpush1.bf16.xpose.msra.mxu1": 192,
+      "vbcast.lane.b32.xlu1": 96,
+      "vbcast.lane.b32.xlu0": 96,
+      "vpop.permute.xlu1": 96,
+      "vpop.permute.xlu0": 96,
+      "vpop.trf.xlu0": 96,
+      "vpop.trf.xlu1": 96,
+      "vxpose.xlu0.b32.cont": 84,
+      "vxpose.xlu1.b32.cont": 84,
+      "vmatpush3.bf16.xpose.msra.mxu0": 48,
+      "vmatpush3.bf16.xpose.msra.mxu1": 48,
+      "vmatmul.mubr.f32.vlgmr.msra.gmra.mrb": 36,
+      "vrot.slane": 36,
+      "vsyncpa": 16,
+      "vsyncadd": 8,
+      "vxpose.xlu0.b32.start": 6,
+      "vxpose.xlu1.b32.start": 6,
+      "vxpose.xlu0.b32.end": 6,
+      "vxpose.xlu1.b32.end": 6,
+      "vmov": 3,
+      "vstv": 1,
+      "vcmp.ne.s32.totalorder": 1
+     }
+    }
+   ]
+  },
+  "H2": {
+   "spec": "ts-h-v7b 的规格",
+   "S_in_main_head_conv_kernel": true,
+   "kernels": [
+    {
+     "fusion": "fusion.18428",
+     "main_head": false,
+     "per_token_reduce_on_conv": [
+      "reduce.9826"
+     ],
+     "n_reduce_precision": 0,
+     "llo_final_bundles": {
+      "vld": 20850,
+      "vst": 11147,
+      "vmatmul.mubr.f32.gmra.mrb": 9144,
+      "vadd.f32": 7184,
+      "vpop.f32.mrb": 6144,
+      "vand.u32": 5574,
+      "vmatprep.mubr.f32.mxu0": 4608,
+      "vmatprep.mubr.f32.mxu1": 4608,
+      "vsub.f32": 3072,
+      "vpack.c.bf16": 2048,
+      "vmul.f32": 2048,
+      "vweird.f32": 1024,
+      "vmand": 1024,
+      "vsel": 1024,
+      "vmatprep.subr.bf16.mxu0": 576,
+      "vmatprep.subr.bf16.mxu1": 576,
+      "vmatpush1.bf16.xpose.msra.mxu0": 576,
+      "vmatpush1.bf16.xpose.msra.mxu1": 576,
+      "vunpack.c.l.bf16": 512,
+      "vunpack.c.h.bf16": 512,
+      "vmatmul.mubr.f32.vlgmr.msra.gmra.mrb": 72,
+      "vpop.trf.xlu1": 64,
+      "vpop.trf.xlu0": 64,
+      "vxpose.xlu1.b32.cont": 56,
+      "vxpose.xlu0.b32.cont": 56,
+      "vrot.slane": 24,
+      "vsyncpa": 8,
+      "vsyncadd": 4,
+      "vxpose.xlu1.b32.start": 4,
+      "vxpose.xlu0.b32.start": 4,
+      "vxpose.xlu1.b32.end": 4,
+      "vxpose.xlu0.b32.end": 4,
+      "vmov": 1,
+      "vstv": 1,
+      "vcmp.ne.s32.totalorder": 1
+     }
+    },
+    {
+     "fusion": "fusion.18486",
+     "main_head": true,
+     "per_token_reduce_on_conv": [
+      "reduce.7939.clone.3"
+     ],
+     "n_reduce_precision": 0,
+     "llo_final_bundles": {
+      "vld": 5690,
+      "vst": 2712,
+      "vand.u32": 2560,
+      "vmul.f32": 2560,
+      "vmatmul.mubr.f32.gmra.mrb": 2268,
+      "vadd.f32": 1560,
+      "vsub.f32": 1280,
+      "vmatprep.mubr.f32.mxu0": 1152,
+      "vmatprep.mubr.f32.mxu1": 1152,
+      "vpack.c.bf16": 1024,
+      "vunpack.c.l.bf16": 531,
+      "vunpack.c.h.bf16": 528,
+      "vpop.f32.mrb": 512,
+      "vweird.f32": 256,
+      "vmand": 256,
+      "vsel": 256,
+      "vmatprep.subr.bf16.mxu0": 240,
+      "vmatprep.subr.bf16.mxu1": 240,
+      "vmatpush1.bf16.xpose.msra.mxu0": 192,
+      "vmatpush1.bf16.xpose.msra.mxu1": 192,
+      "vbcast.lane.b32.xlu1": 96,
+      "vbcast.lane.b32.xlu0": 96,
+      "vpop.permute.xlu1": 96,
+      "vpop.permute.xlu0": 96,
+      "vmatpush3.bf16.xpose.msra.mxu0": 48,
+      "vmatpush3.bf16.xpose.msra.mxu1": 48,
+      "vmatmul.mubr.f32.vlgmr.msra.gmra.mrb": 36,
+      "vrot.slane": 24,
+      "vsyncpa": 20,
+      "vmov": 9,
+      "vsyncadd": 8,
+      "vstv": 1,
+      "vcmp.ne.s32.totalorder": 1
+     }
+    }
+   ]
+  },
+  "H4b": {
+   "spec": "ts-h-v7-noexcess3 的规格",
+   "S_in_main_head_conv_kernel": true,
+   "kernels": [
+    {
+     "fusion": "fusion.18428",
+     "main_head": false,
+     "per_token_reduce_on_conv": [
+      "reduce.9823"
+     ],
+     "n_reduce_precision": 0,
+     "llo_final_bundles": {
+      "vld": 20845,
+      "vst": 11130,
+      "vmatmul.mubr.f32.gmra.mrb": 9144,
+      "vadd.f32": 7184,
+      "vpop.f32.mrb": 6144,
+      "vand.u32": 5574,
+      "vmatprep.mubr.f32.mxu0": 4608,
+      "vmatprep.mubr.f32.mxu1": 4608,
+      "vsub.f32": 3072,
+      "vpack.c.bf16": 2048,
+      "vmul.f32": 2048,
+      "vweird.f32": 1024,
+      "vmand": 1024,
+      "vsel": 1024,
+      "vpack.i.bf16": 1024,
+      "vmatprep.subr.bf16.mxu0": 576,
+      "vmatprep.subr.bf16.mxu1": 576,
+      "vmatpush1.bf16.xpose.msra.mxu0": 576,
+      "vmatpush1.bf16.xpose.msra.mxu1": 576,
+      "vunpack.c.l.bf16": 512,
+      "vunpack.c.h.bf16": 512,
+      "vmatmul.mubr.f32.vlgmr.msra.gmra.mrb": 72,
+      "vpop.trf.xlu1": 64,
+      "vpop.trf.xlu0": 64,
+      "vxpose.xlu1.b32.cont": 56,
+      "vxpose.xlu0.b32.cont": 56,
+      "vrot.slane": 24,
+      "vsyncpa": 8,
+      "vsyncadd": 4,
+      "vxpose.xlu1.b32.start": 4,
+      "vxpose.xlu0.b32.start": 4,
+      "vxpose.xlu1.b32.end": 4,
+      "vxpose.xlu0.b32.end": 4,
+      "vmov": 3,
+      "vstv": 1,
+      "vcmp.ne.s32.totalorder": 1
+     }
+    },
+    {
+     "fusion": "fusion.18486",
+     "main_head": true,
+     "per_token_reduce_on_conv": [
+      "reduce.7936.clone.3"
+     ],
+     "n_reduce_precision": 0,
+     "llo_final_bundles": {
+      "vld": 6286,
+      "vand.u32": 4160,
+      "vst": 3088,
+      "vsub.f32": 1920,
+      "vmatmul.mubr.f32.gmra.mrb": 1860,
+      "vpack.c.bf16": 1472,
+      "vmul.f32": 1280,
+      "vmatprep.mubr.f32.mxu0": 960,
+      "vmatprep.mubr.f32.mxu1": 960,
+      "vadd.f32": 792,
+      "vmatprep.subr.bf16.mxu0": 480,
+      "vmatprep.subr.bf16.mxu1": 480,
+      "vmatpush1.bf16.xpose.msra.mxu0": 480,
+      "vmatpush1.bf16.xpose.msra.mxu1": 480,
+      "vunpack.c.l.bf16": 278,
+      "vunpack.c.h.bf16": 278,
+      "vpop.f32.mrb": 256,
+      "vpack.i.bf16": 256,
+      "vweird.f32": 128,
+      "vmand": 128,
+      "vsel": 128,
+      "vmatmul.mubr.f32.vlgmr.msra.gmra.mrb": 60,
+      "vbcast.lane.b32.xlu1": 48,
+      "vbcast.lane.b32.xlu0": 48,
+      "vpop.permute.xlu1": 48,
+      "vpop.permute.xlu0": 48,
+      "vrot.slane": 24,
+      "vsyncpa": 20,
+      "vsyncadd": 8,
+      "vmov": 7,
+      "vstv": 1,
+      "vcmp.ne.s32.totalorder": 1
+     }
+    }
+   ]
+  },
+  "V16": {
+   "spec": "ts52-h-v7b-r1 的规格",
+   "S_in_main_head_conv_kernel": false,
+   "kernels": [
+    {
+     "fusion": "fusion.18031",
+     "main_head": true,
+     "per_token_reduce_on_conv": [],
+     "n_reduce_precision": 0,
+     "llo_final_bundles": {
+      "vld": 8251,
+      "vst": 4074,
+      "vmatmul.mubr.f32.gmra.mrb": 3504,
+      "vand.u32": 3193,
+      "vpop.f32.mrb": 1824,
+      "vadd.f32": 1824,
+      "vmatprep.mubr.f32.mxu0": 1776,
+      "vmatprep.mubr.f32.mxu1": 1776,
+      "vsub.f32": 1616,
+      "vpack.c.f32.bf16": 1320,
+      "vsel": 1184,
+      "vweird.f32": 592,
+      "vmatprep.subr.bf16.mxu0": 384,
+      "vmatpush1.bf16.xpose.msra.mxu0": 384,
+      "vmatprep.subr.bf16.mxu1": 384,
+      "vmatpush1.bf16.xpose.msra.mxu1": 384,
+      "vmatmul.mubr.f32.vlgmr.msra.gmra.mrb": 48,
+      "vsyncpa": 12,
+      "vsyncadd": 5,
+      "vstv": 1,
+      "vcmp.ne.s32.totalorder": 1
+     }
+    },
+    {
+     "fusion": "fusion.18089",
+     "main_head": false,
+     "per_token_reduce_on_conv": [
+      "reduce.9934"
+     ],
+     "n_reduce_precision": 0,
+     "llo_final_bundles": {
+      "vld": 5239,
+      "vand.u32": 2870,
+      "vst": 2627,
+      "vmatmul.mubr.f32.gmra.mrb": 2268,
+      "vsub.f32": 1536,
+      "vmatprep.mubr.f32.mxu0": 1152,
+      "vmatprep.mubr.f32.mxu1": 1152,
+      "vpack.c.f32.bf16": 896,
+      "vadd.f32": 780,
+      "vpop.f32.mrb": 512,
+      "vsel": 512,
+      "vmul.f32": 512,
+      "vmatprep.subr.bf16.mxu0": 288,
+      "vmatprep.subr.bf16.mxu1": 288,
+      "vmatpush1.bf16.xpose.msra.mxu0": 288,
+      "vmatpush1.bf16.xpose.msra.mxu1": 288,
+      "vweird.f32": 256,
+      "vunpack.c.l.bf16.f32": 128,
+      "vunpack.c.u.bf16.f32": 128,
+      "vmatmul.mubr.f32.vlgmr.msra.gmra.mrb": 36,
+      "vpop.trf.xlu1": 32,
+      "vpop.trf.xlu0": 32,
+      "vxpose.xlu1.b32.cont": 28,
+      "vxpose.xlu0.b32.cont": 28,
+      "vrot.slane": 12,
+      "vsyncpa": 8,
+      "vsyncadd": 4,
+      "vxpose.xlu1.b32.start": 2,
+      "vxpose.xlu0.b32.start": 2,
+      "vxpose.xlu1.b32.end": 2,
+      "vxpose.xlu0.b32.end": 2,
+      "vmov": 1,
+      "vstv": 1,
+      "vcmp.ne.s32.totalorder": 1
+     }
+    }
+   ]
+  }
+ },
+ "cpu_vs_tpu": {
+  "V17": {
+   "run": "ts52-h-v7-dp8-ga1-r1",
+   "program_equal": true,
+   "program_fp": "be83376ff10648d0450996980bd079e0640c7c004697f7b126c1be63aefa4194"
+  },
+  "H2": {
+   "run": "ts-h-v7b",
+   "program_equal": true,
+   "program_fp": "be56745198a23c6e04b44c79c1374096b76ebe4ce7472e816ef424e8b155c9b6"
+  },
+  "H4b": {
+   "run": "ts-h-v7-noexcess3",
+   "program_equal": true,
+   "program_fp": "7eeabf5ddbf6e9f22dbb45e57dde02adcdf13504230e0292afa492aebd2ae0fd"
+  },
+  "V16": {
+   "run": "ts52-h-v7b-r1",
+   "program_equal": true,
+   "program_fp": "48ebd7fb7bc51fa5802c3a10290639fd070db46c91a4c148cadfb687c70e02f2"
+  },
+  "V17-noexc_vs_V17_cpu": {
+   "program_equal": false,
+   "summary_diff": {
+    "convert": {
+     "bf16→f32": {
+      "test": 1805,
+      "base": 1797
+     },
+     "f32→bf16": {
+      "test": 3491,
+      "base": 3482
+     }
+    },
+    "other": {
+     "custom-call": {
+      "test": 1156,
+      "base": 1158
+     },
+     "fusion": {
+      "test": 9407,
+      "base": 9399
+     },
+     "reduce-precision": {
+      "test": 2547,
+      "base": 2340
+     }
+    }
+   }
+  }
+ }
+}

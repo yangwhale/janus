@@ -362,9 +362,19 @@ def overview_lines(arms, spec):
     h, n = heaps(arms)
     k = len({a["issue"] for a in h["issue"]})
     nl = sum(1 for a in arms if a["id"].startswith("L"))
+    # V 类各堆：数为 0 的堆不写，写出来的加起来等于 nv
+    vnames = [("same", "逐位相同"), ("noise", "跟 GPU 重跑一样大"), ("issue", "真有影响"), ("blind", "量不出来"),
+              ("broken", "故意改坏"), ("missing", "没出结果")]
+    vparts = [(lab, len(hv[key])) for key, lab in vnames if hv.get(key)]
+    # 不属于 V 类、但改动名里也写着 libtpu 0.0.52 的（0.0.52 基准自身的校准）
+    other52 = [a["id"] for a in arms if "libtpu 0.0.52" in a.get("plain", "")]
     tail = (
-        f"另有 {nv} 次是同一批改动在 libtpu 0.0.52 上的重测（V 类，[`libtpu-052.md`](libtpu-052.md)）：逐位相同 {len(hv['same'])} 次，"
-        f"跟 GPU 重跑一样大 {len(hv['noise'])} 次，真有影响 {len(hv['issue'])} 次；下面各表里标「libtpu 0.0.52」的就是它们。"
+        f"另有 {nv} 次是同一批改动在 libtpu 0.0.52 上的重测（V 类，[`libtpu-052.md`](libtpu-052.md)）："
+        + "，".join(f"{lab} {c} 次" for lab, c in vparts)
+        + f"，{' + '.join(str(c) for _, c in vparts)} = {nv}。"
+        + "下面各表里标「libtpu 0.0.52」的改动是它们"
+        + (f"，另加 {('、'.join(other52))}（0.0.52 基准自身的校准，算在上面 {n} 种里）" if other52 else "")
+        + "。"
         if nv
         else ""
     )

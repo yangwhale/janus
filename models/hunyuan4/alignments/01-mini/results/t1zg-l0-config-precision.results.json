@@ -1,0 +1,1113 @@
+{
+ "schema_version": 1,
+ "stage": "t1zg-l0-config-precision",
+ "model": "hunyuan4-mini",
+ "inputs": {
+  "tpu_run": "t1zg-a",
+  "gpu_run": "g3-a",
+  "hf_config_sha256": "24cec75c00931bf93c659de379c732df49f0bc6d6bde32487c7cb0ac45927611"
+ },
+ "checks": [
+  {
+   "id": "L0.config.items",
+   "type": "config_diff",
+   "level": "L0",
+   "status": "fail",
+   "threshold": {
+    "kind": "exact"
+   },
+   "metrics": {
+    "items": 106,
+    "differ": 1,
+    "by_rule": {
+     "same_hf": 37,
+     "same_gpu": 20,
+     "registered": 12,
+     "precision": 37
+    }
+   },
+   "message": "106 项（结构对 HF config 37、训练设置对 GPU meta 20、登记值 12、精度开关对登记的对齐配置 37）：不同 1",
+   "details_inline": {
+    "differ": [
+     "sa_use_base2_exp：TPU True，参照 False（config-alignment.md 开关表 M43；并行与确定性「注意力 实现」（2026-11-11 起关））"
+    ],
+    "rows": [
+     {
+      "category": "来源",
+      "item": "同一个 HF 目录（张量清单 sha256）",
+      "rule": "same_gpu",
+      "tpu": "1d869124db698cc51d3fb8fa1c2d83a00ab51066701afd81acf9a0a8af176433",
+      "ref": "1d869124db698cc51d3fb8fa1c2d83a00ab51066701afd81acf9a0a8af176433",
+      "ref_source": "GPU meta.checkpoint.tensor_sha256_manifest",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "来源",
+      "item": "TPU 读的 config.json 就是这一份",
+      "rule": "same_hf",
+      "tpu": "24cec75c00931bf93c659de379c732df49f0bc6d6bde32487c7cb0ac45927611",
+      "ref": "24cec75c00931bf93c659de379c732df49f0bc6d6bde32487c7cb0ac45927611",
+      "ref_source": "本地 config.json 的 sha256",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "来源",
+      "item": "GPU 没有补 HF config 的键",
+      "rule": "registered",
+      "tpu": null,
+      "ref": null,
+      "ref_source": "GPU meta.config.hf_config_filled_from_release",
+      "equal": true,
+      "note": "GPU 记的是 {}"
+     },
+     {
+      "category": "结构",
+      "item": "主干层数",
+      "rule": "same_hf",
+      "tpu": 7,
+      "ref": 7,
+      "ref_source": "HF config.num_hidden_layers",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "MTP 层数",
+      "rule": "same_hf",
+      "tpu": 1,
+      "ref": 1,
+      "ref_source": "HF config.num_nextn_predict_layers",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "隐藏宽度",
+      "rule": "same_hf",
+      "tpu": 1024,
+      "ref": 1024,
+      "ref_source": "HF config.hidden_size",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "注意力头数",
+      "rule": "same_hf",
+      "tpu": 8,
+      "ref": 8,
+      "ref_source": "HF config.num_attention_heads",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "q 低秩",
+      "rule": "same_hf",
+      "tpu": 512,
+      "ref": 512,
+      "ref_source": "HF config.q_lora_rank",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "kv 低秩",
+      "rule": "same_hf",
+      "tpu": 512,
+      "ref": 512,
+      "ref_source": "HF config.kv_lora_rank",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "qk 非 RoPE 维",
+      "rule": "same_hf",
+      "tpu": 192,
+      "ref": 192,
+      "ref_source": "HF config.qk_nope_head_dim",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "qk RoPE 维",
+      "rule": "same_hf",
+      "tpu": 64,
+      "ref": 64,
+      "ref_source": "HF config.qk_rope_head_dim",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "v 每头维",
+      "rule": "same_hf",
+      "tpu": 256,
+      "ref": 256,
+      "ref_source": "HF config.v_head_dim",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "稠密 FFN 宽",
+      "rule": "same_hf",
+      "tpu": 3072,
+      "ref": 3072,
+      "ref_source": "HF config.intermediate_size",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "路由专家 FFN 宽",
+      "rule": "same_hf",
+      "tpu": 256,
+      "ref": 256,
+      "ref_source": "HF config.moe_intermediate_size",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "路由专家数",
+      "rule": "same_hf",
+      "tpu": 16,
+      "ref": 16,
+      "ref_source": "HF config.n_routed_experts",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "每 token 选几个专家",
+      "rule": "same_hf",
+      "tpu": 4,
+      "ref": 4,
+      "ref_source": "HF config.num_experts_per_tok",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "共享专家数",
+      "rule": "same_hf",
+      "tpu": 1,
+      "ref": 1,
+      "ref_source": "HF config.n_shared_experts",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "词表",
+      "rule": "same_hf",
+      "tpu": 120832,
+      "ref": 120832,
+      "ref_source": "HF config.vocab_size",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "路由缩放系数",
+      "rule": "same_hf",
+      "tpu": 2.827,
+      "ref": 2.827,
+      "ref_source": "HF config.routed_scaling_factor",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "路由打分函数",
+      "rule": "same_hf",
+      "tpu": "sigmoid",
+      "ref": "sigmoid",
+      "ref_source": "HF config.scoring_func（缺省 sigmoid，模型代码默认）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "选中专家的权重归一化",
+      "rule": "same_hf",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "HF config.norm_topk_prob",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "RMSNorm eps",
+      "rule": "same_hf",
+      "tpu": 1e-05,
+      "ref": 1e-05,
+      "ref_source": "HF config.rms_norm_eps",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "MLA 两个潜空间 norm 的 eps",
+      "rule": "same_hf",
+      "tpu": 1e-05,
+      "ref": 1e-05,
+      "ref_source": "HF config.rms_norm_eps",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "索引器头数",
+      "rule": "same_hf",
+      "tpu": 32,
+      "ref": 32,
+      "ref_source": "HF config.index_n_heads",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "索引器每头维",
+      "rule": "same_hf",
+      "tpu": 128,
+      "ref": 128,
+      "ref_source": "HF config.index_head_dim",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "索引器 top-k",
+      "rule": "same_hf",
+      "tpu": 2048,
+      "ref": 2048,
+      "ref_source": "HF config.index_topk",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "iHC 流数",
+      "rule": "same_hf",
+      "tpu": 4,
+      "ref": 4,
+      "ref_source": "HF config.hc_mult",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "iHC eps",
+      "rule": "same_hf",
+      "tpu": 1e-06,
+      "ref": 1e-06,
+      "ref_source": "HF config.hc_eps",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "iHC 写回幅度",
+      "rule": "same_hf",
+      "tpu": 2.0,
+      "ref": 2.0,
+      "ref_source": "HF config.hc_magnitude",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "SwiGLU 截断",
+      "rule": "same_hf",
+      "tpu": 10.0,
+      "ref": 10.0,
+      "ref_source": "HF config.swiglu_limit",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "可学习 sink",
+      "rule": "same_hf",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "HF config.learnable_sink",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "门控 MLA（逐元素）",
+      "rule": "same_hf",
+      "tpu": "elementwise",
+      "ref": "elementwise",
+      "ref_source": "HF config.gating_type",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "输出头与词嵌入不共享",
+      "rule": "same_hf",
+      "tpu": false,
+      "ref": false,
+      "ref_source": "HF config.tie_word_embeddings",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "注意力 bias",
+      "rule": "same_hf",
+      "tpu": false,
+      "ref": false,
+      "ref_source": "HF config.attention_bias",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "稠密层数（mlp_layer_types 里 dense 的个数，且都在最前面）",
+      "rule": "same_hf",
+      "tpu": 1,
+      "ref": 1,
+      "ref_source": "HF config.mlp_layer_types",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "自带索引器的层（其余复用上一个）",
+      "rule": "same_hf",
+      "tpu": [
+       0,
+       1,
+       5
+      ],
+      "ref": [
+       0,
+       1,
+       5
+      ],
+      "ref_source": "HF config.indexer_types",
+      "equal": true,
+      "note": "TPU 按 first_num_dense_layers 与 indexer_share_interval 推出"
+     },
+     {
+      "category": "结构",
+      "item": "RoPE θ",
+      "rule": "same_hf",
+      "tpu": 10000000,
+      "ref": 10000000,
+      "ref_source": "HF config.rope_parameters.rope_theta",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "RoPE 不缩放（yarn factor 1 = 普通 RoPE）",
+      "rule": "same_hf",
+      "tpu": 1,
+      "ref": 1,
+      "ref_source": "HF config.rope_parameters.rope_type = default（factor 1）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "MTP loss 系数",
+      "rule": "same_gpu",
+      "tpu": 0.1,
+      "ref": 0.1,
+      "ref_source": "GPU meta.config.mtp_loss_factor",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "结构",
+      "item": "MTP loss 系数（HF）",
+      "rule": "same_hf",
+      "tpu": 0.1,
+      "ref": 0.1,
+      "ref_source": "HF config.mtp_loss_factor",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "学习率",
+      "rule": "same_gpu",
+      "tpu": 1e-05,
+      "ref": 1e-05,
+      "ref_source": "GPU meta.config.lr",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "Adam β1",
+      "rule": "same_gpu",
+      "tpu": 0.9,
+      "ref": 0.9,
+      "ref_source": "GPU meta.config.betas[0]",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "Adam β2",
+      "rule": "same_gpu",
+      "tpu": 0.95,
+      "ref": 0.95,
+      "ref_source": "GPU meta.config.adam_beta2",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "Adam eps",
+      "rule": "same_gpu",
+      "tpu": 1e-10,
+      "ref": 1e-10,
+      "ref_source": "GPU meta.config.adam_eps",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "梯度裁剪阈值",
+      "rule": "same_gpu",
+      "tpu": 1.0,
+      "ref": 1.0,
+      "ref_source": "GPU meta.config.clip",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "序列长度",
+      "rule": "same_gpu",
+      "tpu": 4096,
+      "ref": 4096,
+      "ref_source": "GPU meta.config.seq",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "全局批（条）",
+      "rule": "same_gpu",
+      "tpu": 16,
+      "ref": 16,
+      "ref_source": "GPU meta.config.parallelism.gbs",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "梯度累积步数",
+      "rule": "same_gpu",
+      "tpu": 2,
+      "ref": 2,
+      "ref_source": "GPU meta.config.parallelism.ga",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "QK-Clip 开",
+      "rule": "same_gpu",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "GPU meta.config.qk_clip.on",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "QK-Clip 阈值",
+      "rule": "same_gpu",
+      "tpu": 100.0,
+      "ref": 100.0,
+      "ref_source": "GPU meta.config.qk_clip.threshold",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "索引器 KD 系数",
+      "rule": "same_gpu",
+      "tpu": 0.1,
+      "ref": 0.1,
+      "ref_source": "GPU meta.config.indexer_loss.maxtext_coeff",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "索引器参与训练（稀疏 KD）",
+      "rule": "same_gpu",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "GPU meta.config.indexer_loss.sparse 且 indexer_trained",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "路由偏置更新率",
+      "rule": "same_gpu",
+      "tpu": 0.001,
+      "ref": 0.001,
+      "ref_source": "GPU meta.config.routing_bias_update_rate",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "优化器 Muon",
+      "rule": "same_gpu",
+      "tpu": "muon",
+      "ref": "muon",
+      "ref_source": "GPU meta.config.optimizer",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "Muon Nesterov",
+      "rule": "same_gpu",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "GPU meta.config.optimizer_extra.muon_nesterov",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "iHC 与 hc_head 不走 Muon",
+      "rule": "same_gpu",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "GPU meta.config.muon_exclude_ihc",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "输出门每头正交化",
+      "rule": "same_gpu",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "GPU meta.config.muon_gate",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "MTP 层也做 QK-Clip",
+      "rule": "same_gpu",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "GPU meta.config.qk_clip_mtp（TPU 一侧取 True 的依据：τ 0.1 的 TPU 运行逐步记 qk.clipped.mtp0，第 1 步 MTP 层 8 个头被裁，QK-Clip 对 MTP 层生效）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "学习率常数（warmup 0）",
+      "rule": "registered",
+      "tpu": 0.0,
+      "ref": 0.0,
+      "ref_source": "登记值（PROTOCOL 第 1.2 节）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "学习率常数（不衰减）",
+      "rule": "registered",
+      "tpu": 1.0,
+      "ref": 1.0,
+      "ref_source": "登记值（PROTOCOL 第 1.2 节）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "Muon 动量 0.95（GPU 入口没覆盖 muon_momentum，取 Megatron-Core 0.20 OptimizerConfig 的默认 0.95）",
+      "rule": "registered",
+      "tpu": 0.95,
+      "ref": 0.95,
+      "ref_source": "登记值（PROTOCOL 第 1.2 节）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "Muon 权重衰减 0",
+      "rule": "registered",
+      "tpu": 0.0,
+      "ref": 0.0,
+      "ref_source": "登记值（PROTOCOL 第 1.2 节）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "Adam 权重衰减 0",
+      "rule": "registered",
+      "tpu": 0.0,
+      "ref": 0.0,
+      "ref_source": "登记值（PROTOCOL 第 1.2 节）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "dropout 0",
+      "rule": "registered",
+      "tpu": 0.0,
+      "ref": 0.0,
+      "ref_source": "登记值（PROTOCOL 第 1.2 节）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "MoE 负载均衡 loss 0",
+      "rule": "registered",
+      "tpu": 0.0,
+      "ref": 0.0,
+      "ref_source": "登记值（PROTOCOL 第 1.2 节）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "z-loss 0",
+      "rule": "registered",
+      "tpu": 0.0,
+      "ref": 0.0,
+      "ref_source": "登记值（PROTOCOL 第 1.2 节）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "MoE 不丢 token（capacity_factor −1）",
+      "rule": "registered",
+      "tpu": -1.0,
+      "ref": -1.0,
+      "ref_source": "登记值（PROTOCOL 第 1.2 节）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "训练",
+      "item": "路由偏置不做零均值更新（原版 Megatron-Core 没有，台账 G14）",
+      "rule": "registered",
+      "tpu": false,
+      "ref": false,
+      "ref_source": "登记值（PROTOCOL 第 1.2 节）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "数据",
+      "item": "loss 掩码（eod）",
+      "rule": "registered",
+      "tpu": "回放 GPU 存下的 loss_mask",
+      "ref": "input token == eod -> 0",
+      "ref_source": "GPU meta.config.loss_mask",
+      "equal": true,
+      "note": "TPU 不自己算掩码（eod_mask_loss 关），逐步回放 GPU 存下的 loss_mask；逐位一致见 t1zg-l0-data（L0.data.fingerprint 含 loss_mask 字段）"
+     },
+     {
+      "category": "精度开关",
+      "item": "dtype",
+      "rule": "precision",
+      "tpu": "bfloat16",
+      "ref": "bfloat16",
+      "ref_source": "config-alignment.md 数值精度「计算、主权重、梯度、优化器状态」",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "weight_dtype",
+      "rule": "precision",
+      "tpu": "float32",
+      "ref": "float32",
+      "ref_source": "config-alignment.md 数值精度「计算、主权重、梯度、优化器状态」",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "grad_dtype",
+      "rule": "precision",
+      "tpu": "float32",
+      "ref": "float32",
+      "ref_source": "config-alignment.md 数值精度「计算、主权重、梯度、优化器状态」",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "mu_dtype",
+      "rule": "precision",
+      "tpu": "float32",
+      "ref": "float32",
+      "ref_source": "config-alignment.md 数值精度「计算、主权重、梯度、优化器状态」",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "matmul_precision",
+      "rule": "precision",
+      "tpu": "default",
+      "ref": "default",
+      "ref_source": "config-alignment.md 数值精度「矩阵乘默认精度」",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "dense_fp32_accumulation",
+      "rule": "precision",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "config-alignment.md 数值精度「GEMM 累加只舍一次」（M12）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "rmsnorm_single_rounding",
+      "rule": "precision",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "config-alignment.md 数值精度「RMSNorm 舍入次数」（M9）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "routed_gate_bf16_rounding",
+      "rule": "precision",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "config-alignment.md 数值精度「路由 GEMM」（M8）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "float32_gate_logits",
+      "rule": "precision",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "config-alignment.md 数值精度「路由 GEMM」",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "router_matmul_precision",
+      "rule": "precision",
+      "tpu": "highest",
+      "ref": "highest",
+      "ref_source": "config-alignment.md 数值精度「路由 GEMM」",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "mlp_activation_round_per_op",
+      "rule": "precision",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "config-alignment.md 数值精度「门控激活舍入」（M10）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "indexer_fp32_scores",
+      "rule": "precision",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "config-alignment.md 数值精度「索引器打分」（M23）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "indexer_weights_proj_bf16_weight",
+      "rule": "precision",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "config-alignment.md 数值精度「索引器打分」（M27）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "hc_matmul_precision",
+      "rule": "precision",
+      "tpu": "highest",
+      "ref": "highest",
+      "ref_source": "config-alignment.md 数值精度「iHC 混合系数」",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "ihc_stream_sum_unrolled",
+      "rule": "precision",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "config-alignment.md 数值精度「iHC 四路流加权和」（M28）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "ihc_force_bf16_rounding",
+      "rule": "precision",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "config-alignment.md 数值精度「iHC 分支输入与更新后的流的 BF16 舍入」（M36）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "logits_dot_in_fp32",
+      "rule": "precision",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "config-alignment.md 数值精度「输出头」（M13）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "logits_matmul_precision",
+      "rule": "precision",
+      "tpu": "highest",
+      "ref": "highest",
+      "ref_source": "config-alignment.md 数值精度「输出头」（M13）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "transcendental_accuracy_highest",
+      "rule": "precision",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "config-alignment.md 数值精度「FP32 超越函数」（M33、M37）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "accurate_sigmoid_attn_gate",
+      "rule": "precision",
+      "tpu": null,
+      "ref": null,
+      "ref_source": "config-alignment.md 开关表 M38（默认 null，跟随 transcendental_accuracy_highest）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "accurate_sigmoid_hc_head",
+      "rule": "precision",
+      "tpu": null,
+      "ref": null,
+      "ref_source": "config-alignment.md 开关表 M38（同上）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "accurate_sigmoid_ihc",
+      "rule": "precision",
+      "tpu": null,
+      "ref": null,
+      "ref_source": "config-alignment.md 开关表 M38（同上）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "accurate_sigmoid_router",
+      "rule": "precision",
+      "tpu": null,
+      "ref": null,
+      "ref_source": "config-alignment.md 开关表 M38（同上）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "accurate_silu_dense",
+      "rule": "precision",
+      "tpu": null,
+      "ref": null,
+      "ref_source": "config-alignment.md 开关表 M38（同上）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "accurate_silu_routed",
+      "rule": "precision",
+      "tpu": null,
+      "ref": null,
+      "ref_source": "config-alignment.md 开关表 M38（同上）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "accurate_silu_shared",
+      "rule": "precision",
+      "tpu": null,
+      "ref": null,
+      "ref_source": "config-alignment.md 开关表 M38（同上）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "muon_mcore_ns_bf16",
+      "rule": "precision",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "config-alignment.md 数值精度「Newton–Schulz 的矩阵乘」（M31）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "muon_adam_accurate",
+      "rule": "precision",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "config-alignment.md 数值精度「Adam 的 FP32 除法、sqrt 与偏差修正」（M34）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "rmsnorm_scale_grad_fp32",
+      "rule": "precision",
+      "tpu": false,
+      "ref": false,
+      "ref_source": "config-alignment.md 数值精度「三个梯度 FP32 开关」（T1 不开）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "logits_dense_wgrad_fp32",
+      "rule": "precision",
+      "tpu": false,
+      "ref": false,
+      "ref_source": "config-alignment.md 数值精度「三个梯度 FP32 开关」（T1 不开）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "embedding_grad_fp32",
+      "rule": "precision",
+      "tpu": false,
+      "ref": false,
+      "ref_source": "config-alignment.md 数值精度「三个梯度 FP32 开关」（T1 不开）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "moe_mcore_prob_before_fc2",
+      "rule": "precision",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "config-alignment.md 开关表 M40",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "mlp_fused_fc1_dgrad",
+      "rule": "precision",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "config-alignment.md 开关表 M41",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "splash_dsinks_fp32",
+      "rule": "precision",
+      "tpu": false,
+      "ref": false,
+      "ref_source": "config-alignment.md 开关表 M42（对齐配置不开）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "splash_dsinks_gpu_order",
+      "rule": "precision",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "config-alignment.md 开关表 M42b（M47）",
+      "equal": true,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "sa_use_base2_exp",
+      "rule": "precision",
+      "tpu": true,
+      "ref": false,
+      "ref_source": "config-alignment.md 开关表 M43；并行与确定性「注意力 实现」（2026-11-11 起关）",
+      "equal": false,
+      "note": ""
+     },
+     {
+      "category": "精度开关",
+      "item": "indexer_kd_generalized_kl",
+      "rule": "precision",
+      "tpu": true,
+      "ref": true,
+      "ref_source": "config-alignment.md 开关表 M50（只改记录值）",
+      "equal": true,
+      "note": ""
+     }
+    ]
+   }
+  }
+ ],
+ "summary": {
+  "pass": 0,
+  "fail": 1,
+  "inconclusive": 0,
+  "error": 0
+ }
+}

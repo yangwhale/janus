@@ -26,6 +26,7 @@ GLOBAL = [
     ("decoder.final_layernorm.hc_fn", "model.hc_head.hc_head_fn"),
     ("decoder.final_layernorm.hc_base", "model.hc_head.hc_head_base"),
     ("decoder.final_layernorm.hc_scale", "model.hc_head.hc_head_scale"),
+    ("decoder.final_layernorm.weight", "model.norm.weight"),  # hc_mult = 1（没有 iHC 的结构消融）：末层是普通 RMSNorm
 ]
 LAYER = [
     ("attn_hc.fn", "hc_attn_layer.hc_pre.hc_fn"),
@@ -105,7 +106,9 @@ class Safetensors:
 
 def layer_plan(config, i: int):
     """第 i 层（0 起）的 (Megatron 名后缀, checkpoint 名后缀, 变换)。变换：None 原样；'cat' 两个张量沿第 0 维拼。"""
-    out = [(m, h, None) for m, h in LAYER]
+    out = [
+        (m, h, None) for m, h in LAYER if getattr(config, "hc_mult", 4) > 1 or not m.startswith(("attn_hc.", "ffn_hc."))
+    ]
     out += [("self_attention." + m, h, None) for m, h in ATTN]
     if config.hy4_indexer_types[i] == "full":
         out += [("self_attention." + m, h, None) for m, h in INDEXER]

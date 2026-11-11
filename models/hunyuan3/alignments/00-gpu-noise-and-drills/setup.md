@@ -28,10 +28,10 @@
 
 | 组件 | 版本 | 证据出处 |
 |---|---|---|
-| 镜像 | NeMo 26.10，digest `fc75bf51…` | 第一阶段的 `meta.json` 只记 tag；digest 见 [`pod.yaml`](../../frameworks/megatron/pod.yaml) 的注释（第一阶段用的就是它） |
+| 镜像 | NeMo 26.10，digest `fc75bf51…` | 第一阶段的 `meta.json` 只记 tag；digest 是按 [`pod.yaml`](../../frameworks/megatron/pod.yaml) 的注释认的（推断：注释写第一阶段用的就是它，第一阶段提交时的 Pod 记录没有入库） |
 | torch / CUDA | 2.14.0a0+b2c75dd062.nv26.09 / 13.4 | [`phase1-l1.results.json`](results/phase1-l1.results.json) 的 `environment` |
 | Transformer Engine | 2.20.2+44f31bbe | 同上 |
-| cuBLAS | 13.8.0.4 | 同上 |
+| cuBLAS | 13.8.0.4（容器环境变量）；实际加载的库按同一 digest 推断是 13.8.1 | `environment.cublas` 读的是容器环境变量 `CUBLAS_VERSION`（`frameworks/megatron/l1_ops.py`），不是进程加载的库；同一 digest 的镜像在混元 4 训练 Pod 里实测加载 `libcublas.so.13.8.1.7`（2026-11-11，混元 4 [`gpu-image-versions.json`](../../../hunyuan4/alignments/01-mini/results/gpu-image-versions.json)）；本实践的运行没有直接读过 |
 | Megatron-Core / Megatron-Bridge | 0.20.0 / 0.7.0（容器自带，提交未登记） | 复现审计在容器里读到（[`repro-audit.md`](results/repro-audit.md)）；第一阶段 `meta.json` 的这两项是 `null`（[环境](../../../../docs/reference/environment.md)） |
 | NCCL | 2.31.2 | 容器自带（[环境](../../../../docs/reference/environment.md)「第一阶段踩到的坑」第 1 条） |
 

@@ -17,27 +17,30 @@ hy4-mini 保留混元 4 的全部结构与每头维度，只缩宽度与个数�
 | [`config-alignment.md`](config-alignment.md) | 两边每一项配置怎么对上 |
 | [`goldens.md`](goldens.md) | 每一份运行的来历与代号 |
 | [`setup.md`](setup.md)、[`runs.yaml`](runs.yaml) | 设置与运行登记 |
-| `catalogs/`、`results/` | 检查项目录；结果文件 |
+| `catalogs/`、`results/` | 检查项目录；结果文件。目录文件注释里的「现行」指成文那一天的现行比较，现在以 [`DETAILS.md`「代号」](DETAILS.md#代号)为准 |
 | [`gpu-noise/`](gpu-noise/README.md) | GPU 一侧自比 |
 
 本尺寸 TPU 配置是 [`hy4-mini-t1.yml`](../../frameworks/maxtext/hy4-mini-t1.yml)。
 
 ## 现状
 
-现行配置（2026-11-11 起 base2 关）跑 1000 步，对 GPU 基线逐步比，噪声取同一代 GPU 16 份两两 120 对：
+现行配置（2026-11-11 起 C 口径：M36、M52、M58 都开，base2 关）跑 1000 步，对 GPU 基线逐步比，噪声取同一代 GPU 16 份两两 120 对：
 
 | 比较 | 步数 | 被测 / 基线 | 结果 |
 |---|---|---|---|
-| [`t1zo-l4`](results/t1zo-l4.report.md) | 1000 | TPU `tz-off-rep`（现行对齐配置，含 M50，base2 关）/ GPU `g3-a` | 过 7、不过 0、待定 2（主 loss 全程与后段，r 1.55 / 1.52；与 base2 无关，是第 500 步以后攒出来的训练轨迹差，同一份权重上前向没有，后段根因未定：已排除 MTP / KD 两项 loss、sink 与 norm 两类小参数，[D30](DETAILS.md#d30)）；上一代（base2 开的 `t1zg-a`）见[历代比较](../../dashboard/history.md) |
+| [`t1zc-l4`](results/t1zc-l4.report.md) | 1000 | TPU `tc-a`（C 口径，同配置 5 份的第一份）/ GPU `g3-a` | 过 8、不过 0、待定 1（路由偏置均值 r 1.31，同配置另 4 份过）；主 loss 过（r 0.98）。C 口径 5 份都没有不过（[`t1zc-repeats.json`](results/t1zc-repeats.json)）。后段偏高的主因已定位到 iHC 流梯度的舍入写法，残余 +6.6e-6 机制待查（[D30](DETAILS.md#d30)） |
+| [`t1zo-l4`](results/t1zo-l4.report.md) | 1000 | 上一代：TPU `tz-off-rep`（C 口径之前，M52、M58 不开）/ GPU `g3-a` | 过 7、不过 0、待定 2（主 loss 全程与后段，r 1.55 / 1.52）；更早的 `t1zg-a`（base2 开）见[历代比较](../../dashboard/history.md) |
 
 | mini 挡签字的项 | 状态 |
 |---|---|
-| 第 1 步 177 个超出噪声 | 现行配置（base2 关）5 个 iHC 张量与 MTP enorm 比 GPU 远；enorm 与其中 2 个 iHC 在 base2 开时已接受（[D11](DETAILS.md#d11)），另 3 个 iHC 是关 base2 后新出现的，未定责；仍缺 2b |
+| 第 1 步 169 个超出噪声 | C 口径之前的配置（`tz-off-rep`）的读数，C 口径改了第 1 步梯度，要重判。GPU 参照 2026-11-11 补到 6 份 15 对后，超出噪声且比 GPU 远的只剩第 3 层注意力前 `hc_scale`（1.05 N，计入未定责）与 MTP enorm（另列），两个都按 D11 豁免规则单列（豁免规则与沿用待复核）（[D11](DETAILS.md#d11)）；3 份时是 177 个超出、5 个 iHC 未定责；仍缺 2b |
+| 训练曲线待定（2a） | 以现行比较 tc-a 为准：1000 步路由偏置均值待定（r 1.31，C 口径另 4 份过）；前 300 步 grad_norm 待定（r 1.01）；主 loss 现已过。QK-Clip 全局最大 logit 1000 步与前 300 步待定（1.09、1.05）是 C 口径之前另一份同配置运行的读数；它与 grad_norm 在 base2 开时已接受，是否沿用尚未决定（[D2](DETAILS.md#d2)、[D29](DETAILS.md#d29)） |
+| 低阈值 QK-Clip 第 1 步第 4 层（3a） | 关 base2 后 R 1.55，未定责（[D31](DETAILS.md#d31)） |
 | 第 1 步噪声参照 | 只有 3 对，要求 15 对 |
 | golden 对 GPU 生产程序 | 没比 |
 | 三条事后判法的前瞻验证 | 已在 PROTOCOL 事先登记，用真实权重截层下一批运行验证 |
 
-QK-Clip 全局最大 logit（[D29](DETAILS.md#d29)）、逐元素 log（[D14](DETAILS.md#d14)）已定责、已接受；param_norm 漂移（[D12](DETAILS.md#d12)）已过线，不挡签字。
+逐元素 log（[D14](DETAILS.md#d14)）已定责、已接受；param_norm 漂移（[D12](DETAILS.md#d12)）已过线，不挡签字。
 
 
 ## 真实权重截层的 L0 与 L1（不依赖优化器）

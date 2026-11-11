@@ -6,7 +6,7 @@
 
 r、R、MARE 与定责依据的读法见[总览细节「读法」](../dashboard/detail.md#读法)，术语见[知识库的术语对照表](../knowledge.md#术语对照表)。
 
-边界类型（与根源一览的 A / B / C 类别无关）：**边界**（16 位与 32 位之间的舍入位置）／**语义**（两边写法或配置的含义不同）／**协议**（协议里的设置）／**病态**（标量本身数值病态）／**量法**（测量口径）。
+边界类型（与根源一览的 A / B / C 类别无关）：**边界**（16 位与 32 位之间的舍入位置）／**语义**（两边写法或配置的含义不同）／**协议**（协议里的设置）／**病态**（标量本身数值病态）／**量法**（测量口径）／**编译器 bug**（编译出的程序算错，和精度无关）。
 
 | # | 案例 | 边界类型 | 台账 / 开关 | 定责依据 | 状态 |
 |---|---|---|---|---|---|
@@ -15,12 +15,13 @@ r、R、MARE 与定责依据的读法见[总览细节「读法」](../dashboard/
 | 04 | [TPU 的「FP32 输出头」只做一遍 BF16](04-lm-head-single-bf16-pass.md) | 边界 | M13 | 读代码；单开关 A/B | 已修（T1 开）；代价 +24%，生产看情况 |
 | 05 | [`full` 重算下反向重选路由](05-full-remat-routing-reselect.md) | 语义 | M26 | 读代码 | 已修 |
 | 06 | [GPU eager 注意力 q·k 先舍 BF16](06-gpu-attn-scores-bf16.md) | 边界 | G17 | 读代码＋修后两边的差收拢 | 已修 |
-| 07 | [QK-Clip 的三处问题](07-qk-clip-bugs.md) | 语义 | M1、M19、M25、M35 | 读代码＋单测 | 已修 |
+| 07 | [QK-Clip 的三处问题](07-qk-clip-bugs.md) | 语义 | M1、M19、M25、M35 | 读代码＋单测；M19 另有 TPU 低阈值实测 | 已修 |
 | 08 | [Muon 与标量 Adam 对上原版 Megatron-Core](08-muon-mcore-switches.md) | 语义 | M15–M18、M30、M34、G18 | 读代码＋单测；回放对 FP64 的 R | 已对齐（D17） |
 | 09 | [路由偏置均值 r 19](09-router-bias-zero-mean.md) | 协议 | G14 | 读代码＋改后两边的差收拢 | 已解决 |
-| 11 | [第 1 步 iHC 梯度：四路流加权和的相加顺序](11-ihc-stream-sum-highest-einsum.md) | 边界 | M28、G29 | 只改 TPU 后两边的差收拢 | 已修；以现行比较 tz-off-rep 为准第 1 步还有 5 个 iHC 张量未定责（3 个是关 base2 后新出现的），base2 开那一代的 6 个已定责、已接受（D11） |
+| 11 | [第 1 步 iHC 梯度：四路流加权和的相加顺序](11-ihc-stream-sum-highest-einsum.md) | 边界 | M28、G29 | 只改 TPU 后两边的差收拢 | 已修；以现行比较 tz-off-rep 为准、GPU 参照 6 份，第 1 步还有 1 个 iHC 张量未定责（3 份时 5 个），base2 开那一代的 6 个已定责、已接受（D11） |
 | 12 | [param_norm：FP32 全局求和的测量误差与真实漂移](12-param-norm-fp32-sum-and-drift.md) | 量法＋边界 | J13、M28 | 量法（两边比精确值） | 量法已改；余下一半的漂移待查（D12） |
 | 13 | [权重侧精度开关在第 1 步测不到](13-weight-side-switch-step1-blind-spot.md) | 量法 | M13、M27、M8 | 只改一边的 300 步 A/B＋机理核对 | 机理已查明 |
-| 14 | [DDP 和 FSDP 对不上，一路查到词嵌入反向的一次 scatter-add](14-ddp-fsdp-embedding.md) | 边界 | M12、J48 | 对 FP64 的 R；训练步 HLO 审计；单算子逐位对仿真 | 已修（三种修法）；生产尺寸上的验收待核 |
-| 14 · 二 | [案例 14 第二阶段：只把词嵌入表沿数据并行轴切开](14-ddp-fsdp-embedding.md#第二阶段只把词嵌入表沿数据并行轴切开) | 边界 | maxtext `9099c8ce` | 对 FP64 的 R；训练步 HLO 的集合通信清单 | 已验证（300 / 1000 步和 GPU 重跑分不开） |
+| 14 | [DDP 和 FSDP 对不上，一路查到词嵌入反向的一次 scatter-add](14-ddp-fsdp-embedding.md) | 边界 | M12、M54、M55、M56、J48 | 对 FP64 的 R；训练步 HLO 审计；单算子逐位对仿真 | 已修（三种修法）；生产尺寸上的验收待核 |
+| 14 · 二 | [案例 14 第二阶段：只把词嵌入表沿数据并行轴切开](14-ddp-fsdp-embedding.md#第二阶段只把词嵌入表沿数据并行轴切开) | 边界 | M54；maxtext `9099c8ce` | 对 FP64 的 R；训练步 HLO 的集合通信清单 | 已验证（300 / 1000 步和 GPU 重跑分不开） |
 | 15 | [换 libtpu 版本后，RMSNorm 多舍一次被放大成主 loss 偏高](15-libtpu-upgrade-final-norm-double-rounding.md) | 边界 | M9 | 只改 TPU 的单开关 A/B；同状态前向；FP64 模拟 | 机理已查明；修法不变（开 `rmsnorm_single_rounding`） |
+| 16 | [jit 静默算错：不满 8 行的行块](16-jit-miscompile-sub8-row-block.md) | 编译器 bug（不是精度） | 无（libtpu 实测 0.0.46、0.0.48、0.0.51、0.0.52 有的 bug，0.0.47、0.0.49 没测；workaround 见案例） | 逐算子执行对 jit；逐 pass 程序 CPU 回放；换 libtpu 二分 | 机理已查明；正式版未修（nightly 11-06 起已修），混元 3 / 混元 4 存档程序里没有特征 |

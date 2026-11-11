@@ -22,6 +22,7 @@ how_to_read: []
 
 evidence_sources:
   - {match: "tm-l0-settings", source: "生产程序（逐步记录）"}
+  - {match: "tmb-l0-settings", source: "生产程序（逐步记录）"}
   - {match: "tm*-l4", source: "生产程序（逐步记录）"}
   - {match: "hy4-mid-l0-*", source: "离线核对（CPU，检查点文件，MaxText 469dbb85）"}
   - {match: "mid-tm2-step1-grad-vs-fp64", source: "第 1 步诊断（TPU tm2diag 对 GPU 三份第 1 步参照 gms）＋CPU FP64 整网重算"}
@@ -37,7 +38,7 @@ levels:
           - name: 设置核对：逐步学习率
             what: 两边每一步记下的学习率都等于登记的常数 1e-5
             objects: 300 步
-            src: {mid: "tm-l0-settings:L0.settings.lr"}
+            src: {tmb: "tmb-l0-settings:L0.settings.lr", mid: "tm-l0-settings:L0.settings.lr"}
           - name: 权重转换往返与 dtype 清单
             what: TPU 检查点反向取回逐张量对 HF 清单逐位，dtype 清单全符合
             objects: 212 个张量
@@ -59,7 +60,7 @@ levels:
             agg: 逐张量算 r 与 R；有超 2N 而 R > 1.2 的判不过，只有 1–2N 的判待定
             src: {mid: "mid-tm2-step1-grad-vs-fp64:L3.step1.grads.vs_gpu"}
             why: >-
-              TPU 梯度文件 9 个张量落盘损坏（文件平方和对不上设备上算的 per_tensor.sq，取回时一段被写成 0；第 0 层 gate_proj、第 4 层 o_proj、第 5 / 6 层与 MTP 层输出门、第 5 层与 MTP 层专家 gate_up、输出头、词嵌入），不可判。其余 196 个的 rel_L2 对 FP64 中位数 GPU 2.48e-2、TPU 2.41e-2，R 0.98，误差余弦中位数 0.54。未定责 7 个：第 3 层 FFN 前 `hc_base`（7.98 N）GPU 2.79e-3、TPU 4.27e-2，R 15.3；第 3 层注意力前 `hc_base`（3.79 N）GPU 1.06e-2、TPU 5.81e-2，R 5.46；第 2 层 FFN 前 `hc_scale`（2.34 N）GPU 4.67e-2、TPU 1.18e-1，R 2.53；第 0 / 2 / 4 层与 MTP 层注意力的 sink（1.73–2.22 N）GPU 3.47e-2 / 3.70e-2 / 3.69e-2 / 4.65e-2、TPU 4.27e-2 / 4.59e-2 / 4.78e-2 / 6.83e-2，R 1.23 / 1.24 / 1.30 / 1.47。
+              TPU 梯度文件 9 个张量取回损坏（文件平方和对不上设备上算的 per_tensor.sq。当时按 256 MiB 分块并行取回、只核总字节数，有的块中途断流，本机文件留下没写入的空洞，读出来是 0；9 个空洞都止于块边界，见 `tm2diag-grad-file-holes.json`；mid 没有用同一份代码重跑诊断，这 9 个仍不可判（之后的 `tm3diag` 文件完好，但不是同配置重跑：MaxText `2306c7a5`，含 M42；比它要重算 CPU FP64 参照梯度、重新取回 GPU 三份全量抓数，还没做）；第 0 层 gate_proj、第 4 层 o_proj、第 5 / 6 层与 MTP 层输出门、第 5 层与 MTP 层专家 gate_up、输出头、词嵌入），不可判。其余 196 个的 rel_L2 对 FP64 中位数 GPU 2.48e-2、TPU 2.41e-2，R 0.98，误差余弦中位数 0.54。未定责 7 个：第 3 层 FFN 前 `hc_base`（7.98 N）GPU 2.79e-3、TPU 4.27e-2，R 15.3；第 3 层注意力前 `hc_base`（3.79 N）GPU 1.06e-2、TPU 5.81e-2，R 5.46；第 2 层 FFN 前 `hc_scale`（2.34 N）GPU 4.67e-2、TPU 1.18e-1，R 2.53；第 0 / 2 / 4 层与 MTP 层注意力的 sink（1.73–2.22 N）GPU 3.47e-2 / 3.70e-2 / 3.69e-2 / 4.65e-2、TPU 4.27e-2 / 4.59e-2 / 4.78e-2 / 6.83e-2，R 1.23 / 1.24 / 1.30 / 1.47。
               sink 一组 8 个 R 1.09–1.47、余弦 0.49–0.75，与上一代 `tmdiag`（没有 M39–M41）持平，是 TPU 一侧 sink 梯度的系统差（推断），待查；iHC 3 个未定责（mini 的 D11 是 6 个 iHC 张量 R 1.57–5.22、已接受，接受理由没在 mid 上核），待查。上一代 `tmdiag` 的判定（未定责 8 个）在 `mid-step1-grad-vs-fp64.json`。
 
   - id: L4
@@ -103,5 +104,6 @@ levels:
             src: {tmb: "tmb-l4:L4.router.*"}
 
 unlisted_reasons:
-  mid-l4-vs-8gpu: 诊断：tm-b 对 8 份 GPU（gm-a…h）的 r 与 GPU 28 对留一 r；L4 判定只对单一 golden gm-a，文件里的 rules 是未采用的候选
+  mid-l4-vs-8gpu: 诊断：tm-b 对 8 份 GPU（gm-a…h）的 r 与 GPU 28 对留一 r；L4 判定只对单一 golden gm-a，文件里的 rules 是未采用的候选。grad_norm 一行早于 2026-11-10 的分母改动，已过时（没有重算）
+  tm2diag-grad-file-holes: mid 第 1 步诊断 tm2diag 的梯度文件里有 9 个没写入的空洞（取回断流），碰到的 9 个张量即 L3 里不可判的那 9 个；`tpu_grad_file_holes.py`
   tm-l4: 上一代 tm-a 的 300 步 L4（fd796f6 时的配置，没有 M39–M41、M42b）；最近一代是 tmb-l4，历代见 models/hunyuan4/dashboard/history.md

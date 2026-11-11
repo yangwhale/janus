@@ -22,7 +22,7 @@
 |---|---|---|
 | 硬件 | v5p 2x2x2（8 个 JAX 设备，每设备 95 GiB） | B200 × 8（每卡 183,359 MiB，`nvidia-smi` 实测） |
 | 程序 | MaxText 混元 4 集成分支（版本见「软件版本」） | Megatron-Core 0.20 + TE（NeMo 26.10 镜像所带，版本见「软件版本」）上的 [`frameworks/megatron/`](../../frameworks/megatron/README.md)；`hy4_mcore.py` 与 g2 / g3 同一份（sha256 `4dab75aa…`） |
-| 配置 | [`hy4-t2-b.yml`](../../frameworks/maxtext/hy4-t2-b.yml) / [`hy4-t2-d1.yml`](../../frameworks/maxtext/hy4-t2-d1.yml)：[`hy4-mini-t1.yml`](../../frameworks/maxtext/hy4-mini-t1.yml) 现在的全部数值与优化器开关（含 M31、M33；已跑的 `tb2-a`、`td2-a` 是之前打包的 t1v 等价设置，没有这两个开关），只换 `model_name: hy4-preview`；层数由 `STAGE` 给 | `train_hy4mg.py`，参数同 g2 / g3（下面 README 的作业规格） |
+| 配置 | [`hy4-t2-b.yml`](../../frameworks/maxtext/hy4-t2-b.yml) / [`hy4-t2-d1.yml`](../../frameworks/maxtext/hy4-t2-d1.yml)：[`hy4-mini-t1.yml`](../../frameworks/maxtext/hy4-mini-t1.yml) 现在的全部数值与优化器开关（含 M31、M33；已跑的 `tb2-a`、`td2-a` 是之前打包的 t1v 等价设置，没有这两个开关），只换 `model_name: hy4-preview`；层数由 `STAGE` 给 | `train_hy4mg.py`，参数同 g2 / g3（见下面「[GPU golden 的作业规格](#gpu-golden-的作业规格)」） |
 | 切分 | FSDP 8（同 T1） | 数据并行 8、专家并行 4（同 T1） |
 | 重算 | `custom`：除层输入外全部重算，路由索引存下（同 T1） | 整层重算（`--recompute`，同 g2）；第 1 步参照不重算（同 g2s） |
 | 数据 | `replay.py` 原样回放 GPU 基线运行写下的 batch 与 loss_mask | `--save-batches`；token 文件与 T1 同一份（`tokens.npy`），样本排法 `(step−1)·16 + micro·8 + rank` |
@@ -39,9 +39,9 @@ TPU 命令：`YML=hy4-t2-b.yml STAGE=B GOLDEN=<gb2-a 运行目录> HF_DIR=<…/h
 | TPU | MaxText | 集成分支 `2c28a4f4` | `meta.json` 的 `code`（[`runs.yaml`](runs.yaml) 原先写「未登记」，现按它补上） |
 | TPU | janus（打进 Pod 的程序） | `9c0f19af` | `meta.json` 的 `code` |
 | TPU | jax / jaxlib | 0.11.1 / 0.11.1 | `meta.json` 的 `versions` |
-| TPU | libtpu | 0.0.46（推断） | `meta.json` 只记了构建号 `cl/963683785`，没记 pip 版本号。推断：T1 现行 `tz-off-rep` 是同一构建号，记的是 `libtpu==0.0.46` |
-| TPU | tokamax | 0.0.14（镜像自带的包） | 同 T1 |
-| GPU | 镜像、torch、CUDA、NCCL、Megatron-Core、TE、cuBLAS | 同 T1 | `gb3-*`、`gd3-*` 16 份的 `meta.json` 的 `image`、`versions` 与 T1 的 `g3-*` 逐字相同 |
+| TPU | libtpu | 0.0.46（构建 `cl/963683785`） | `meta.json` 只记了构建号，没记 pip 版本号；同一构建（`Built on Aug 12 2026 16:43:34`，`cl/963683785`）在 [`jit-miscompile-probe-v5p.json`](../../results/jit-miscompile-probe-v5p.json) 里读到 pip 版本 0.0.46（`runs[0]`，镜像默认 libtpu；[`jit-miscompile-mof-off-steptime.json`](../../results/jit-miscompile-mof-off-steptime.json) 记同一镜像 digest `b152355a…`） |
+| TPU | tokamax | 0.0.14（镜像自带的包，实测） | `meta.json` 不记；同 T1，读镜像层里的 `tokamax-0.0.14.dist-info` 核过（2026-11-11，[mini 的「软件版本」](../01-mini/setup.md#软件版本)） |
+| GPU | 镜像、torch、CUDA、NCCL、Megatron-Core、TE、cuBLAS | 同 T1 | `gb3-*`、`gd3-*` 16 份的 `meta.json` 的 `image`、`versions` 与 T1 的 `g3-*` 逐字相同（比对输出 [`gpu-meta-versions-vs-g3.json`](../../results/gpu-meta-versions-vs-g3.json)，脚本 `analysis/gpu_meta_versions_check.py`，各份 sha256 与已提交结果文件里记的相同） |
 | GPU | janus 训练程序 | `hy4_mcore.py` sha256 `4dab75aa…`（与 g2 / g3 同一份） | `meta.json` 的 `code` |
 
 `meta.json` 不入库，结果文件 [`t2b5b-l4.results.json`](results/t2b5b-l4.results.json)、[`t2d15b-l4.results.json`](results/t2d15b-l4.results.json) 记着每份的 sha256。**结论在这些版本上测得**；换 libtpu 或 jax 要按 [`libtpu-052.md`](../04-tpu-self/libtpu-052.md) 的做法重测。
@@ -56,11 +56,11 @@ TPU 命令：`YML=hy4-t2-b.yml STAGE=B GOLDEN=<gb2-a 运行目录> HF_DIR=<…/h
 | GPU 每卡（估算，专家并行 4、重算开） | 约 92.3 GiB | 约 94.6 GiB |
 | GPU 每卡（估算，第 1 步参照：不重算，上界） | 约 117.5 GiB | 约 121.1 GiB |
 
-编译期分析只作初筛，TPU 装不装得下以实机装载训练步成功为准。`meta.json` 的 `memory.peak_bytes_in_use` 不能单独当判据：06 的 D3 装载日志写着训练步要预留 72.80G 并且装上开跑，跑完的峰值却只记 3.03e10，所以这个峰值不含那块临时区（由这两条读数推出，[06 设置「显存」](../06-rw3/setup.md#显存要几片)）。B 的 `tb5b-a` 记 2.65e10 字节，也远小于编译期的 73.13 GB，与此一致。GPU 估算的推导写在结果文件的 `gpu_estimate` 里：常驻量按每参数字节数逐项乘出，激活取 AdamW 之后同一 GPU 程序在真实权重 B / D1 上的冒烟实测（专家并行 8、Muon、重算、q·k 在 BF16 里）减去按同一公式算出的常驻量，再加上 q·k 改成 FP32 的增量。
+编译期分析只作初筛，TPU 装不装得下以实机装载训练步成功为准。`meta.json` 的 `memory.peak_bytes_in_use` 不能单独当判据：06 的 D3 训练步要预留 72.80 GiB（7.82e10 字节）临时区并且装上开跑，跑完的峰值却只记 3.03e10 字节，所以这个峰值不含那块临时区（推断：由这两条读数推出，[06 设置「显存」](../06-rw3/setup.md#显存要几片)）。B 的 `tb5b-a` 记 2.65e10 字节（读自它运行目录的 `meta.json`，`meta.json` 不入库，仓库里没有可核的结果文件），也远小于编译期的 73.13 GB，与此一致。GPU 估算的推导写在结果文件的 `gpu_estimate` 里：常驻量按每参数字节数逐项乘出，激活取 AdamW 之后同一 GPU 程序在真实权重 B / D1 上的冒烟实测（专家并行 8、Muon、重算、q·k 在 BF16 里）减去按同一公式算出的常驻量，再加上 q·k 改成 FP32 的增量。
 
 ## 读这份设置要注意
 
-- 真实权重下 QK-Clip 的最大 logit 比 T1 大得多（AdamW 之后同一 GPU 程序的冒烟 300 步：B 13.06–16.38，D1 35.25–59.75），仍低于阈值 100，预计不触发（推断，以运行的记录为准）。真实宽度 D3 的 1000 步 GPU golden 全程最大 76.9，也没触发（[05](../05-gpu-scale/README.md#真实宽度截层)）；裁剪真正生效时两边是否一致，只在 mini 上用低阈值查过。
+- 真实权重下 QK-Clip 的最大 logit 比 T1 大得多，仍低于阈值 100、没有触发：GPU golden 全程 B `gb3-a` 11.95–16.34、D1 `gd3-a` 35.42–60.90，被裁的头 0 个（300 步的 `gb2-a`、`gd2-a` 同样；[`t2-max-logit-summary.json`](results/t2-max-logit-summary.json)）。TPU 训练运行不记这一列（`qk_clip_log_per_head` 关），TPU 一侧全程的最大 logit 没有记录；B 的第 1 步诊断 `tb6diag` 逐头最大 14.46、中位数 7.08（同一文件）。真实宽度 D3 的 1000 步 GPU golden 全程最大 76.9，也没触发（[05](../05-gpu-scale/README.md#真实宽度截层)）；裁剪真正生效时两边是否一致，只在 mini 上用低阈值查过。
 - B 检查点是 AdamW 时期转换的；已用 MaxText `5eaa12f3`（第一代 `td2-a` 的提交）重做 L0（[`../../model/t2_l0.sh`](../../model/t2_l0.sh)）：60 个张量反向取回逐位、RoPE 12 / 12，这份检查点和现在的参数树对得上。之后各代的提交（`64652880`、`469dbb85`、`3741e818`、`2c28a4f4`）上没有重跑这一步。
 
 ## GPU golden 的作业规格
@@ -93,7 +93,7 @@ C=--ep=4,--optimizer=muon,--opt-kv=muon_scale_mode=shape_scaling,--qk-clip,--qk-
 - 一个作业里串几份由 GPU 一侧按截止时间排。参考：AdamW 之后同一程序在真实权重上的冒烟（专家并行 8、q·k 在 BF16 里），B 300 步 589 s、D1 772 s（含启动）。
 - 跑完把每个运行目录（至少 `meta.json`、`metrics.jsonl`、`load_check.json`、`optimizer_partition.json`、`params_sha/`、`data/`，第 1 步参照另有 `step_1/`）放到 `gs://<POC 桶>/janus/hunyuan4/golden-t2/<运行名>/`，写 `DONE`。
 - 必须存下的数据：`gb2-a`、`gd2-a`、`gb2s-a`、`gd2s-a` 的 `data/batches/rank<r>.{bin,jsonl}`（tokens、labels、loss_mask，`--save-batches`），全部运行的 `data/rank<r>.jsonl`（每步每 rank 每个 microbatch 的输入指纹）。TPU 只从 `meta.json` 与 `data/` 回放。
-- 显存（估算，见 [`setup.md`](setup.md)）：专家并行 4 时每卡约 92.3 / 94.6 GiB，第 1 步参照不重算上界约 117.5 / 121.1 GiB，都在 179.1 GiB 之内。真要 OOM，第 1 步参照可改 `--ep=8`（只改执行方式），三份一起改并记在 `meta.json`。
+- 显存（估算，见本页「[显存](#显存v5p-编译期分析是实测b200-是估算)」一节）：专家并行 4 时每卡约 92.3 / 94.6 GiB，第 1 步参照不重算上界约 117.5 / 121.1 GiB，都在 179.1 GiB 之内。真要 OOM，第 1 步参照可改 `--ep=8`（只改执行方式），三份一起改并记在 `meta.json`。
 
 ## 1000 步 GPU golden 的作业规格（gb3 / gd3）
 
@@ -106,4 +106,4 @@ C=--ep=4,--optimizer=muon,--opt-kv=muon_scale_mode=shape_scaling,--qk-clip,--qk-
 
 - 跑完放到 `gs://<POC 桶>/janus/hunyuan4/golden-t2/<运行名>/`，写 `DONE`；`gb3-a`、`gd3-a` 必须带 `data/batches/`（TPU 回放）。
 - 时长（推断）：300 步的 B 约 10 分钟、D1 约 13 分钟（冒烟实测，含启动），1000 步约 3.3 倍；每份 B 约 30 分钟、D1 约 40 分钟，8 份各约 4–5.5 小时机时。
-- TPU 一侧对应 `tb5-b`（`tb5-a` 未完成后补跑）/ `td5-a`（1000 步，回放 `gb3-a` / `gd3-a`），目录 `t2b5-l4` / `t2d15-l4`（窗口第 1–1000 步与第 101–1000 步，噪声 `gb3-*` / `gd3-*` 两两 28 对）。
+- TPU 一侧对应最近一代 `tb5b-a` / `td5b-b`（加 M42b，目录 `t2b5b-l4` / `t2d15b-l4`），和上一代 `tb5-b`（`tb5-a` 未完成后补跑）/ `td5-a`（目录 `t2b5-l4` / `t2d15-l4`）；都是 1000 步，回放 `gb3-a` / `gd3-a`，窗口第 1–1000 步与第 101–1000 步，噪声 `gb3-*` / `gd3-*` 两两 28 对。

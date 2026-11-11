@@ -166,7 +166,9 @@ def hy4_config_kwargs(hf: dict, num_layers: int | None = None) -> dict:
     assert len(mlp_types) == L and len(idx_types) == L, "逐层表比层数短"
     assert set(hf["layer_types"][:L]) == {"deepseek_sparse_attention"}, hf["layer_types"][:L]
     assert hf.get("use_mla", True) and hf.get("use_dsa", True) and hf.get("gated_mla", True)
-    assert hf.get("gating_type", "elementwise") == "elementwise" and hf.get("enable_ihc", True)
+    assert hf.get("gating_type", "elementwise") == "elementwise"
+    # enable_ihc false 只给结构消融（make_tiny_hf.py --no-ihc，hc_mult 1：普通残差，见 layer_specs）
+    assert hf.get("enable_ihc", True) or hf.get("hc_mult") == 1, "enable_ihc false 时 hc_mult 要是 1"
     assert hf.get("learnable_sink", True) and hf["rope_parameters"]["rope_type"] == "default"
     assert hf["n_group"] == 1 and hf["topk_group"] == 1 and hf["norm_topk_prob"]
     assert hf["qk_nope_head_dim"] + hf["qk_rope_head_dim"] == hf["qk_head_dim"]
@@ -300,6 +302,35 @@ class Hy4HyperConnection(MegatronModule):
         return post, out.to(x.dtype)
 
 
+class _ToFloatRoundOnce(torch.autograd.Function):
+    """诊断（HY4_TPU_LIKE_STREAM）：BF16 的流转成 FP32 给一层里的三处用，三处的梯度在 FP32 里相加，最后只舍一次 BF16。
+    模仿 TPU 上 XLA 省掉逐份舍入后的流梯度（MaxText 不开 ihc_stream_grad_gpu_order 时）。"""
+
+    @staticmethod
+    def forward(ctx, x):
+        ctx.dtype = x.dtype
+        return x.float()
+
+    @staticmethod
+    def backward(ctx, g):
+        return g.to(ctx.dtype)
+
+
+def _tpu_like(part: str) -> bool:
+    return os.environ.get(f"HY4_TPU_LIKE_{part}") == "1"
+
+
+def _fp32_out(linear: nn.Module) -> None:
+    """诊断（HY4_TPU_LIKE_BRANCH）：把一个不切分的线性层换成 FP32 输出（BF16 输入与权重升 FP32 再乘，等于 FP32 累加、
+    输出不舍 BF16），模仿 TPU 上 XLA 省掉分支输出的 BF16 舍入（MaxText 不开 ihc_stream_grad_gpu_order 的 branch 部分时）。
+    反向时这层的输出梯度也是 FP32，权重梯度在 w.float() 处舍一次 BF16（与 TE 的权重梯度一样舍一次）。"""
+
+    def fwd(x, *_, **__):
+        return F.linear(x.float(), linear.weight.float()), None
+
+    linear.forward = fwd
+
+
 def hc_residual(post: torch.Tensor, h: torch.Tensor, residual: torch.Tensor) -> torch.Tensor:
     """HF 解码层的残差更新：(post ⊗ h + residual) 在 FP32 里算，转回流的精度。residual [s, b, n, H]。"""
     return (post.float().unsqueeze(-1) * h.float().unsqueeze(-2) + residual.float()).to(residual.dtype)
@@ -335,7 +366,13 @@ class Hy4FinalNorm(MegatronModule):
                 flat.square().mean(-1, keepdim=True) + self.norm_eps
             )
             pre = torch.sigmoid(mixes * self.hc_scale.float() + self.hc_base.float()) + self.hc_eps
-            out = (pre.unsqueeze(-1) * x.view(s, b, self.n, self.H)).sum(dim=2).to(x.dtype)
+            out = (pre.unsqueeze(-1) * x.view(s, b, self.n, self.H)).sum(dim=2)
+            if _tpu_like("HEAD"):
+                # 诊断：hc_head 收拢的输出不舍 BF16，FP32 进末层 RMSNorm（FP32 算、输出舍一次），
+                # 模仿 TPU 上 XLA 省掉这次舍入（MaxText 不开 hc_head_force_bf16_rounding 时）
+                w = self.norm.weight.float()
+                return (out * torch.rsqrt(out.square().mean(-1, keepdim=True) + self.norm_eps) * w).to(x.dtype)
+            out = out.to(x.dtype)
         return self.norm(out)
 
 
@@ -693,6 +730,13 @@ class Hy4TransformerLayer(MegatronModule, BaseTransformerLayer):
             self.mlp.config = _no_clamp(self.mlp.config)
         self.attn_hc = Hy4HyperConnection(config)
         self.ffn_hc = Hy4HyperConnection(config)
+        if _tpu_like("BRANCH"):
+            # 覆盖：注意力的 linear_proj、稠密 MLP 的 linear_fc2、共享专家的 linear_fc2；路由专家的输出仍是 BF16，
+            # 但和共享专家相加后整体变 FP32（MoE 输出的那次舍入也省了）
+            _fp32_out(self.self_attention.linear_proj)
+            sh = getattr(self.mlp, "shared_experts", None) if self.is_moe_layer else self.mlp
+            if sh is not None:
+                _fp32_out(sh.linear_fc2)
 
     def forward(self, hidden_states, attention_mask=None, packed_seq_params=None, position_ids=None, **kwargs):
         assert packed_seq_params is None
@@ -700,6 +744,22 @@ class Hy4TransformerLayer(MegatronModule, BaseTransformerLayer):
         s, b, d = hidden_states.shape
         if d == H:
             hidden_states = hidden_states.unsqueeze(2).expand(s, b, n, H).reshape(s, b, n * H)
+        if _tpu_like("STREAM"):
+            # 诊断：流的梯度在 FP32 里相加、只舍一次（前向的值不变：分支输入与更新后的流照旧存 BF16）
+            dt = hidden_states.dtype
+            hs = _ToFloatRoundOnce.apply(hidden_states)
+            post, x = self.attn_hc(hs)
+            x = self.input_layernorm(x.to(dt))
+            attn_out, attn_bias = self.self_attention(x, attention_mask=attention_mask, position_ids=position_ids)
+            assert attn_bias is None
+            h = hc_residual(post, attn_out, hs.view(s, b, n, H)).to(dt)
+            hs = _ToFloatRoundOnce.apply(h)
+            post, x = self.ffn_hc(hs.view(s, b, n * H))
+            x = self.pre_mlp_layernorm(x.to(dt))
+            mlp_out, mlp_bias = self.mlp(x)
+            assert mlp_bias is None
+            h = hc_residual(post, mlp_out, hs).to(dt)
+            return h.view(s, b, n * H), None
         residual = hidden_states.view(s, b, n, H)
         post, x = self.attn_hc(hidden_states)
         x = self.input_layernorm(x)
@@ -842,6 +902,24 @@ def layer_specs(config, use_te: bool) -> TransformerBlockSubmodules:
     attn = attention_spec(config, use_te)
     dense, moe = mlp_specs(config, use_te)
     specs = []
+    if config.hc_mult == 1:
+        # 结构消融（没有 iHC）：普通预归一化残差，与 MTP 层同一种写法（Megatron-Core TransformerLayer + bias-dropout-add），
+        # 末层是普通 RMSNorm、没有 hc_head
+        for i in stage_layers(config):
+            specs.append(
+                ModuleSpec(
+                    module=TransformerLayer,
+                    submodules=TransformerLayerSubmodules(
+                        input_layernorm=be["norm"],
+                        self_attention=attn,
+                        self_attn_bda=_bda(),
+                        pre_mlp_layernorm=be["norm"],
+                        mlp=moe if config.moe_layer_freq[i] else dense,
+                        mlp_bda=_bda(),
+                    ),
+                )
+            )
+        return TransformerBlockSubmodules(layer_specs=specs, layer_norm=be["norm"])
     for i in stage_layers(config):
         specs.append(
             ModuleSpec(
@@ -941,9 +1019,13 @@ def install_fp32_head(model) -> None:
 
 def apply_mlp_semantics(model) -> None:
     """整个模型（含 MTP 层）：路由偏置留 FP32；只有路由专家截断，共享专家不截。幂等。"""
+    from megatron.core.transformer.mlp import MLP
     from megatron.core.transformer.moe.moe_layer import MoELayer
 
     for mod in model.modules():
+        if isinstance(mod, TransformerLayer) and type(mod.mlp) is MLP:
+            # 稠密层的 MLP 不截断（Hy4TransformerLayer 里也这样设；没有 iHC 的普通残差层在这里补）
+            mod.mlp.config = _no_clamp(mod.mlp.config)
         if isinstance(mod, MoELayer):
             eb = getattr(mod.router, "expert_bias", None)
             if eb is not None:

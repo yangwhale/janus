@@ -8,7 +8,7 @@
 - 平台：v5p 8 片（2x2x2，2 台主机，8 个 JAX 设备），对 GPU B200 × 8；设备 d 第 m 个累积步吃 GPU rank d 的第 m 个 microbatch。
 - 代码：`maxtext` 的混元 4 集成分支（`stage.sh` 用环境变量 `MAXTEXT_BRANCH` 指定分支名；含 `0b7dead5` 及之后的全部改动）。
   具体提交由 [`stage.sh`](stage.sh) 记进每个运行的 `meta.json` 的 `code`。
-- 镜像：与混元 3 相同的 MaxText `tpu_pre_training` 0.2.5（[`run.sh`](run.sh) 里的 `IMAGE`，按 digest 钉死）。TPU 上实跑的库版本以镜像为准：jax / jaxlib 0.11.1、libtpu 0.0.46（构建 `cl/963683785`）、flax 0.12.9、optax 0.2.8、orbax-checkpoint 0.12.4，每个运行记在 `meta.json` 的 `versions`；tokamax 版本 `meta.json` 不记，未登记。逐项与出处见 [mini 的「软件版本」](../../alignments/01-mini/setup.md#软件版本)。
+- 镜像：与混元 3 相同的 MaxText `tpu_pre_training` 0.2.5（[`run.sh`](run.sh) 里的 `IMAGE`，按 digest 钉死）。TPU 上实跑的库版本以镜像为准：jax / jaxlib 0.11.1、libtpu 0.0.46（构建 `cl/963683785`）、flax 0.12.9、optax 0.2.8、orbax-checkpoint 0.12.4，每个运行记在 `meta.json` 的 `versions`；tokamax 0.0.14（`meta.json` 不记，读镜像层里的 `tokamax-0.0.14.dist-info` 核过）。逐项与出处见 [mini 的「软件版本」](../../alignments/01-mini/setup.md#软件版本)。
 - CPU 验证环境：jax / jaxlib 0.11.1、flax 0.12.10、optax 0.2.8、orbax-checkpoint 0.12.7（分支 `tpu-requirements.txt` 的下限，去掉 libtpu）；
   编译期显存分析另装 libtpu 0.0.46（只用编译器）。
 
@@ -25,8 +25,8 @@
 | 开关或修复 | 做什么 | 集成分支的提交（PR） | 上游 | 用上游要怎么办 |
 |---|---|---|---|---|
 | `embedding_grad_fp32`（台账 M12） | 词嵌入梯度在 FP32 里累加 | `23f71c66`（从 `hunyuan` 分支移植） | 没有这个键：写了报错 | 移植 `layers/embeddings.py` 的取行写法，`configs/base.yml`、`configs/types.py` 加键。纯数据并行 + 梯度累积下还要带上下一行的修复 |
-| `d5c9b113` 的修复 | 纯数据并行 + 梯度累积时，`embedding_grad_fp32` 丢掉前面微批的词嵌入梯度（r 611，[impacts/01](../../alignments/04-tpu-self/impacts/01-data-parallel.md)） | `d5c9b113` | 不涉及：上游没有 `embedding_grad_fp32` | 移植上一行时一起移植 `utils/gradient_accumulation.py` 的改动。集成分支上也要 `d5c9b113` 之后的提交：TPU 自比 golden 与 mini 现行比较用的 `b87a55aa` 在它之前（这两份是 FSDP，不走这条路径） |
-| `embedding_grad_fp32_local_bf16_comm` | 词嵌入梯度本地 FP32 累加、BF16 跨卡求和 | 合并提交 `f70d74cb` | 没有这个键：写了报错 | 移植 `layers/embeddings.py`、`utils/gradient_accumulation.py` 与两处配置 |
+| `d5c9b113` 的修复（台账 M55） | 纯数据并行 + 梯度累积时，`embedding_grad_fp32` 丢掉前面微批的词嵌入梯度（r 611，[impacts/01](../../alignments/04-tpu-self/impacts/01-data-parallel.md)） | `d5c9b113` | 不涉及：上游没有 `embedding_grad_fp32` | 移植上一行时一起移植 `utils/gradient_accumulation.py` 的改动。集成分支上也要 `d5c9b113` 之后的提交：TPU 自比 golden 与 mini 现行比较用的 `b87a55aa` 在它之前（这两份是 FSDP，不走这条路径） |
+| `embedding_grad_fp32_local_bf16_comm`（台账 M56） | 词嵌入梯度本地 FP32 累加、BF16 跨卡求和 | 合并提交 `f70d74cb` | 没有这个键：写了报错 | 移植 `layers/embeddings.py`、`utils/gradient_accumulation.py` 与两处配置 |
 | `embedding_shard_over_data`（台账 M54） | 只把词嵌入表沿 `data` 轴切开，纯数据并行下按 FSDP 的方式更新词嵌入 | `9099c8ce` | 没有这个键：写了报错 | 移植 `layers/embeddings.py` 与两处配置（`types.py` 里追加逻辑轴规则）。上游已有的 `shard_optimizer_over_data` 是另一件事，和它互斥 |
 | `rmsnorm_single_rounding`（台账 M9） | RMSNorm 在 FP32 里算完只舍一次 | `2f745f37`（`hunyuan` 分支的 MaxText 上的一处修改），接到混元 4 路径是另一次修改 | 没有这个键：写了报错 | 移植 `layers/normalizations.py` 与两处配置，再把开关接到用到 RMSNorm 的模型文件（一次 MaxText 修改接了 `attentions.py`、`nnx_decoders.py`、`qwen3.py`，一次 MaxText 修改接了 `deepseek.py`、`attention_mla.py`、`multi_token_prediction.py`） |
 | MLA 接上 `float32_qk_product`、`float32_logits` | 普通注意力（`attention=dot_product`）的打分与 softmax 走 FP32；上下文并行的修法要它（[impacts/06](../../alignments/04-tpu-self/impacts/06-context-parallel.md)） | `56492817` | 两个键都有。上游 `models/deepseek.py` 建 MLA 时没把它们传下去，和集成分支修之前一样：**写了静默不生效**（TPU 自比 G3c：打开后训练步程序不变）。上游自己的 `models/hy4.py` 传了 | 用 `decoder_block: deepseek` 时移植 `models/deepseek.py` 的三行；用上游的 `hy4` 实现不用改，但那份实现本仓库没测过 |
@@ -92,7 +92,7 @@
 
 ### 显存
 
-编译期显存分析（`aot_memory.py`，v5p 2x2x2）只作初筛，最终看实测 `meta.json` 的 `memory.peak_bytes_in_use`。
+编译期显存分析（`aot_memory.py`，v5p 2x2x2）只作初筛。装不装得下以实机装载训练步成功为准。`meta.json` 的 `memory.peak_bytes_in_use` 不能单独当判据：它不含训练步程序预留的临时区（D3 在 v5p 16 片上预留 72.80 GiB 并开跑，峰值只记 3.03e10 字节；推导见 [06 设置「显存：要几片」](../../alignments/06-rw3/setup.md#显存要几片)）。
 hy4-mini 的结果见 [`hy4-mini-aot-memory.json`](../../alignments/01-mini/results/hy4-mini-aot-memory.json)。
 
 - 重算策略：本想用 `save_everything`（反向不重算任何前向算子），但它在 maxtext `0b7dead5` 上对 Hy4 一 trace 就报错

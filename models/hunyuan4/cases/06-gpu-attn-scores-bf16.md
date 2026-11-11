@@ -14,8 +14,8 @@ GPU 的 `sparse_sink_attention` 是 janus 的 eager 实现。在 `hy4_attn_score
 
 ## 证据
 
-- 单测 `test_attn_scores_fp32.py`：开关打开时离 FP64 参照更近，说明开关确实改变结果（提交 `37ccee8`）。具体数没有入库。
-- 第 1 步只改这一处（`g2-a` 对 `g1-a`，提交 `2d5dcf6`）：lm_loss 变 +8.1e-7，grad_norm 变 −3.0e-5，indexer_loss 变 −1.2e-6。同期 GPU 自己的噪声（8 份两两 28 对的最大相对差）：`g2-*` 的 lm_loss 4.5e-5、grad_norm 2.2e-3；`g1-*` 的 lm_loss 3.7e-5、grad_norm 2.3e-3。所以单看第 1 步，这一处的变化远小于 GPU 噪声，噪声带本身也几乎没变。300 步上它单独的效果仓库里没有记录。
+- 单测 `test_attn_scores_fp32.py`：开关打开时离 FP64 参照更近，说明开关确实改变结果（提交 `37ccee8`）。同一组输入在 CPU 上重算，对 FP64 的相对 L2 误差：舍 BF16 8.18e-3，留 FP32 1.62e-3；种子 0–9 十组都是留 FP32 更近，比值 0.20–0.40（[`attn-scores-fp32-unit.json`](../alignments/01-mini/results/attn-scores-fp32-unit.json)）。
+- 第 1 步只改这一处（`g2-a` 对 `g1-a`，提交 `2d5dcf6`）：lm_loss 变 +8.1e-7，grad_norm 变 −3.0e-5，indexer_loss 变 −1.2e-6。同窗口的 GPU 自己的散布（同设置 8 份第 1 步的相对极差，[`gpu-load-check-and-step1-spread.json`](../alignments/01-mini/gpu-noise/results/gpu-load-check-and-step1-spread.json)）：`g2-*` 的 lm_loss 1.7e-6、grad_norm 9.3e-5；`g1-*` 的 lm_loss 2.1e-6、grad_norm 7.3e-5。所以单看第 1 步，这一处的变化小于 GPU 第 1 步的散布（lm_loss 0.47 倍、grad_norm 0.32 倍，对 `g2-*` 比），散布本身也几乎没变。300 步上它单独的效果仓库里没有记录。
 - 300 步 L4，修前 `t1s-l4`（GPU `g1-a` 对 TPU `t1s-a`，尺子 `g1`；GPU 当时是被测，写「差」）、修后 `t1t-l4`（TPU `t1t-c` 对 GPU `g2-a`，尺子 `g2`）：
 
 | 检查 | 修前：N、差、r | 修后：N、TPU、r |

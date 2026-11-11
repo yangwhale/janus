@@ -1,0 +1,45 @@
+{
+ "what": "TPU 存档续跑是否逐位（台账 J46）：hy4-mini T1 现行配置（hy4-mini-t1.yml，回放 GPU g3-a 的数据），v5p 2x2x2（8 个设备）",
+ "runs": {
+  "x4-full": "不断开跑第 1–1000 步，不存档",
+  "x4-s1": "第 1–500 步，第 500 步把整个训练状态存档（train_hy4.py --save-every 500；learning_rate_schedule_steps 写成 1000，与不断开那份相同）",
+  "x4-s2": "新进程从 x4-s1 第 500 步存档续跑第 501–1000 步（--resume）；与 x4-s1 不在同一组机器上（另一个 2x2x2 切片，同型号同拓扑）"
+ },
+ "per_step": {
+  "steps_1_500": {
+   "compared_steps": 500,
+   "first": 1,
+   "last": 500,
+   "fields": 47,
+   "differ_steps": 0,
+   "first_diffs": []
+  },
+  "steps_501_1000": {
+   "compared_steps": 500,
+   "first": 501,
+   "last": 1000,
+   "fields": 47,
+   "differ_steps": 0,
+   "first_diffs": []
+  },
+  "fields_note": "metrics.jsonl 每步除 step_time（墙钟）以外的全部 47 个字段（lm_loss、loss、mtp_loss、indexer_loss、grad_norm、raw_grad_norm、param_norm、param_norm_exact、param_norm_fp64、学习率、路由偏置统计、分组参数平方和等），按 repr 逐字比"
+ },
+ "final_state": {
+  "params_sha": "第 1000 步参数清单 9 个文件（rank0–7 与 buffers）：x4-full 与 x4-s2 逐字节相同",
+  "state_sha_tensors": 677,
+  "state_sha": {
+   "full_final_eq_s2_final": true,
+   "s1_final_eq_s2_init": true,
+   "full_init_eq_s1_init": true
+  },
+  "state_sha_note": "state_sha 是整个训练状态逐张量 FP32 sha256：参数 254、优化器状态（Muon / Adam 的动量与计数）416、路由偏置 7，共 677 个"
+ },
+ "checkpoint_bytes": 3604336046,
+ "save_seconds": 10.6,
+ "control_vs_current": "x4-full 与现行比较 tz-off-rep（同 MaxText b87a55aa，janus 代码包不同）1000 步 lm_loss、mtp_loss、grad_norm、param_norm、indexer_loss 逐位相同",
+ "conclusion": "存档续跑与不断开逐位相同：1000 步每步 47 个字段全同，最终参数清单与整个训练状态清单全同；续跑换到另一个同拓扑切片上也一样",
+ "code": {
+  "maxtext_commit": "b87a55aad08b9f223cb4e248f2877fde9c51ac33",
+  "janus_commit": "2a1d08e7081c2d82511e7ed978736ee38e9af1fc"
+ }
+}
