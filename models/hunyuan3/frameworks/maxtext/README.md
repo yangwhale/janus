@@ -100,7 +100,7 @@
 第 3 步之前先装：
 
 ```bash
-git clone <修改过的 MaxText 仓库> maxtext && git -C maxtext checkout hunyuan   # 尚未公开，见 docs/public-edition.md
+git clone https://github.com/yangwhale/maxtext maxtext && git -C maxtext checkout hunyuan   # 公开分支，见 docs/public-edition.md
 uv venv -p 3.12 mt-venv
 grep -v -E '^(libtpu|torch|nvidia|triton)' maxtext/src/dependencies/requirements/generated_requirements/tpu-requirements.txt \
   | sed 's/>=/==/;s/ ;.*//' > req.txt

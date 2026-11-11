@@ -1,6 +1,6 @@
 # janus
 
-> 这是 janus 的公开版，由开发仓库定期同步生成。文中提到、但没有公开的东西（我们修改过的 MaxText、开发历史、问题跟踪记录）见[关于公开版](docs/public-edition.md)。许可：Apache License 2.0，见 [`LICENSE`](LICENSE)。
+> 这是 janus 的公开版，由开发仓库定期同步生成。我们修改过的 MaxText 在 [yangwhale/maxtext](https://github.com/yangwhale/maxtext) 的 `hunyuan`（混元 3）与 `hunyuan4`（混元 4）分支；文中提到、但没有公开的东西（开发历史、问题跟踪记录）见[关于公开版](docs/public-edition.md)。许可：Apache License 2.0，见 [`LICENSE`](LICENSE)。
 
 GPU（Megatron）与 TPU（MaxText）训练的数值对齐工具。它回答一个问题：
 
@@ -58,5 +58,5 @@ janus run /tmp/janus-demo/catalog.yaml --out /tmp/janus-demo/out-bad --test t-ba
 
 ## 其他
 
-- 问题与建议在本仓库开 issue，参与方式见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。文中的 `maxtext` 指我们修改过、尚未公开的 MaxText，见[关于公开版](docs/public-edition.md)。
+- 问题与建议在本仓库开 issue，参与方式见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。文中的 `maxtext` 指我们修改过的 MaxText，公开在 [yangwhale/maxtext](https://github.com/yangwhale/maxtext) 的 `hunyuan`、`hunyuan4` 分支，见[关于公开版](docs/public-edition.md)。
 - 版本：`janus --version` 与 [`CHANGELOG.md`](CHANGELOG.md)。改 janus 本身：[`CONTRIBUTING.md`](CONTRIBUTING.md)。数据与机密：[`SECURITY.md`](SECURITY.md)。许可：Apache License 2.0，见 [`LICENSE`](LICENSE) 与 [`NOTICE`](NOTICE)。

@@ -316,7 +316,7 @@
   }
  },
  "fork_switches": {
-  "pr": "MaxText 修改（未公开）",
+  "pr": "MaxText 修改，已含在公开分支 yangwhale/maxtext hunyuan",
   "commit": "0d306c0e",
   "run": "t-mts-all",
   "bitwise_equal_to": "t-g32-all（50 个梯度张量）",

@@ -100,7 +100,7 @@ flowchart LR
   - 案例文件：实践的 `cases/NN-*.md`；
   - 计划：实践的 `plan.md`。
 - 3 修复：
-  - 模型代码在 MaxText（我们的修改尚未公开）；
+  - 模型代码在 MaxText，我们的修改公开在 [yangwhale/maxtext](https://github.com/yangwhale/maxtext)（见[关于公开版](../public-edition.md)）；
   - 配置在 `models/<模型>/frameworks/`；
   - 工具在本仓库 `janus/`。
 - 5 优化：实践的 `catalogs/`；`models/<模型>/regression/`；`docs/reference/checks/`。
