@@ -18,18 +18,18 @@ TPU 设 `routed_bias_zero_mean_update: false` 重跑 6 份 `t1n-*`（`t1n-b` 与
 
 | 检查 | 修前 `t1-l4`（`t1-a`） | 修后 `t1-l4-nozm`（`t1n-a`） |
 |---|---|---|
-| 路由偏置均值 | 不过：带符号均值 N 0.799、差 15.3，r 19.1 | 过：MARE N 0.800、差 0.251，r 0.31 |
+| 路由偏置均值 | 不过：带符号均值 N 0.799、差 15.3，r 19.1；MARE N 0.800、差 15.3，r 19.1 | 过：带符号均值差 0.135，r 0.17；MARE 差 0.251，r 0.31 |
 | 路由偏置标准差 | 待定 | 过 |
 | 主 loss | 不过：最大单步 N 3.74e-5、差 2.68e-4，r 7.17 | 不过：同左 |
 
-出处：[`t1-l4.results.json`](../alignments/01-mini/results/t1-l4.results.json)、[`t1-l4-nozm.results.json`](../alignments/01-mini/results/t1-l4-nozm.results.json)、[`t1-l4-nozm.report.md`](../alignments/01-mini/results/t1-l4-nozm.report.md)。索引器 KD loss、grad_norm 两次都不过，r 有升有降，数见结果文件；协议预期这一改只影响偏置均值（推断），仓库里没有逐项解释。
+出处：[`t1-l4.results.json`](../alignments/01-mini/results/t1-l4.results.json)、[`t1-l4-nozm.results.json`](../alignments/01-mini/results/t1-l4-nozm.results.json)、[`t1-l4-nozm.report.md`](../alignments/01-mini/results/t1-l4-nozm.report.md)。索引器 KD loss、grad_norm 两次都不过，这一改没有让它们动出可分辨的量：带符号均值的变化都小于它自身的标准误（结果文件的 `signed_mean_se`）。KD：+4.80e-4 → +4.89e-4，变化 9.1e-6，标准误修前 5.7e-5、修后 6.5e-5；grad_norm：−1.72e-4 → −2.22e-4，变化 5.1e-5，标准误修前 9.7e-5、修后 1.04e-4（N 分别是 5.59e-5、8.29e-5）。MARE 与最大单步变化更小（KD r 2.39 → 2.49、0.95 → 0.99；grad_norm r 1.71 → 1.75、1.13 → 1.14）。
 
 ## 结论
 
 - **修法**：对齐配置里 TPU 设 `routed_bias_zero_mean_update: false`，GPU 保持原版（台账 **G14**）。PROTOCOL 第 1.2 节「路由」行改为「路由偏置不做零均值更新」；旧结果 `t1-l4.results.json` 原样保留。
 - **定责依据**：
   - 读代码，对照写明的语义标准：优化器与 loss 细节以原版 Megatron-Core 为准；原版没有路由偏置零均值更新，协议原来的设置 GPU 做不到（G14）。
-  - 只改 TPU 一边后两边的差收拢：偏置均值的差 15.3 → 0.251（N 约 0.80），r 19.1 → 0.31；同一次改动里主 loss 的差不变（N 3.74e-5，差 2.68e-4），不是这一处的问题。
+  - 只改 TPU 一边后两边的差收拢：偏置均值的带符号均值 15.3 → 0.135（N 0.799），r 19.1 → 0.17；MARE 15.3 → 0.251（N 0.800），r 19.1 → 0.31；同一次改动里主 loss 的差不变（N 3.74e-5，差 2.68e-4），不是这一处的问题。
 - **生产建议：两边都开零均值更新**。关掉它只是对齐设置。
   - 符号式固定步长的更新（DeepSeek 的 loss-free balancing，arXiv 2408.15664，DeepSeek-V3 采用）每步各专家更新之和一般不为 0，偏置的共同分量会漂移。例如 GLM-5.2 公开 checkpoint 第 6 层的 `e_score_correction_bias` 均值 15.6、标准差 8.71e-2（GLM-5.2 实践的 goldens）。
   - 减均值不改变 top-k，但防止漂移、保住分辨率：偏置相加若在 BF16 里做，15 附近 1 ulp 是 0.0625，已与标准差同量级。Qwen 的 ID Balancing（arXiv 2609.39137）同样把偏置拉回零均值。

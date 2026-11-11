@@ -104,7 +104,7 @@
   - 起步：[`g1k`](../glossary.md#g1k)（第一阶段 GPU golden）的 `g1k-a` / `g1k-b` / `g1k-c`。默认设置，1000 步，第 1 步全量抓数、第 1000 步只抓前向。
   - 最终：生产配置的 golden，查出系统偏差时只修那一处。混元 3 是 [`rcc`](../glossary.md#rcc) 的 `rcc-a..j` 10 份，[最终 golden](../glossary.md#final-golden)，见[第 2 章](02-gpu-golden.md)。
   - [精确轨迹](../glossary.md#exact-trajectory)用来当裁判查偏差。
-  - 份数：至少 3 份同设置的 golden 才凑得出 3 对噪声参照；签字前建议 6 份以上（15 对）。
+  - 份数：至少 3 份同设置的 golden 才凑得出 3 对噪声参照；签字前单一设置至少 6 份（15 对）；长窗口要更多，混元 4 的 1000 步用 16 份（120 对），8 份偏紧（[judging.md](../reference/judging.md#参照要几对)「参照要几对」）。
 - 日常回归实例：清单与判法照 [`reference/regression.md`](../reference/regression.md)，按模型填固定输入、平台档案、各行的名字与个数。TPU 执行噪声按平台重新标定。
 
 ## 三、按步骤走（每步写清产出的文件）
@@ -139,7 +139,7 @@
 
 ## 四、结构差异清单：哪些差异会要求加检查或改代码
 
-接新模型前，逐项对照混元 3 看。有差异的项，在配置对照表里单列，并按下面「要做什么」处理。
+接新模型前，逐项对照混元 3 看。有差异的项，在配置对照表里单列，并按下面「要做什么」处理。最后一节「混元 4 新踩到的结构点」是混元 3 没有、换到混元 4 这类模型才出现的项。
 
 ### 路由类型
 
@@ -177,11 +177,11 @@
 
 ### MTP
 
-- 混元 3：截层时关掉。
+- 混元 3：截层时关掉。混元 4 mini：带 1 层 MTP 直接对齐，MTP loss 进了 L4。
 - 会影响到：多一个预测头和 loss。
 - 要做什么：
-  - 对齐先关。
-  - 要开就另开实践文件夹，并加 MTP loss 的 L4 检查。
+  - 可以开。开就加 MTP loss 的 L4 检查。
+  - 两边 MTP loss 的重标写法可能不同，先统一读同一个口径（混元 4 两边都读 MaxText 口径，[mini 对齐细节 D7](../../models/hunyuan4/alignments/01-mini/DETAILS.md#d7)）。
 
 ### 归一化
 
@@ -222,6 +222,20 @@
 - 混元 3：不丢 token；GPU alltoall、TPU megablox。
 - 会影响到：专家输出缓冲区不能跨运行逐位比（00 README 第 3 条）。
 - 要做什么：比 token 空间的 `mlp.out`，不比分发后的缓冲区。
+
+### 混元 4 新踩到的结构点
+
+下面几项混元 3 没有，混元 4 上都查出了对不齐的根源。新模型有同类结构时，先照差异清单把对应的开关和检查加上（根因与读数见[混元 4 根源一览](../../models/hunyuan4/ROOT-CAUSES.md)）。
+
+| 结构 | 踩到什么 | 要做什么 |
+|---|---|---|
+| Muon 优化器 | Nesterov 偏差修正、标量参数 Adam / NAdam、Newton–Schulz 归一化与迭代精度、分区与正交化单位两边默认不同 | 照 [差异清单 D1–D5](../reference/tpu-vs-gpu-differences.md#5-d-优化器语义) 逐项设开关；L1 加优化器逐步重放，同一组梯度上逐步比更新量 |
+| 注意力 sink | splash 反向把 sink 梯度在 BF16 里累加；上下文并行时 sink 梯度整条在 BF16 里算 | [A10](../reference/tpu-vs-gpu-differences.md#a10-splash-反向的-sink-梯度在-bf16-里累加生产用-m42对齐用-m42b余量见-u1)、[A14](../reference/tpu-vs-gpu-differences.md#a14-上下文并行时-sink-梯度在-bf16-里算float32_logits-没接到-mla)；L3 单列 sink 梯度，先看只换顺序的运行跳多大 |
+| 超连接（iHC） | 多路流加权和的相加顺序；编译器省掉 BF16 往返，同一个值被读成两种精度；hc_head 收拢后同类问题 | [B5](../reference/tpu-vs-gpu-differences.md#b5-ihc-四路流加权和的相加顺序机制待查见-u11)、[A6](../reference/tpu-vs-gpu-differences.md#a6-编译器省掉了-gpu-一定会做的-bf16-往返后端省长跑归因见-u12)、[A13](../reference/tpu-vs-gpu-differences.md#a13-hc_head-收拢之后没舍-bf16)；要照 GPU 舍入点的地方用 `reduce_precision`；L3 单列 iHC 小参数 |
+| 稀疏注意力索引器（DSA） | 打分精度、KD 标量病态、KD 记录写法；GPU 参照自己的 RoPE 在 BF16 里算 | [B2](../reference/tpu-vs-gpu-differences.md#b2-索引器打分只算一遍-bf16)、[C4](../reference/tpu-vs-gpu-differences.md#c4-病态标量一格误差被放大成大差)、[A15](../reference/tpu-vs-gpu-differences.md#a15-gpu-参照的索引器-rope-在-bf16-里算)；L3 路由一致率加 DSA top-k；病态标量先查 CPU 上是否同样偏 |
+| QK-Clip | 扫描层共用缩放、梯度累积把最大 logit 求和、负数开根号，三个 bug；含不含 sink | [D7–D10](../reference/tpu-vs-gpu-differences.md#d7-qk-clip-在扫描层下各层共用一个缩放)；L4 加 QK-Clip 全局最大 logit 曲线 |
+| 注意力内核选项 | splash base2 把常数 log2 e 舍成 BF16，logits 整体放大 | [A11](../reference/tpu-vs-gpu-differences.md#a11-splash-的-base2-指数把注意力-logits-放大-10018-倍q-多舍一次-bf16生产与对齐都关)；TPU 设 `sa_use_base2_exp: false` |
+| 词嵌入与并行方式 | 纯数据并行下词嵌入梯度在 BF16 里 scatter、不排序 | [A12](../reference/tpu-vs-gpu-differences.md#a12-纯数据并行时词嵌入梯度在-bf16-里-scatter不排序)；TPU 换切法先查 [TPU 自比](../../models/hunyuan4/alignments/04-tpu-self/README.md) |
 
 ---
 

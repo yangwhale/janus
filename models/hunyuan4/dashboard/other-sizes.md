@@ -19,9 +19,9 @@
 
 | 列 | 含义 |
 |---|---|
-| mid | 03 · hy4-mid 现行：L4 是 TPU tm-b 300 步对 GPU gm-a（噪声 gm 两两 28 对）；L3 是 tm2diag；L0 取 tm-a 一代（同一份检查点、同一学习率） |
-| B | 02 · real-weight 截层 B：L4 是 TPU tb5b-a 1000 步对 GPU gb3-a（噪声 gb3 两两 28 对）；L3 是 tb6diag；L0 学习率取上一代 tb5-b（学习率设置相同） |
-| D1 | 02 · real-weight 截层 D1：L4 是 TPU td5b-b 1000 步对 GPU gd3-a（噪声 gd3 两两 28 对）；L3 是 td6diag；L0 学习率取上一代 td5-a（学习率设置相同） |
+| mid | 03 · hy4-mid 最近一代（base2 开、早于 M50；现行对齐配置在 mid 上尚无运行）：L4 是 TPU tm-b 300 步对 GPU gm-a（噪声 gm 两两 28 对）；L3 是 tm2diag；L0 取 tm-a 一代（同一份检查点、同一学习率） |
+| B | 02 · real-weight 截层 B：L4 是 TPU tb5b-a 1000 步（base2 开、早于 M50；现行对齐配置在 B 上尚无运行）对 GPU gb3-a（噪声 gb3 两两 28 对）；L3 是 tb6diag；L0 学习率取上一代 tb5-b（学习率设置相同） |
+| D1 | 02 · real-weight 截层 D1：L4 是 TPU td5b-b 1000 步（base2 开、早于 M50；现行对齐配置在 D1 上尚无运行）对 GPU gd3-a（噪声 gd3 两两 28 对）；L3 是 td6diag；L0 学习率取上一代 td5-a（学习率设置相同） |
 | tiny | 00 · hy4-tiny：只有 TPU 一侧的 CPU 冒烟（8 个假 CPU 设备，四个阶段整条链路），没有 GPU 对 TPU 的比较 |
 
 ## L0 地基（设置 / 数据 / 权重 / 配置，必须逐位）

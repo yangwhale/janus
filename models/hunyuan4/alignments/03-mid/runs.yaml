@@ -10,7 +10,7 @@ golden:
   - {name: gms-a..gms-c, steps: 1, role: "第 1 步全量抓数参照（L3 噪声）", location: "gs://<POC 桶>/janus/hunyuan4/golden-mid/gms-*/"}
 test:
   - {name: tm-a, steps: 300, role: "被测，回放 gm-a（已跑：MaxText 469dbb85，janus fd796f6）", config: frameworks/maxtext/hy4-mid-t1.yml, golden: gm-a, results: [tm-l4, tm-l0-settings], location: "gs://<POC 桶>/janus/hunyuan4/tpu/tm-a/"}
-  - {name: tm-b, steps: 300, role: "被测，回放 gm-a，现行开关含 M39–M41 与 M42b（已跑：MaxText 2c28a4f4，janus 9c0f19a）", config: frameworks/maxtext/hy4-mid-t1.yml, golden: gm-a, results: [tmb-l4], location: "gs://<POC 桶>/janus/hunyuan4/tpu/tm-b/"}
+  - {name: tm-b, steps: 300, role: "被测（最近一代），回放 gm-a，当时的 yml 开关含 M39–M41 与 M42b；sa_use_base2_exp 开、没有 M50（已跑：MaxText 2c28a4f4，janus 9c0f19a，meta.json 已核）", config: frameworks/maxtext/hy4-mid-t1.yml, golden: gm-a, results: [tmb-l4], location: "gs://<POC 桶>/janus/hunyuan4/tpu/tm-b/"}
   - {name: tmdiag, steps: 1, role: "第 1 步诊断（--diag-step1，不更新），回放 gms-a；逐张量对 CPU FP64 参照已比", config: frameworks/maxtext/hy4-mid-t1.yml, results: [mid-step1-grad-vs-fp64, mid-step1-groups-vs-fp32]}
-  - {name: tm2diag, steps: 1, role: "第 1 步诊断，现行 yml（MaxText 3741e818，含 M39–M41），回放 gms-a；9 个张量的梯度文件取回时一段被写成 0，不可判", config: frameworks/maxtext/hy4-mid-t1.yml, results: [mid-tm2-step1-grad-vs-fp64], location: "gs://<POC 桶>/janus/hunyuan4/tpu/tm2diag/"}
+  - {name: tm2diag, steps: 1, role: "第 1 步诊断，当时的 yml（MaxText 3741e818，含 M39–M41，没有 M42b、M50，base2 开），回放 gms-a；9 个张量的梯度文件取回时一段被写成 0，不可判", config: frameworks/maxtext/hy4-mid-t1.yml, results: [mid-tm2-step1-grad-vs-fp64], location: "gs://<POC 桶>/janus/hunyuan4/tpu/tm2diag/"}
   - {name: tmdiag-f32, steps: 1, role: "tmdiag 的 TPU FP32 + HIGHEST 版（dtype float32、matmul_precision highest、sparse_matmul false）；与被测同源，只作诊断，不作定责", config: frameworks/maxtext/hy4-mid-t1.yml, results: [mid-step1-groups-vs-fp32]}

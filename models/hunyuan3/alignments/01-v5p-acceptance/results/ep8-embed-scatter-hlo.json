@@ -1,0 +1,45 @@
+{
+ "what": "混元 3 词嵌入反向 scatter-add 在 EP = 8 与 FSDP 8 下的切法与是否排序（读优化后 HLO）。回答：EP = 8 对词嵌入是不是纯数据并行、会不会落进混元 4 案例 14 的「不排序、每加一次舍一次」。",
+ "date": "2026-11-11",
+ "threshold_note": "排序门槛（libtpu 0.0.46）：一次 scatter 的下标数超过表行数的 1/8，120832 / 8 = 15104（混元 4 案例 14、04-tpu-self/libtpu-052.md）",
+ "builds": [
+  {
+   "name": "ep8-v5p-aot",
+   "how": "CPU 离线编译（models/hunyuan3/frameworks/maxtext/aot_hlo.py），compile_topology v5p-16（8 个 device）",
+   "program": "t-ep8-1000 的同一程序：maxtext 0622774a160c17ba8f3f66941cf1ee49cd9158b2，yml sha256 a238883b7f914d5c99f313d2d5ef68fa472164ef81e95d48d1046cb7e593ee6b，覆盖 = t-ep8-1000 meta.json 的 config.overrides（rmap 重算覆盖 + ici_fsdp_parallelism=1 + ici_expert_parallelism=8），steps 1000",
+   "versions": {"image": "tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf", "jax": "0.11.1", "libtpu": "0.0.46"},
+   "mesh": {"expert": 8, "fsdp": 1},
+   "hlo_sha256": "331dd39d0ee7910bf94be899d849df81d4f739d77dab2dd6c28ed2d8b74b64c5",
+   "embedding_table_per_device": "bf16[120832,512]（隐藏维 4096 沿 expert 轴切 8 份；逻辑轴 embed_vocab -> fsdp, fsdp_transpose, context, context_usp_ulysses, expert）",
+   "scatter_indices_per_device": 32768,
+   "scatter": "scatter，indices_are_sorted=true",
+   "full_table_all_reduce": false
+  },
+  {
+   "name": "ep8-v7x-aot",
+   "how": "同上，compile_topology tpu7x-8（4 片 8 个 device）",
+   "program": "同上",
+   "versions": {"image": "同上", "jax": "0.11.1", "libtpu": "0.0.46"},
+   "mesh": {"expert": 8, "fsdp": 1},
+   "hlo_sha256": "e32fad56b82a6c9b9bb3fb36c44ab776a8b50f0310aee889c17f79767d2bd1ae",
+   "embedding_table_per_device": "bf16[120832,512]",
+   "scatter_indices_per_device": 32768,
+   "scatter": "交给 SparseCore（scatter_offload_custom_fusion，async）；后端按什么精度累加没有实测",
+   "full_table_all_reduce": false
+  },
+  {
+   "name": "obs-t1",
+   "how": "上卡运行存下的优化后 HLO（观测构建：加钩子，per_device_batch_size 2、GA 1；不是正式被测的程序）",
+   "program": "maxtext 237a32705feb9f028910eb28216299139415d007，FSDP 8，v5p 2x2x2",
+   "versions": {"image": "同上", "libtpu": "0.0.46（同一构建）"},
+   "mesh": {"fsdp": 8, "expert": 1},
+   "hlo_sha256": "f406c74de7c1a50afff78009ac5d64f445c43ca3815b183d7390cf61d79b6f5f",
+   "embedding_table_per_device": "bf16[120832,512]",
+   "scatter_indices_per_device": 65536,
+   "scatter": "scatter，indices_are_sorted=true",
+   "full_table_all_reduce": false,
+   "other_bf16_all_reduce": "路由专家权重梯度 bf16[192,4096,1536]（沿 fsdp 轴 psum）、各 norm scale 梯度 bf16[4096] / [1,4096] / [1,128] 按 BF16 all-reduce"
+  }
+ ],
+ "conclusion": "EP = 8 对词嵌入和 FSDP 8 是同一种切法：表沿隐藏维切开，每卡一次 scatter 收全部 8 × 4096 = 32768 个 token，超过门槛，被排序（v7x 交给 SparseCore）。不是纯数据并行，混元 4 案例 14 的问题在这个配置、这个 libtpu 构建上不出现。换 libtpu 或改切分要重看。"
+}

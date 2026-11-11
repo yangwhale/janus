@@ -52,7 +52,7 @@ moe_mcore_prob_before_fc2: true        # GPU：路由专家在 fc2 之前乘 FP3
 mlp_fused_fc1_dgrad: true              # GPU：linear_fc1 是 gate | up 一个 GEMM，输入梯度 [g0|g1][W0|W1]^T 只舍一次（台账 M41）
 splash_dsinks_fp32: false              # M42 暂从对齐配置撤下（t1zv-b：单开 M42 整网离 GPU 更远，主 loss r 0.65 → 1.32）；照 GPU 写法的 M42b 验证后再定（PROTOCOL 变更记录 2026-11-09）
 splash_dsinks_gpu_order: true           # M42b：sink 梯度照 GPU（Megatron-Core autograd）的写法：−Σ_q p_sink·Σ_j p_j·bf16(do·v_j)，p 与求和 FP32；t1zw-a 起（PROTOCOL 变更记录 2026-11-09）
-sa_use_base2_exp: false                # M43：splash 不走 base2 指数，与 GPU 的自然指数同。2026-11-11 起所有尺寸的对齐配置都关（PROTOCOL 变更记录 2026-11-11）；2026-11-09 开过一代
+sa_use_base2_exp: false                # M43：splash 不走 base2 指数，与 GPU 的自然指数同。2026-11-11 起所有尺寸的对齐配置都关（PROTOCOL 变更记录 2026-11-11）；此前各代对齐运行都是 base2 开（MaxText 默认 true），只有 2026-11-09 的 t1zz-a 一代关过；只关它的单次诊断见台账 M43
 indexer_kd_generalized_kl: true         # M50：索引器 KD 改记广义 KL Σp·log(p/q) − Σp + Σq，差值经 stop_gradient 加回，梯度逐位不变、只改记录值；t1zg-a 起（PROTOCOL 变更记录 2026-11-09，MaxText 47d31984 起有这个键）
 muon_weight_decay: 0.0                  # 照现状（MaxText 默认 0；生产值未知）
 adam_weight_decay: 0.0                  # 照现状

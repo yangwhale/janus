@@ -87,7 +87,7 @@ T0–T2、T4 都用回放数据，所以**生产的数据管线不在这几档�
 | T2 每日 | 4 层，1000 步，第 1 步抓张量；两个并行变体；R27 在第 500 步存档续训（注 2） | 每天一次 | 未实施 |
 | T3 生产形状 | 生产层数（`hunyuan3-295b.yml`，80 层）、生产切分与切片、生产数据管线，100 步 | 每周一次起步 | 未实施（注 3） |
 | T4 低精度配方 | — | — | 未启用：混元 3 目前没有 FP8 配方 |
-| 金丝雀 | T1 配置，libtpu 换每日构建 | 每天一次 | 未实施 |
+| 金丝雀 | T1 配置，libtpu 换每日构建 | 每天一次 | 未实施；换 libtpu 前要做什么，见第七节末「换 libtpu」 |
 | 对照臂 | T0 配置，LKG 的提交 | 每天一次；失败时用失败那档的配置 | 未实施 |
 
 - 注 1：`g1k-b/c` 只组噪声带；窗口 `1:1001`（第 1–1000 步），分母 golden。
@@ -110,6 +110,13 @@ T0–T2、T4 都用回放数据，所以**生产的数据管线不在这几档�
 - 主切分在两份档位配置里显式写成 `per_device_batch_size=2 gradient_accumulation_steps=1`。
 - `hy3-4layers.yml` 现在默认是 GA 2（对齐用，按 GPU 的 microbatch 分两次前反向）。
 - 而 T2 要在第 1 步抓张量，加钩子的训练步只支持 GA 1。
+
+### 回归守的不是正式验收的那个程序
+
+- T0、T1 跑的是 yml 默认的重算设置（各中间量都存 `device`，等于不重算）加 GA 1（`tiers/t0.yaml`、`tiers/t1.yaml` 的 `overrides`）。
+- 正式 L4 的被测 `t-rmap-on-1000` 是 GA 2，命令行另加了 rmap 重算覆盖：除层输入和 `moe_routing_maps` 外全部 `remat`（01 [`runs.yaml`](../alignments/01-v5p-acceptance/runs.yaml)）。
+- 两处都改数值：重算换舍入点（第五节 `rematqkv` 一行，R20 `reduce-precision` 31 → 24），累积分组也改舍入（对齐报告台账 #12）。
+- 所以 T0、T1 绿了，只说明回归这个程序没变，不说明验收签字的那个程序没变。要守验收程序，得给 GA 2 + rmap 覆盖单独建一个变体和 LKG；建不建另行确定。
 
 ## 四、各行的具体内容
 
@@ -191,7 +198,7 @@ T0–T2、T4 都用回放数据，所以**生产的数据管线不在这几档�
 
 和迁移验收的 TPU 噪声参照（扰动臂）共用同一批运行。
 每个扰动臂跑 T1 的 1000 步，第 1 步抓张量。
-同时给迁移验收的 L2 / L3 当噪声参照、给日常回归的 T1 / T2 当执行噪声。
+给日常回归的 T1 / T2 当执行噪声。迁移验收的 L2 / L3 不用它：2026-11-08 起第 1 步只用 GPU 第 1 步重跑 3 对当尺子，超出部分对 FP64 定责（尺子只来自参照一侧）。
 
 ### 步骤
 
@@ -335,9 +342,15 @@ python models/hunyuan3/regression/calibrate.py --root <运行根> --out models/h
 | 5 | TPU 执行噪声标定 | 执行级判定和「不变差」都要它 | 第五节 | v5p 在现行配置（yml a238883b）下已正式标定（注 3）；v7x 未做 |
 | 6 | 回归目录 `catalogs/regression-<档>.yaml`；手动入口 | 跑起来 | 本目录 | T0、T1 已实施；**排程暂缓**，等 TPU 预算（第九节第 3 条） |
 
-- 注 1：TPU 上还没实测（[`../../../docs/reference/environment.md`](../../../docs/reference/environment.md#tpu-侧)「TPU 侧」）。两台主机的数据回放也要在里面一起证明。
+- 注 1：前提见 [`../../../docs/reference/environment.md`](../../../docs/reference/environment.md#tpu-侧)「TPU 侧」；v5p 两台主机上已实测（注 2）。
 - 注 2：见 [`results/README.md`](results/README.md)。另一套 v5p-8 切片上同一提交对 LKG 也逐位（`reg-t0-st1/st2`）。
 - 注 3：8 份运行两两 28 对，配置换代后重标过一次。容差门 `threshold: calibrated`，参照在 [`calibration.yaml`](calibration.yaml)。
+
+### 换 libtpu
+
+- 现行 LKG 和全部验收运行都在同一个 libtpu 构建上（`lkg.yaml`；与混元 4 的 libtpu 0.0.46 是同一构建）。
+- 换版本不能假定只换求和顺序：混元 4 从 0.0.46 换到 0.0.52 后，scatter 排序门槛和 RMSNorm 的舍入都变了（[`libtpu-052.md`](../../hunyuan4/alignments/04-tpu-self/libtpu-052.md)）。
+- 照那一页的三步做：只换 libtpu 建镜像；CPU 离线编译，看训练步程序变了什么（词嵌入 scatter 排不排序、`reduce-precision` 与 all-reduce 的个数）；上卡重建 LKG，重跑 T1，并对 GPU golden 重跑 L4。
 
 ## 八、手动跑
 

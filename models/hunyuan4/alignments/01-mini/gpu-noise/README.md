@@ -4,7 +4,7 @@
 
 **这一部分干什么**：hy4-mini 的 GPU 和 GPU 自己比。语义以 TPU 一侧 MaxText 为准（[`PROTOCOL.md`](../../../PROTOCOL.md) 第 1.2 节），判定时 GPU（Megatron-Core，B200 × 8）是 golden、TPU 是被测（`PROTOCOL.md` 变更记录）。这里回答三件事：GPU 同设置重跑本来就差多少（这就是 T1 L4 的噪声尺子，`PROTOCOL.md` 第 3 节）；确定性设置下能不能逐位复现；埋了错，janus 的检查能不能抓到。做法照[混元 3 的 00](../../../../hunyuan3/alignments/00-gpu-noise-and-drills/README.md)。
 
-**现状**：只有噪声参照的原始运行，三代各 8 份：`g1-*`（前三代比较）、`g2-*`（300 步：现行 `t1zga300-l4` 及之前各代的 300 步比较）、`g3-*`（1000 步：现行 `t1zga-l4` 及之前各代的 1000 步比较；各代见[历代比较](../../../dashboard/history.md)），各自两两 28 对就是 01 里对应比较的噪声上限 N；第 1 步参照 `g1s-*`、`g2s-*` 各 3 份。1000 步的尺子另有 16 份版：`g3-i … g3-p` 是同一代码包、同一参数的再 8 份重跑，与 `g3-a … g3-h` 一起两两 120 对（[`catalogs/g3x16-noise.yaml`](catalogs/g3x16-noise.yaml)）。
+**现状**：只有噪声参照的原始运行。以现行比较 tz-off-rep 为准：前 300 步 `t1zo300-l4` 的噪声上限 N 是 `g2-*` 8 份两两 28 对，1000 步 `t1zo-l4` 的是 `g3-a … g3-p` 16 份两两 120 对（`g3-i … g3-p` 是与 `g3-a … g3-h` 同一代码包、同一参数的再 8 份重跑，[`catalogs/g3x16-noise.yaml`](catalogs/g3x16-noise.yaml)）。2026-11-11 以前的 1000 步比较用 `g3-a … g3-h` 28 对，最早三代用 `g1-*` 28 对，各代见[历代比较](../../../dashboard/history.md)。第 1 步参照 `g1s-*`、`g2s-*` 各 3 份。各份运行的载入自检与第 1 步相对极差在 [`gpu-load-check-and-step1-spread.json`](results/gpu-load-check-and-step1-spread.json)。
 
 | 1000 步，基线 `g3-a` | 8 份（28 对）的上限 | 16 份（120 对）的上限 |
 |---|---|---|
@@ -60,29 +60,29 @@
 
 | 级 | 检查项 | 严格档 | 参考档 | 说明 | 证据 |
 |---|---|---|---|---|---|
-| L0 | GPU 载入自检（每个参数等于检查点张量） | 🟡 | — | 进行中 | hy4-mini 通过（台账 G7）；没有结果文件 |
+| L0 | GPU 载入自检（每个参数等于检查点张量） | 🟡 | — | 进行中 | hy4-mini 的 g1、g2、g3 共 32 份噪声参照运行都通过（gpu-noise/results/gpu-load-check-and-step1-spread.json，读自各运行 meta.json 的 load_check）；还没写成 janus 检查 |
 | L1 | 逐元素函数（FP32；mini 列是 TPU 现行开关写法，gpu 列是 B200 实测的 log；按 CUDA 文档门槛：exp ≤ 2、log ≤ 1、sigmoid / silu ≤ 4、sqrt / 除法 ≤ 1、rsqrt ≤ 2 ulp）<br>`L1.elem.log.gpu_b200` | ✅ | — | 实测 1（ulp_max）｜严格档 ≤ 1 → 1×，过｜参考档 无对应门槛 | [t1-log-ulp](../results/t1-log-ulp.results.json) |
 | L1 | GPU 算子对 FP64、逐元素函数、极端输入 | ⬜ | — | 还没跑 | 待做（gpu-noise README「计划（待做）」第 6 项） |
 | L3 | GPU 第 1 步三份的逐张量散布 | 🟡 | — | 进行中 | g1s 中位数 rel_L2 2.7e-3（台账 G15）；g1s、g2s 的逐张量散布记在 01 第 1 步比较的结果文件里（gpu_noise_max），没有单独的 GPU 自比检查 |
 | L3 | 只换执行方式（专家并行、梯度累积切分、重算） | ⬜ | — | 还没跑 | 待做（gpu-noise README「计划（待做）」第 4 项） |
-| L4 | GPU 自比：同设置 8 份两两的散布（噪声尺子） | 🟡 | — | 进行中 | g1、g2、g3 各自 8 份两两 28 对就是各代 L4 比较的噪声尺子（g1：t1-l4-nozm / t1s-l4；g2：t1zr300-l4、t1zs300-l4、t1z-l4、t1v-l4、t1t-l4；g3：t1zr-l4、t1zs-l4、t1zk-l4、t1w-l4、t1u-l4 的 N）；GPU 自比（catalogs/t1-gpu-noise.yaml）待做 |
+| L4 | GPU 自比：同设置多份两两的散布（噪声尺子） | 🟡 | — | 进行中 | 现行比较的噪声尺子：前 300 步 t1zo300-l4 用 g2 8 份两两 28 对，1000 步 t1zo-l4 用 g3 16 份两两 120 对；2026-11-11 前的 1000 步比较用 g3 前 8 份 28 对，最早三代用 g1 8 份（各代见历代比较）；GPU 自比（catalogs/t1-gpu-noise.yaml）待做 |
 | L4 | 抓数不改数值（开 / 不开全量抓数） | ⬜ | — | 还没跑 | 待做（gpu-noise README「计划（待做）」第 3 项） |
 | L4 | 故障演练（确定性基线上埋错） | ⬜ | — | 还没跑 | 待做，要先有确定性基线（gpu-noise README「计划（待做）」第 5 项） |
-| L4 | 同设置重跑逐位（mini 列是 TPU 一侧；gpu 列是 GPU 一侧） | 🟡 | — | 进行中 | hy4-mini 8 卡同设置重跑不逐位（g3 8 份第 1 步的相对极差：loss 2.9e-6、grad_norm 8.2e-5）；hy4-tiny 2 卡 20 步两份逐位相同（台账 G7）；没有结果文件 |
+| L4 | 同设置重跑逐位（mini 列是 TPU 一侧；gpu 列是 GPU 一侧） | 🟡 | — | 进行中 | hy4-mini 8 卡同设置重跑不逐位（g3 8 份第 1 步的相对极差：loss 2.9e-6、grad_norm 8.2e-5，gpu-noise/results/gpu-load-check-and-step1-spread.json）；hy4-tiny 2 卡 20 步两份逐位相同（台账 G7，没有结果文件） |
 
 <!-- janus:table:end -->
 
 ## 这一阶段做了什么
 
-### 已有的证据（都不在本文件夹的结果文件里）
+### 已有的证据
 
 | 项 | 现状 | 出处 |
 |---|---|---|
 | GPU 同设置 8 份的散布 | 每一代 8 份两两 28 对，每一对算一次判定量，每个判定量取 28 对里的最大值，就是对应 L4 比较的噪声上限 N：`g1-*`（前三代）、`g2-*`（300 步）、`g3-*`（1000 步） | 01 [`../catalogs/t1t-l4.yaml`](../catalogs/t1t-l4.yaml)、[`../catalogs/t1u-l4.yaml`](../catalogs/t1u-l4.yaml)；各结果文件里每条检查的 `threshold.noise.upper` |
 | 注意力 q·k 改 FP32 前后的散布 | `g2-*` 两两最大相对差 lm_loss 4.5e-5、grad_norm 2.2e-3；`g1-*` 3.7e-5、2.3e-3，几乎不变 | 台账 G17 |
 | GPU 第 1 步三份的逐张量散布 | `g1s-*`：中位数 rel_L2 2.7e-3；第 0、1 层索引器 10 个张量三份逐位相同（`g2s-*` 同样） | 台账 G15；01 [`../results/t1-step1-grad-vs-ref.json`](../results/t1-step1-grad-vs-ref.json)、[`../results/t1t-step1-grad-vs-ref.json`](../results/t1t-step1-grad-vs-ref.json) 的 `gpu_noise_max` |
-| 默认设置下能不能逐位复现 | hy4-mini 8 卡不能：g1 / g2 / g3 各 8 份第 1 步的相对极差 loss 2.1e-6 / 1.7e-6 / 2.9e-6、grad_norm 7.3e-5 / 9.3e-5 / 8.2e-5（台账 G9 的 4.9e-6、2.4e-4 是 T1 之前关 eod 掩码的测试）；hy4-tiny B200 × 2、20 步两份逐位相同 | 台账 G9、G7 |
-| 载入自检 | 第 1 步前每个参数等于检查点张量、FP64 平方和相等，否则退出；hy4-mini 通过 | 台账 G7 |
+| 默认设置下能不能逐位复现 | hy4-mini 8 卡不能：g1 / g2 / g3 各 8 份第 1 步的相对极差 loss 2.1e-6 / 1.7e-6 / 2.9e-6、grad_norm 7.3e-5 / 9.3e-5 / 8.2e-5（台账 G9 的 4.9e-6、2.4e-4 是 T1 之前关 eod 掩码的测试）；hy4-tiny B200 × 2、20 步两份逐位相同 | hy4-mini：[`gpu-load-check-and-step1-spread.json`](results/gpu-load-check-and-step1-spread.json)；hy4-tiny：台账 G7（没有结果文件） |
+| 载入自检 | 第 1 步前每个参数等于检查点张量、FP64 平方和相等，否则退出；hy4-mini 的 `g1-*`、`g2-*`、`g3-*` 共 32 份都通过（rank 0 核 246 个参数，全部 rank 0 处不同） | 台账 G7；[`gpu-load-check-and-step1-spread.json`](results/gpu-load-check-and-step1-spread.json) |
 | per-token loss 开关不改数值 | eod 关（掩码全 1）时 per-token 开 / 关第 1 步 loss 差 1.3e-6、grad_norm 差 8.5e-5，在同设置重跑的差之内 | 台账 G9 |
 | 对照：TPU 重跑 | 逐位相同（两组各两份 100 步、45 个逐步量）；只作记录，不进尺子 | 01 [`../results/hy4-mini-tpu-determinism.json`](../results/hy4-mini-tpu-determinism.json) |
 

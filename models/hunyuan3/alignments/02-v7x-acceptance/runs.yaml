@@ -101,6 +101,15 @@ test:
   # ---- 2026-11-05 对齐配置打开 dense_fp32_accumulation（yml a238883b7f91…，maxtext 0622774a，janus 958d173）：开 / 关步时与显存对比
   - {name: t-v7x-st-off-100, steps: 100, role: "生产 rmap 配置，命令行 dense_fp32_accumulation=false", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-v7x-st-off-100/"}
   - {name: t-v7x-st-on-100, steps: 100, role: "生产 rmap 配置，开关打开", location: "gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-v7x-st-on-100/"}
+  - name: t-v7x-on-1000
+    steps: 1000
+    role: 正式验收第一层（v7x）：生产 rmap 配置 + dense_fp32_accumulation，对最终 golden rcc-a（噪声 rcc-a..j 10 份两两 45 对）；01 t-rmap-on-1000 的 v7x 对应
+    setting: "GA 2 + 四个精度开关（yml）；除层输入与 moe_routing_maps 外全部 remat，moe_routing_maps=device；FSDP 8；2x2x1"
+    code: {framework: maxtext@0622774a160c17ba8f3f66941cf1ee49cd9158b2, janus: 958d173ed6cd5d34008bf0ca5d99263fb32ad128, image: "tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf"}
+    versions: {jax: 0.11.1, libtpu: "TFRT TPU7x，2026-08-12 构建 cl/963683785（pip 版本号没记，按构建号认作 0.0.46）"}
+    config: {file: frameworks/maxtext/hy3-4layers.yml, sha256: a238883b7f914d5c99f313d2d5ef68fa472164ef81e95d48d1046cb7e593ee6b, overrides: [mtp_num_layers=0, context=remat, query_proj=remat, key_proj=remat, value_proj=remat, out_proj=remat, mlpwi_0=remat, mlpwi_1=remat, mlpwo=remat, moe_mlpwi_0=remat, moe_mlpwi_1=remat, moe_mlpwo=remat, moe_routing_maps=device]}
+    location: gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-v7x-on-1000/
+    results: [phase2-v7x-acceptance-rcc, phase2-v7x-acc-health-rcc, phase2-v7x-acceptance-rcb]
   - name: t-v7x-ep8-1000
     steps: 1000
     role: 并行方式对照：生产配置只改成 EP=8（ici_fsdp_parallelism=1、ici_expert_parallelism=8，对应 GPU DP8 + EP8）

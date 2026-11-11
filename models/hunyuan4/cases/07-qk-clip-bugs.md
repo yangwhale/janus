@@ -18,7 +18,7 @@
 
 ## 证据
 
-- **A**：TPU 检查脚本 `qk_clip_scan_check.py`（台账 J1）在 hy4-tiny（1 稠密层 + 10 MoE 层，τ 取 0.001）上实测，修前结果在 [`hy4-tiny11-qk-clip-scan.json`](../results/hy4-tiny11-qk-clip-scan.json)。扫描块 `moe_layers/layers_0` 的两层，实测每头 √scale 都是 0.3355 / 0.2889 / 0.3084 / 0.3196；按各层自己的最大 logit 算，第 1 层应为 0.3437 / 0.3494 / 0.3084 / 0.3375，第 2 层应为 0.3355 / 0.2889 / 0.3558 / 0.3196。4 个扫描块的实测缩放都等于两层期望的逐头最小值，即 logit 小的层跟着 logit 大的层多裁了；不扫描的层都对。单测 `qk_clip_scan_test.py` 修前 4 条全不过；修后 hy4-tiny 11 层每层每头 √scale 与期望一致（rtol 1e-5）。
+- **A**：TPU 检查脚本 `qk_clip_scan_check.py`（台账 J1）在 hy4-tiny（1 稠密层 + 10 MoE 层，τ 取 0.001）上实测，修前结果在 [`hy4-tiny11-qk-clip-scan.json`](../results/hy4-tiny11-qk-clip-scan.json)。扫描块 `moe_layers/layers_0` 的两层，实测每头 √scale 都是 0.3355 / 0.2889 / 0.3084 / 0.3196；按各层自己的最大 logit 算，第 1 层应为 0.3437 / 0.3494 / 0.3084 / 0.3375，第 2 层应为 0.3355 / 0.2889 / 0.3558 / 0.3196。4 个扫描块的实测缩放都等于两层期望的逐头最小值，即 logit 小的层跟着 logit 大的层多裁了。修后同一脚本复跑（MaxText `b87a55aa`），11 层每层每头的实测 √scale 与期望逐位相同（[`hy4-tiny11-qk-clip-scan-postfix.json`](../results/hy4-tiny11-qk-clip-scan-postfix.json)）；不扫描的层都对。单测 `qk_clip_scan_test.py` 修前 4 条全不过；修后 hy4-tiny 11 层每层每头 √scale 与期望一致（rtol 1e-5）。
 - **B**：单测 `mcore_compat_switches_test.py`（`reduce_microbatch_aux`）确认 max_logits 取最大、其余 aux 求和；`gradient_accumulation_nnx_test` 下 hy4-tiny CPU 梯度累积 2 训练跑通。TPU 上「累积 2 对不累积」的最大 logit 对比还没做。
 - **C**：单测 `qk_clip_max_logit_exclude_sink_test.py` 对 float64 参照通过，并覆盖 logit 全为负时不报 0。由此引出的 NaN（最大 logit 为负时开负数的根号，M35）单测改前 NaN、改后通过；Megatron-Core 同一情形的 CPU 复现见台账 G25。
 - **L4**：B 没有修前 / 修后的数（T1 下不触发）；C（M25）只关它的 300 步对照见上。M1、M19 在 T1 所有运行里都已生效；M25 只在 `t1t-*` 起生效，其前后变化与其他几处混在一起（[案例 06](06-gpu-attn-scores-bf16.md)）。

@@ -22,7 +22,7 @@
 | 镜像 | `nvcr.io/nvidia/nemo:26.10`（meta 里没有 digest；`janus/dump/runinfo.py` 对这种情况会告警） | MaxText 官方 `tpu_pre_training`，digest `sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf` |
 | 框架代码 | Megatron-Bridge（容器自带）+ `train_hy3.py`（sha256 `4e41f0ae455c…`） | `maxtext` @ `64cd9a640b8ea65aaf856b6f24755f61ee97e057` |
 | janus | 未记录（第一阶段 golden 的 meta 不记 janus commit） | `16af8f7b116b337fae03265c26bf0ba7256c6fc7` |
-| 关键版本 | torch 2.14.0a0、CUDA 13.4、Transformer Engine 2.20.2、NCCL 2.31.2 | jax / jaxlib 0.11.1、flax 0.12.9、optax 0.2.8、orbax-checkpoint 0.12.4、libtpu（2026-08-12 构建） |
+| 关键版本 | torch 2.14.0a0、CUDA 13.4、Transformer Engine 2.20.2、NCCL 2.31.2 | jax / jaxlib 0.11.1、flax 0.12.9、optax 0.2.8、orbax-checkpoint 0.12.4、libtpu 0.0.46（2026-08-12 构建 `cl/963683785`；版本号按构建号认，见「软件版本」） |
 | 训练配置 | `train_hy3.py` 的参数（见表下），默认设置（非确定性） | `frameworks/maxtext/hy3-4layers.yml`，命令行另加 `mtp_num_layers=0`（见表下） |
 | 权重 | HF 截 4 层 → Megatron（`import_hy3.py`）；清单 `tensor_sha256.json` 的 sha256 `183274dbf17e…` | 同一份 HF → MaxText（`convert_hf_to_maxtext.py`），FP32；清单 sha256 相同 |
 | 数据 | `fw_hy3_text_document`（Megatron `GPTDataset`） | 回放 `g1k-a` 的 `data/batches`（清单 sha256 `e4db6392d89a…`），`replay_of` 记着 GPU 数据清单 sha256 `83d5a23b14d3…` |
@@ -34,6 +34,29 @@
 - TPU：
   - `t-loss30` 用的是 sha256 `66a03bf31d35…`，改名前叫 `hy3-4l.yml`，内容相同；
   - yml 后来改过两次，各运行用的版本见下面「配置文件版本」。
+
+## 软件版本
+
+以正式验收第一层为准：TPU `t-rmap-on-1000` 对最终 golden `rcc-a`，噪声 `rcc-a … rcc-j` 10 份（`phase2-acceptance-rcc-on`）。
+
+| 侧 | 组件 | 版本 | 证据出处 |
+|---|---|---|---|
+| TPU | 镜像 | MaxText 官方 `tpu_pre_training`，digest `b152355a…` | `t-rmap-on-1000` 的 `meta.json` 的 `image`；[`frameworks/maxtext/run.sh`](../../frameworks/maxtext/run.sh) 的 `IMAGE` |
+| TPU | MaxText | `maxtext` `hunyuan` 分支 `0622774a` | `meta.json` 的 `code` |
+| TPU | janus（打进 Pod 的程序） | `958d173e` | `meta.json` 的 `code` |
+| TPU | jax / jaxlib | 0.11.1 / 0.11.1 | `meta.json` 的 `versions` |
+| TPU | libtpu | 0.0.46（推断；构建 `cl/963683785`，2026-08-12） | `meta.json` 只记了构建号，没记 pip 版本号。推断：混元 4 同一构建号的运行记了 `libtpu==0.0.46`（混元 4 [mini 设置「软件版本」](../../../hunyuan4/alignments/01-mini/setup.md#软件版本)），jax 0.11.1 的 `tpu` 依赖也钉 0.0.46.* |
+| TPU | flax / optax / orbax-checkpoint | 0.12.9 / 0.2.8 / 0.12.4 | `meta.json` 的 `versions` |
+| TPU | tokamax | 0.0.14（镜像自带的包） | `meta.json` 不记；读镜像层里的 `tokamax-0.0.14.dist-info` 核过（2026-11-11） |
+| GPU | 镜像 | NeMo 26.10，digest `fc75bf51…` | `rcc-*` 的 `meta.json` 的 `image`（10 份相同） |
+| GPU | torch / CUDA / NCCL | 2.14.0a0+b2c75dd062.nv26.09 / 13.4 / 2.31.2 | `meta.json` 的 `versions` |
+| GPU | Megatron-Core / Megatron-Bridge | 0.20.0 / 0.7.0（容器自带，提交未登记） | `meta.json` 的 `versions` 与 `code` |
+| GPU | Transformer Engine | 2.20.2+44f31bbe | `meta.json` 的 `versions` |
+| GPU | cuBLAS | 13.8.0.4 | `rcc` 的 `meta.json` 不记；第一阶段在同一镜像里读到（[`phase1-l1.results.json`](../00-gpu-noise-and-drills/results/phase1-l1.results.json) 的 `environment.cublas`；第一阶段的 digest 见 [`pod.yaml`](../../frameworks/megatron/pod.yaml) 的注释） |
+
+- 运行目录的 `meta.json` 在 POC 桶里，不入库；结果文件 [`phase2-acceptance-rcc-on.results.json`](results/phase2-acceptance-rcc-on.results.json) 的 `runs.*.meta_sha256` 记着每份的 sha256。
+- 本页上面「两边」表是早期运行 `t-loss30` 的，版本与这里相同，MaxText 提交不同。
+- **结论在这些版本上测得。** 换 libtpu 或 jax 不能假定只换了求和顺序，要按混元 4 [`libtpu-052.md`](../../../hunyuan4/alignments/04-tpu-self/libtpu-052.md) 的做法重建 golden、重测。
 
 ## 配置文件版本
 

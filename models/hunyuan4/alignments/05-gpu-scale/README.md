@@ -2,17 +2,17 @@
 
 # 混元 4 · 05 · GPU 扩展：换机器数和并行方式，GPU 的结果变不变
 
-**结论**：hy4-mini 从 1 台换到 2 台、4 台，换 DP / EP / PP（数据并行 / 专家并行 / 流水线并行）的切法，训练曲线都没有超出单机自己重跑的波动，也没有系统偏移；存档续跑与不断开逐位相同。真实宽度截层（第 0–2 层 + MTP）2 台对单机同样没有超出、没有偏移。
+**结论**：hy4-mini 从 1 台换到 2 台、4 台，换 DP / EP / PP（数据并行 / 专家并行 / 流水线并行）的切法，前 300 步训练曲线都没有超出单机自己重跑的波动，也没有系统偏移。存档续跑与不断开逐位相同：GPU、确定性模式、同一并行设置，存 1 次、续跑 10 步。真实宽度截层（第 0–2 层 + MTP）2 台对单机前 30 步同样没有超出、没有偏移。TPU 一侧的续跑见 [06](../06-rw3/README.md#从存档续跑为什么装不下已修)，只核过同一切片规模。
 
 ![被测对单机 golden 的逐步相对差，灰带是单机尺子](figures/loss-param-norm-vs-single-node.png)
 
-同一个模型、同一份权重和数据、同一套训练设置，只改执行方式，和单机 GPU golden `g3-a` 比。尺子是单机同设置 8 份（`g3-a … g3-h`）两两 28 对的波动上限（即单机自己重跑能差多少），前 300 步。设置与判法见 [`setup.md`](setup.md)，运行登记 [`runs.yaml`](runs.yaml)。为以后 TPU 与 GPU 的大规模对比打底：GPU 一侧先证明自己扩到多机、换并行方式后还是同一个程序。
+同一个模型、同一份权重和数据、同一套训练设置，只改执行方式，和单机 GPU golden `g3-a` 比。尺子是单机同设置 8 份（`g3-a … g3-h`，即 1000 步 golden 16 份里的前 8 份）两两 28 对的波动上限（即单机自己重跑能差多少），前 300 步。设置与判法见 [`setup.md`](setup.md)，运行登记 [`runs.yaml`](runs.yaml)。为以后 TPU 与 GPU 的大规模对比打底：GPU 一侧先证明自己扩到多机、换并行方式后还是同一个程序。
 
 ## 现状
 
 ### 曲线：对单机 `g3-a` 前 300 步
 
-8 项检查，每项取三个判定量里对尺子倍数最大的那个；全部运行与 `g3-a` 逐样本吃同一批数据（[核对](results/data-same-batches.json)）。
+8 项检查，每项取三个判定量里对尺子倍数最大的那个；下表 14 份 mini 运行都与 `g3-a` 逐样本吃同一批数据（[核对](results/data-same-batches.json)）。真实宽度截层的运行没有做这项核对。
 
 | 被测 | 机器 | 并行 | 步时 | 在噪声内 | 1–2 倍 | 超出 | 最大倍数（哪项） |
 |---|---|---|---|---|---|---|---|
@@ -35,7 +35,7 @@
 |---|---|
 | 多机尺子 ÷ 单机尺子 | 主 loss、grad_norm、param_norm 的三个判定量 1.0–1.3 倍；路由偏置均值 0.17–0.38 倍（[尺子对比](results/yardstick-multi-vs-single.json)、[多机两两](results/mn-self-pairs.json)） |
 | 反过来：单机 `g3-a` 对多机 `mn-a`，用多机尺子 | 6 项在噪声内、2 项 1–2 倍（最大 1.41 倍，param_norm），和多机对单机的情形对称（[结果](results/g3-a-vs-multi-node.report.md)） |
-| 两组有没有系统偏移（7 份单机、8 份多机对 `g3-a` 的带符号均值，Welch t：比两组平均值有没有系统差别的统计量） | 窗口带符号均值：5 条曲线的 \|t\| 都 ≤ 1.3（param_norm 1.27，主 loss 0.56）；第 300 步单步值：除索引器 KD（−3.0）外 \|t\| ≤ 1.5，索引器 KD 的窗口均值 t 是 −0.19（[结果](results/groups-single-vs-multi.json)） |
+| 两组有没有系统偏移（7 份单机、8 份多机对 `g3-a` 的带符号均值，Welch t：比两组平均值有没有系统差别的统计量） | 窗口带符号均值：5 条曲线的 \|t\| 都 ≤ 1.3（param_norm 1.27，主 loss 0.56）；第 300 步单步值：除索引器 KD 外 \|t\| ≤ 1.5；索引器 KD 第 300 步 t −3.0，单步上两组有差，原因没查，同一项的窗口均值 t 是 −0.19（[结果](results/groups-single-vs-multi.json)） |
 
 多机重跑本身的波动比单机略大（按上表 1.0–1.3 倍），所以拿单机尺子量多机，偶尔会落在 1–2 倍；两组之间没有看到系统偏移。
 
@@ -46,7 +46,7 @@
 | 设置 | 两次 20 步重跑 | 续跑的第 11–20 步 | 比了什么 |
 |---|---|---|---|
 | 2 台，PP 2 + DP 8 + EP 8 | [逐位相同](results/ckpt-rerun-pp2.json) | [逐位相同](results/ckpt-resume-pp2.json) | 750 个记录量；16 个 rank 的 1752 个参数与 buffer、8760 个状态张量（FP32 主权重、Muon 动量、Adam 两个矩与步数） |
-| 1 台，DP 8 + EP 4 | [逐位相同](results/ckpt-rerun-dp8.json) | [逐位相同](results/ckpt-resume-dp8.json) | 810 个记录量；8 个 rank 的 1968 个参数与 buffer |
+| 1 台，DP 8 + EP 4 | [逐位相同](results/ckpt-rerun-dp8.json) | [逐位相同](results/ckpt-resume-dp8.json) | 810 个记录量；8 个 rank 的 1968 个参数与 buffer（这一组没比状态张量） |
 | 2 台，真实宽度第 0–2 层 + MTP，DP 16 + EP 16 | 没有单跑（续跑逐位相同已经包含确定性） | [逐位相同](results/ckpt-resume-rw.json) | 480 个记录量；16 个 rank 的 3152 个参数与 buffer、14512 个状态张量 |
 
 负对照（故意拿不同的东西比，确认工具认得出）：跑 10 步与跑 20 步的最终参数清单 1968 个里 1680 个不同（[结果](results/ckpt-negative-control.json)），比较工具认得出不同。
@@ -72,12 +72,19 @@ hy4-preview 第 0–2 层 + MTP（真实权重，`hf/hy4-4l`），设置同上�
 | 放在哪 | `gs://<POC 桶>/janus/hunyuan4/gpu-scale/rw1k-a/`：`meta.json`、`metrics.jsonl`、`data/rank<r>.jsonl`（逐 rank 输入指纹）、`data/batches/rank<r>.{bin,jsonl}`（16 个 rank × 1 个 microbatch × 1000 步，tokens / labels / loss_mask / position_ids） |
 | 对应配置 | hy4-preview 第 0–2 层 + MTP（`hf/hy4-4l`，`--layers 3 --mtp`），附加参数见 [`setup.md`](setup.md) 的 `C2` 加 `--ep=16`；2 台 DP 16 + EP 16，每卡微批 1，全局批 16 × 4096；数据与 mini 同一份 `tokens.npy`，第 s 步第 (s−1)·16 … 条 |
 | 回放能读吗 | 能：TPU 回放读 batch 的同一段代码 `frameworks/maxtext/replay.py check` 核过 1000 步、16000 个单元，拼成全局 batch 再还原，指纹与 golden 不同 0 处（[输出](results/rw1k-a-replay-check.txt)） |
-| 怎么回放 | `STAGE=D3 YML=hy4-t2-d1.yml GOLDEN=gs://<POC 桶>/janus/hunyuan4/gpu-scale/rw1k-a bash run.sh <运行名> 1000`（[MaxText 一侧](../../frameworks/maxtext/README.md)；T2 的 yml 不写死层数，层数与 MTP 由 `STAGE` 给）。还没做的：D3（3 层 + MTP）的 MaxText 检查点（`model/convert_hf_to_maxtext.py --stage D3`）；TPU 要多大切片放得下，未评估 |
+| 怎么回放 | 已回放：D3 的 MaxText 检查点已转换、v5p 16 片放得下，TPU 1000 步两臂回放已跑完，命令、显存与结果见 [06](../06-rw3/README.md) |
 
 ## 下一步
 
-- 真实宽度截层：TPU 回放 `rw1k-a` 的 1000 步，对多机 golden 比。
+- 真实宽度截层的 TPU 回放已在 [06](../06-rw3/README.md) 做完；后续在那里跟。
+- 真实宽度截层的运行补逐样本数据核对（`gpu_scale_compare.py data`）。
 - 规模往上：更多层用 PP 分段，切分点落在 full 索引器层上（完整模型可切在第 1 + 4k 层前）。
+
+## 适用范围
+
+- 只在 B200 上；曲线判定 mini 前 300 步、真实宽度前 30 步（`rw1k-a` 1000 步只判前 30 步），超过这个窗口多机是否仍无偏移没测。
+- 真实宽度截层最多 4 层（`rw4-pp2`）；PP 在真实宽度上只有逐步差，没有尺子判定（`rw-pp2`、`rw4-pp2` 不判档）。
+- 存档续跑只在确定性模式、同一并行设置、存 1 次续 10 步上核过；换并行设置续跑没测。
 
 ## 这个文件夹
 

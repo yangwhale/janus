@@ -6,6 +6,9 @@ sink、索引器 k_norm、路由偏置），代码里写死的 `.float()` / `.to
 每行打印 MICRO（与 step1_ref.py 同格式：row、loss_sum、n_tokens、mtp_mean），`mini_main_loss_same_state.py` 汇总。
 - `--backward`：同时反向（MTP 经 MTPLossAutoScaler、缩放 1），全部行累加后除以有效 token 总数，存 final 块、输出头、
   词嵌入、MTP enorm / hnorm / eh_proj 与第 6 层的梯度（Megatron 名字）到 `grads_s<步>.safetensors`；
+- `--all-grads`：同 `--backward`，但每行反向后把各参数的梯度（参数自己的 dtype，同 GPU 每个 microbatch 落地一次）在 FP32
+  里累加、清零（同 Megatron DDP 的 main_grad；GPU golden 每个 rank 的 microbatch 就是一行），最后除以有效 token 总数，
+  换成 HF 名字存 `grads_hf.safetensors`（路由专家不存），给同状态逐张量 R 当 GPU 写法的一份样本；
 - `--final32` / `--hc-round-only`：主干末尾的 hc_head 输出与末层 RMSNorm 留 FP32（或只保留 hc_head 输出那一次 BF16 舍入），
   MTP 的 hnorm 输入照旧舍 BF16（诊断：看末尾这几次舍入对 hc_head 梯度的影响）。
 
@@ -35,8 +38,11 @@ def main():
     p.add_argument("--out", required=True)
     p.add_argument("--final32", action="store_true", help="主干 hc_head 输出与末层 RMSNorm 留 FP32（不舍 BF16）")
     p.add_argument("--backward", action="store_true", help="同时反向，全部行累加后除以有效 token 总数，存 final 块与几组参数的梯度")
+    p.add_argument("--all-grads", action="store_true", help="每行反向后 FP32 累加全部梯度，存 HF 名字的 grads_hf.safetensors")
     p.add_argument("--hc-round-only", action="store_true", help="只保留 hc_head 输出的 BF16 舍入，末层 RMSNorm 在 FP32 里算、输出不舍")
     a = p.parse_args()
+    if a.all_grads:
+        a.backward = True
     torch.set_num_threads(a.threads)
     import step1_ref as S
 
@@ -95,6 +101,7 @@ def main():
     rows = [int(x) for x in a.rows.split(",")] if a.rows else list(range(16))
     os.makedirs(a.out, exist_ok=True)
     ntok_total = [0.0]
+    acc32 = {}
     for i in rows:
         r = base + i
         row = np.asarray(toks[r, : a.seq + 1]).astype(np.int64)
@@ -112,11 +119,24 @@ def main():
         if a.backward:
             st.backward()
             ntok_total[0] += float(lm.sum())
+            if a.all_grads:
+                for n_, q in m16.named_parameters():
+                    if q.grad is None or ".experts." in n_:
+                        continue
+                    acc32[n_] = acc32.get(n_, 0) + q.grad.float()
+                    q.grad = None
         rec = {"row": r, "loss_sum": s, "n_tokens": float(lm.sum()), "fwd_s": round(time.time() - t0, 1),
                "mtp_mean": float(MTPLossLoggingHelper.tracker["loss_values"][0])}
         MTPLossLoggingHelper.clean_metrics_in_tracker()
         print("MICRO " + json.dumps(rec), flush=True)
-    if a.backward:
+    if a.all_grads:
+        from safetensors.torch import save_file
+        grads = {n_.replace("module.", "", 1): g / ntok_total[0] for n_, g in acc32.items()}
+        hfg = S.to_hf(grads, cfg16, True)
+        save_file({k: v.contiguous() for k, v in sorted(hfg.items())}, os.path.join(a.out, "grads_hf.safetensors"))
+        json.dump({"global_tokens": ntok_total[0]}, open(os.path.join(a.out, "summary.json"), "w"))
+        print("SAVED_HF", len(hfg), "ntok", ntok_total[0], flush=True)
+    elif a.backward:
         from safetensors.torch import save_file
         keep = {}
         for n_, q in m16.named_parameters():

@@ -40,7 +40,7 @@
 1. **纯数据并行下，大部分矩阵乘权重的跨卡求和是 FP32，求完和才舍成 BF16；真正以 BF16 跨卡求和的是路由专家、索引器 `wk`/`wq_b` 和词嵌入。** 32 个 all-reduce 里，归约函数是 BF16 加法的有 10 个（路由专家 6 个、索引器 2 个、词嵌入 2 个）。注意力 6 个投影和共享专家 3 个矩阵（第 1–6 层）的 all-reduce 输入 FP32、归约函数 FP32、输出 BF16。其余都是 FP32。
 2. **这几类权重在 FSDP 下的数据类型和舍入次数与纯数据并行一样。** 路由专家在 FSDP 下也是 8 路 BF16 all-reduce；索引器 `wk`/`wq_b` 是 BF16 部分和的窗口化 reduce-scatter；FP32→BF16 那一类在 FSDP 下是 FP32 部分和的窗口化 reduce-scatter，求完和舍一次 BF16。所以这 204 个张量只是换了求和顺序：矩阵乘、路由专家、索引器、RMSNorm 这几类第 1 步离 FP64 的比值（纯数据并行 ÷ golden）在 0.87–1.07；204 个张量里除 6 个 iHC 小参数（数值上病态，本来就定不了责，01-mini D11）外，全部在噪声内或定责为换了顺序。
 3. **词嵌入丢精度的主因不在 8 路 BF16 all-reduce，而在每张卡本地那次 BF16 scatter-add 的累加。** 两边 HLO 里 scatter 都声明为 BF16、归约函数都是 BF16 加；差别是 FSDP 先按 token 号排序、清零在融合内部，纯数据并行不排序、往外面传进来的零缓冲上加。多出来的误差集中在 39 个高频 token 的行，随每张卡一次 scatter 的 token 数涨（4096 个 1.57e-2，8192 个 3.07e-2），与 all-reduce 是 8 路还是 16 路无关；而 FSDP 关掉 excess precision 后，scatter 的 HLO 一字不差，高频行却远 35 倍。
-   【实测】（第七节）scatter 标了 `indices_are_sorted=true` 时，TPU 后端换一种写法：表按块搬进片上 FP32 缓冲，块内所有更新加完再写回，每行只舍一次；下标有序时块才能顺序推进（LLO 实验确认），前提是 excess precision 开着；没标时每个更新都对 BF16 输出读、加、舍、写一次，开不开 excess precision 都一样。排序是编译器 pass `tpu_scatter_gather_optimizer` 插的，在 libtpu 0.0.46 上，条件是这一次 scatter 的下标个数超过表行数的 1/8（严格大于；词表 120832 行即超过 15104 个；前提是整张表按 FP32 放不进片上内存），和切不切分无关：FSDP 每张卡的 scatter 收的是 8 张卡全部 32768 个 token，过线；纯数据并行每张卡 4096 个（不累积时 8192 个），不过线。
+   【实测】（第七节）scatter 标了 `indices_are_sorted=true` 时，TPU 后端换一种写法：表按块搬进片上 FP32 缓冲，块内所有更新加完再写回，每行只舍一次；下标有序时块才能顺序推进（LLO 实验确认），前提是 excess precision 开着；没标时每个更新都对 BF16 输出读、加、舍、写一次，开不开 excess precision 都一样。排序是编译器 pass `tpu_scatter_gather_optimizer` 插的，在 libtpu 0.0.46 上，条件是这一次 scatter 的下标个数超过表行数的 1/8（严格大于；词表 120832 行即超过 15104 个；前提是整张表按 FP32 放不进片上内存；v5p 各种列宽、v7x 上列数 1024 的表都是这样，v7x 上列数 128 的表交给 SparseCore，另算；0.0.52 上门槛随列宽、芯片代际变，见第七节），和切不切分无关：FSDP 每张卡的 scatter 收的是 8 张卡全部 32768 个 token，过线；纯数据并行每张卡 4096 个（不累积时 8192 个），不过线。
 4. **修复（`embedding_grad_fp32`）后**，词嵌入两个 `bf16[120832,1024]` all-reduce 变成循环里一个 `f32[120832,1024]` all-reduce（主输入与 MTP 输入合进一次 FP32 scatter），每步执行 2 次。修复前那份把这个 FP32 all-reduce 挪到了循环外，循环体里用 `select(convert(partition-id), 0, 累加器)` 把非 0 号分区的累加器每次清零。
 
 ## 一、纯数据并行的 32 个 all-reduce
@@ -220,7 +220,7 @@
 - **E1**：每行按下标出现的先后在 FP32 里累加，最后舍一次 BF16；
 - **E2**：同一顺序，每加一次舍一次 BF16。
 
-脚本 [`analysis/emb_scatter_sort_probe.py`](../../analysis/emb_scatter_sort_probe.py)。v5p 上真跑的结果在 [`results/emb-scatter-sort-probe-tpu.json`](results/emb-scatter-sort-probe-tpu.json)（运行 `embsort`，镜像与 golden 相同，libtpu 同一构建）；CPU 上为 TPU 交叉编译（只编不跑）看各 pass 和后端代码的结果在 [`results/emb-scatter-sort-aot.json`](results/emb-scatter-sort-aot.json)。
+脚本 [`analysis/emb_scatter_sort_probe.py`](../../analysis/emb_scatter_sort_probe.py)。v5p 上真跑的结果在 [`results/emb-scatter-sort-probe-tpu.json`](results/emb-scatter-sort-probe-tpu.json)（运行 `embsort`，镜像与 golden 相同，libtpu 0.0.46，与 golden 同一构建）；CPU 上为 TPU 交叉编译（只编不跑）看各 pass 和后端代码的结果在 [`results/emb-scatter-sort-aot.json`](results/emb-scatter-sort-aot.json)。
 
 ### 四格（N = 4096，纯数据并行每张卡一次 scatter 的量）
 
@@ -276,14 +276,14 @@ rel_L2（全部被更新的行），每格都逐位等于括号里的仿真：
 | 120832 | 1024 | 15105 | 15104 |
 | 480000 | 128 | 60001 | 60000 |
 
-- 条件是 **N > V / 8**（严格大于；混元 4 词表 120832 行，门槛是超过 15104 个），7 种表形状全部吻合；前提是整张表按 FP32 放不进片上内存，放得进的小表（前两行）不插。同一个 libtpu（libtpu 0.0.46）为 v7x、v6e 编译，V = 120832 的门槛也是 15104 / 15105。
+- 条件是 **N > V / 8**（严格大于；混元 4 词表 120832 行，门槛是超过 15104 个），7 种表形状全部吻合；前提是整张表按 FP32 放不进片上内存，放得进的小表（前两行）不插。同一个 libtpu（libtpu 0.0.46）为 v7x、v6e 编译，120832 × 1024 的表门槛也是 15104 / 15105；v7x 上列数 128 的表（120832 × 128 等）交给 SparseCore 执行，下标数到 2 就排序，不按 1/8（[`emb-scatter-sort-aot-v7x-046.json`](results/emb-scatter-sort-aot-v7x-046.json)）。
 - 这个门槛只对 libtpu 0.0.46 实测过。更新的 libtpu 门槛会随列宽和芯片代际变化，换版本要重测，或者直接看 HLO 里有没有 `sort` 和 `indices_are_sorted=true`。
 - libtpu 0.0.52 上用同一个脚本离线编译重测（[`libtpu-052.md`](libtpu-052.md#词嵌入那次-scatter排不排序)）：门槛不再是 1/8。120832 × 1024 的表 v5p 14420、v7x 7181；120832 × 128 的表 v5p 1783，v7x 上交给 SparseCore 执行、下标数到 2 就排序。下表各运行在 v5p 上排不排序，0.0.52 和 0.0.46 一样；变的只有 v7x 上每卡 8192 个下标的纯数据并行（不做梯度累积），0.0.52 开始排序，上卡实测词嵌入梯度不再变远。
 - 和切分无关：FSDP 一侧过线，是因为每张卡的那次 scatter 收的是 8 张卡全部的 token。已有训练步 HLO 全部对得上：
 
 | 运行 | 每张卡一次 scatter 的下标数 | > 15104（libtpu 0.0.46） | scatter 标 sorted |
 |---|---|---|---|
-| `ts-g-a`（golden，FSDP 8）、`ts-c-noexcess`、`ts-h-v7b`（v7x FSDP） | 32768 | 是 | 是 |
+| `ts-g-a`（golden，FSDP 8）、`ts-c-noexcess`、`ts-h-v7b`（v7x FSDP；这张 128 列的表在 v7x 上交给 SparseCore 执行，下标数到 2 就排序，不是靠过 1/8 门槛） | 32768 | 是 | 是 |
 | `ts-f16`（FSDP 16） | 65536 | 是 | 是 |
 | `ts-dp8`、`ts-f16-dp16`、`ts-h-v7-dp8b` | 4096 | 否 | 否 |
 | `ts-dp8-ga1` | 8192 | 否 | 否 |

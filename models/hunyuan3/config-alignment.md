@@ -28,7 +28,7 @@
 - 「MaxText 模型 yml」指 `maxtext` 的 `src/maxtext/configs/models/hunyuan3-smoke.yml`。
 - 「MaxText 代码」指同一仓库的 `src/maxtext/layers/moe.py`、`layers/linears.py`。
   - 以上都按 v5p [`t-loss30`](../../docs/glossary.md#run-prefixes)（TPU 30 步冒烟）用的 commit `64cd9a64` 读。
-  - 精度开关 #94–#97 按 `4d4ffac2` 读，`dense_fp32_accumulation`（FSDP 切开收缩维的投影改用 FP32 累加，#102）按 `0622774` 读。
+  - 精度开关 几处 MaxText 修改 按 `4d4ffac2` 读，`dense_fp32_accumulation`（FSDP 切开收缩维的投影改用 FP32 累加）按 `0622774` 读。
   - 现行 `hy3-4layers.yml`（sha256 `a238883b…`）打开了这四个开关，所以要 `hunyuan@0622774` 或更新（[`frameworks/maxtext/README.md`](frameworks/maxtext/README.md)）。
 - 「HF」指 `tencent/Hy3` revision `a960ebc3…` 的 `config.json`，经 [`truncate_hy3.py`](model/truncate_hy3.py) 截成 4 层、去 MTP。
 
@@ -110,16 +110,16 @@
 | 精度 | 计算 dtype | 激活与 GEMM 输入 | `bf16: true`（GPU meta）；`dtypes.compute: bf16` | `dtype: "bfloat16"`（TPU yml） | 相同 | 已对齐（L1、L2 前向） | 两边 meta 记的计算 dtype 都是 BF16；L1 单算子 9 项、L2 逐层前向 4 层的 R 比都 ≤ 1.2（见下面「收缩维被 FSDP 切开」行），算术精度和 GPU 同档 |
 | 精度 | 参数与主权重 | 更新精度；小扰动在 BF16 里看不见（00 README 第 11 条） | BF16 参数 + FP32 主权重：`main_params_dtype: torch.float32`（GPU meta） | 只存 FP32 主权重，计算时转 BF16：`weight_dtype: "float32"`（TPU yml） | 等价 | 已对齐（L0、L3） | 载入后的主权重对 golden 逐位；更新后不是 BF16 冒充的 FP32（见注 7） |
 | 精度 | 优化器状态 | Adam 两个动量 | `exp_avg_dtype`、`exp_avg_sq_dtype: torch.float32`（GPU meta） | `mu_dtype: "float32"`（TPU yml）；二阶矩 `nu` 跟参数 dtype，即 FP32（optax `scale_by_adam`） | 相同 | 已对齐（L0、L3） | 两个动量全是 FP32，更新后也不是 BF16 冒充（见注 8） |
-| 精度 | 梯度 dtype 与规约 | 规约顺序与精度 | `dtypes.grad_reduce: fp32`（GPU meta） | `grad_dtype: "float32"`（TPU yml）；但专家、embedding、归一化层的梯度在 8 个设备之间按 BF16 规约（案例 01 第 6 节 4c） | dtype 配置相同；规约顺序不同（切分不同，见下）；部分梯度 BF16 规约（不可避免） | 有差异（已核对无影响） | GPU 反过来改成 BF16 规约，仍在 GPU 自己的散布里（见注 9） |
+| 精度 | 梯度 dtype 与规约 | 规约顺序与精度 | `dtypes.grad_reduce: fp32`（GPU meta） | `grad_dtype: "float32"`（TPU yml）；但部分梯度在 8 个设备之间按 BF16 规约（见注 9） | dtype 配置相同；规约顺序不同（切分不同，见下）；部分梯度以 BF16 落地或规约，其中 norm scale、输出层、embedding 三类可用对齐报告台账 #20 的开关改成 FP32 落地（不在当前对齐配置里） | 有差异（已核对无影响） | GPU 反过来改成 BF16 规约，仍在 GPU 自己的散布里（见注 9） |
 | 精度 | 路由 GEMM | 路由 logits 离 FP64 本来就远；但翻转不从这里来：喂两边相同的路由输入，翻转是 0，翻转来自上游注意力舍入造成的输入差 | `moe_router_dtype: fp32`（GPU meta），在这版 Megatron 里走 TE `general_gemm`，BF16 入、FP32 出，不是先升 FP32 再乘 | `float32_gate_logits: True`（模型 yml）；DEFAULT 档下 FP32 操作数先舍 BF16 再乘（见注 10） | 相同（操作数）；累加方式不同（不可避免） | 已对齐（L1） | TPU 对 FP64 4.8e-8–5.7e-8，GPU 3.8e-6–4.0e-6；翻转 0（见注 10） |
-| 精度 | 路由打分 dtype | sigmoid 在哪个精度算 | 路由 logits FP32，sigmoid 在 FP32 上（推断，按 `moe_router_dtype: fp32`） | sigmoid 与加偏置都在 FP32 上（见注 11） | 相同（GPU 一侧推断） | 已对齐（L1） | top-8 集合对 FP64 每层一致率 ≥ 0.9995（见注 11） |
+| 精度 | 路由打分 dtype | sigmoid 在哪个精度算 | 路由 logits FP32，sigmoid 在 FP32 上（推断，按 `moe_router_dtype: fp32`） | sigmoid 与加偏置都在 FP32 上（见注 11） | dtype 相同（GPU 一侧推断）；TPU 默认的 FP32 sigmoid 是近似实现（见注 11） | 已对齐（L1） | top-8 集合对 FP64 每层一致率 ≥ 0.9995（见注 11） |
 | 精度 | expert_bias dtype | 存成 BF16 后更新量会被舍入吃掉 | FP32 buffer（00 `L0.dtype.manifest` 规则 `buffer.*expert_bias`） | FP32（MaxText `MoEBiasVar`；检查点里存 FP32） | 相同 | 已对齐（检查点） | 01 `phase2-ckpt-convert` 的 `L0.ckpt.convert.dtype`（3 个 FP32） |
 | 精度 | TF32 | FP32 输入的 GEMM 会被降成 TF32 | 默认开，只有 `NVIDIA_TF32_OVERRIDE=0` 能全关（见注 12） | 没有 TF32。路由反向的 GEMM 按 `matmul_precision: "default"` 算，FP32 操作数推断是单遍 BF16 | 不可避免差异（推断） | 有差异 | 00 `phase1-kernels` 的 `TF32.gemm_inventory`、`TF32.switch.matrix`；00 `phase1-tf32`（关 TF32 后参数梯度最大差是噪声上限的 4.95 倍，30 步 loss 在噪声内） |
 | 精度 | TPU matmul 精度 | 决定 FP32 操作数的 dot 走几遍 BF16 | — | `matmul_precision: "default"`（TPU yml，与 base.yml 默认相同）；影响范围见注 13 | — | 已核对（路由 GEMM 前向） | 01 `phase2-l1-l2-replay` 的 `router_precision_probe`；`train_hy3.py` 把 `matmul_precision` 写进 `meta.json` |
 | 精度 | 收缩维被 FSDP 切开的投影的累加精度（注意力 q / k / v、稠密 MLP 的 wi） | 投影输出多舍几次，L1 / L2 里 TPU 离 FP64 比 GPU 远两到三成的就是这两处 | TE `LayerNormLinear`：GEMM FP32 累加、输出舍一次（见注 14） | 窗口化 collective matmul 在 BF16 里累加；开关 `dense_fp32_accumulation` 改成 FP32（见注 14） | 相同（开关打开） | 已对齐（L1、L2 前向，v5p、v7x）；2026-11-05 决定打开，对齐配置 yml 从 `a238883b7f91…` 起 | 打开后 L1 单算子 9 条、L2 逐层前向 4 层全过；L4 不需要它（见注 15） |
 | 精度 | 注意力 softmax | 末位差异的主要来源之一；逐层隔离回放里第 1–3 层第一个超过 BF16 末位量级的就是 `attn.core.out` | cuDNN fused attention，内部 softmax 精度未查（cuDNN 不公开内核写法；不影响判定，见证据栏） | 旧 Splash attention，softmax 在 FP32 里算（见注 16） | 不可避免差异（两种内核） | 已对齐（L1）；对 GPU 逐元素有差异 | `L1.ops.kernel.attn_core` R 1.009（v5p、v7x）；1000 步换 FP32 点积注意力也过（见注 16） |
 | 精度 | logits 与 loss | 交叉熵精度 | logits BF16（golden 第 1 步 logits 张量 dtype 是 BF16）；融合交叉熵，反向写出 BF16 的 dlogits；确定性设置下关 `cross_entropy_loss_fusion`（`train_hy3.py`） | `cast_logits_to_fp32: true`、`logits_dot_in_fp32: false`（TPU yml）：logits 在 BF16 出、转 FP32 算交叉熵，反向的 dlogits 也是 BF16 | 等价（两边都是 BF16 logits、FP32 交叉熵、BF16 dlogits） | 已对齐（L4） | 第 1 步 loss 相对差 d0 2.5e-6（v5p）/ 9.7e-6（v7x）；GPU 换写法无影响（见注 17） |
-| 精度 | excess precision | TPU 默认在融合内部跳过中间的 BF16 舍入；GPU 每个算子各舍一次。影响前向与重算、DP 与 FSDP 的舍入位置 | 无此机制：PyTorch / Megatron 每个算子输出舍到 BF16 | 没设，XLA 默认开（`--xla_allow_excess_precision` 默认 true）；开关与取舍见注 18 | 不可避免差异（保持默认开；要对齐的舍入点用下面两行的开关显式写） | 有差异（已核对：不进对齐配置也在噪声内） | 现行配置（开着）对 `rcc-a` L4 全部在噪声内（关掉的几臂见注 18） |
+| 精度 | excess precision | TPU 默认在融合内部跳过中间的 BF16 舍入；GPU 每个算子各舍一次。影响前向与重算、DP 与 FSDP 的舍入位置 | 无此机制：PyTorch / Megatron 每个算子输出舍到 BF16 | 没设，XLA 默认开（`--xla_allow_excess_precision` 默认 true）；开关与取舍见注 18 | 有差异（保持默认开；要对齐的舍入点用 `reduce_precision` 显式写，下面两行就是） | 有差异（已核对：不进对齐配置也在噪声内） | 现行配置（开着）对 `rcc-a` L4 全部在噪声内（关掉的几臂见注 18） |
 | 精度 | RMSNorm 舍入次数 | 默认写法比全程 FP32 多舍两次（归一化结果、scale 各转一次 BF16）；关 excess precision 后 25.29% 元素不是正确舍入 | TE RMSNorm：对 FP64 正确舍入 99.9988%–99.9993%（`../../docs/dev/design/0003-l1-op-replay.md` 第 5 条） | `rmsnorm_single_rounding: true`（TPU yml）；v5p 实测默认写法已经只舍一次（见注 19） | 相同 | 已对齐（L1、L2 前向） | 打开后各层 `in.grad` 对 golden 的 rel_l2 略降（见注 19） |
 | 精度 | 门控激活舍入（silu·up） | 「SiLU 舍一次再乘」与「整体舍一次」27.48% 元素不同 | 路由专家：`silu` 在 BF16 里舍一次、乘积再舍一次（见注 20） | `mlp_activation_round_per_op: true`（TPU yml）：按算子舍入（见注 20） | 相同（按算子舍入） | 已对齐（L1）；L2 见证据 | 整层回放里打开后 `fc2.out`、`shared.out`、各层 `in.grad` 都变小（见注 20） |
 | 精度 | 路由核 BF16 舍入 | TPU 的核是 FP32 主权重，GPU 是 BF16 参数 | BF16 权重 × BF16 激活、FP32 累加 | `routed_gate_bf16_rounding: true`（TPU yml）：核先舍 BF16 再乘，梯度直通（见注 21） | 相同 | 已对齐（L1） | `default_eq_rounded_kernel_frac` = 1（见注 21） |
@@ -136,6 +136,7 @@
   - `L0.dtype.state`：`opt_state/0/mu`、`nu` 各 58 项全是 FP32（v5p `phase2-l0-state`）。
   - 第 1 步更新后两个动量不是 BF16 冒充的 FP32（`L3.step1.fake_fp32.optim_state`，100 个张量，v5p、v7x）。
 - 注 9（梯度 dtype 与规约）：
+  - TPU 哪些梯度按 BF16 跨卡求和（读 FSDP 8 观测构建 `obs-t1` 的优化后 HLO，[`ep8-embed-scatter-hlo.json`](alignments/01-v5p-acceptance/results/ep8-embed-scatter-hlo.json)；观测构建加了钩子、GA 1，不是正式被测的程序）：路由专家权重梯度（专家不切，沿 fsdp 轴 all-reduce）和各 norm scale 梯度是 BF16 all-reduce。词嵌入表沿隐藏维切开，梯度在本卡收齐全部 token 后算，没有整表的跨卡求和；它的 BF16 落地见对齐报告注 20。
   - GPU 反过来改成 BF16 规约（`g-bf16grad`，1000 步）：param_norm 对 g1k-a（第一阶段 GPU golden 的第 1 份）+6.6e-4。
   - 同设置的 `g-ctl`（扩充噪声带用的 GPU 对照运行）+8.2e-4，在 GPU 自己的散布里（[`goldens.md`](goldens.md)「梯度 BF16 规约」行）。
   - L4 对 [`rcc-a`](../../docs/glossary.md#rcc-a) 全部在噪声内。
@@ -156,6 +157,7 @@
     - 专家输出加权 `float32_weight_sum: true`（base.yml 默认）。
   - 证据：喂 golden 的输入，TPU top-8 集合对 FP64 每层一致率 ≥ 0.9995（`L1.router.topk.fp64.layer1..3`，v5p、v7x）。
   - sigmoid 若在 BF16 里算，近似平局处的翻转会多出一截（推断，没有单独做 BF16 臂）。
+  - FP32 上也不是正确舍入：混元 4 在 v5p 上实测 TPU 默认 FP32 sigmoid 离正确舍入最多 83 ulp（GPU B200 3.4 ulp），一个近乎平局的 token 因此选了另一个专家；改用精确 exp 搭的 sigmoid 后收拢（[根源一览第 11、14 行](../hunyuan4/ROOT-CAUSES.md#r11)）。混元 3 用的是同一种默认 sigmoid，近似平局翻转（对齐报告台账 #5）里可能有一部分来自它，没有在混元 3 上验证（推断）。
 - 注 12（TF32，GPU 一侧）：
   - 容器设了 `TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=1`，默认开。
   - 训练里输入是 FP32 的 GEMM 只有路由反向：rank 0 第 1 步共 12 次（dgrad、wgrad 各 6 次）。
@@ -215,6 +217,7 @@
   - TPU 一侧：
     - `run.sh` 透传调用方的 `XLA_FLAGS`，关掉用 `XLA_FLAGS=--xla_allow_excess_precision=false`。
     - 关掉为的是舍入位置确定，不是更准（有些算子默认更接近正确舍入）。
+    - 但省掉的舍入不是不可避免：混元 4 查明后端在融合内部省掉 GPU 一定会做的 FP32 → BF16 → FP32 往返，用 `reduce_precision` 显式舍入能补回（[根源一览第 16 行](../hunyuan4/ROOT-CAUSES.md#r16)）；关掉这个开关还会让排好序的词嵌入 scatter 退回每加一次舍一次（[案例 14](../hunyuan4/cases/14-ddp-fsdp-embedding.md#回头看-10-月的建议)）。
     - v5p 上默认开时，RMSNorm 的中间舍入、门控激活 `silu` 后的舍入都被省掉（见下面两行）。
     - 需要和 GPU 一样各舍一次的地方用 `reduce_precision` 显式写，不靠这个开关。
   - 证据：
@@ -242,7 +245,7 @@
     - 各层 `in.grad` 也都变小。
 - 注 21（路由核 BF16 舍入）：
   - TPU 开关：核先 `reduce_precision` 到 BF16 再乘，梯度直通。
-    - #94 的 `astype` 写法会把梯度也舍成 BF16，#97 修掉。
+    - `astype` 写法会把梯度也舍成 BF16，后一版修掉。
   - v5p 上 DEFAULT 档本来就先舍 BF16，开不开逐位相同。
     - 不能用 BF16 表示的核也一样。
     - 回归试跑 20 步开 / 关整条训练逐位相同，编译后只多 2 个 reduce-precision。
@@ -290,7 +293,8 @@
   - TPU 侧：生产配置第 1 步状态读，按被测自己 meta 里记的 β1 / β2 / ε / 权重衰减 / 裁剪阈值重放一步。
     - 用和 GPU 侧同一个 FP64 公式（ε 加在根号外，[`janus/replay.py`](../../janus/replay.py) 的 `adamw_step`）。
     - 比更新量和两个动量：48 个参数 × 3 = 144 个张量，rel_l2 最大 2.13e-3（v5p）/ 2.12e-3（v7x），门槛 5e-3，cosine 1.0（`L1.optim.adamw.replay`，`phase2-st1-prod-state`、`phase2-v7x-st1-prod-state`）。
-    - 连续 8 步重放（第 0 层注意力、各层路由权重、全部归一化权重，66 个张量）rel_l2 最大 4.80e-3 / 4.79e-3（`L1.optim.adamw.8steps`，`phase2-st8-opt8`、`phase2-v7x-st8-opt8`）。
+    - 连续 8 步重放（第 0 层注意力、各层路由权重、全部归一化权重，66 个张量）rel_l2 最大 4.80e-3 / 4.79e-3（`L1.optim.adamw.8steps`，`phase2-st8-opt8`、`phase2-v7x-st8-opt8`），已到门槛 5e-3 的 0.96 倍。
+    - 混元 4 查明 TPU 默认的 FP32 除法、sqrt、1 − β^t 不精确（2 / 3 / 108 ulp），Adam 小张量离 FP64 最多是 GPU 的 3.82 倍，改精确写法后收拢（[根源一览第 17 行](../hunyuan4/ROOT-CAUSES.md#r17)）。混元 3 这 0.96 倍里有多少来自这几处，没有单独测（推断：同一个 optax 写法、同一个 libtpu 构建，应有同类贡献）。
     - 梯度从一阶动量反推，所以一阶动量按构造吻合，有信息量的是更新量与二阶动量。
   - GPU 侧：00 `L1.optim.adamw.replay`（FP64 重放，141 个张量在门槛内）。
 - 注 25（β1 / β2 / ε）：
@@ -353,12 +357,13 @@
 - 注 30（切分方式）：
   - 00 `phase1-parallel`、`phase1-parallel-ext`：只换 EP 度，反向就不逐位。
   - 并行方式对 L4 的影响（2026-11-05）：TPU 生产配置只改成和 GPU 一样的 EP = 8（`ici_fsdp_parallelism=1`、`ici_expert_parallelism=8`）。
-    - 1000 步对精确轨迹的 param_norm 带符号均值：v5p `t-ep8-1000` 比当前 FSDP 配置少 18%（第 1000 步 +2.35e-3 降到 +1.86e-3），v7x `t-v7x-ep8-1000` 反而多 17%（3.74e-7 对 3.19e-7）；两者都在 TPU 执行噪声上限 9e-8 以内。
+    - 1000 步对精确轨迹的 param_norm 带符号均值：v5p `t-ep8-1000` 比当前 FSDP 配置少 18%（4.27e-7 降到 3.52e-7），v7x `t-v7x-ep8-1000` 反而多 17%（3.19e-7 升到 3.74e-7）；差值都在 GPU 精确五份两两的上限 1.07e-7 以内。第 1000 步的差另列：v5p +2.35e-3 → +1.86e-3，v7x 不变（+2.35e-3）。
     - 仍是约 3 倍噪声，不过。
     - 这是排查期对 `rce-a`（精确轨迹，BF16 权重、全程 FP32 计算）的读数，`rce` 现在只作参考；读数见案例 01 第 0 节「并行方式」行。
     - 结论：切分方式只解释 TPU 剩下那一份的一小部分。
   - 对最终 golden `rcc-a`：FSDP 8（当前配置）与 EP = 8 两种切分在 v5p、v7x 上 L4 都在噪声内。
     - 目录：`phase2-acceptance-rcc-on` / `-ep8`、`phase2-v7x-acceptance-rcc` / `-ep8`。
+  - EP = 8 时非专家参数沿 expert 轴切 8 份（MaxText 逻辑轴规则把 `embed` 也映射到 expert 轴），对词嵌入和 FSDP 8 是同一种切法：读优化后 HLO 核实，反向 scatter 每卡 32768 个下标、被排序，不是纯数据并行（[`goldens.md`](goldens.md) 注 50）。只在 libtpu 0.0.46 上核过。
     - 切分方式不构成可测的差。
   - 已知限制：GPU 换 FSDP 的对照没做成（两种失败方式都记在 [goldens.md](goldens.md)「并行」行）：
     - Megatron-FSDP 载入检查点时报 `MegatronFSDP` 没有 `sharded_state_dict`（Bridge 要求 FSDP 用 `fsdp_dtensor` 格式的检查点，现有的是 `torch_dist`）；
@@ -383,7 +388,8 @@
     - 第一阶段 `g1k-*`（归因参照）：不开（`recompute: false`）。
     - 这套重算设置是假设的，真实的生产重算配置还没拿到，拿到后可能重跑（03 `setup.md`）。
   - TPU：`remat_policy: "custom"`。
-    - 层输入、各投影、MoE 三个 GEMM 输出、`moe_routing_maps` 存 `device`（TPU yml），其余在反向里重算。
+    - yml 默认：层输入、各投影、MoE 三个 GEMM 输出、`moe_routing_maps` 存 `device`，其余在反向里重算。日常回归 T0、T1 用的就是这一份。
+    - 正式验收与生产配置（rmap 覆盖，命令行给）：只存层输入与 `moe_routing_maps`，`context`、`query_proj`、`key_proj`、`value_proj`、`out_proj`、`mlpwi_0`、`mlpwi_1`、`mlpwo`、`moe_mlpwi_0`、`moe_mlpwi_1`、`moe_mlpwo` 都改 `remat`（01 `runs.yaml` 的 `t-rmap-on-1000`、02 `runs.yaml` 的 `t-v7x-on-1000`）。照抄 yml 跑出来的不是验收的那个程序。
     - `remat_policy: none` 在 NNX 解码器里仍会包成整层重算，所以不用。
   - 证据：
     - 00 `phase1-remat`；03 `remat-replay`、`remat-vs-g1k`；

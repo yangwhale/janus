@@ -8,9 +8,30 @@
 - 平台：v5p 8 片（2x2x2，2 台主机，8 个 JAX 设备），对 GPU B200 × 8；设备 d 第 m 个累积步吃 GPU rank d 的第 m 个 microbatch。
 - 代码：`maxtext` 的混元 4 集成分支（`stage.sh` 用环境变量 `MAXTEXT_BRANCH` 指定分支名；含 `0b7dead5` 及之后的全部改动）。
   具体提交由 [`stage.sh`](stage.sh) 记进每个运行的 `meta.json` 的 `code`。
-- 镜像：与混元 3 相同的 MaxText `tpu_pre_training` 0.2.5（[`run.sh`](run.sh) 里的 `IMAGE`，按 digest 钉死）。
+- 镜像：与混元 3 相同的 MaxText `tpu_pre_training` 0.2.5（[`run.sh`](run.sh) 里的 `IMAGE`，按 digest 钉死）。TPU 上实跑的库版本以镜像为准：jax / jaxlib 0.11.1、libtpu 0.0.46（构建 `cl/963683785`）、flax 0.12.9、optax 0.2.8、orbax-checkpoint 0.12.4，每个运行记在 `meta.json` 的 `versions`；tokamax 版本 `meta.json` 不记，未登记。逐项与出处见 [mini 的「软件版本」](../../alignments/01-mini/setup.md#软件版本)。
 - CPU 验证环境：jax / jaxlib 0.11.1、flax 0.12.10、optax 0.2.8、orbax-checkpoint 0.12.7（分支 `tpu-requirements.txt` 的下限，去掉 libtpu）；
   编译期显存分析另装 libtpu 0.0.46（只用编译器）。
+
+## 这些开关在哪个分支
+
+本仓库混元 4 的结论都在 `maxtext` 的混元 4 集成分支上测得。读者文档「怎么修」里的开关只在这条分支上，上游 `AI-Hypercomputer/maxtext` 没有（2026-11-11 核：上游 main `e66c28c2` 的 `src/maxtext/configs/base.yml` 里没有这些键；按开关名搜上游的 PR，没有搜到）。下表的 PR 都合进了集成分支，`maxtext` 自己的 main 也没有它们。
+
+先知道三件事：
+
+- **上游有另一份混元 4 实现。** 上游 2026-10-29 起有自己的 `decoder_block: hy4`（`models/hy4.py`）；集成分支的混元 4 建在 DeepSeek 解码器上（`decoder_block: deepseek`）。两份不是同一份代码，本仓库的结论没在上游实现上测过。
+- **分叉点。** 集成分支与上游 main 的公共祖先是上游 `493d5928`（2026-10-01）。移植时以它为底看差异。
+- **上游没有的键会报错，不会静默。** 上游 `configs/pyconfig.py` 对配置里不认识的键抛 `ValueError`。所以对齐配置 [`hy4-mini-t1.yml`](hy4-mini-t1.yml) 原样拿到上游加载不起来。上游**有**这个键、只是代码路径没接上时，才会静默不生效（下表 `float32_logits` 那行）。
+
+| 开关或修复 | 做什么 | 集成分支的提交（PR） | 上游 | 用上游要怎么办 |
+|---|---|---|---|---|
+| `embedding_grad_fp32`（台账 M12） | 词嵌入梯度在 FP32 里累加 | `23f71c66`（从 `hunyuan` 分支移植） | 没有这个键：写了报错 | 移植 `layers/embeddings.py` 的取行写法，`configs/base.yml`、`configs/types.py` 加键。纯数据并行 + 梯度累积下还要带上下一行的修复 |
+| `d5c9b113` 的修复 | 纯数据并行 + 梯度累积时，`embedding_grad_fp32` 丢掉前面微批的词嵌入梯度（r 611，[impacts/01](../../alignments/04-tpu-self/impacts/01-data-parallel.md)） | `d5c9b113` | 不涉及：上游没有 `embedding_grad_fp32` | 移植上一行时一起移植 `utils/gradient_accumulation.py` 的改动。集成分支上也要 `d5c9b113` 之后的提交：TPU 自比 golden 与 mini 现行比较用的 `b87a55aa` 在它之前（这两份是 FSDP，不走这条路径） |
+| `embedding_grad_fp32_local_bf16_comm` | 词嵌入梯度本地 FP32 累加、BF16 跨卡求和 | 合并提交 `f70d74cb` | 没有这个键：写了报错 | 移植 `layers/embeddings.py`、`utils/gradient_accumulation.py` 与两处配置 |
+| `embedding_shard_over_data`（台账 M54） | 只把词嵌入表沿 `data` 轴切开，纯数据并行下按 FSDP 的方式更新词嵌入 | `9099c8ce` | 没有这个键：写了报错 | 移植 `layers/embeddings.py` 与两处配置（`types.py` 里追加逻辑轴规则）。上游已有的 `shard_optimizer_over_data` 是另一件事，和它互斥 |
+| `rmsnorm_single_rounding`（台账 M9） | RMSNorm 在 FP32 里算完只舍一次 | `2f745f37`（`hunyuan` 分支的 MaxText 上的一处修改），接到混元 4 路径是另一次修改 | 没有这个键：写了报错 | 移植 `layers/normalizations.py` 与两处配置，再把开关接到用到 RMSNorm 的模型文件（一次 MaxText 修改接了 `attentions.py`、`nnx_decoders.py`、`qwen3.py`，一次 MaxText 修改接了 `deepseek.py`、`attention_mla.py`、`multi_token_prediction.py`） |
+| MLA 接上 `float32_qk_product`、`float32_logits` | 普通注意力（`attention=dot_product`）的打分与 softmax 走 FP32；上下文并行的修法要它（[impacts/06](../../alignments/04-tpu-self/impacts/06-context-parallel.md)） | `56492817` | 两个键都有。上游 `models/deepseek.py` 建 MLA 时没把它们传下去，和集成分支修之前一样：**写了静默不生效**（TPU 自比 G3c：打开后训练步程序不变）。上游自己的 `models/hy4.py` 传了 | 用 `decoder_block: deepseek` 时移植 `models/deepseek.py` 的三行；用上游的 `hy4` 实现不用改，但那份实现本仓库没测过 |
+| `hc_head_force_bf16_rounding`（台账 M52） | hc_head 收成一路后先舍成 BF16 再进末层 RMSNorm（诊断开关） | `0e33d77c`（与 M53 的五个诊断开关同一提交） | 没有这个键：写了报错 | 只在复现混元 4 主 loss 排查时需要 |
+| 其余对齐开关 | [`CHANGES-LEDGER.md`](../../CHANGES-LEDGER.md) MaxText 表里有开关名的各行 | 见台账「提交」列 | 都没有，只有 `sa_use_base2_exp`、`logits_dot_in_fp32`、`matmul_precision`、`shard_optimizer_over_data`、`float32_logits` 这几个已有的键上游也有 | 要逐个移植；台账「提交」列是起点 |
 
 ## 文件
 
@@ -22,7 +43,7 @@
 | [`../../model/t2_l0.sh`](../../model/t2_l0.sh) | T2 的 L0 一条龙：hf-manifest、反向取回、RoPE、janus 目录、GPU 载入自检汇总（阶段 B / D1） |
 | [`../../model/make_tiny_hf.py`](../../model/make_tiny_hf.py) | 小维度的假 HF 目录（CPU 冒烟用）；也是 HF 形状表 `hf_shapes` 的出处 |
 | [`hy4-mini-t1.yml`](hy4-mini-t1.yml) | T1 的 MaxText 配置；逐项对照见 [`../../alignments/01-mini/config-alignment.md`](../../alignments/01-mini/config-alignment.md) |
-| [`hy4-t2-b.yml`](hy4-t2-b.yml) / [`hy4-t2-d1.yml`](hy4-t2-d1.yml) | T2（真实权重截层 B、D1）的配置：`hy4-mini-t1.yml` 现在的全部数值与优化器开关（含 M31、M33；另暂关 `qk_clip_max_logit_exclude_sink`，real-weight 的对齐细节 D20；`tb2-a`、`td2-a` 跑的是之前的 t1v 等价设置），换 `model_name: hy4-preview`（单测逐键核对）；见[实践 02](../../alignments/02-real-weight/README.md) |
+| [`hy4-t2-b.yml`](hy4-t2-b.yml) / [`hy4-t2-d1.yml`](hy4-t2-d1.yml) | T2（真实权重截层 B、D1）的配置：`hy4-mini-t1.yml` 现在的全部数值与优化器开关（含 M31、M33；`qk_clip_max_logit_exclude_sink` 也开着：阶段 B 上打开时的 NaN 由 M35 修好，2026-11-08 起重新打开，real-weight 的对齐细节 D20；`tb2-a`、`td2-a` 跑的是之前的 t1v 等价设置），换 `model_name: hy4-preview`（单测逐键核对）；见[实践 02](../../alignments/02-real-weight/README.md) |
 | [`hy4-4layers.yml`](hy4-4layers.yml) | 不设 `HY4_YML` 时的默认配置：真实权重截层的转换、L0 核对与单算子回放用它 |
 | [`mt_common.py`](mt_common.py) | 按阶段建配置；和模型 yml 冲突的键自动补到命令行（`forced_overrides`），并核对 yml 每个键实际生效（`effective_mismatch`） |
 | [`replay.py`](replay.py) | 数据回放；T1 / T2 的 golden 开 `--eod-mask on` 与 `--save-batches`，loss_mask 一起存下（台账 G9）；更早只存 tokens / labels 的运行，缺的 loss_mask 补 1、position_ids 补 0…S−1 |

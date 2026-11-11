@@ -8,10 +8,27 @@
 |---|---|---|
 | 模型 | MaxText `hy4-mid`（集成分支；与 `hy4-mini` 只差宽度、头数、q_lora、稠密 FFN、专家宽度） | 同一 HF 目录 |
 | 初始权重 | `hf/hy4-mid-seed0`（`model/make_tiny_hf.py --config mid --layers 7 --mtp 1 --seed 0`，权重矩阵标准差 0.006）转换的 MaxText 检查点 `maxtext/hy4-mid-maxtext/0/items` | `hf/hy4-mid-seed0` |
-| 配置 | [`hy4-mid-t1.yml`](../../frameworks/maxtext/hy4-mid-t1.yml)：`hy4-mini-t1.yml` 的全部开关，只换 `model_name`；`STAGE=mid` | 参数同 g2 / g3，只换 HF 目录 |
+| 配置 | [`hy4-mid-t1.yml`](../../frameworks/maxtext/hy4-mid-t1.yml)：`hy4-mini-t1.yml` 的全部开关，只换 `model_name`；`STAGE=mid`。`tm-b` 的 `meta.json` 记 jax 0.11.1，libtpu 构建串与 06 的 `rfx-on` 相同（那份记 libtpu 0.0.46） | 参数同 g2 / g3，只换 HF 目录 |
 | 数据 | 回放 `gm-a` 的 batch 与 loss_mask | `tokens.npy`（与 T1 同一份） |
 
-路径都在 `gs://<POC 桶>/janus/hunyuan4/` 下。TPU 命令：`YML=hy4-mid-t1.yml STAGE=mid GOLDEN=<gm-a 运行目录> HF_DIR=<…/hf/hy4-mid-seed0> bash run.sh tm-a 300 --dump-steps none`。复现 `tm-a` 要用 janus `fd796f6` 的 yml 与 MaxText `469dbb85`：之后加的 M39（MaxText 代码）与 M40、M41（yml 开关）都会改变数值。
+路径都在 `gs://<POC 桶>/janus/hunyuan4/` 下。TPU 命令：`YML=hy4-mid-t1.yml STAGE=mid GOLDEN=<gm-a 运行目录> HF_DIR=<…/hf/hy4-mid-seed0> bash run.sh tm-a 300 --dump-steps none`。这条命令用现行 yml，复现不了已判的运行：复现 `tm-a` 要用 janus `fd796f6` 的 yml 与 MaxText `469dbb85`；复现 `tm-b` 要用 janus `9c0f19a` 的 yml 与 MaxText `2c28a4f4`（base2 开、没有 M50，`meta.json` 已核），运行名换成 `tm-b`。之后加的开关都会改变数值，以各运行的 `meta.json` 为准。现行 yml（关 base2、含 M50）在 mid 上还没跑过。
+
+## 软件版本
+
+以现行比较为准：TPU `tm-b` 对 GPU `gm-a`，噪声是同设置 8 份。其余各行同 [T1 的「软件版本」](../01-mini/setup.md#软件版本)。
+
+| 侧 | 组件 | 版本 | 证据出处 |
+|---|---|---|---|
+| TPU | 镜像 | MaxText `tpu_pre_training`，digest `b152355a…`（同 T1） | `tm-b` 的 `meta.json` 的 `image` |
+| TPU | MaxText | 集成分支 `2c28a4f4` | `meta.json` 的 `code`；[`runs.yaml`](runs.yaml) |
+| TPU | janus（打进 Pod 的程序） | `9c0f19af` | `meta.json` 的 `code` |
+| TPU | jax / jaxlib | 0.11.1 / 0.11.1 | `meta.json` 的 `versions` |
+| TPU | libtpu | 0.0.46（推断） | `meta.json` 只记了构建号 `cl/963683785`。推断：T1 现行 `tz-off-rep` 是同一构建号，记的是 `libtpu==0.0.46` |
+| TPU | tokamax | 0.0.14（镜像自带的包） | 同 T1 |
+| GPU | 镜像、torch、CUDA、NCCL、Megatron-Core、TE、cuBLAS | 同 T1 | `gm-*` 8 份的 `meta.json` 的 `image`、`versions` 与 T1 的 `g3-*` 逐字相同 |
+| GPU | janus 训练程序 | `hy4_mcore.py` sha256 `4dab75aa…` | `meta.json` 的 `code` |
+
+`meta.json` 不入库，结果文件 [`tmb-l4.results.json`](results/tmb-l4.results.json) 记着每份的 sha256。**结论在这些版本上测得**；换 libtpu 或 jax 要按 [`libtpu-052.md`](../04-tpu-self/libtpu-052.md) 的做法重测。
 
 ## GPU golden 的作业规格
 

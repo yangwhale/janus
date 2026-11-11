@@ -8,7 +8,7 @@
 - DSA 不重合率：自带索引器的层，每个 query 选中的位置集合里对方没选的比例（1 − |A∩B| ÷ |A|），对有选择的 query 取平均；
   另记「选中集合不完全相同」的 query 比例。
 判定（逐层，再取最差层）：正式判定用对真值口径：R = TPU 对 CPU FP64 自选的量 ÷ GPU 各份对 FP64 的最大值，≤ 1.2 过、
-≤ 2 待定、> 2 不过（同 L3 的 R；DSA 要 FP64 每行都存了 top-k：step1_ref.py --dsa-topk-all）。「对 GPU 两两」口径照报不判：尺子 = GPU 各对的最大值，
+≤ 2 待定、> 2 不过（1.2 这条线同 L3 的 R，待定一档是这里自己的；DSA 要 FP64 每行都存了 top-k：step1_ref.py --dsa-topk-all）。「对 GPU 两两」口径照报不判：尺子 = GPU 各对的最大值，
 TPU ≤ 尺子 / ≤ 2 倍 / > 2 倍 记 过 / 待定 / 不过；尺子为 0 时 TPU 为 0 记过、不为 0 记不过。GPU 两两量的是同一套舍入的确定性。
 
 输入（每份「选择」一个来源，行按 token 逐个相等对上第一份 GPU，不依赖文件里的行号）：
@@ -148,7 +148,7 @@ TRUTH_R = 1.2
 
 
 def judge_truth(tpu_vs64: float, gpu_vs64: list[float]) -> tuple[str, float | None]:
-    """正式判定（对真值）：R = TPU 对 FP64 的量 ÷ GPU 各份对 FP64 的最大值，≤ 1.2 过，≤ 2 待定，> 2 不过（同 L3 的 R）。"""
+    """正式判定（对真值）：R = TPU 对 FP64 的量 ÷ GPU 各份对 FP64 的最大值，≤ 1.2 过，≤ 2 待定，> 2 不过（1.2 这条线同 L3 的 R，待定一档是这里自己的）。"""
     g = max(gpu_vs64)
     if g == 0:
         return ("pass" if tpu_vs64 == 0 else "fail"), None

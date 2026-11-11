@@ -3,10 +3,11 @@
 schema: 1
 alignment: 04-tpu-self
 golden:   # TPU golden
-  - {name: ts-g-a, stage: T1, steps: 1000, role: "TPU 自比的 golden：现行对齐 yml、MaxText b87a55aa、v5p 2x2x2、FSDP 8、微批 1 × 累积 2，回放 GPU g3-a；第 1 步全量抓数、训练步优化后 HLO", results: [ts-g-a.golden, ts-g-a-vs-gpu], location: "gs://<POC 桶>/janus/hunyuan4/tpu/ts-g-a/"}
+  - {name: ts-g-a, stage: T1, steps: 1000, role: "TPU 自比的 golden：现行对齐 yml、MaxText b87a55aa、v5p 2x2x2、FSDP 8、微批 1 × 累积 2，回放 GPU g3-a；第 1 步全量抓数、训练步优化后 HLO", results: [ts-g-a.golden, ts-g-a-vs-gpu, ts-g-a-vs-gpu16], location: "gs://<POC 桶>/janus/hunyuan4/tpu/ts-g-a/"}
 reference:   # 尺子与对照（不是被测）
   - {name: g2-a..g2-h, stage: T1, steps: 300, role: "曲线的尺子：GPU 同设置 8 份两两 28 对（catalogs/vs-golden.yaml）", location: "gs://<POC 桶>/janus/hunyuan4/gpu/g2-*/"}
   - {name: g3-a..g3-h, stage: T1, steps: 1000, role: "golden 对 GPU 的 1000 步比较（g3-a 是基线，28 对是噪声；catalogs/golden-vs-gpu.yaml）", results: [ts-g-a-vs-gpu], location: "gs://<POC 桶>/janus/hunyuan4/gpu/g3-*/"}
+  - {name: g3-a..g3-p, stage: T1, steps: 1000, role: "v7x 1000 步（ts-h-v7-1k3）直接对 GPU 比的尺子：g3-a 基线，16 份两两 120 对（catalogs/v7x-1k-vs-gpu16.yaml；golden ts-g-a 用 --test 同尺子判一次作对照）", results: [ts-h-v7-1k3-vs-gpu16, ts-g-a-vs-gpu16], location: "gs://<POC 桶>/janus/hunyuan4/gpu/g3-*/"}
   - {name: g2s-a..g2s-c, stage: T1, steps: 1, role: "第 1 步梯度的尺子：GPU 三份两两"}
   - {name: mini-fp64, role: "第 1 步梯度的 CPU FP64 参照（frameworks/megatron/step1_ref.py，同 01-mini）"}
 test:     # TPU：对 golden 比
@@ -19,4 +20,5 @@ test:     # TPU：对 golden 比
   - {name: ts-dp8, stage: T1, steps: 300, role: "阶段 1 并行方式：纯数据并行 8（ici_data_parallelism=8、ici_fsdp_parallelism=1），其余同 golden", golden: ts-g-a, results: [ts-dp8-vs-golden], location: "gs://<POC 桶>/janus/hunyuan4/tpu/ts-dp8/"}
   - {name: ts-f16, stage: T1, steps: 300, role: "阶段 1 并行方式：v5p 2x2x4（16 个设备），FSDP 16、每设备微批 1、累积 1，全局批仍 16 × 4096", golden: ts-g-a, results: [ts-f16-vs-golden], location: "gs://<POC 桶>/janus/hunyuan4/tpu/ts-f16/"}
   - {name: "ts-*（其余各臂）", stage: T1, steps: "300 或 1000", role: "实验矩阵的各臂：运行名、对照、改法、场景在 arms.yaml，结果在 results/<运行名>-vs-<对照>.json；第 1 步全量抓数与训练步 HLO 在各运行目录", location: "gs://<POC 桶>/janus/hunyuan4/tpu/<运行名>/"}
+  - {name: "ts-n2-* / ts-n3-*（第 1 步消融）", stage: T1, steps: 1, role: "只抓第 1 步的消融，不判档、不进 arms.yaml。关省舍入那件（impacts/02）：ts-n2-ihcpk(-noexc)（iHC 走 Pallas 内核）、ts-n2-xfg(-noexc)（门控吃 FP32 的流，测试分支 486ac74e）、ts-n2-ihc-r1 / r2（cfb277dc / 983b4937）、ts-n2-hcdef(-noexc)、ts-n2-k1(-noexc)（b647e1e0：iHC 前半 Pallas、后半 XLA）、ts-n2-k2(-noexc)（b0bf5dc0：前半 XLA、后半 Pallas）、ts-n3-dlo-prodround（f4966773：开着省舍入，d layer_out 的每个乘积先舍 BF16 再累加）、ts-n2-dense-round、ts-n2-noexc-ga1、ts-n2-noexc-remall、ts-n2-noexc-hi。芯片 v5p、libtpu 0.0.46 都是推断（结果文件不记）：关省舍入的几次第 1 步梯度范数 6.325–6.329，与 v5p 关省舍入 ts-c-noexcess（6.3256）同一档，v7x 关省舍入是 6.3567；ts-n3-dlo-prodround 的基线就是 v5p golden ts-g-a。部分运行的本地第 1 步抓数已删，数字沿用 a65c914 那一版（见结果文件 note）", results: [night2-noexcess-grad-sq], location: "gs://<POC 桶>/janus/hunyuan4/tpu/<运行名>/"}
   - {name: "g2-a..g2-h / g3-a..g3-h（留一法）", stage: T1, role: "GPU 重跑的留一法 r 分布（analysis/gpu_loo_r.py），给「和 GPU 重跑分不开」的解读用", results: [gpu-rerun-loo-r-300, gpu-rerun-loo-r-1000]}

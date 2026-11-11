@@ -2,7 +2,7 @@
 
 # GLM-5.2
 
-GLM-5.2（Hugging Face `zai-org/GLM-5.2`，架构不改）截层后从 GPU（B200 × 8，Megatron-Bridge）迁到 TPU（v5p 8 片，MaxText）的端到端数值对齐。方法、数据回放与检查清单照[混元 3](../hunyuan3/README.md)，文件夹结构与混元 3 一一对应；判法用 janus 现行判法（与混元 4 相同，见[比较协议](PROTOCOL.md)）。对应 issue：一次实际排查。
+GLM-5.2（Hugging Face `zai-org/GLM-5.2`，架构不改）截层后从 GPU（B200 × 8，Megatron-Bridge）迁到 TPU（v5p 8 片，MaxText）的端到端数值对齐。方法、数据回放与检查清单照[混元 3](../hunyuan3/README.md)，文件夹结构与混元 3 一一对应；判法用 janus 现行判法（与混元 4 相同，见[比较协议](PROTOCOL.md)）。
 
 为什么是 GLM-5.2：它的骨架和混元 4 相同（MLA、DSA 索引器与跨层共享、256 专家 sigmoid 路由、1 层 MTP），又有 Megatron-Bridge 现成的桥与训练配方。这里做完端到端对齐后，整理成逐组件的对齐指南，给混元 4 这类同骨架模型用。混元 4 的实践在 [`../hunyuan4/`](../hunyuan4/README.md)。
 

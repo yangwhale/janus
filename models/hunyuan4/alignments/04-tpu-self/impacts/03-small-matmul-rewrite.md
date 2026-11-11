@@ -34,7 +34,7 @@ RMSNorm 乘 scale 的那一步，MaxText 写成 `einsum("...k,k->...k", normed, 
 
 ## 换 libtpu 版本
 
-在 libtpu 0.0.52 上重测（V6，v5p，对 `ts-g52-a` 比；[`libtpu-052.md`](../libtpu-052.md)）：曲线最差 r 1.00（0.0.46 是 0.94）；第 1 步变远的仍是 MTP `enorm`，R 1.35（0.0.46 是 1.40）。这两个版本、这个配置下结论相同。
+在 libtpu 0.0.52 上重测（V6，v5p，对 `ts-g52-a` 比；[`libtpu-052.md`](../libtpu-052.md)）：曲线最差 r 1.00（0.0.46 是 0.94）；第 1 步变远的仍是 MTP `enorm`，R 1.35（0.0.46 是 1.40）。这两个版本、这个配置下结论相同。`hc_head` 在 0.0.52 上不再偏：`hc_head_base` 离 FP64 5.2e-2，0.0.52 的 golden 5.0e-2。
 
 ## 能不能忍
 
@@ -50,8 +50,9 @@ RMSNorm 乘 scale 的那一步，MaxText 写成 `einsum("...k,k->...k", normed, 
 
 ## 坑
 
-- 同样的 `hc_head` 偏差在 D3（einsum 改广播乘，含只改末层、只改末层以外两种拆法）和 v7x 默认配置里也出现，对 FP64 的差几乎是同一个常数（四个元素都约 −11e-6）；关掉省舍入后都回到 FP64 附近。这个梯度八成是末层 RMSNorm 的 ε 项，偏差约等于 ε 项的 1.26 倍，所以四个元素一起被推过零。根因定到输出头反向那颗卷积 kernel：偏的程序里末层 RMSNorm 反向的每 token 行和 S 用的是 kernel 里没舍的 dy，主项用的是写进显存的 BF16 dy；在 TPU 上给这份余切加 `optimization_barrier` 就回到 golden（`ts-n3-d3final-barrier`）。详见[实验矩阵「hc_head：被 iHC 豁免盖住的三个张量」](../MATRIX.md#hc_head被-ihc-豁免盖住的三个张量)。
-- 工具对 iHC 小参数单列、不挡判档（`ihc_accepted`），原意是放过 1.5–2 倍的小偏差；这里偏到 18–46 倍、符号反了也被单列。收窄豁免的提议已登记在 PROTOCOL 变更记录（2026-11-11），判档暂不改；看判档时要看 `ihc_accepted` 里的倍数。
+- 同样的 `hc_head` 偏差在 D3（einsum 改广播乘，含只改末层、只改末层以外两种拆法）和 v7x 默认配置里也出现（都是 libtpu 0.0.46），对 FP64 的差几乎是同一个常数（四个元素都约 −11e-6）；关掉省舍入后都回到 FP64 附近。这个梯度的大部分是末层 RMSNorm 的 ε 项（FP64 的 6.87–11.18e-6 里 8.8–9.2e-6），偏差约等于 ε 项的 1.26 倍，所以四个元素一起被推过零。根因定到输出头反向那颗卷积 kernel：偏的程序里末层 RMSNorm 反向的每 token 行和 S 用的是 kernel 里没舍的 dy，主项用的是写进显存的 BF16 dy；在 TPU 上给这份余切加 `optimization_barrier` 就回到 golden（`ts-n3-d3final-barrier`）。这条因果只在 v5p、只改末层的程序上验证过；v7x 默认和关小矩阵乘改写两个程序没编 LLO、没核，同一机制是推断；写进显存那次是「截断式」舍入、所以幅度对得上，也是推断。
+- libtpu 0.0.52 上，v7x 默认（V16，`hc_head_base` 1.267 → 0.014）和关小矩阵乘改写（V6）都不再偏；v7x 纯数据并行不累积（V17）却偏到 0.56，是不是同一种机制没核。详见[实验矩阵「hc_head：被 iHC 豁免盖住的三个张量」](../MATRIX.md#hc_head被-ihc-豁免盖住的三个张量)。
+- 工具对 iHC 小参数单列、不挡判档（`ihc_accepted`，定义见 [MATRIX「iHC 豁免」](../MATRIX.md#ihc-豁免定义与受影响的运行)），原意是放过 1.5–2 倍的小偏差；这里偏到 18–46 倍、符号反了也被单列。收窄豁免的提议已登记在 PROTOCOL 变更记录（2026-11-11），豁免是否收窄待定；看判档时要看 `ihc_accepted` 里的倍数。
 
 ## 一句话
 

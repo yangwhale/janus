@@ -13,9 +13,20 @@
 > - 对未经修改的 GPU 生产 golden `rc`，TPU 仍然不过（param_norm 带符号均值约 24 倍噪声），记为已解释差异，全部归到 GPU 输出头 dgrad 的长求和偏差（第 3 节末）。
 > - 尺子是看到待定结果之后改过的：噪声参照从 5 份（10 对）补到 10 份（45 对），两处测量口径也改了。用原口径、45 对同样全部过，最差 0.84（第 3 节「我们怎么走到 45 对的」）。
 > - L0 验收路径上全部逐位。L1 单算子（只比前向）离 FP64 不比 GPU 远，例外是 v7x 第 2 层 MoE 块：一个 token 路由翻转，R 比 1.27。L2 逐层前向、反向全过；L2 的参数梯度来自整网第 1 步，和下一条同源。
-> - 验收路径上严格档不过或待定的，集中在第 1 步的梯度与优化器状态，主要来源是路由近似平局，已定责、不累积（第 4 节）。按签字原则这一项不满足「噪声检查全部过」，是否据定责接受由使用方决定（签字清单 2b）。另有三项不在验收路径上：TPU 原生数据加载器、加抓数改数值（原因见第 4 节）、跨平台激活逐位（按定义不要求，见检查清单 L3）。
+> - 验收路径上严格档不过或待定的，集中在第 1 步的梯度与优化器状态，主要来源是路由近似平局，已对 FP64 查明机理、不累积；其中一部分张量 R 在 1.23–2.70 之间，未达 R ≤ 1.2 的定责线（第 4 节）。按签字原则这一项不满足「噪声检查全部过」，是否据定责接受由验收方决定（签字清单 2b）。另有三项不在验收路径上：TPU 原生数据加载器、加抓数改数值（原因见第 4 节）、跨平台激活逐位（按定义不要求，见检查清单 L3）。
 
-**适用范围。** 结论只对下面这组条件成立：GPU 一侧是 B200 × 8、CUDA 13.4、cuBLAS 13.8（输出头 dgrad 的长累加偏差只在这套软硬件上量过）；混元 3 截前 4 层（1 层稠密 + 3 层 MoE）、去掉 MTP；1000 步、常数学习率 1e-5、无 warmup 与 decay；全局批 16、序列 4096、fineweb-edu 数据；BF16 混合精度（没有 FP8）；GPU 一侧关分布式优化器与通信重叠（`no_shard`，开着时 loss 会持续偏低 2–7e-5，台账 #13）；TPU 主配置是非专家参数 FSDP 8，EP = 8 只验了 L4 的 loss、grad_norm、param_norm 与学习率。没有覆盖的，最主要的三项：80 层生产形状（日常回归 T3 档位待定）、日常回归用的 TPU 执行噪声在 v7x 上还没标定（v5p 做了）、第 1 步专家参数只比了每层 192 个里的 2 个。全部未覆盖项见检查清单「[已知的覆盖缺口](CHECKS.md#已知的覆盖缺口)」。第 1 步整步的噪声参照 2026-11-08 起只用 GPU 第 1 步重跑 3 对（「两侧执行噪声的并集」已撤回，见下方判法变更记录）：GPU 一侧只有 3 份（一般规则对单一设置建议 6 份），而且 GPU 重跑路由一个都不翻、量不到近似平局翻转，所以这几格超出的部分全部另对 FP64 定责。
+**适用范围。** 结论只对下面这组条件成立：GPU 一侧是 B200 × 8、CUDA 13.4、cuBLAS 13.8（输出头 dgrad 的长累加偏差只在这套软硬件上量过）、NeMo 26.10 镜像（Megatron-Core 0.20.0、Megatron-Bridge 0.7.0、Transformer Engine 2.20.2）；TPU 一侧是 MaxText 官方镜像 `tpu_pre_training`（digest `b152355a…`）、jax 0.11.1、libtpu 0.0.46（构建 `cl/963683785`）、`maxtext` `hunyuan` 分支 `0622774a`（正式 L4 的 `t-rmap-on-1000`、`t-v7x-on-1000`；逐项与出处见 [01 设置「软件版本」](alignments/01-v5p-acceptance/setup.md#软件版本)），换 libtpu 或 jax 要按混元 4 [`libtpu-052.md`](../hunyuan4/alignments/04-tpu-self/libtpu-052.md) 的做法重建 golden、重测（混元 4 上换到 0.0.52，有的结论变了）；混元 3 截前 4 层（1 层稠密 + 3 层 MoE）、去掉 MTP；1000 步、常数学习率 1e-5、无 warmup 与 decay；全局批 16、序列 4096、fineweb-edu 数据；BF16 混合精度（没有 FP8）；GPU 一侧关分布式优化器与通信重叠（`no_shard`，开着时 loss 会持续偏低 2–7e-5，台账 #13）；TPU 主配置是非专家参数 FSDP 8，EP = 8 只验了 L4 的 loss、grad_norm、param_norm 与学习率。TPU 的 CP、TP、PP 一次都没测（GPU 侧 TP 2、CP 2 只比了前 3 步标量），而混元 3 生产在用 CP。没有覆盖的，最主要的三项：80 层生产形状（日常回归 T3 档位待定）、日常回归用的 TPU 执行噪声在 v7x 上还没标定（v5p 做了）、第 1 步专家参数只比了每层 192 个里的 2 个。全部未覆盖项见检查清单「[已知的覆盖缺口](CHECKS.md#已知的覆盖缺口)」。第 1 步整步的噪声参照 2026-11-08 起只用 GPU 第 1 步重跑 3 对（「两侧执行噪声的并集」已撤回，见下方判法变更记录）：GPU 一侧只有 3 份（一般规则对单一设置建议 6 份），而且 GPU 重跑路由一个都不翻、量不到近似平局翻转，所以这几格超出的部分全部另对 FP64 定责。
+
+**搬到 TPU 时另外几处没覆盖的**（检查清单的缺口表里也还没有）：
+
+| 维度 | 测过的取值 | 没测的取值 | 搬到 TPU 时怎么办 |
+|---|---|---|---|
+| 训练中途从 GPU 接到 TPU | 检查点只测了从 HF（第 0 步，值都是 BF16）转 MaxText，逐位（[`CHECKS.md`](CHECKS.md) L0）。案例 01 的 `t-sw-g99b` 把 GPU 的 FP32 主权重导进 TPU，只作诊断、不带优化器状态（[案例 01](alignments/01-v5p-acceptance/cases/01-loss-offset-param-norm.md)「状态互换」行） | Megatron 存档（FP32 主权重、Adam 两个动量、路由偏置、步数、数据位置）直接转 MaxText，没实现（[00 覆盖表](alignments/00-gpu-noise-and-drills/coverage.md)「待做」）；TPU 训完的权重导回 HF / Megatron 也没查 | 先实现带全部训练状态的转换，L0 逐张量逐位；再从 GPU 第 N 步接 TPU 跑若干步，对 GPU 连续训练比第 1 步张量与 L4 |
+| TPU 存档续训 | v5p、v7x 各一次：20 步里第 10 步存档、同一拓扑恢复，走本仓库 `train_hy3.py` 的 orbax 存取（[续训目录](alignments/01-v5p-acceptance/catalogs/phase2-resume.yaml)） | MaxText 原生存档（`hy3-4layers.yml` 里 `enable_checkpointing: false`）；换拓扑、换切片大小、v5p ↔ v7x 恢复 | 「20 步」对「10 步存档再续 10 步」逐位，换成要用的存档方式和拓扑再做一次 |
+| 多切片 | 单切片：v5p 2x2x2、v7x 2x2x1（`dcn_data_parallelism: 1`） | 多切片（跨切片的数据并行与归约） | 同一起点只改执行方式比单切片（L4），超了做第 1 步张量 |
+| TPU 原生数据管线 | 只在 CPU 上对拍过：换序后 1000 步 64000 个单元逐元素对上 GPU（[`data/README.md`](data/README.md)）。所有 TPU 训练都是原样回放 GPU 的 batch | 原生加载器进 TPU 训练：首步 loss、续训位置、真多机（[00 覆盖表](alignments/00-gpu-noise-and-drills/coverage.md) 注 2） | 在 TPU 上用原生加载器（加换序）跑首步 loss 和一次存档续训，L0 输入指纹逐位 |
+| libtpu / jax 版本 | 一个 libtpu 构建（2026-08-12，[`runs.yaml`](alignments/02-v7x-acceptance/runs.yaml) 与 [`lkg.yaml`](regression/lkg.yaml) 记的构建号；混元 4 按同一构建号认作 0.0.46）；jax 0.11.1（[v5p setup](alignments/01-v5p-acceptance/setup.md)） | 其它版本，没做过换版本对照。混元 4 上换 libtpu 改过结论（[环境说明](../../docs/reference/environment.md)） | 换版本先重建 golden，再重跑 L4，结论只对实测过的版本成立 |
+| 日常回归守的程序 | 回归 T0 / T1：`per_device_batch_size=2`、累积 1（[`tiers/t1.yaml`](regression/tiers/t1.yaml)），yml 默认中间量都存着、不重算；只在 v5p 上跑过 | 正式 L4 的 `t-rmap-on-1000` 用 yml 的累积 2，命令行另加重算覆盖（除层输入与路由结果外都重算，写法见 [v7x `runs.yaml`](alignments/02-v7x-acceptance/runs.yaml)）。重算会换舍入点（[回归 README](regression/README.md) `rematqkv` 行：`reduce-precision` 31 → 24），所以回归绿了不等于验收的那个程序没变 | 回归绿了只说明它自己那份程序没变；要守验收程序，得给它（累积 2 + 重算覆盖）单独建回归变体和 LKG，建不建待定 |
 
 ## 结论展开
 
@@ -157,7 +168,7 @@ flowchart LR
 
 TPU 程序是确定性的，同一提交重跑逐位相同。我们只改不影响数学的执行参数（splash 注意力块大小、片上内存上限），造了一组扰动运行：v5p 5 份、v7x 4 份，各自对 `rcc-a` 判一遍。
 
-v5p 5 份的四个 L4 量 r 全部 ≤ 0.85。v7x 4 份里 3 份 ≤ 0.85；splash 块 1024 的那一份 grad_norm MARE 1.02、最大单步 1.15，落在待定区。这一份是诊断用的扰动成员，不是正式被测，而且 1.02 落在 TPU 自己的执行噪声里：v7x 上扰动运行两两之间 grad_norm 的 MARE 上限是 3.92e-2，比 GPU `rcc` 重跑两两 45 对的上限 3.30e-2 宽 19%（3.92 ÷ 3.30 = 1.19）。loss、param_norm 两两的散布，两平台都比 GPU 小（[`case01-rcc-ensemble.json`](alignments/01-v5p-acceptance/results/case01-rcc-ensemble.json)）。
+v5p 5 份的四个 L4 量 r 全部 ≤ 0.85。v7x 4 份里 3 份 ≤ 0.85；splash 块 1024 的那一份 grad_norm MARE 1.02、最大单步 1.15，落在待定区。这一份是诊断用的扰动成员，不是正式被测；按 GPU 尺子判，它就是待定，不拿 TPU 自己的散布来解释（尺子只来自参照一侧）。它说明被测只改 splash 块大小，v7x 的 L4 grad_norm 就可能落进待定区：「过」是对正式被测那一个程序说的，换执行参数要重判。扰动运行两两之间的散布只作诊断参考：v7x 上 grad_norm 的 MARE 上限 3.92e-2，GPU `rcc` 45 对是 3.30e-2；loss、param_norm 两平台都比 GPU 小（[`case01-rcc-ensemble.json`](alignments/01-v5p-acceptance/results/case01-rcc-ensemble.json)）。
 
 ### 我们怎么走到 45 对的
 
@@ -263,17 +274,17 @@ v7x 的逐步序列没有入库，loss 一格没有直接算。推导：v7x 对 
 | 2 | cuBLAS FP32 长累加（关 TF32 的「精确」乘法） | B200 上 cuBLAS FP32 GEMM 一次累加 12 万长的收缩维，rel_L2 是 CPU FP32 的 59 – 129 倍且有偏（见注 2） | — | 沿 ŵ̄ 第 1 步 −1.8e-6，θ₂₉₉ −2.6e-4；GPU 精确轨迹因此少漂 8.5e-3 – 8.9e-3 | golden（分段累加；`rcx`、`rce` 带着它，只作参考） | [`case01-cublas-fp32-longk.json`](alignments/01-v5p-acceptance/results/case01-cublas-fp32-longk.json)、`g-bwc-1k`、`rcec-a` |
 | 3 | TF32 override | 容器设 `TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=1`，FP32 GEMM 进 TF32 张量核（见注 3） | 没有 TF32 | BF16 程序里只有路由反向两个 GEMM 是 FP32 输入，1000 步无可见影响；FP32 乘法里开着时输出头 dgrad 沿 ŵ̄ −8.1e-4 | golden 里同原始；`dgrad-chunk` 在它那次乘法里关 | [`goldens.md`](goldens.md)「TF32」行、`g-notf32` |
 | 4 | 流进输出头反向的 dlogits 舍 BF16 | 融合交叉熵写出 BF16 梯度 | logits 在 BF16 出，反向的 dlogits 也是 BF16；只经 dgrad 那一路起作用 | 第 1000 步 param_norm 相对真精确（舍 − 不舍）：GPU −6.74e-3，TPU −6.84e-3（v7x）/ −6.10e-3（v5p） | 两边共有（想更接近精确值，两边都让 dlogits 留在 FP32，见开关表） | `g-bwcr-1k`、`t-v5p-bw-rd-hcot/hcd/hcw-1000`，案例 01「TPU 那一份再拆」「GPU 一侧的同一件事」两行 |
-| 5 | 路由 GEMM 的累加与近似平局 | 张量核截断，路由 logits 对 FP64 3.8e-6 | MXU，4.8e-8（R 比约 0.013，TPU 更近精确） | 第 1 步每层 0.44% – 0.56% 的路由槽位在近似平局处翻转（隔离回放里翻转 token 的第 8、9 名分差中位数 2.7e-5 – 6.3e-5，全部 token 3.1e-4 – 8.0e-4）；1000 步统计在噪声内（见注 5） | 不可避免 | 案例 01「第 1 步整网梯度」一节、[`config-alignment.md`](config-alignment.md)「路由 GEMM」行 |
+| 5 | 路由 GEMM 的累加与近似平局 | 张量核截断，路由 logits 对 FP64 3.8e-6 | MXU，4.8e-8（R 比约 0.013，TPU 更近精确） | 第 1 步每层 0.44% – 0.56% 的路由槽位在近似平局处翻转（隔离回放里翻转 token 的第 8、9 名分差中位数 2.7e-5 – 6.3e-5，全部 token 3.1e-4 – 8.0e-4）；1000 步统计在噪声内（见注 5） | 不可避免（TPU 的 FP32 sigmoid 是近似实现，可能也贡献一部分翻转，推断，见注 5） | 案例 01「第 1 步整网梯度」一节、[`config-alignment.md`](config-alignment.md)「路由 GEMM」行 |
 | 6 | 窗口化 collective matmul 的 BF16 部分和 | — | 收缩维被 FSDP 切开的投影（q / k / v、稠密 MLP 的 wi）被编成窗口化 collective matmul，分片部分积在 BF16 里累加 | 逐层前向（`attn.qkv.out`）对 FP64 的 R 比 v5p 1.21 – 1.24、v7x 1.53 – 1.57（单算子 qkv / 第 0 层 fc1：v5p 1.24 / 1.29、v7x 1.57 / 1.58）；打开开关后各层最差观测点 v5p 1.01 – 1.09、v7x 1.01 – 1.06（qkv 本身约 1.00）；对 L4 影响很小（见注 6） | TPU 开关 `dense_fp32_accumulation` | [`config-alignment.md`](config-alignment.md)「收缩维被 FSDP 切开」行、02 README 第 5 条 |
 | 7 | RMSNorm 舍入次数 | TE RMSNorm 在 FP32 里算完只舍一次（对 FP64 正确舍入 99.999%） | MaxText 写法是归一化结果、scale 各舍一次；v5p 上 XLA 把中间那次省掉，前向实际只舍一次 | 打开开关后前向逐位不变，各层 `in.grad` 对 golden 2.09e-3 → 2.06e-3 | TPU 开关 `rmsnorm_single_rounding` | 同上「RMSNorm 舍入次数」行 |
 | 8 | 门控激活的舍入位置（silu · up） | 路由专家非融合 GLU：silu 舍一次、乘积再舍一次 | 默认编成 FP32 算完舍一次 | 默认写法与 GPU 只有 73.7% 元素逐位（rel_l2 2.8e-3），打开后 100% | TPU 开关 `mlp_activation_round_per_op` | 同上「门控激活舍入」行 |
 | 9 | 路由核 BF16 舍入 | 路由 GEMM 的权重操作数是 BF16 | DEFAULT 精度下 FP32 操作数本来就先舍 BF16 | 开和不开逐位相同（显式保证） | TPU 开关 `routed_gate_bf16_rounding` | 同上「路由核 BF16 舍入」行 |
-| 10 | excess precision | 每个算子各舍一次 | XLA 在融合内部跳过中间的 BF16 舍入 | 关掉：param_norm 漂移不变，loss 偏移变小一半 | 不可避免（关掉只是让舍入位置确定，不是更准） | 案例 01「TPU excess precision」行 |
-| 11 | 切分方式 | DP 8 + EP 8 | 非专家参数 FSDP 8、专家不切 | 规约顺序不同；EP = 8 的 TPU 对 `rcc-a` 同样在噪声内 | 不可避免（可选：TPU 改 EP = 8，步时反而更短） | `phase2-acceptance-rcc-ep8`、`phase2-v7x-acceptance-rcc-ep8` |
-| 12 | 梯度累积的分组 | GA 2（每 rank 2 个 microbatch） | 同 | 只换累积切分，embedding 梯度差到噪声上限的 31 倍 | 两边设成一样 | [`goldens.md`](goldens.md)「全局批」行 |
+| 10 | excess precision | 每个算子各舍一次 | XLA 在融合内部跳过中间的 BF16 舍入 | 关掉：param_norm 漂移不变，loss 偏移变小一半 | 保持默认开，现行配置在噪声内。不是不可避免：要和 GPU 一样舍的点可以用 `reduce_precision` 显式补（#7、#8 就是这么做的；混元 4 [根源一览第 16 行](../hunyuan4/ROOT-CAUSES.md#r16)）。混元 3 关掉后减半的那部分是哪几处，没再拆 | 案例 01「TPU excess precision」行 |
+| 11 | 切分方式 | DP 8 + EP 8 | 非专家参数 FSDP 8、专家不切 | 规约顺序不同；EP = 8 的 TPU 对 `rcc-a` 同样在噪声内 | 不可避免（可选：TPU 改 EP = 8，步时反而更短；只在 libtpu 0.0.46、截 4 层、L4 四个量上验过，见注 11） | `phase2-acceptance-rcc-ep8`、`phase2-v7x-acceptance-rcc-ep8` |
+| 12 | 梯度累积的分组 | GA 2（每 rank 2 个 microbatch） | 同 | 只换累积切分，embedding 梯度差到噪声上限的 31 倍（GPU 一侧机理是推断；TPU 一侧同类机理见注 12） | 两边设成一样 | [`goldens.md`](goldens.md)「全局批」行 |
 | 13 | 分布式优化器 | 开分布式优化器 | — | loss 比其余三组设置持续低 2–7e-5（相对，[00 README](alignments/00-gpu-noise-and-drills/README.md) 第 6 条） | golden 里关 | [`goldens.md`](goldens.md)「分布式优化器」行 |
 | 14 | 注意力缩放常数 | 1/√128 精确值 | MaxText 在 BF16 query 上乘 Python 标量，得到 BF16 舍过的 0.08837890625 | 300 步看不出 | 不可避免（试过把 GPU 改成一样，无影响） | 案例 01「反向复现」行 |
-| 15 | 交叉熵、Adam、裁剪、最后一层 RMSNorm、输出层 wgrad、残差流、MoE 加权求和的写法 | Megatron / TE 写法 | MaxText / optax 写法 | 逐项换成对方写法，300 – 1000 步都在 GPU 噪声内 | 不可避免（已核对无影响） | [`goldens.md`](goldens.md)「试过、没有采用的开关」 |
+| 15 | 交叉熵、Adam、裁剪、最后一层 RMSNorm、输出层 wgrad、残差流、MoE 加权求和的写法 | Megatron / TE 写法 | MaxText / optax 写法 | 逐项换成对方写法，300 – 1000 步都在 GPU 噪声内 | 不可避免（已核对无影响；Adam 的 TPU 一侧另见注 15） | [`goldens.md`](goldens.md)「试过、没有采用的开关」 |
 | 16 | 原生数据加载器的两处约定 | Megatron 把 pad id 换成 0，label 为 pad id 的位置不计 loss | MaxText 梯度累积按另一种顺序把样本分到 microbatch；pad id 原样保留、照常算 loss | 原样布局只有 2000 / 16000 个单元与 GPU 同号 rank 相同，换序后等价；pad id 只在数据里出现时触发（4 种组合共 8 处） | 对齐时回放 GPU 的 batch | 01 `phase2-native-loader` |
 | 17 | 更新后 expert_bias 的符号（v7x 第 1 层 65 号专家） | 第 1 步负载 ≥ 均值，偏置减（GPU 三份与 v5p 都这样） | ≤ 均值，偏置加 | 192 个里 1 个翻号；按 FP64 是 GPU 偏（见注 17） | 不可避免（同 #5 的下游） | 02 `phase2-v7x-st1-on-state-xnoise`、`phase2-v7x-st1-fp64-on` |
 | 18 | param_norm 的测量精度 | Megatron 的范数：与分组平方和合成的值比，单步最大差 8e-8 | MaxText 整网一次 FP32 归约：与分组 FP32 求和、组间 FP64 相加的值比，单步最大差 2.6e-7 | 和 GPU `rcc` 重跑两两的单步差同量级（45 对的上限 4.86e-7） | 测量口径：被测读分组合成的 `param_norm_from_groups` | 本报告第 8 节 |
@@ -290,12 +301,15 @@ v7x 的逐步序列没有入库，loss 一格没有直接算。推导：v7x 对 
   其余 GEMM 的输入有正有负，截断误差大部分抵消，下游也没有这样的放大环节（推断，未逐个量）。
 - **注 2**（cuBLAS FP32 长累加）：rel_L2 是 CPU FP32 的 59 – 129 倍，第 1 步 2.18e-5 对 3.73e-7，θ₂₉₉ 4.17e-5 对 3.22e-7。`fp32_precision=ieee`、去掉 TF32 override、换后端、emulation 都不改变它。
 - **注 3**（TF32 override）：输入尾数截到 10 位，FP32 GEMM 对 FP64 2.94e-4。torch 开关读回来不可信，只有 `NVIDIA_TF32_OVERRIDE=0` 能连 TE 一起关。
-- **注 5**（路由近似平局）：分到 token 少的专家梯度相对差到 0.10；整网按梯度能量加权只差 1.3e-3。
+- **注 5**（路由近似平局）：分到 token 少的专家梯度相对差到 0.10；整网按梯度能量加权只差 1.3e-3。路由 logits 的矩阵乘 TPU 比 GPU 更近 FP64，但后面的 FP32 sigmoid 在 TPU 上默认是近似实现：混元 4 在 v5p 上实测离正确舍入最多 83 ulp（GPU 3.4 ulp），一个近乎平局的 token 因此换了专家，改用精确写法后收拢（[根源一览第 11、14 行](../hunyuan4/ROOT-CAUSES.md#r11)）。混元 3 的翻转里有多少来自它，没有在混元 3 上验证（推断）。
 - **注 6**（窗口化 collective matmul）：打开开关后的数出自 `phase2-l2-replay-rratio-on`、`phase2-v7x-l2-replay-rratio-on`（四层前向）。对 L4 的影响：把窗口化整个关掉（`t-wcoff-1000`，TPU 生产配置只关窗口化，1000 步），第 1000 步 param_norm 对 `rcx` 的差 8.74e-3 → 8.50e-3，少 2.7%。
+- **注 11**（切分方式）：EP = 8 时非专家参数也沿 expert 轴切 8 份（MaxText 逻辑轴规则把 `embed` 映射到 expert 轴），所以对词嵌入它和 FSDP 8 是同一种切法。读优化后 HLO 核实：反向 scatter 每卡 32768 个下标，超过排序门槛，被排序；混元 4 [案例 14](../hunyuan4/cases/14-ddp-fsdp-embedding.md) 的纯数据并行问题在这里不出现（[`goldens.md`](goldens.md) 注 50）。EP = 8 只在 libtpu 0.0.46、截 4 层、8 个 device、L4 四个量上验过；生产规模的切法一定和这两种都不同，要另验。
+- **注 12**（梯度累积的分组）：GPU 一侧「累加分组改变舍入点」是推断，没有单算子验证。TPU 一侧的同类机理混元 4 查清了：词嵌入 scatter-add 是否排序由每次的下标数决定，排序时只舍一次、不排序时每加一次舍一次（[案例 14](../hunyuan4/cases/14-ddp-fsdp-embedding.md)），可作旁证。
+- **注 15**（Adam）：写法换成对方的在噪声内。另一件事是 TPU 默认的 FP32 除法、sqrt、1 − β^t 不精确（混元 4 实测 2 / 3 / 108 ulp，[根源一览第 17 行](../hunyuan4/ROOT-CAUSES.md#r17)）。混元 3 的 8 步优化器重放已到门槛的 0.96 倍（[`config-alignment.md`](config-alignment.md) 注 24），其中有多少来自这几处，没有单独测（推断）。
 - **注 17**（expert_bias 翻号）：平均负载 65536 × 8 / 192 = 2730.67 个 token，差一个 token 就能落在均值两边。FP64 整步参照里这个专家选中 2730 个，比均值少 0.67，偏置应当加：v7x 和精确算术一致，GPU 差一个 token 落到了均值另一边。其余 191 个专家三方方向一致。
 - **注 20**（第 1 步一维参数与输出层、embedding 的梯度）：
   - 量级。TPU 离 FP64 的 rel_L2 是 GPU 的：各层输入 RMSNorm 1.16 – 1.59 倍、第 0 层 MLP 前 RMSNorm 2.18 倍、最后的 RMSNorm 1.57 倍、输出层 1.60 倍、embedding 1.21 倍；q / k 每头 norm 也在这一类，v5p 最高的 2.20 是第 3 层 q_norm，v7x 最高的 2.70 是第 1 层 MLP 前 RMSNorm（MoE 层，梯度也经过路由，主要来自 #20，可能混有 #5）。同一批里投影、共享专家、稠密 MLP 的梯度反而比 GPU 更接近 FP64（0.45 – 0.96 倍）。误差几乎全在和梯度正交的方向上，约是 GPU 的 √2 倍，符合「多了一次同量级的独立舍入」。
-  - 机制（已用诊断臂逐一验证，[`case01-grad-fp32-arms.json`](alignments/01-v5p-acceptance/results/case01-grad-fp32-arms.json)）。MaxText 把这几类 FP32 参数先转成 BF16 再参与计算，梯度在每个设备、每个 microbatch 上先以 BF16 落地，再累加回 FP32。RMSNorm（`rmsnorm_single_rounding`）用 `reduce_precision` 把 scale 舍到 BF16，JAX 把它当线性算子，反向对梯度做同样的舍入，scale 舍入改直通后 norm 组 R 比 1.35 → 0.58。输出层先把 kernel 转成 BF16，wgrad 以 BF16 输出，kernel 以 FP32 进乘法后 R 比 1.60 → 0.91。embedding 先把整张表转成 BF16 再取行，反向的 scatter-add 在 BF16 里累加，从 FP32 表取行后 R 比 1.21 → 0.87。三个一起开：整网按能量 R 比 1.20 → 0.67，第 1 步 loss 逐位不变，其余参数组的梯度一位不变。GPU（Megatron）把 wgrad 直接累加进 FP32 的 main_grad，norm 的 dγ 在 FP32 kernel 里归约，没有这一次舍入。
+  - 机制（已用诊断臂逐一验证，[`case01-grad-fp32-arms.json`](alignments/01-v5p-acceptance/results/case01-grad-fp32-arms.json)）。MaxText 把这几类 FP32 参数先转成 BF16 再参与计算，梯度在每个设备、每个 microbatch 上先以 BF16 落地，再累加回 FP32。RMSNorm（`rmsnorm_single_rounding`）用 `reduce_precision` 把 scale 舍到 BF16，JAX 把它当线性算子，反向对梯度做同样的舍入，scale 舍入改直通后 norm 组 R 比 1.35 → 0.58。输出层先把 kernel 转成 BF16，wgrad 以 BF16 输出，kernel 以 FP32 进乘法后 R 比 1.60 → 0.91。embedding 先把整张表转成 BF16 再取行，梯度以 BF16 落地：FSDP 8 下每卡一次 scatter-add 收全部 token，被排序后在片上 FP32 里累加，每个微批每行只舍一次 BF16（读优化后 HLO 核实是排序的 scatter，[`ep8-embed-scatter-hlo.json`](alignments/01-v5p-acceptance/results/ep8-embed-scatter-hlo.json)；累加方式按混元 4 [案例 14](../hunyuan4/cases/14-ddp-fsdp-embedding.md)），从 FP32 表取行后 R 比 1.21 → 0.87。三个一起开：整网按能量 R 比 1.20 → 0.67，第 1 步 loss 逐位不变，其余参数组的梯度一位不变。GPU（Megatron）把 wgrad 直接累加进 FP32 的 main_grad，norm 的 dγ 在 FP32 kernel 里归约，没有这一次舍入。
   - 正式开关在我们修改过的 MaxText 里。三开关全开（`t-mts-all`）与诊断臂（`t-g32-all`）的 50 个梯度张量逐位相同。v7x 同样核过：整网 R 比 1.21 → 0.72，第 1 步 loss 逐位不变。
   - 开关打开后仍高于 1.2 的单个张量：第 2 层 MLP 前 RMSNorm 1.79、第 2 层专家 1 的 fc2 1.32，梯度经过路由，随近似平局翻转变（#5）；更新量与二阶动量里几个 128 维的 q / k norm，Adam 第 1 步的更新量近似 lr·sign(g)，小张量上少数元素的符号就决定比值，按能量整体 0.92 / 0.67。
 
@@ -327,7 +341,8 @@ v7x 的逐步序列没有入库，loss 一格没有直接算。推导：v7x 对 
 | `mlp_activation_round_per_op: true` | silu 输出先舍 BF16，乘完再舍 | #8 | 未单独测 | 推荐，见下 |
 | `routed_gate_bf16_rounding: true` | 路由核先舍 BF16 再乘 | #9 | 无（编出同一个程序） | 可选（显式保证） |
 | `per_device_batch_size=1`、`gradient_accumulation_steps=2` | 与 GPU 同样的累积分组 | #12 | — | 必需 |
-| `ici_expert_parallelism=8`（EP = 8，替代 FSDP 8） | 并行方式与 GPU 相同 | #11 | v7x 0.980 → 0.710 s（−28%）；v5p 1.607 → 0.999 s（−38%） | 可选：两种并行方式对 `rcc-a`（最终 golden 的第 1 份，验收的比较基线）都在噪声内 |
+| 重算覆盖（rmap，命令行给，不在 yml 里）：`context`、`query_proj`、`key_proj`、`value_proj`、`out_proj`、`mlpwi_0`、`mlpwi_1`、`mlpwo`、`moe_mlpwi_0`、`moe_mlpwi_1`、`moe_mlpwo` 都设 `remat`，`moe_routing_maps=device` | 照 golden 的整层重算，只存层输入与路由结果（路由不在反向里重选） | 让被测是生产配置（重算设置是假设的，见第 7 节第 8 行） | 未单独测 | 验收被测的组成部分（yml 默认全存 `device`，照抄 yml 跑出来的不是验收的那个程序） |
+| `ici_expert_parallelism=8`（EP = 8，替代 FSDP 8） | 并行方式与 GPU 相同 | #11 | v7x 0.980 → 0.710 s（−28%）；v5p 1.607 → 0.999 s（−38%） | 可选：两种并行方式对 `rcc-a`（最终 golden 的第 1 份，验收的比较基线）都在噪声内。前提是这里的 EP = 8 对词嵌入仍是 FSDP 那种切法（读 HLO 核过）；只在 libtpu 0.0.46、截 4 层上验过，换版本或切法要重验（注 11） |
 | `logits_dot_in_fp32: true` + `matmul_precision: highest`（logmm） | 让 dlogits 在 FP32 里进输出头反向 | #4（TPU 一侧单方面更接近真精确） | v7x 0.980 → 1.075 s（+9.6%） | 否，而且对最终 golden 有害（见下） |
 | `XLA_FLAGS=--xla_allow_excess_precision=false` | 融合内部不跳过 BF16 舍入 | #10 | 未测 | 否（不改 param_norm，loss 偏移变小一半） |
 | `rmsnorm_scale_grad_fp32`、`logits_dense_wgrad_fp32`、`embedding_grad_fp32`（默认关） | norm scale、输出层、embedding 的梯度直接以 FP32 落地，前向不变 | #20 | v5p +0.79%、v7x +1.6%（100 步对比）；显存未测 | L4 不需要；要让第 1 步这三类梯度不比 GPU 离 FP64 远才需要（见下） |
@@ -380,6 +395,8 @@ TPU 记的 param_norm 是整网一次 FP32 归约。拿同一次运行里按组�
 grad_norm 逐步涨落约 ±3%（MARE），个别步会突跳：GPU `rcc` 重跑两两之间单步最大相对差是 0.46，TPU 对 `rcc-a` 最大 0.27（v5p 第 175 步）。所以 grad_norm 的分辨力主要来自 MARE 与带符号均值，最大单步只防极端情况。以 golden 为分母时，带符号均值 mean((t − g) / g) 有 +E[δ²] 的偏置（约 1e-3），交换两边两个方向都偏正。后果是噪声对按 a~b 还是 b~a 列，N 从 1.26e-3 变成 2.49e-3（当时 `rcc-a..e` 两两 10 对），N 取决于列表顺序。
 
 改法：用两边均值作分母（`params: {denominator: mean}`），交换两边只差一个符号。
+
+混元 4 自 2026-11-10 起所有曲线一律以参照作分母（[`judging.md`](../../docs/reference/judging.md)「逐步涨落大的量」），两个模型的口径不同。混元 3 两种口径都过：以 `rcc-a` 为分母的只报项 `L4.grad_norm.golden_den`，最差 r v5p 0.84、v7x 0.84（都是 MARE；[`phase2-acceptance-rcc-on`](alignments/01-v5p-acceptance/results/phase2-acceptance-rcc-on.results.json)、[`phase2-v7x-acceptance-rcc`](alignments/02-v7x-acceptance/results/phase2-v7x-acceptance-rcc.results.json)）。
 
 通用写法见 [`docs/reference/judging.md`](../../docs/reference/judging.md)「两处测量口径」。
 

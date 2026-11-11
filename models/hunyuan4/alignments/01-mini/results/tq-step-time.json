@@ -1,0 +1,454 @@
+{
+ "what": "hy4-mini 单开关步时 A/B（TPU v5p 8 个设备）",
+ "tq": {
+  "method": "300 步训练运行，metrics.jsonl 的 step_time 取第 11–300 步中位数；cost_vs_base = tq-base ÷ 该运行 − 1（正数 = 开着更慢）",
+  "base": "tq-base：t1zu-a 那一代对齐配置全开（没有 M42b、M50）；tq-mN 只关台账 MN 那个开关；tq-alloff 对齐开关全关",
+  "runs": {
+   "tq-base": {
+    "steps_in_window": 290,
+    "median_s": 0.4766981601715088,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "3741e818d9a875eb98bc9704d37210092f0c0ceb"
+     },
+     {
+      "repo": "janus",
+      "commit": "2679a8372811a0d81ba3884bb83db99879a1c38e"
+     }
+    ],
+    "hardware": {
+     "accelerator": "TPU v5",
+     "count": 8,
+     "topology": "2x2x2",
+     "processes": 2
+    }
+   },
+   "tq-alloff": {
+    "steps_in_window": 290,
+    "median_s": 0.3297497034072876,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "3741e818d9a875eb98bc9704d37210092f0c0ceb"
+     },
+     {
+      "repo": "janus",
+      "commit": "2679a8372811a0d81ba3884bb83db99879a1c38e"
+     }
+    ],
+    "hardware": {
+     "accelerator": "TPU v5",
+     "count": 8,
+     "topology": "2x2x2",
+     "processes": 2
+    },
+    "cost_vs_base": 0.44563635765494247
+   },
+   "tq-base2": {
+    "steps_in_window": 290,
+    "median_s": 0.4761906862258911,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "3741e818d9a875eb98bc9704d37210092f0c0ceb"
+     },
+     {
+      "repo": "janus",
+      "commit": "2679a8372811a0d81ba3884bb83db99879a1c38e"
+     }
+    ],
+    "hardware": {
+     "accelerator": "TPU v5",
+     "count": 8,
+     "topology": "2x2x2",
+     "processes": 2
+    },
+    "cost_vs_base": 0.0010656948157463653
+   },
+   "tq-m8": {
+    "steps_in_window": 290,
+    "median_s": 0.4762808084487915,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "3741e818d9a875eb98bc9704d37210092f0c0ceb"
+     },
+     {
+      "repo": "janus",
+      "commit": "2679a8372811a0d81ba3884bb83db99879a1c38e"
+     }
+    ],
+    "hardware": {
+     "accelerator": "TPU v5",
+     "count": 8,
+     "topology": "2x2x2",
+     "processes": 2
+    },
+    "cost_vs_base": 0.0008762723908120051
+   },
+   "tq-m9": {
+    "steps_in_window": 290,
+    "median_s": 0.4776512384414673,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "3741e818d9a875eb98bc9704d37210092f0c0ceb"
+     },
+     {
+      "repo": "janus",
+      "commit": "2679a8372811a0d81ba3884bb83db99879a1c38e"
+     }
+    ],
+    "hardware": {
+     "accelerator": "TPU v5",
+     "count": 8,
+     "topology": "2x2x2",
+     "processes": 2
+    },
+    "cost_vs_base": -0.0019953434498951594
+   },
+   "tq-m10": {
+    "steps_in_window": 290,
+    "median_s": 0.47696781158447266,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "3741e818d9a875eb98bc9704d37210092f0c0ceb"
+     },
+     {
+      "repo": "janus",
+      "commit": "2679a8372811a0d81ba3884bb83db99879a1c38e"
+     }
+    ],
+    "hardware": {
+     "accelerator": "TPU v5",
+     "count": 8,
+     "topology": "2x2x2",
+     "processes": 2
+    },
+    "cost_vs_base": -0.0005653450954438144
+   },
+   "tq-m12": {
+    "steps_in_window": 290,
+    "median_s": 0.47286105155944824,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "3741e818d9a875eb98bc9704d37210092f0c0ceb"
+     },
+     {
+      "repo": "janus",
+      "commit": "2679a8372811a0d81ba3884bb83db99879a1c38e"
+     }
+    ],
+    "hardware": {
+     "accelerator": "TPU v5",
+     "count": 8,
+     "topology": "2x2x2",
+     "processes": 2
+    },
+    "cost_vs_base": 0.008114664126821491
+   },
+   "tq-m13": {
+    "steps_in_window": 290,
+    "median_s": 0.3854184150695801,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "3741e818d9a875eb98bc9704d37210092f0c0ceb"
+     },
+     {
+      "repo": "janus",
+      "commit": "2679a8372811a0d81ba3884bb83db99879a1c38e"
+     }
+    ],
+    "hardware": {
+     "accelerator": "TPU v5",
+     "count": 8,
+     "topology": "2x2x2",
+     "processes": 2
+    },
+    "cost_vs_base": 0.2368328588696258
+   },
+   "tq-m23": {
+    "steps_in_window": 290,
+    "median_s": 0.4483788013458252,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "3741e818d9a875eb98bc9704d37210092f0c0ceb"
+     },
+     {
+      "repo": "janus",
+      "commit": "2679a8372811a0d81ba3884bb83db99879a1c38e"
+     }
+    ],
+    "hardware": {
+     "accelerator": "TPU v5",
+     "count": 8,
+     "topology": "2x2x2",
+     "processes": 2
+    },
+    "cost_vs_base": 0.06315945076056684
+   },
+   "tq-m25": {
+    "steps_in_window": 290,
+    "median_s": 0.47226202487945557,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "3741e818d9a875eb98bc9704d37210092f0c0ceb"
+     },
+     {
+      "repo": "janus",
+      "commit": "2679a8372811a0d81ba3884bb83db99879a1c38e"
+     }
+    ],
+    "hardware": {
+     "accelerator": "TPU v5",
+     "count": 8,
+     "topology": "2x2x2",
+     "processes": 2
+    },
+    "cost_vs_base": 0.009393377104977896
+   },
+   "tq-m26": {
+    "steps_in_window": 290,
+    "median_s": 0.4768102169036865,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "3741e818d9a875eb98bc9704d37210092f0c0ceb"
+     },
+     {
+      "repo": "janus",
+      "commit": "2679a8372811a0d81ba3884bb83db99879a1c38e"
+     }
+    ],
+    "hardware": {
+     "accelerator": "TPU v5",
+     "count": 8,
+     "topology": "2x2x2",
+     "processes": 2
+    },
+    "cost_vs_base": -0.0002350132782502623
+   },
+   "tq-m27": {
+    "steps_in_window": 290,
+    "median_s": 0.47625529766082764,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "3741e818d9a875eb98bc9704d37210092f0c0ceb"
+     },
+     {
+      "repo": "janus",
+      "commit": "2679a8372811a0d81ba3884bb83db99879a1c38e"
+     }
+    ],
+    "hardware": {
+     "accelerator": "TPU v5",
+     "count": 8,
+     "topology": "2x2x2",
+     "processes": 2
+    },
+    "cost_vs_base": 0.0009298846917951131
+   },
+   "tq-m28": {
+    "steps_in_window": 290,
+    "median_s": 0.47566771507263184,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "3741e818d9a875eb98bc9704d37210092f0c0ceb"
+     },
+     {
+      "repo": "janus",
+      "commit": "2679a8372811a0d81ba3884bb83db99879a1c38e"
+     }
+    ],
+    "hardware": {
+     "accelerator": "TPU v5",
+     "count": 8,
+     "topology": "2x2x2",
+     "processes": 2
+    },
+    "cost_vs_base": 0.0021663128823439237
+   },
+   "tq-m31": {
+    "steps_in_window": 290,
+    "median_s": 0.47147834300994873,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "3741e818d9a875eb98bc9704d37210092f0c0ceb"
+     },
+     {
+      "repo": "janus",
+      "commit": "2679a8372811a0d81ba3884bb83db99879a1c38e"
+     }
+    ],
+    "hardware": {
+     "accelerator": "TPU v5",
+     "count": 8,
+     "topology": "2x2x2",
+     "processes": 2
+    },
+    "cost_vs_base": 0.011071170582802159
+   },
+   "tq-m33": {
+    "steps_in_window": 290,
+    "median_s": 0.46274077892303467,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "3741e818d9a875eb98bc9704d37210092f0c0ceb"
+     },
+     {
+      "repo": "janus",
+      "commit": "2679a8372811a0d81ba3884bb83db99879a1c38e"
+     }
+    ],
+    "hardware": {
+     "accelerator": "TPU v5",
+     "count": 8,
+     "topology": "2x2x2",
+     "processes": 2
+    },
+    "cost_vs_base": 0.030162418970201887
+   },
+   "tq-m34": {
+    "steps_in_window": 290,
+    "median_s": 0.47623515129089355,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "3741e818d9a875eb98bc9704d37210092f0c0ceb"
+     },
+     {
+      "repo": "janus",
+      "commit": "2679a8372811a0d81ba3884bb83db99879a1c38e"
+     }
+    ],
+    "hardware": {
+     "accelerator": "TPU v5",
+     "count": 8,
+     "topology": "2x2x2",
+     "processes": 2
+    },
+    "cost_vs_base": 0.0009722274371393169
+   },
+   "tq-m36": {
+    "steps_in_window": 290,
+    "median_s": 0.47629106044769287,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "3741e818d9a875eb98bc9704d37210092f0c0ceb"
+     },
+     {
+      "repo": "janus",
+      "commit": "2679a8372811a0d81ba3884bb83db99879a1c38e"
+     }
+    ],
+    "hardware": {
+     "accelerator": "TPU v5",
+     "count": 8,
+     "topology": "2x2x2",
+     "processes": 2
+    },
+    "cost_vs_base": 0.0008547288782478901
+   },
+   "tq-m40": {
+    "steps_in_window": 290,
+    "median_s": 0.4756046533584595,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "3741e818d9a875eb98bc9704d37210092f0c0ceb"
+     },
+     {
+      "repo": "janus",
+      "commit": "2679a8372811a0d81ba3884bb83db99879a1c38e"
+     }
+    ],
+    "hardware": {
+     "accelerator": "TPU v5",
+     "count": 8,
+     "topology": "2x2x2",
+     "processes": 2
+    },
+    "cost_vs_base": 0.0022991928386897342
+   },
+   "tq-m41": {
+    "steps_in_window": 290,
+    "median_s": 0.48529279232025146,
+    "code": [
+     {
+      "repo": "maxtext",
+      "commit": "3741e818d9a875eb98bc9704d37210092f0c0ceb"
+     },
+     {
+      "repo": "janus",
+      "commit": "2679a8372811a0d81ba3884bb83db99879a1c38e"
+     }
+    ],
+    "hardware": {
+     "accelerator": "TPU v5",
+     "count": 8,
+     "topology": "2x2x2",
+     "processes": 2
+    },
+    "cost_vs_base": -0.01771019946051655
+   }
+  }
+ },
+ "m42b": {
+  "method": "诊断程序第 1 步编译后连跑 4 次，去掉第 1 次取中位数；与 tq 的量法不同，不能并列比",
+  "on": {
+   "run": "tw-t42b-on",
+   "run_seconds": [
+    0.7344787120819092,
+    0.4723622798919678,
+    0.4710524082183838,
+    0.4714999198913574
+   ],
+   "median_excl_first_s": 0.4714999198913574,
+   "peak_bytes_in_use_max": 1516907520,
+   "code": [
+    {
+     "repo": "maxtext",
+     "commit": "2c28a4f4ce95589dc2dc62609a5123367bade616"
+    },
+    {
+     "repo": "janus",
+     "commit": "14a53b04265ef6d63caa2336e5156de7d0a309c3"
+    }
+   ]
+  },
+  "off": {
+   "run": "tw-t42b-off",
+   "run_seconds": [
+    4.667165756225586,
+    0.4550788402557373,
+    0.45387721061706543,
+    0.4534440040588379
+   ],
+   "median_excl_first_s": 0.45387721061706543,
+   "peak_bytes_in_use_max": 1506678784,
+   "code": [
+    {
+     "repo": "maxtext",
+     "commit": "2c28a4f4ce95589dc2dc62609a5123367bade616"
+    },
+    {
+     "repo": "janus",
+     "commit": "14a53b04265ef6d63caa2336e5156de7d0a309c3"
+    }
+   ]
+  },
+  "cost": 0.03882704145981064,
+  "peak_bytes_delta": 10228736
+ }
+}

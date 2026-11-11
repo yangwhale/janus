@@ -22,6 +22,21 @@
 | 训练 | 全局 batch 16、microbatch 1、序列 4096、学习率 1e-5 常数、种子 1234 |
 | TF32 | 开（容器默认）；只有 `g61-notf32` 关（`NVIDIA_TF32_OVERRIDE=0`） |
 
+## 软件版本
+
+本实践只有 GPU。镜像那一行的版本逐项出处：
+
+| 组件 | 版本 | 证据出处 |
+|---|---|---|
+| 镜像 | NeMo 26.10，digest `fc75bf51…` | 第一阶段的 `meta.json` 只记 tag；digest 见 [`pod.yaml`](../../frameworks/megatron/pod.yaml) 的注释（第一阶段用的就是它） |
+| torch / CUDA | 2.14.0a0+b2c75dd062.nv26.09 / 13.4 | [`phase1-l1.results.json`](results/phase1-l1.results.json) 的 `environment` |
+| Transformer Engine | 2.20.2+44f31bbe | 同上 |
+| cuBLAS | 13.8.0.4 | 同上 |
+| Megatron-Core / Megatron-Bridge | 0.20.0 / 0.7.0（容器自带，提交未登记） | 复现审计在容器里读到（[`repro-audit.md`](results/repro-audit.md)）；第一阶段 `meta.json` 的这两项是 `null`（[环境](../../../../docs/reference/environment.md)） |
+| NCCL | 2.31.2 | 容器自带（[环境](../../../../docs/reference/environment.md)「第一阶段踩到的坑」第 1 条） |
+
+噪声宽度在这套版本上量得；换镜像要重量。
+
 **两种设置**（确定性 / 默认）
 
 - 含义见 [`../../../../docs/reference/environment.md`](../../../../docs/reference/environment.md)。

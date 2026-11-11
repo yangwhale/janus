@@ -70,7 +70,7 @@ gcloud storage cp -r $B/golden/g1k-{a,b,c} $B/tpu/t-smoke30 $B/tpu/t-st1 $B/tpu/
 |---|---|---|
 | L0 | [`g1k-a`](../glossary.md#g1k)：同一份检查点、同一批数据 | 冒烟 `t-smoke30`；第 1 步状态读 `t-st1` |
 | L1、L2 前向与反向 | `g1k-a` 第 1 步的逐层输入；FP64 真值在这份输入上算 | 逐层隔离回放 `r-l2` |
-| L2 参数梯度、L3 | `g1k-a`；噪声参照 `g1k-a/b/c` 3 份两两 3 对，并上 TPU 只改执行参数的 7 份两两 21 对 | `t-st1` 反推梯度后的 `t-st1-gm` |
+| L2 参数梯度、L3 | `g1k-a`；噪声参照 `g1k-a/b/c` 3 份两两 3 对（混元 3 当时另并上 TPU 只改执行参数的 7 份两两 21 对；2026-11-07 起现行判法只用 GPU，超出的对 FP64 定责，见 4.6） | `t-st1` 反推梯度后的 `t-st1-gm` |
 | L4 第一层、路由偏置、健康信号 | [基线](../glossary.md#baseline) [`rcc-a`](../glossary.md#rcc-a)；噪声参照 [`rcc-a..j`](../glossary.md#rcc) 10 份两两 45 对 | 生产配置 `t-prod-1000` |
 | L4 第二层 | [`rc-a`](../glossary.md#rc)；噪声参照 `rc-a..e` 5 份两两 10 对 | 同上 |
 
@@ -200,7 +200,7 @@ python -m janus run models/hunyuan3/alignments/01-v5p-acceptance/catalogs/phase2
 
 参数与几种模式见 [`fwd_rratio.py`](../../models/hunyuan3/analysis/fwd_rratio.py) 与 [`l1_replay_results.py`](../../models/hunyuan3/analysis/l1_replay_results.py) 的文件头。
 
-**混元 3 的结果**：v5p 全部算子 ≤ 1.2；v7x 除第 2 层 MoE 块（R 比 1.27）外全部 ≤ 1.2。那一格是 4096 个 token 里 1 个在近似平局处选了和 FP64 不同的专家，去掉它是 0.95。v5p 连续 8 步重放 4.80e-3，已到门槛的 96%（门槛来自单步重放，多步时 FP32 存储舍入会累积）。
+**混元 3 的结果**：v5p 全部算子 ≤ 1.2；v7x 除第 2 层 MoE 块（R 比 1.27）外全部 ≤ 1.2。那一格是 4096 个 token 里 1 个在近似平局处选了和 FP64 不同的专家，去掉它是 0.95。v5p 连续 8 步重放 4.80e-3，已到门槛的 96%（门槛来自单步重放，多步时 FP32 存储舍入会累积；这个门槛只验到 8 步，更长的重放或更大的模型要重新定）。
 
 **不过先查**：先看回放写法是不是训练走的那条代码路径，再看两边的精度设置（矩阵乘默认精度、TF32），最后看是否多舍入了一次，R ≈ 1.41 是它的特征。混元 3 的 qkv 与第 0 层 fc1 曾经超线（1.24 / 1.29），根因是 FSDP 切开收缩维的投影在 BF16 里累加部分和，打开 `dense_fp32_accumulation` 后全过（台账 #6（「台账 #n」指混元 3 对齐报告第 5 节偏差台账的行号，不是 issue 号））。
 
@@ -258,11 +258,11 @@ python -m janus run models/hunyuan3/alignments/01-v5p-acceptance/catalogs/phase2
 
 FP64 整步参照的参数见 [`fp64_step.py`](../../models/hunyuan3/analysis/fp64_step.py) 文件头；回放怎么提交见 TPU 操作手册「[在 TPU 上拿第 1 步的正式证据：三条路](../../models/hunyuan3/frameworks/maxtext/README.md#在-tpu-上拿第-1-步的正式证据三条路)」。
 
-**混元 3 的结果**：logits、逐 token loss、覆盖率全过；梯度、动量多数落在噪声的 1–2 倍，几层参数梯度超 2 倍。退出码 1 是预期的。原因已定责、不累积（[对齐报告](../../models/hunyuan3/ALIGNMENT-REPORT.md)第 4 节；这一判定用的是两侧执行噪声的并集，按 2026-11-07 的决定待重判，见[判定](../reference/judging.md#第-1-步张量两侧执行噪声的并集)）：
+**混元 3 的结果**：logits、逐 token loss、覆盖率全过。梯度、动量 2026-11-08 起按只用 GPU 第 1 步重跑 3 对的尺子重判，全部超 2 倍，判「不过 · 已解释」：超出的张量都已对 FP64 定责，但一部分 R 在 1.23–2.70 之间，按 R ≤ 1.2 的字面不算已定责（[对齐报告](../../models/hunyuan3/ALIGNMENT-REPORT.md)第 4 节与「判法变更记录」；[判定](../reference/judging.md#第-1-步张量两侧执行噪声的并集)）。原来按两侧执行噪声的并集判时，多数落在 1–2 倍，几层参数梯度超 2 倍。退出码 1 是预期的。原因：
 
 - 大头是路由近似平局：第 1 步每层 0.44%–0.56% 的路由槽位两边各落一边，分到 token 少的专家梯度相对差到 0.10；按梯度能量加权，整网只差 1.3e-3（台账 #5）。
 - 一维 norm 权重、输出层与 embedding 的梯度 TPU 先以 BF16 落地，离 FP64 比 GPU 远；有三个前向不变的可选开关能消掉（台账 #20）。
-- L4 的 1000 步统计在噪声内。
+- L4 的 1000 步统计在噪声内（截 4 层、1000 步、常数学习率 1e-5 下；更长的训练和生产学习率没测）。
 - 专家参数每层只比了 192 个里的 0、1 号两个（检查清单「已知的覆盖缺口」）。
 
 **不过先查**：依次查 loss 的约定（平均方式、loss_mask、EOS）、embedding 与输出层（是否共享、转置）、梯度缩放。梯度缩放出错时，范数比常接近某个整数倍，如 microbatch 数。最后回到 L1 做优化器重放。
@@ -289,7 +289,7 @@ python -m janus run models/hunyuan3/alignments/01-v5p-acceptance/catalogs/phase2
 
 - loss 只能证伪：第 1 步 loss 一位不差、梯度却错了的 bug 很常见，loss 曲线重合只是必要条件。
 - 健康检查要看 grad_norm：在第 5 步埋一个梯度 NaN，grad_norm 第 5 步就报警，loss 第 6 步才变 NaN，那时参数已经坏了。
-- grad_norm 的分母用两边均值、TPU 的 param_norm 读按组合成的列，这两处测量口径见[方法详解：判定](../reference/judging.md#两处测量口径被测与参照的量要一样准统计量要对称)。
+- grad_norm 的分母用两边均值（混元 3；混元 4 2026-11-10 起一律以参照作分母）、TPU 的 param_norm 读按组合成的列，这两处测量口径见[方法详解：判定](../reference/judging.md#两处测量口径被测与参照的量要一样准统计量要对称)。
 
 **不过先查**：依次查学习率曲线与实际生效的权重衰减、路由偏置更新率、梯度通信与主权重 dtype，最后回到 L3 看第 1 步的梯度。
 

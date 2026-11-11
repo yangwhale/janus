@@ -8,7 +8,7 @@
 - 300 步与 1000 步的 r 不能直接比大小：GPU 自己重跑的散布随步数变宽。
 - 每一代改了什么：开关台账 [`CHANGES-LEDGER.md`](../CHANGES-LEDGER.md)；判法的改动：[`PROTOCOL.md`](../PROTOCOL.md) 变更记录。
 
-## mini · 1000 步（对 GPU g3-a，噪声 g3 两两 28 对）
+## mini · 1000 步（对 GPU g3-a；噪声 g3 两两：现行 tz-off-rep 16 份 120 对，其余各代 8 份 28 对，两种 N 下的 r 不能直接比）
 
 M 编号是开关台账的行；「诊断」是只为拆开某个开关效果的运行，不当现行。
 
@@ -65,7 +65,7 @@ t1n、t1s 两代按当时的角色（GPU 当被测）记差；g1 → g2 是 GPU 
 | [`td3-a`](../alignments/02-real-weight/results/t2d1z-l4.report.md) | 第二代，300 步（t1z 的开关、M25 暂关） | ❌ 2.97 | 🟡 1.20 | ❌ 4.28 | ❌ 2.70 | 🟡 1.13 | 🟡 1.69 | 🟡 1.24 | ✅ 0.90 | ✅ 0.81 |
 | [`td4-a`](../alignments/02-real-weight/results/t2d14-l4.report.md) | 第三代，300 步（t1zr 再加 M34、M37，M25 重新打开） | ❌ 2.64 | 🟡 1.13 | ❌ 4.09 | ❌ 2.54 | ❌ 2.20 | 🟡 1.44 | 🟡 1.42 | 🟡 1.36 | ✅ 0.85 |
 | [`td5-a`](../alignments/02-real-weight/results/t2d15-l4.report.md) | 1000 步（当时 T2 配置的全部开关，含 M39–M41，不含 M42b） | ✅ 0.94 | ✅ 0.73 | 🟡 1.72 | 🟡 1.43 | ❌ 3.46 | ✅ 0.80 | ✅ 0.38 | 🟡 1.68 | ✅ 0.92 |
-| [`td5b-b`](../alignments/02-real-weight/results/t2d15b-l4.report.md) | **现行**，1000 步（含 M42b） | 🟡 1.25 | 🟡 1.06 | 🟡 1.35 | 🟡 1.27 | ❌ 2.32 | ✅ 0.98 | 🟡 1.02 | 🟡 1.68 | 🟡 1.01 |
+| [`td5b-b`](../alignments/02-real-weight/results/t2d15b-l4.report.md) | 最近一代，1000 步（含 M42b；base2 开、早于 M50，现行对齐配置在 D1 上尚无运行） | 🟡 1.25 | 🟡 1.06 | 🟡 1.35 | 🟡 1.27 | ❌ 2.32 | ✅ 0.98 | 🟡 1.02 | 🟡 1.68 | 🟡 1.01 |
 
 ## real-weight · B（300 步对 gb2-a、1000 步对 gb3-a；噪声各自 28 对；第一代 tb2-a 第 1 步更新后出 NaN，没有 L4）
 
@@ -74,7 +74,7 @@ t1n、t1s 两代按当时的角色（GPU 当被测）记差；g1 → g2 是 GPU 
 | [`tb3-b`](../alignments/02-real-weight/results/t2bz-l4.report.md) | 第二代，300 步（同 td3-a 的设置） | ❌ 2.34 | ✅ 0.98 | — | — | 🟡 1.58 | ✅ 0.96 | 🟡 1.88 | 🟡 1.10 | 🟡 1.14 |
 | [`tb4-a`](../alignments/02-real-weight/results/t2b4-l4.report.md) | 第三代，300 步（同 td4-a 的设置） | ❌ 2.29 | ✅ 0.83 | — | — | 🟡 1.61 | 🟡 1.61 | 🟡 1.60 | ✅ 0.58 | ✅ 0.56 |
 | [`tb5-b`](../alignments/02-real-weight/results/t2b5-l4.report.md) | 1000 步（同 td5-a 的设置） | 🟡 1.19 | ✅ 0.83 | — | — | 🟡 1.12 | 🟡 1.13 | 🟡 1.31 | ✅ 0.66 | ✅ 0.83 |
-| [`tb5b-a`](../alignments/02-real-weight/results/t2b5b-l4.report.md) | **现行**，1000 步（含 M42b） | 🟡 1.15 | ✅ 0.82 | — | — | ✅ 0.97 | 🟡 1.13 | 🟡 1.03 | ✅ 0.66 | ✅ 0.83 |
+| [`tb5b-a`](../alignments/02-real-weight/results/t2b5b-l4.report.md) | 最近一代，1000 步（含 M42b；base2 开、早于 M50，现行对齐配置在 B 上尚无运行） | 🟡 1.15 | ✅ 0.82 | — | — | ✅ 0.97 | 🟡 1.13 | 🟡 1.03 | ✅ 0.66 | ✅ 0.83 |
 
 ## mid · 300 步（对 GPU gm-a，噪声 gm 两两 28 对）
 
@@ -83,7 +83,7 @@ tm-a 与 tm-b 差不止一个开关，不能当 A/B。
 | 被测 | 设置 | 主 loss | 主 loss 后段 | MTP loss | MTP 后段 | 索引器 KD | grad_norm | param_norm | 偏置均值 | 偏置标准差 |
 |---|---|---|---|---|---|---|---|---|---|---|
 | [`tm-a`](../alignments/03-mid/results/tm-l4.report.md) | fd796f6 时的配置（没有 M39–M41、M42b） | 🟡 1.01 | ✅ 0.94 | 🟡 1.04 | 🟡 1.04 | ✅ 0.94 | ✅ 0.97 | 🟡 1.02 | ✅ 0.53 | ✅ 0.86 |
-| [`tm-b`](../alignments/03-mid/results/tmb-l4.report.md) | **现行**（含 M39–M41 与 M42b） | 🟡 1.38 | 🟡 1.01 | ✅ 0.96 | ✅ 0.91 | 🟡 1.12 | ✅ 0.93 | 🟡 1.79 | ✅ 0.61 | ✅ 0.68 |
+| [`tm-b`](../alignments/03-mid/results/tmb-l4.report.md) | 最近一代（含 M39–M41 与 M42b；base2 开、早于 M50，现行对齐配置在 mid 上尚无运行） | 🟡 1.38 | 🟡 1.01 | ✅ 0.96 | ✅ 0.91 | 🟡 1.12 | ✅ 0.93 | 🟡 1.79 | ✅ 0.61 | ✅ 0.68 |
 
 ## mini · 第 1 步整网（L3）
 

@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import copy
 import functools
+import os
 from dataclasses import dataclass, field
 
 import torch
@@ -407,6 +408,10 @@ class Hy4Indexer(DSAIndexer):
         assert cu_seqlens is None
         rope = self.qk_pos_emb_head_dim
         x_nope, x_pe = torch.split(x, [self.index_head_dim - rope, rope], dim=-1)
+        dt = x_pe.dtype
+        if os.environ.get("HY4_INDEXER_ROPE_FP32") == "1":
+            # 诊断：索引器 RoPE 在 FP32 里算（cos、sin、乘加都是 FP32），结果舍一次回原精度（06-rw3「索引器 KD」）
+            x_pe, rotary_pos_emb = x_pe.float(), rotary_pos_emb.float()
         x_pe = apply_rotary_pos_emb(
             x_pe,
             rotary_pos_emb,
@@ -415,7 +420,7 @@ class Hy4Indexer(DSAIndexer):
             mscale=mscale,
             cp_group=self.pg_collection.cp,
             mla_rotary_interleaved=self.config.dsa_indexer_rope_interleaved,
-        )
+        ).to(dt)
         return torch.cat([x_nope, x_pe], dim=-1)
 
 

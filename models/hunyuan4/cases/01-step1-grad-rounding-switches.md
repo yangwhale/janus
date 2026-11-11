@@ -29,7 +29,7 @@ GPU 同设置重跑之间只差原子加的顺序，舍入位置相同，所以 
 
 出处：[`t1-step1-precision-switches.json`](../alignments/01-mini/results/t1-step1-precision-switches.json)。这一比值是两边的差，不定责。
 
-- 只把输出头设成 `logits_matmul_precision: highest`，逐张量结论不变（提交 `0a39dd5`，没有单独的结果文件；见[案例 04](04-lm-head-single-bf16-pass.md)）。
+- 只把输出头设成 `logits_matmul_precision: highest`，逐张量结论不变：第 1 步开关前后（`tw-sw-base` / `tw-sw-m13`）`lm_head.weight` 梯度 TPU 对 GPU 开 1.81e-3、关 1.81e-3（GPU 三份之间 1.01e-3），两次 TPU 梯度之间只差 5.7e-5（[`t1-switch-isolation-tpu.json`](../alignments/01-mini/results/t1-switch-isolation-tpu.json) 的 M13 段；见[案例 04](04-lm-head-single-bf16-pass.md)）。
 - 修后对 CPU FP64（`t1diag15`，五个开关含 M23）：205 个参数梯度的 R 中位数 0.95（rel_L2 中位数 GPU 6.60e-3、TPU 6.18e-3）；R > 1.2 的 13 个全是 iHC 的 `hc_pre` 参数与 MTP `enorm`；超 2N 的 58 个里未定责的 3 个都是 iHC（[案例 11](11-ihc-stream-sum-highest-einsum.md)）（[`t1s-step1-grad-vs-fp64.json`](../alignments/01-mini/results/t1s-step1-grad-vs-fp64.json)）。
 - M12 的旁证（混元 3 `phase2-l1-ops-own`，v5p 单算子对 FP64，开关关）：qkv GPU 1.89e-3、TPU 2.33e-3，R 1.24；稠密 fc1 GPU 1.99e-3、TPU 2.58e-3，R 1.29。
 - 300 步 L4（`t1-l4-nozm` → `t1s-l4`）主 loss、grad_norm、索引器 KD 修后仍不过，这一代同时开了 M23，是两边的差、不定责（[`t1-l4-nozm.results.json`](../alignments/01-mini/results/t1-l4-nozm.results.json)、[`t1s-l4.results.json`](../alignments/01-mini/results/t1s-l4.results.json)）；后续见[案例 06](06-gpu-attn-scores-bf16.md)、[案例 02](02-indexer-kd-f32-lse.md)。

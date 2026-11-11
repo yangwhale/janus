@@ -16,14 +16,14 @@ test:     # TPU：v5p 2x2x4（16 个设备），FSDP 16
   - {name: trw-b, stage: rw3, steps: 1000, role: "同命令重提，还没开始记步又被整片抢走"}
   - {name: trw-c, stage: rw3, steps: 1000, role: "同命令，每 100 步把整个训练状态存到 GCS；第 100 步存档时 Orbax 拒存大小为 0 的数组，退出"}
   - {name: trw-e, stage: rw3, steps: 1000, role: "被测（自建 spot 池）：同 trw-c，存档跳过大小为 0 的叶子；第一段跑到第 164 步（第 100 步存档成功），逐步记录从 Pod 镜像出来", golden: rw1k-a, results: [rw3-l4-first164], location: "gs://<POC 桶>/janus/hunyuan4/tpu/trw-e-s*/"}
-  - {name: trw-d, stage: rw3, steps: 1000, role: "被测（另一个按预留供给的 v5p 集群，16 片）：同命令，每个作业一段（≤ 1 小时），段尾存档、下一段接着跑", golden: rw1k-a, location: "gs://<POC 桶>/janus/hunyuan4/tpu/trw-d-s*/"}
+  - {name: trw-d, stage: rw3, steps: 1000, role: "被测（另一组 v5p 16 片）：同命令，每个作业一段（≤ 1 小时），段尾存档、下一段接着跑；原来那组机器恢复后停掉，没有结果，不进判定（存档的问题同 trw-c）"}
   - {name: b2s1-bt, stage: rw3, steps: 2, role: "第 1 步 base2 验证：只改 sa_use_base2_exp=false（其余同 trw-e，同一代码包），训练 2 步，--dump-steps 1 --full（全量只抓 norm、sink、iHC 参数）；第 1 步 lm_loss / mtp_loss_mt 对 CPU FP64", golden: rw1k-a, results: [step1-base2-off], location: "gs://<POC 桶>/janus/hunyuan4/tpu/b2s1-bt/"}
   - {name: b2s1-at, stage: rw3, steps: 2, role: "同 b2s1-bt 但 base2 开（对照）：第 1 步 lm_loss 与 trw-e 逐位相同（Pod 日志）；第 2 步之后 spot 节点被收走，运行目录没取回"}
   - {name: b2s1-bd, stage: rw3, steps: 1, role: "--diag-step1、base2 关：装载梯度程序时显存差 1.3 GB（要 74.22G，可用 72.93G）退出；改用 --diag-free-opt 重跑为 b2s1-bd2"}
   - {name: b2s1-bd2, stage: rw3, steps: 1, role: "--diag-step1 --diag-free-opt、base2 关：第 1 步逐张量梯度（路由专家之外 102 个张量，HF 名字，FP32）", golden: rw1k-a, results: [step1-base2-off], location: "gs://<POC 桶>/janus/hunyuan4/tpu/b2s1-bd2/"}
   - {name: b2s1-ad2, stage: rw3, steps: 1, role: "同 b2s1-bd2 但 base2 开（对照）", golden: rw1k-a, results: [step1-base2-off], location: "gs://<POC 桶>/janus/hunyuan4/tpu/b2s1-ad2/"}
   - {name: b2r-off, stage: rw3, steps: 250, role: "base2 开 / 关短回放：只改 sa_use_base2_exp=false（其余同 trw-e，同一代码包），250 步一次跑完、不存档", golden: rw1k-a, results: [rw3-l4-b2r250-off, rw3-base2-replay], location: "gs://<POC 桶>/janus/hunyuan4/tpu/b2r-off/"}
-  - {name: b2r-on, stage: rw3, steps: 250, role: "同 b2r-off 但 base2 开（现行配置，trw-e 的同一命令）；前 164 步与 trw-e 逐位相同", golden: rw1k-a, results: [rw3-l4-b2r250-on, rw3-base2-replay], location: "gs://<POC 桶>/janus/hunyuan4/tpu/b2r-on/"}
+  - {name: b2r-on, stage: rw3, steps: 250, role: "同 b2r-off 但 base2 开（2026-11-11 前的对齐配置，trw-e 的同一命令）；前 164 步与 trw-e 逐位相同", golden: rw1k-a, results: [rw3-l4-b2r250-on, rw3-base2-replay], location: "gs://<POC 桶>/janus/hunyuan4/tpu/b2r-on/"}
   - {name: rfx-v, stage: rw3, steps: 250, role: "续跑核对：修好读档显存后，从 trw-e 的第 100 步存档续跑到第 250 步（同 b2r-on 的配置，不存档）；第 101–250 步与 b2r-on 逐位相同", golden: rw1k-a, results: [resume-check], location: "gs://<POC 桶>/janus/hunyuan4/tpu/rfx-v-s1/"}
   - {name: b2s-off150, stage: rw3, steps: 151, role: "同 b2r-off 跑到第 151 步，第 151 步训练之前导出 HF 快照（--hf-snapshot-at 151；第 1 步 --hf-snapshot-verify 111 个张量与 HF 原件逐位相同）；第 1–151 步与 b2r-off 逐位相同", results: [rw3-step151-same-state]}
   - {name: b2s2-off151, stage: rw3, steps: 151, role: "同上，只导出输出头与索引器 k_norm 的 FP32 主权重原值（--hf-snapshot-only gpu-fp32）", results: [rw3-step151-same-state]}
@@ -32,8 +32,8 @@ test:     # TPU：v5p 2x2x4（16 个设备），FSDP 16
   - {name: b2d2-off151, stage: rw3, steps: 1, role: "同上（--param-override 读完删副本、--bias-override hf:param-override）：第 151 步同状态的逐张量梯度", results: [rw3-step151-same-state-grads]}
   - {name: b2d3-noexc151, stage: rw3, steps: 1, role: "同 b2d2-off151，再关编译器省舍入（XLA_FLAGS=--xla_allow_excess_precision=false）", results: [rw3-step151-same-state-grads-noexc]}
   - {name: b2r-noexc, stage: rw3, steps: 250, role: "base2 关、关编译器省舍入的 250 步回放：看 iHC 那几次舍入是不是后段轨迹差的原因（不是：主 loss r 7.32 → 29.6）", golden: rw1k-a, results: [rw3-l4-b2r250-noexc, rw3-b2r-noexc-vs-off]}
-  - {name: rfx-on, stage: rw3, steps: 1000, role: "被测（现行配置，base2 开）：修好续跑以后的代码包，每 100 步存档；第 62、119 步两次被收，第三段从第 100 步存档续跑到第 1000 步，各段重叠的 81 步逐位相同；前 250 步与 b2r-on 逐位相同", golden: rw1k-a, results: [rw3-l4, rw3-l0-settings, rw3-1k-replay], location: "gs://<POC 桶>/janus/hunyuan4/tpu/rfx-on-s*/"}
-  - {name: rfx-off, stage: rw3, steps: 1000, role: "同 rfx-on 但只改 sa_use_base2_exp=false；一段跑完；前 250 步与 b2r-off 逐位相同", golden: rw1k-a, results: [rw3-l4-b2off, rw3-1k-replay], location: "gs://<POC 桶>/janus/hunyuan4/tpu/rfx-off-s2/"}
+  - {name: rfx-on, stage: rw3, steps: 1000, role: "被测（2026-11-11 前的对齐配置，base2 开；含 M42b、M50，MaxText b87a55aa、janus f46f6981，meta.json 已核）：修好续跑以后的代码包，每 100 步存档；第 62、119 步两次被收，第三段从第 100 步存档续跑到第 1000 步，各段重叠的 81 步逐位相同；前 250 步与 b2r-on 逐位相同", golden: rw1k-a, results: [rw3-l4, rw3-l0-settings, rw3-1k-replay], location: "gs://<POC 桶>/janus/hunyuan4/tpu/rfx-on-s*/"}
+  - {name: rfx-off, stage: rw3, steps: 1000, role: "同 rfx-on 但只改 sa_use_base2_exp=false：除命令行的 gradient_accumulation_steps=1、ici_fsdp_parallelism=16 外与现行 hy4-t2-d1.yml 逐键相同（meta.json 的 maxtext_config_full 已核）；一段跑完；前 250 步与 b2r-off 逐位相同；L0 学习率没核", golden: rw1k-a, results: [rw3-l4-b2off, rw3-1k-replay], location: "gs://<POC 桶>/janus/hunyuan4/tpu/rfx-off-s2/"}
   - {name: mtp9-snap / mtp9-fp32, stage: rw3, steps: 1, role: "从 rfx-off 第 900 步存档续跑一步，导出 HF 快照（BF16 / 输出头与索引器 k_norm 的 FP32 原值），给 GPU 同状态对照；第 901 步与 rfx-off 逐位相同", results: [rw3-mtp-same-state], location: "gs://<POC 桶>/janus/hunyuan4/tpu/mtp9-*-s1/"}
   - {name: mtp9-frz / mtp9-frz32, stage: rw3, steps: 8, role: "同一份权重（rfx-off 第 900 步之后）连算第 901–908 步 8 批 / 第 901–932 步 32 批：learning_rate=0、routed_bias_update_rate=0（param_norm 不变）；32 批的前 8 批与 8 批那次逐位相同", results: [rw3-mtp-same-state], location: "gs://<POC 桶>/janus/hunyuan4/tpu/mtp9-frz-s1/"}
 l0:

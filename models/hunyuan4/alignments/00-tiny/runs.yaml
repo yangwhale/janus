@@ -4,6 +4,6 @@ alignment: 00-tiny
 offline:  # CPU
   - {name: hy4-cpu-smoke, role: "TPU 一侧 CPU 冒烟：hy4-tiny、8 个假设备，四个阶段整条链路（frameworks/maxtext/cpu_smoke.py）", results: results/hy4-cpu-smoke.json}
   - {name: hy4-tiny-muon-partition, role: "Muon 分区表（muon_partition.py，台账 J1）", results: ../../results/hy4-tiny-muon-partition.md}
-  - {name: hy4-tiny11-qk-clip-scan, role: "QK-Clip 扫描层检查（qk_clip_scan_check.py，台账 J1、M1）", results: ../../results/hy4-tiny11-qk-clip-scan.json}
+  - {name: hy4-tiny11-qk-clip-scan, role: "QK-Clip 扫描层检查（qk_clip_scan_check.py，台账 J1、M1）", results: [../../results/hy4-tiny11-qk-clip-scan.json, ../../results/hy4-tiny11-qk-clip-scan-postfix.json]}
 gpu:
-  - {name: hy4-tiny 2 卡冒烟, role: "Megatron 训练入口 2 卡 20 步两份，逐位相同（台账 G7）；没有结果文件"}
+  - {name: hy4-tiny 2 卡冒烟, role: "Megatron 训练入口 2 卡 20 步两份，逐位相同（只记在台账 G7）；没有存结果文件，未存证，不作判定依据"}

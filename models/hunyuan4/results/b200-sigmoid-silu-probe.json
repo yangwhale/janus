@@ -1,0 +1,45 @@
+{
+ "what": "B200 上 sigmoid / silu / exp 对 FP64 的实测精度（单卡，训练镜像里跑）；表见 frameworks/megatron/README.md「sigmoid / silu 各处的实际算法」",
+ "script": "models/hunyuan4/analysis/sigmoid_silu_probe.py",
+ "fetched_at": "2026-11-07（从运行输出取回的时间，UTC）",
+ "gpu": "NVIDIA B200",
+ "torch": "2.14.0a0+b2c75dd062.nv26.09",
+ "te": "2.20.2+44f31bbe",
+ "n_fp32_inputs": 20000000,
+ "n_bf16_inputs": 33762,
+ "sigmoid_fp32": {
+  "max_ulp": 3.432615138590336,
+  "mean_ulp": 0.3843446890862666,
+  "frac_correctly_rounded": 0.6640343070030212
+ },
+ "silu_fp32": {
+  "max_ulp": 3.4240546710789204,
+  "mean_ulp": 0.352320239229118,
+  "frac_correctly_rounded": 0.7129715085029602
+ },
+ "exp_fp32_[-30,30]": {
+  "max_ulp": 1.8889481201767921,
+  "mean_ulp": 0.3833776935437658,
+  "frac_correctly_rounded": 0.6969486474990845
+ },
+ "sigmoid_bf16_in_out": {
+  "frac_equal_correctly_rounded": 1.0,
+  "max_bf16_ulp": 0.0
+ },
+ "silu_bf16_in_out": {
+  "frac_equal_correctly_rounded": 1.0,
+  "max_bf16_ulp": 0.0
+ },
+ "gate_out_x_sigmoid_bf16": {
+  "frac_equal_correctly_rounded": 0.7568462491035461,
+  "max_bf16_ulp": 1.0
+ },
+ "swiglu_unfused_bf16": {
+  "frac_equal_correctly_rounded": 0.730256974697113,
+  "max_bf16_ulp": 1.0
+ },
+ "te_ops_SwiGLU_bf16": {
+  "frac_equal_correctly_rounded": 0.9999942183494568,
+  "max_bf16_ulp": 1.0
+ }
+}

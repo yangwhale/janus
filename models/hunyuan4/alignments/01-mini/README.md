@@ -28,7 +28,7 @@ hy4-mini 保留混元 4 的全部结构与每头维度，只缩宽度与个数�
 
 | 比较 | 步数 | 被测 / 基线 | 结果 |
 |---|---|---|---|
-| [`t1zo-l4`](results/t1zo-l4.report.md) | 1000 | TPU `tz-off-rep`（现行对齐配置，含 M50，base2 关）/ GPU `g3-a` | 过 7、不过 0、待定 2（主 loss 全程与后段，r 1.55 / 1.52；与 base2 无关，是第 500 步以后攒出来的训练轨迹差，同一份权重上前向没有，后段根因未定，[D30](DETAILS.md#d30)）；上一代（base2 开的 `t1zg-a`）见[历代比较](../../dashboard/history.md) |
+| [`t1zo-l4`](results/t1zo-l4.report.md) | 1000 | TPU `tz-off-rep`（现行对齐配置，含 M50，base2 关）/ GPU `g3-a` | 过 7、不过 0、待定 2（主 loss 全程与后段，r 1.55 / 1.52；与 base2 无关，是第 500 步以后攒出来的训练轨迹差，同一份权重上前向没有，后段根因未定：已排除 MTP / KD 两项 loss、sink 与 norm 两类小参数，[D30](DETAILS.md#d30)）；上一代（base2 开的 `t1zg-a`）见[历代比较](../../dashboard/history.md) |
 
 | mini 挡签字的项 | 状态 |
 |---|---|
@@ -49,7 +49,7 @@ QK-Clip 全局最大 logit（[D29](DETAILS.md#d29)）、逐元素 log（[D14](DE
 | HF 目录：135 个张量的名字、形状、dtype；参数量 42,070,313,621 | 全部 | pass | [`hy4-l0-names`](results/hy4-l0-names.results.json) |
 | 转换后逐张量还原回 HF 对 `tensor_sha256.json` 逐位，含 dtype 清单 | A / B / C / D | pass（31 / 60 / 84 / 87 个张量） | `hy4-{a,b,c,d}-l0-ckpt-convert`，例 [`A`](results/hy4-a-l0-ckpt-convert.report.md) |
 | RoPE 列去交错与逆置换 | A / B / C / D | pass（6 / 12 / 14 / 18 个张量） | `hy4-{a,b,c,d}-l0-rope` |
-| 跨侧：TPU 初始权重对 GPU golden 初始参数清单 | A、B | pass（248 / 248、472 / 472，对旧参照） | [`A`](results/hy4-a-l0-init-vs-gpu.report.md)、[`B`](results/hy4-b-l0-init-vs-gpu.report.md) |
+| 跨侧：TPU 初始权重对 GPU golden 初始参数清单 | A、B | pass（248 / 248、472 / 472，对 AdamW 时期的 GPU golden：A 是 `ga-b`、`ga1-a`，B 是 `gb-a`；现行 T2 的 Megatron-Core golden 上这一项没做，见 [real-weight 签字清单](../02-real-weight/ALIGNMENT-REPORT.md#签字清单) 1a） | [`A`](results/hy4-a-l0-init-vs-gpu.report.md)、[`B`](results/hy4-b-l0-init-vs-gpu.report.md) |
 | 数据回放：300 步 × 8 rank × 2 microbatch 的输入指纹对 GPU 运行 | A | 4800 个单元 0 处不同 | [`ga-a`](results/hy4-a-replay-check-ga-a.txt) |
 | 阶段 A 第 0 层 10 个算子隔离回放，对 FP64（GPU 一侧是 HF 参照模型） | A | 全过，R 0.18–1.00 | [`hy4-a-l1-op-tpu-fix.json`](results/hy4-a-l1-op-tpu-fix.json) |
 

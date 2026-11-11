@@ -50,9 +50,9 @@
 ### 第 3、4 行
 
 - **第 3 行为什么数值没变**：报告只说明「开关打开了、HLO 多了两个 `reduce-precision`、训练状态逐位相同」。
-  - 推断：`matmul_precision=default` 下 TPU 的 FP32 矩阵乘本来就把操作数按 BF16 算，先把路由权重舍入成 BF16 再乘不改变结果。
+  - 原因：`matmul_precision=default` 下 TPU 的 FP32 矩阵乘本来就把操作数按 BF16 算，先把路由权重舍入成 BF16 再乘不改变结果。
+  - 这一点在 v5p 上验证过：DEFAULT 的结果与「核先舍 BF16 再乘」逐位相同（01 `phase2-l1-l2-replay` 的 `router_precision_probe`，`default_eq_rounded_kernel_frac` = 1，3 层；[`../../config-alignment.md`](../../config-alignment.md) 注 10、注 21）。
   - CPU 上同一开关会改数值（CPU 冒烟里训练后 91 个叶子 88 个不同），因为 CPU 的默认精度是完整 FP32。
-  - 这条推断没在 TPU 上单独验证。
   - 不论原因，回归门在「数学不变」声明下把它拦住了：配置变了、编译产物变了，声明却说什么都没变。
 - **第 4 行**：第 1 步 loss 逐位相同而第 1 步裁剪前梯度范数不同（第一个不同的量是 R09）。
   - 20 步 loss 对 LKG 的 MARE 2.06e-5、最大单步 6.34e-5（第 11 步）。

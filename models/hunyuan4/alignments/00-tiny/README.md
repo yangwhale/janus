@@ -17,7 +17,7 @@
 |---|---|---|---|
 | CPU 冒烟 | `frameworks/maxtext/cpu_smoke.py`：hy4-tiny 维度、8 个假 CPU 设备，四个阶段（A–D）各走一遍：生成 HF 目录、转换、往返逐位、RoPE 去交错（含不去交错必须判不一致的负对照）、训练几步、初始权重等于 HF、索引器冻结、数据指纹、学习率常数 | 全部通过（`ok`） | [`results/hy4-cpu-smoke.json`](results/hy4-cpu-smoke.json) |
 | Muon 分区表 | `frameworks/maxtext/muon_partition.py` 写出每个参数走 Muon 还是 Adam、Newton–Schulz 作用的矩阵（台账 J1） | Muon 142 个张量 / 4,851,712 个参数；Adam 112 个张量 / 530,609 个参数 | [`hy4-tiny-muon-partition.md`](../../results/hy4-tiny-muon-partition.md) |
-| QK-Clip 扫描层检查 | `qk_clip_scan_check.py`（台账 J1）在 hy4-tiny 的 11 层变体 hy4-tiny11（1 稠密 + 10 MoE：MoE 层按 IndexCache 每 4 层一组扫描，扫描长度 2，另有 2 层余数块；扫描长度至少 2 才看得出各层是不是共用一个缩放，见脚本开头的说明）上实测每层每头的 √scale | 扫描块里各层共用一个缩放（MaxText 的 bug，台账 M1），修后单测每层每头与按该层最大 logit 算的期望一致 | [`hy4-tiny11-qk-clip-scan.json`](../../results/hy4-tiny11-qk-clip-scan.json)、[案例 07](../../cases/07-qk-clip-bugs.md) |
+| QK-Clip 扫描层检查 | `qk_clip_scan_check.py`（台账 J1）在 hy4-tiny 的 11 层变体 hy4-tiny11（1 稠密 + 10 MoE：MoE 层按 IndexCache 每 4 层一组扫描，扫描长度 2，另有 2 层余数块；扫描长度至少 2 才看得出各层是不是共用一个缩放，见脚本开头的说明）上实测每层每头的 √scale | 修前：扫描块里各层共用一个缩放（MaxText 的 bug，台账 M1）；修后同一脚本复跑（MaxText `b87a55aa`），每层每头与按该层最大 logit 算的期望逐位相同 | 修前 [`hy4-tiny11-qk-clip-scan.json`](../../results/hy4-tiny11-qk-clip-scan.json)、修后 [`hy4-tiny11-qk-clip-scan-postfix.json`](../../results/hy4-tiny11-qk-clip-scan-postfix.json)、[案例 07](../../cases/07-qk-clip-bugs.md) |
 | GPU 一侧冒烟 | Megatron 训练入口（台账 G7）在 hy4-tiny 上 B200 × 2 跑 20 步，两份 | 两份逐位相同 | 台账 G7（没有结果文件） |
 | 检查点读法 | hy4-tiny 改用 vLLM 读法（转换时去交错、latent eps 1e-5、索引器 k_norm eps 1e-6），与各尺寸一致（台账 M7） | 单测通过 | 台账 M7 |
 

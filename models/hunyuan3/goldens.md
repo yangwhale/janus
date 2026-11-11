@@ -15,7 +15,7 @@
   - 它是 GPU 生产程序 [`rc`](../../docs/glossary.md#rc)（BF16 混合精度、整层重算 + 路由回放）只加一处。
   - 加的这一处：输出头 dgrad（dh = dlogits · W，沿词表 120832 求和）改成分段 FP32 累加（[`rr_arms.py`](frameworks/megatron/rr_arms.py) 的 `dgrad-chunk`）。
   - 定义见术语表 [`rcc`](../../docs/glossary.md#rcc)、[最终 golden](../../docs/glossary.md#final-golden)。
-- 为什么只改这一处：GPU 生产与 TPU 生产之间唯一测得出的数值差，就是这一次长累加在 B200 上的系统偏差。BF16 张量核朝 0 截断，改成 cuBLAS FP32 一次累加也还偏。修掉它以后其余全是生产程序本身，GPU 与 TPU 的生产程序在 GPU 自己重跑的噪声内重合。整体结论见 [`ALIGNMENT-REPORT.md`](ALIGNMENT-REPORT.md)。
+- 为什么只改这一处：在 L4（1000 步）上，GPU 生产与 TPU 生产之间唯一测得出的系统偏差，就是这一次长累加在 B200 上的偏差。第 1 步还有几处测得出、但不累积的差（路由近似平局等，见对齐报告台账 #5、#6、#20）。BF16 张量核朝 0 截断，改成 cuBLAS FP32 一次累加也还偏。修掉它以后其余全是生产程序本身，GPU 与 TPU 的生产程序在 GPU 自己重跑的噪声内重合。整体结论见 [`ALIGNMENT-REPORT.md`](ALIGNMENT-REPORT.md)。
 - 其余代号（见文末「从 g1k 到 rcc」）：
   - 迭代过程中的几步：
     - [`g1k`](../../docs/glossary.md#g1k)（第一阶段 GPU golden，不开重算，1000 步，3 份）；
@@ -255,8 +255,8 @@
   - 只换 EP 度，反向就已经不逐位（00 `phase1-parallel`）。所以所有 golden 和噪声参照都固定用同一种切分。
   - TPU 用 FSDP 8，这个差别不可避免。
   - 这个差别占多少（2026-11-05，排查期对参考轨迹 `rce-a` 的读数）：TPU 生产配置只改成和 GPU 一样的 EP = 8。
-    - 对 `rce-a` 的 param_norm 带符号均值，和同平台当前 FSDP 配置比：v5p 少 18%（4.27e-7 降到 3.52e-7），v7x 多 17%（3.19e-7 升到 3.74e-7）；差值都在 TPU 执行噪声上限 9e-8 以内。
-    - 第 1000 步：v7x 不变（+2.35e-3），v5p +2.35e-3 → +1.86e-3。
+    - 对 `rce-a` 的 param_norm 带符号均值，和同平台当前 FSDP 配置比：v5p 少 18%（4.27e-7 降到 3.52e-7），v7x 多 17%（3.19e-7 升到 3.74e-7）；差值都在 GPU 精确五份两两的上限 1.07e-7 以内（案例 01「GPU 精确 + 分段 dgrad：1000 步」行）。
+    - 第 1000 步的 param_norm 差（另列，不是上面「少 18%」的口径）：v7x 不变（+2.35e-3），v5p +2.35e-3 → +1.86e-3。
     - 仍约 3 倍噪声，不过（案例 01 第 0 节「并行方式」行）。
   - 对最终 golden `rcc-a`：EP = 8 的 TPU 在 v5p、v7x 上 L4 各项都在噪声内（`phase2-acceptance-rcc-ep8`、`phase2-v7x-acceptance-rcc-ep8`）。
     - 当前的 FSDP 8 配置见 ALIGNMENT-REPORT。
@@ -547,13 +547,13 @@
 | TPU 精度 | `rmsnorm_single_rounding` | 关：MaxText 的写法是归一化结果、scale 各转一次 BF16，舍两次 | 开 | 采用 | TPU 向 GPU | 前向逐位不变，改的是反向（见注 43） |
 | TPU 精度 | `mlp_activation_round_per_op` | 关：默认编出来是「FP32 算完舍一次」 | 开：`silu` 的输出先舍 BF16，乘完再舍一次 | 采用 | TPU 向 GPU | 按算子舍入后与 GPU 100% 逐位（见注 44） |
 | TPU 精度 | `routed_gate_bf16_rounding` | 关 | 开：路由核先 `reduce_precision` 到 BF16 再乘，梯度直通 | 采用（显式保证） | TPU 向 GPU | 开和不开逐位相同，留着作显式保证（见注 45） |
-| TPU 精度 | excess precision（`--xla_allow_excess_precision`） | 开（XLA 默认） | 同原始 | 试过关，无影响 | — | 关掉只是让舍入位置确定，不是更准（见注 46） |
+| TPU 精度 | excess precision（`--xla_allow_excess_precision`） | 开（XLA 默认） | 同原始 | 试过关，不采用：param_norm 漂移不变、loss 偏移减半（排查期对 `rc` 的读数） | — | 关掉只是让舍入位置确定，不是更准（见注 46） |
 | TPU 精度 | `logits_dot_in_fp32`（单开） | False | 同原始 | 试过，无影响 | — | 单开等于没开；1000 步对 `rcc-a` 四项都过（见注 47） |
 | TPU 精度 | `logits_dot_in_fp32` + `matmul_precision: highest`（logmm） | False + default | 同原始 | 只作诊断：对最终 golden 有害，对真精确有效 | 两边向精确值（只动 TPU 一侧） | 对 `rcc-a` 不过，对 [`rcec-a`](../../docs/glossary.md#rcec) 过（见注 48） |
 | TPU 精度 | `matmul_precision: highest`（单开） | default | 同原始 | 试过，无影响 | — | `t-v7x-mmhi-1000`（v7x 当前配置只加这一项，1000 步）对 `rcc-a` 四项都过（最差 r 0.93；见注 49） |
 | TPU 精度 | 注意力 FP32 点积：`attention: dot_product` + `float32_qk_product: true` | splash（BF16 输入） | 同原始 | 试过，无影响 | — | `t-v7x-attn32-1000`（v7x 当前配置只加这一项，1000 步）对 `rcc-a` 四项都过（最差 r 0.78）；和 highest 一起开（`t-v7x-attnmm-1000`）loss 全程 1.11、grad_norm 1.03 倍，待定；和 logit32 一起开都过 |
 | TPU 精度 | `float32_gate_logits: true` | False | 同原始 | 试过，无影响（编出同一个程序） | — | `t-v7x-gate32-1000b`（v7x 当前配置只加这一项）1000 步与当前配置逐位相同（案例 01「路由 logits 用 FP32」行） |
-| TPU 并行 | `ici_expert_parallelism: 8`（EP = 8，非专家参数整份复制） | FSDP 8，专家不切 | 同原始（FSDP 8） | 可选：两种都对得上 | 并行方式和 GPU 相同 | 对 `rcc-a` 在 v5p、v7x 上 L4 都过（`phase2-acceptance-rcc-ep8`、`phase2-v7x-acceptance-rcc-ep8`）；步时见注 50 |
+| TPU 并行 | `ici_expert_parallelism: 8`（EP = 8；非专家参数沿 expert 轴做 FSDP 8，不是整份复制） | FSDP 8，专家不切 | 同原始（FSDP 8） | 可选：两种都对得上（只在 libtpu 0.0.46、截 4 层、L4 四个量上验过） | 专家的切法和 GPU 相同 | 对 `rcc-a` 在 v5p、v7x 上 L4 都过（`phase2-acceptance-rcc-ep8`、`phase2-v7x-acceptance-rcc-ep8`）；词嵌入的切法读 HLO 核过，见注 50 |
 | TPU 诊断 | `train_hy3.py --bf16-weights`（TPU 精确轨迹，全程 FP32、BF16 权重语义）、`--head-matmul-precision`、`--head-round input / cotangent / cot-dgrad / cot-wgrad`、`--jax-default-matmul-precision` | — | 不用 | 只作诊断 | — | 定位 TPU 那一份误差用的臂（见注 51） |
 
 - 注 41（`dense_fp32_accumulation`）：
@@ -588,7 +588,8 @@
   - TPU：XLA 在融合内部跳过中间的 BF16 舍入。
   - GPU：没有这个机制，每个算子各舍一次。
   - 关掉只是让舍入位置确定，不是更准；需要和 GPU 一样逐个舍的地方，用上面的开关显式写。
-  - `t-noexc-1000`（TPU 关 excess precision 的 1000 步运行）照样漂（案例 01「剩下约四成：TPU excess precision」行）。
+  - `t-noexc-1000`（TPU 关 excess precision 的 1000 步运行）param_norm 照样漂，loss 偏移减半（案例 01「剩下约四成：TPU excess precision」行）。
+  - 混元 4 查明，省掉的舍入能用 `reduce_precision` 显式补回（[根源一览第 16 行](../hunyuan4/ROOT-CAUSES.md#r16)），而且关掉这个开关会让排好序的词嵌入 scatter 退回每加一次舍一次（[案例 14](../hunyuan4/cases/14-ddp-fsdp-embedding.md#回头看-10-月的建议)）。混元 3 保持默认开。
 - 注 47（`logits_dot_in_fp32` 单开）：
   - 单开时 DEFAULT 精度在 MXU 上仍按单遍 BF16 乘，等于没开。
   - `t-gn-l32-300`（TPU 单开 `logits_dot_in_fp32`，300 步）第 300 步输出层贡献 +3.85e-3，和 `t-gn-300`（不开，300 步）一样（案例 01 第 6 节 4b）。
@@ -603,9 +604,11 @@
 - 注 49（`matmul_precision: highest` 单开）：
   - 改的是 FP32 操作数的 dot：反向里 FP32 梯度 28 个、路由 4 个、MoE 加权求和 3 个。
   - 不改权重语义（案例 01「`matmul_precision=highest` 改了哪些算子」行）。
-- 注 50（EP = 8 的步时，各运行 `metrics.jsonl` 第 50–1000 步中位数）：
-  - v7x 0.980 → 0.710 s
-  - v5p 1.607 → 0.999 s
+- 注 50（EP = 8）：
+  - 步时（各运行 `metrics.jsonl` 第 50–1000 步中位数）：v7x 0.980 → 0.710 s，v5p 1.607 → 0.999 s。
+  - 切法：MaxText 的逻辑轴规则把 `embed` / `embed_vocab` 也映射到 expert 轴，所以 EP = 8 时非专家参数沿 expert 轴切 8 份，等于 FSDP 8。
+  - 词嵌入（2026-11-11 读优化后 HLO 核实，[`ep8-embed-scatter-hlo.json`](alignments/01-v5p-acceptance/results/ep8-embed-scatter-hlo.json)）：表每卡 [120832, 512]，反向 scatter-add 每卡 32768 个下标，超过排序门槛 15104。v5p 上排了序，v7x 上交给 SparseCore；没有整表 all-reduce。混元 4 [案例 14](../hunyuan4/cases/14-ddp-fsdp-embedding.md) 的纯数据并行问题在这里不出现。
+  - 只在 libtpu 0.0.46 上核过。换版本要重看 HLO（[`libtpu-052.md`](../hunyuan4/alignments/04-tpu-self/libtpu-052.md)）。改成真正的纯数据并行（每卡一个微批 4096 个下标）会落到门槛以下，要开 `embedding_grad_fp32`。
 - 注 51（TPU 诊断臂）：
   - 定位 TPU 那一份（只舍输出头反向的 dlogits、只经 dgrad 一路）用的臂（案例 01「TPU 自己的 BF16 那一份」「TPU 那一份再拆」两行）。
   - `--jax-default-matmul-precision highest` 会让 splash / megablox 在 BF16 操作数上出错，只配全 FP32 用。

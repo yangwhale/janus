@@ -89,6 +89,8 @@
 
 ### Changed
 
+- **[判定]** 混元 4 mini 的对齐配置关 splash 的 base2 指数（四份对齐 yml `sa_use_base2_exp: false`，所有尺寸一致），现行比较从 `t1zg-a` 换成关 base2 的 `tz-off-rep`；同时 mini 1000 步的噪声尺子从 `g3` 8 份两两 28 对换成 16 份两两 120 对。现行判定：1000 步 9 项过 7、待定 2（`t1zo-l4`）；同一把 16 份尺子下上一代 `t1zg-a` 是 9 项全过（8 份时过 7、待定 2）。旧结果不重判、原样保留，`t1zg-a` 降为上一代；L1 单算子回放、L2、路由一致率第 8 / 30 / 100 步没有关 base2 的结果，照旧引用开 base2 的一代并注明。变更记录见混元 4 `PROTOCOL.md` 2026-11-11
+- **[判定]** 混元 4 TPU 自比 1000 步的尺子从 GPU `g3` 8 份两两 28 对换成 16 份两两 120 对，全部 1000 步臂重判：8 份时落在 r 2–3 的灰区臂全部落到「和 GPU 重跑分不开」，GPU 留一法最大值 2.00 → 1.82；前 300 步仍是 8 份。逐臂结果在 `models/hunyuan4/alignments/04-tpu-self/MATRIX.md`「L 长跑」，变更记录见混元 4 `PROTOCOL.md` 2026-11-10
 - **[判定]** 混元 4 的曲线检查一律以参照作分母，grad_norm 不再用两边均值（`denominator: mean`）。87 个目录改动，262 份结果用同一批运行目录重跑后原名覆盖：梯度范数以外的检查不变，判定只变 1 项（`t1zz-l4` 的 grad_norm 过 → 待定），TPU 自比判档与 GPU 留一法最大值（2.47 / 1.82）不变；逐项对照在 `models/hunyuan4/results/grad-norm-denominator-rejudge.md`，变更记录见混元 4 `PROTOCOL.md` 2026-11-10。janus 本身的判法与默认值不变，`denominator: mean` 仍可用；混元 3 已签字，第一层沿用两边均值
 - 结果格式升到 `schema_version: 2`：`catalog` 记目录的内容指纹（`content_sha256`，`hash_algo: content-v1`），原文件 sha256 改名 `raw_sha256` 只留作历史
   - 内容指纹 = 解析 YAML（丢注释）、删掉纯描述键（顶层 `description`；检查项的 `description`、`notes`、`source`、`pending_note`）、键排序的紧凑 JSON 的 sha256（`docs/reference/result-schema.md` 注 2）。

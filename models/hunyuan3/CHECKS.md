@@ -44,7 +44,7 @@
 |---|---|---|
 | 逐位 | L0 数据、权重、配置；续训 | 两边逐位相同才过 |
 | R 比 ≤ 1.2 | L1 单算子；L2 逐层前向、反向；L3 logits 与逐 token loss | R = TPU 离 FP64 真值的 rel_L2 ÷ GPU 离 FP64 真值的 rel_L2。TPU 不比 GPU 离精确算术远就过 |
-| 噪声上限 N | L2、L3 的第 1 步梯度与状态；L4 的逐步曲线 | N 是 GPU（第 1 步再并上 TPU 只改执行参数）自己重跑两两之间的最大差。实测 ≤ N 过，> 2N 不过，之间待定 |
+| 噪声上限 N | L2、L3 的第 1 步梯度与状态；L4 的逐步曲线 | N 是 GPU 自己重跑两两之间的最大差（第 1 步只用 GPU 第 1 步重跑 3 对；2026-11-08 起，之前并上 TPU 只改执行参数的 21 对，已撤回）。实测 ≤ N 过，> 2N 不过，之间待定 |
 
 定义与依据见 [`docs/reference/judging.md`](../../docs/reference/judging.md)。
 
@@ -79,7 +79,7 @@ L0 共 11 项检查，检查条数 29 / 28（v5p / v7x），张量级比较 4,84
 | dtype 清单<br>`L0.dtype.manifest`<br>`L0.dtype.state` | 每个参数与训练状态的 dtype 是否符合规则 | 参数清单（expert_bias 为 FP32，其余 BF16）；训练状态（主权重、两个动量、路由偏置必须 FP32，只在 v5p 的回归运行上读）<br>比较单元：TPU v5p-8 3,142 项 dtype；TPU v7x-4 2,960 项 dtype<br>聚合：逐项核 dtype，数不合规的个数 | 逐位｜参考：无 | 生产程序（第 1 步训练前读状态） | [0 / 3,142 不同 ✅](alignments/01-v5p-acceptance/results/phase2-l0-state.report.md) | [0 / 2,960 不同 ✅](alignments/02-v7x-acceptance/results/phase2-v7x-l0-state.report.md) |
 | 模型结构<br>`L0.model.structure` | TPU 实例化出来的模型和 HF 配置是否一致 | 15 条规则：1 层稠密 + 3 层 MoE、192 个专家、专家中间维 1536、1 个共享专家、64 个 q 头 / 8 个 kv 头 × 128、稠密 MLP 13312、词表 120832、输出层不与词表共享、主权重全部 FP32、没有 MTP<br>比较单元：15 条规则<br>聚合：逐条规则核，数不满足的条数 | 按规则｜参考：无 | 生产程序（第 1 步训练前读状态） | [全部规则满足 ✅](alignments/01-v5p-acceptance/results/phase2-l0-state.report.md) | [全部规则满足 ✅](alignments/02-v7x-acceptance/results/phase2-v7x-l0-state.report.md) |
 | 权重转换<br>`L0.ckpt.convert.bitwise`<br>`L0.ckpt.convert.dtype`<br>`L0.ckpt.source.dtype` | HF 权重转成 MaxText 检查点后，逐张量转回 HF 对原件。v5p、v7x 用同一份检查点 | 全部 1781 个 HF 张量逐位，加转换前后两份 dtype 清单<br>比较单元：1,781 个参数张量、3,562 项 dtype<br>聚合：逐张量比 sha256，数不同的个数；逐项核 dtype，数不合规的个数 | 逐位｜参考：无 | 离线核对（CPU，检查点文件） | [0 / 1,781 不同 ✅](alignments/01-v5p-acceptance/results/phase2-ckpt-convert.report.md) | [0 / 1,781 不同 ✅](alignments/01-v5p-acceptance/results/phase2-ckpt-convert.report.md) |
-| 续训的数据位置<br>`L0.resume.data` | 从存档恢复后，数据是否从正确的位置接着读 | 恢复后各步、各 rank 的输入指纹<br>比较单元：650 个数据单元<br>聚合：逐单元比 sha256，数不同的个数 | 逐位｜参考：无 | 生产程序（存档与续训） | [0 / 650 不同 ✅](alignments/01-v5p-acceptance/results/phase2-resume.report.md) | [0 / 650 不同 ✅](alignments/02-v7x-acceptance/results/phase2-v7x-resume.report.md) |
+| 续训的数据位置<br>`L0.resume.data` | 从存档恢复后，数据是否从正确的位置接着读。TPU 侧数据是按步号回放 golden 的 batch，这一项只验证回放的步号索引，不覆盖原生加载器（Grain 迭代器）状态的存取 | 恢复后各步、各 rank 的输入指纹<br>比较单元：650 个数据单元<br>聚合：逐单元比 sha256，数不同的个数 | 逐位｜参考：无 | 生产程序（存档与续训） | [0 / 650 不同 ✅](alignments/01-v5p-acceptance/results/phase2-resume.report.md) | [0 / 650 不同 ✅](alignments/02-v7x-acceptance/results/phase2-v7x-resume.report.md) |
 | TPU 原生数据加载器（只报）<br>`L0.native.gpu_integrity`<br>`L0.native.index`<br>`L0.native.stream`<br>`L0.native.device_map.native`<br>… | 不回放 GPU 的 batch、改用 MaxText 自己的数据管线时，读出的样本是否与 Megatron 相同 | 14 条：三个索引表、样本流、每步非 padding token 数、字段约定、读取进程数、多 host、多 epoch、文档边界合成用例、pad id、3 个负对照、覆盖率；分配到设备与 microbatch 的布局。加载器与 TPU 型号无关，只在 CPU 上跑了一次，v7x 列引用同一份结果<br>比较单元：80,000 个数据单元、2,000 步、64,000 个名字<br>聚合：逐条规则核，数不满足的条数；逐单元比 sha256，数不同的个数；逐步、逐张量比两次运行，数不可复现的项；逐用例看埋的错有没有被抓到；比名字清单，数缺的个数 | 逐位｜参考：无 | 离线核对（CPU，数据管线） | [14,000 / 16,000 不同 ❌](alignments/01-v5p-acceptance/results/phase2-native-loader.report.md) | [14,000 / 16,000 不同 ❌](alignments/01-v5p-acceptance/results/phase2-native-loader.report.md) |
 | 设置核对：学习率逐步<br>`L4.lr` | 逐步学习率两边逐位相同。学习率是设置的常数（1e-5，无 warmup、无衰减），不是观测量，所以归设置核对，不算 L4 的比较项（报告口径，判定不变，见对齐报告「判法变更记录」） | `lr`，第 1–1000 步（检查 id 仍是 `L4.lr`，取自 L4 的验收结果文件）<br>比较单元：1,000 步<br>聚合：逐步比，任一步超出容差就不过 | rtol ≤ 0、abs_ulp ≤ 0｜参考：无 | 生产程序 | [逐步在容差内 ✅](alignments/01-v5p-acceptance/results/phase2-acceptance-rcc-on.report.md) | [逐步在容差内 ✅](alignments/02-v7x-acceptance/results/phase2-v7x-acceptance-rcc.report.md) |
 
@@ -238,7 +238,7 @@ L3 共 17 项检查，检查条数 34 / 22（v5p / v7x），张量级比较 1,54
 - **梯度分布**（TPU v5p-8 ❌、TPU v7x-4 ❌）：同「全部参数梯度」：被路由翻转的专家梯度把逐元素相对误差 p99 推到 1.68，GPU 3 对的上限只有 0.043（约 39 倍；当时并集的上限是 1.6，1.05 倍）。
 - **优化器状态**（TPU v5p-8 ❌、TPU v7x-4 ❌）：动量由梯度直接决定，原因同「全部参数梯度」。
 - **更新后主权重**（TPU v5p-8 🟡、TPU v7x-4 🟡）：v5p 是梯度差的下游，量级很小（rel_L2 5e-5；最差的 1−cos 是 N 的 1.11 倍）；对 FP64 按能量算 R 0.92，TPU 的更新量更接近精确值。参考档（rel_L2 ≤ 0.02、cos ≥ 0.9999）两平台都过。
-- **更新后路由偏置**（TPU v7x-4 ❌）：v7x 第 1 层 65 号专家的偏置更新方向和 GPU 相反（192 个里 1 个，台账 #17）。噪声的 24 对里没有一对翻号，所以 N = 0，任何翻号都判不过。按 FP64 这个专家选中 2730 个 token，比平均 2730.67 少 0.67，偏置应当加：v7x 和精确算术一致，GPU 三份与 v5p 都减。
+- **更新后路由偏置**（TPU v7x-4 ❌）：v7x 第 1 层 65 号专家的偏置更新方向和 GPU 相反（192 个里 1 个，台账 #17）。GPU 第 1 步重跑 3 对里没有一对翻号（撤回前的并集 24 对里也没有），所以 N = 0，任何翻号都判不过。按 FP64 这个专家选中 2730 个 token，比平均 2730.67 少 0.67，偏置应当加：v7x 和精确算术一致，GPU 三份与 v5p 都减。
 - **激活逐位**（TPU v5p-8 ❌、TPU v7x-4 ❌）：两种硬件的舍入顺序不同，按定义不会逐位；这条 `hard: false`，不参与验收，数值上的判定看 L2 前向的 R。
 
 ### 对 FP64 定责
@@ -426,7 +426,7 @@ GPU 一侧把抓到的算子输入重新喂给同一个 kernel、对 CPU 复现�
 | [`phase2-obs-grad`](alignments/01-v5p-acceptance/results/phase2-obs-grad.report.md) | v5p 观测构建（每一步都加抓数钩子）第 1 步梯度的标定：没过，所以观测构建的张量不当正式证据（L4「加抓数不改数值」一行） | fail 2、inconclusive 1 |
 | [`phase2-rcb-vs-rcc`](alignments/01-v5p-acceptance/results/phase2-rcb-vs-rcc.report.md) | GPU 一侧的便宜等价修法 `rcb-a`（输出头 dgrad 用 BF16 张量核分段）对 `rcc-a` 的 1000 步比较：只说明 golden 可以更便宜地造，不是 TPU 的检查；正式基线仍是 `rcc-a`（案例 01「便宜的等价修法 `rcb`」行） | pass 8 |
 | [`phase2-st1-gradfp32-xnoise`](alignments/01-v5p-acceptance/results/phase2-st1-gradfp32-xnoise.report.md) | 三个梯度 FP32 开关全开时的并集旧结果，同上；现行 `phase2-st1-gradfp32-gpuonly` | pass 4、fail 2、inconclusive 6 |
-| [`phase2-st1-on-state-xnoise`](alignments/01-v5p-acceptance/results/phase2-st1-on-state-xnoise.report.md) | v5p 第 1 步整步按两侧执行噪声并集判的旧结果（2026-11-07 撤回：尺子只来自 GPU）；现行 `phase2-st1-on-state-gpuonly`，留作判法变更记录 | pass 4、fail 3、inconclusive 5 |
+| [`phase2-st1-on-state-xnoise`](alignments/01-v5p-acceptance/results/phase2-st1-on-state-xnoise.report.md) | v5p 第 1 步整步按两侧执行噪声并集判的旧结果（2026-11-08 撤回：尺子只来自 GPU）；现行 `phase2-st1-on-state-gpuonly`，留作判法变更记录 | pass 4、fail 3、inconclusive 5 |
 | [`phase2-st1-prod-state`](alignments/01-v5p-acceptance/results/phase2-st1-prod-state.report.md) | v5p 第 1 步整步更早的判法（GPU 3 对，被测是改配置前的 TPU 运行）；现行判法 `phase2-st1-on-state-gpuonly` | pass 4、fail 7、inconclusive 1 |
 | [`phase2-v7x-acceptance-rcb`](alignments/02-v7x-acceptance/results/phase2-v7x-acceptance-rcb.report.md) | v7x 对 `rcb-a` 的交叉核对，只报：正式第一层仍对 `rcc-a`（`phase2-v7x-acceptance-rcc`）；grad_norm 的 MARE 1.09 倍待定，对 `rcc` 单份当 golden 时也在 0.70 – 1.11 之间起伏 | pass 5、inconclusive 1 |
 | [`phase2-v7x-l1-ops-own`](alignments/02-v7x-acceptance/results/phase2-v7x-l1-ops-own.report.md) | v7x 单算子，打开 `dense_fp32_accumulation` 之前的配置。被 `phase2-v7x-l1-ops-own-on` 取代 | pass 7、fail 2 |

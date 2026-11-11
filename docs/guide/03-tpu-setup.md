@@ -82,7 +82,9 @@ flowchart LR
   - 对齐配置打开的四个精度开关要这个版本，见 3.2。
   - 训练循环、数据回放、抓数都在 janus 里，**不改 MaxText 源码**。
 - **镜像**：MaxText 官方 `tpu_pre_training` 0.2.5，按 digest 钉死在 `run.sh` 里。
-  - 实际的 jax / jaxlib / libtpu 版本在运行时读出来写进 `meta.json`。
+  - 实际的 jax / jaxlib / libtpu 版本在运行时读出来写进 `meta.json`；在 Pod 里另装 libtpu 时以 `meta.versions.libtpu_pip` 为准。
+  - 这个镜像带 jax 0.11.1、libtpu 0.0.46，两个模型的对齐都在它上面测（[环境「两个模型实测用的版本」](../reference/environment.md#两个模型实测用的版本)）。
+  - **libtpu 版本会改数值，不只改求和顺序**：混元 4 上 0.0.46 → 0.0.52，「RMSNorm 多舍一次」的影响从 r 1.06 变成 5.50，词嵌入 scatter 插排序的门槛也变了。换版本前先看 [`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md)：先建新 golden、重测已知敏感项，再做别的。0.0.50 / 0.0.50.1 不用（[环境](../reference/environment.md#tpu-侧)）。
 - **对齐阶段不加性能类 libtpu 参数**（`LIBTPU_INIT_ARGS` 默认空）。
   - 要加，先用「同程序、只改这一个开关」证明它不改数学（[方法详解：环境](../reference/environment.md#tpu-侧)「TPU 侧」）。
 - **把 GPU 侧的产物搬到桶里**：
@@ -163,11 +165,11 @@ TPU 一侧的配置文件 [`hy3-4layers.yml`](../../models/hunyuan3/frameworks/m
 |---|---|---|
 | 权重衰减 | **实际 0.033**（调度器覆盖了配置里的 0.1）；一维参数不衰减 | `adam_weight_decay=0.033`，`adamw_mask: ["norm/scale"]` |
 | 学习率 | 1e-5 常数，无预热 | `wsd`，预热与衰减都为 0 → 常数 1e-5 |
-| 路由 | sigmoid + `expert_bias`，top-8，FP32 出，偏置更新率 1e-3，缩放 2.826 | 同值；`float32_gate_logits: True`；`matmul_precision=default`（BF16 乘、FP32 累加） |
+| 路由 | sigmoid + `expert_bias`，top-8，FP32 出，偏置更新率 1e-3，缩放 2.826 | 同值；`float32_gate_logits: True`；`matmul_precision=default`（BF16 乘、FP32 累加）。这是混元 3 的取值；新模型按[差异清单 B3](../reference/tpu-vs-gpu-differences.md#b3-路由-logits-的精度决定选哪个专家) 设 `router_matmul_precision: highest`（混元 4 已设：默认精度下 top-k 有 1%–2% 的 token 与 FP64 不同） |
 | microbatch | gbs 16、每卡 2 个 microbatch 分两次前反向再累加 | `per_device_batch_size=1`、`gradient_accumulation_steps=2` |
 | 重算 | 整层重算 + 路由回放（`rc` / `rcc`） | 命令行覆盖，见 3.4「生产配置」 |
 | MTP / dropout | 关 / 0 | `mtp_num_layers=0`（`train_hy3.py` 自动加）/ `dropout_rate=0` |
-| 并行 | DP8 + EP8 | FSDP8：归约顺序本来就不同，列为已知差异 |
+| 并行 | DP8 + EP8 | FSDP8：归约顺序不同，列为已知差异。TPU 一侧换切法不一定只换顺序：混元 4 上纯数据并行（词嵌入梯度 BF16 scatter）、上下文并行（sink 梯度在 BF16 里算）都改了精度路径，要开对应开关（[TPU 自比「一页看完」](../../models/hunyuan4/alignments/04-tpu-self/README.md#一页看完六件真有影响的和三条规律)）；生产切法与验收用的切法不同时要重测 |
 
 ### 四个精度开关
 
@@ -176,16 +178,16 @@ TPU 一侧的配置文件 [`hy3-4layers.yml`](../../models/hunyuan3/frameworks/m
 | 开关 | 作用 | 去掉哪一处差（量级） | 对齐必需？ | 对照行 |
 |---|---|---|---|---|
 | `dense_fp32_accumulation` | 切开的收缩维部分和改用 FP32 相加（见表下） | 不开时 qkv、稠密层 fc1 的前向 R-ratio 超线（v5p 1.24 / 1.29，v7x 1.57 / 1.58） | 必需 | [「收缩维被 FSDP 切开的投影的累加精度」](../../models/hunyuan3/config-alignment.md#数值精度) |
-| `rmsnorm_single_rounding` | RMSNorm 在 FP32 里算完只舍一次 | 见表下 | 推荐（显式保证） | [「RMSNorm 舍入次数」](../../models/hunyuan3/config-alignment.md#数值精度) |
+| `rmsnorm_single_rounding` | RMSNorm 在 FP32 里算完只舍一次 | 见表下 | 必需（对齐、生产都开） | [「RMSNorm 舍入次数」](../../models/hunyuan3/config-alignment.md#数值精度) |
 | `mlp_activation_round_per_op` | 门控激活 silu(gate)·up 按 GPU 的两个算子分别舍入 | 默认写法与 GPU 只有 73.7% 元素逐位，打开后 100% | 推荐 | [「门控激活舍入」](../../models/hunyuan3/config-alignment.md#数值精度) |
-| `routed_gate_bf16_rounding` | 路由权重按 GPU 的写法先舍成 BF16 | 开和不开编出同一个程序 | 可选（显式保证） | [「路由核 BF16 舍入」](../../models/hunyuan3/config-alignment.md#数值精度) |
+| `routed_gate_bf16_rounding` | 路由权重按 GPU 的写法先舍成 BF16 | 路由默认精度下开和不开编出同一个程序（混元 3）；路由设 `highest` 后开关有差别（[精度边界第 8 类](../reference/precision-boundaries.md)） | 可选（显式保证） | [「路由核 BF16 舍入」](../../models/hunyuan3/config-alignment.md#数值精度) |
 
 - `dense_fp32_accumulation` 的作用：
   - FSDP 把矩阵乘的收缩维切成几段，默认每段的部分和用 BF16 相加、多舍入一次；
   - 打开后改成 FP32 相加、最后只舍一次。
 - `rmsnorm_single_rounding` 去掉哪一处差：
-  - v5p 上前向已被 XLA 编成只舍一次，打开后前向逐位不变；
-  - 反向 `in.grad` 对 golden 略降（2.09e-3 → 2.06e-3）。
+  - 混元 3（libtpu 0.0.46，v5p）：前向已被 XLA 编成只舍一次，打开后前向逐位不变；反向 `in.grad` 对 golden 略降（2.09e-3 → 2.06e-3）。
+  - 混元 4 TPU 自比：libtpu 0.0.46 上不开它曲线 r 1.06，能忍；0.0.52 上不开它主 loss 系统性偏高，r 5.50（1000 步 3.68），不能忍。所以对齐、生产都要开，不依赖「编译器碰巧省掉中间那次舍入」。机理见 [impacts/04](../../models/hunyuan4/alignments/04-tpu-self/impacts/04-rmsnorm-double-rounding.md)。
 - 数字出自[对齐报告](../../models/hunyuan3/ALIGNMENT-REPORT.md)第 6 节开关表。
 - 每一行 GPU 怎么写、TPU 怎么写、证据在哪，点最后一栏进 [`../../models/hunyuan3/config-alignment.md`](../../models/hunyuan3/config-alignment.md#数值精度)。
 
@@ -242,6 +244,7 @@ TPU 一侧的配置文件 [`hy3-4layers.yml`](../../models/hunyuan3/frameworks/m
 
 - MaxText 的 Grain 管线可以直接读 GPU 用的 Megatron `.bin/.idx`。
 - 逐样本对拍 GPU 的结果：换序后 1000 步 64000 个单元逐元素相同。
+  - 前提：只在混元 3 上、只在 CPU 上对拍（MaxText 上游 `ce608b9`），多主机是模拟的；TPU 首步 loss、TPU 续训位置、真多机都没做（[混元 3 覆盖审计](../../models/hunyuan3/alignments/00-gpu-noise-and-drills/coverage.md)「TPU 原生数据加载器」）。混元 4 全程用回放，原生加载器没有对拍。
 - 另有两处约定差异（设备分配、pad id 处理）要知道。
   - 说明：[`data/README.md`](../../models/hunyuan3/data/README.md)
   - 结果：[`phase2-native-loader`](../../models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-native-loader.report.md)

@@ -14,9 +14,11 @@
 
 ## 现状
 
-- 300 步现行一代没有不过（过 5、待定 4，都只略超 N）。
-- 第 1 步主 loss 对 CPU FP64 的差在 GPU 一侧（GPU +1.68e-4，TPU +2.8e-6）。
-- 第 1 步逐张量梯度：7 个张量未定责（sink 4 个、iHC 3 个），9 个张量 TPU 梯度文件落盘损坏待重比。
+- 300 步最近一代 `tm-b` 没有不过（过 5、待定 4，都只略超 N）。`tm-b` base2 开、早于 M50；2026-11-11 起的现行对齐配置（关 base2、含 M50）在 mid 上尚无运行。
+- 第 1 步主 loss 对 CPU FP64 的相对差在 GPU 一侧（GPU +1.42e-5，TPU +2.4e-7）。
+- 第 1 步逐张量梯度：7 个张量未定责（sink 4 个、iHC 3 个，最大第 3 层 FFN 前 `hc_base` R 15.3），9 个张量 TPU 梯度文件落盘损坏待重比。
 - 1000 步、L1 / L2 没做。对齐开关全开比全关贵 +46.8%，M13 约占 60%。
+
+适用范围：只在 v5p 8 个设备上、只用 FSDP，随机初始化，300 步（[对齐报告第 5 节](ALIGNMENT-REPORT.md#5-适用范围)）。
 
 判定：[对齐报告](ALIGNMENT-REPORT.md)；逐格：[支线总览](../../dashboard/other-sizes.md)、[检查清单](CHECKS.md)；设置与 GPU golden 的作业规格：[`setup.md`](setup.md)；与 mini 的配置差别：[`config-alignment.md`](config-alignment.md)；运行：[`goldens.md`](goldens.md)、[`runs.yaml`](runs.yaml)。

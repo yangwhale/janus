@@ -9,7 +9,7 @@
 | | 设置 | 出处 |
 |---|---|---|
 | 硬件与规模 | NVIDIA B200 × 8，单机 | `PROTOCOL.md` 第 1.2 节「序列 / 批」行 |
-| 程序 | Megatron-Core 0.20 + TE（NeMo 26.10 镜像所带；`meta.json` 没有记 TE 版本，未核）之上的 janus 程序（`hy4_mcore.py`、`train_hy4mg.py`） | `PROTOCOL.md` 第 1.2 节「GPU 一侧的舍入位置」行 |
+| 程序 | Megatron-Core 0.20 + TE（NeMo 26.10 镜像所带；`meta.json` 不记 TE 版本，按同一镜像推断是 TE 2.20.2，见[软件版本](../setup.md#软件版本)）之上的 janus 程序（`hy4_mcore.py`、`train_hy4mg.py`） | `PROTOCOL.md` 第 1.2 节「GPU 一侧的舍入位置」行 |
 | 镜像 | NeMo 26.10（digest 见各运行的 `meta.json`） | `CHANGES-LEDGER.md` GPU 一侧表头 |
 | 并行切分 | 数据并行 8、专家并行 4，TP / CP 1 | `PROTOCOL.md` 第 1.2 节 |
 | 模型 | hy4-mini（427,783,489 参数，7 层 + 1 层 MTP），从共同的随机初始化 HF 目录载入（清单 sha256 见 `PROTOCOL.md` 第 1.1 节）；载入后逐参数自检 | 台账 G7 |

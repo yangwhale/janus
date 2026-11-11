@@ -1,0 +1,318 @@
+{
+ "note": "修后复跑（台账 M1 修复之后）：同一脚本 qk_clip_scan_check.py、同一参数（hy4-tiny11，τ 1e-3），MaxText b87a55aa，CPU。7 个 wq_b 叶子、11 层每层每头的实测 √scale 与按该层最大 logit 算的期望逐位相同（最大绝对差 0）；修前见 hy4-tiny11-qk-clip-scan.json",
+ "maxtext_commit": "b87a55aa",
+ "command": "JAX_PLATFORMS=cpu python models/hunyuan4/frameworks/maxtext/qk_clip_scan_check.py --out <结果.json>",
+ "layers": 11,
+ "tau": 0.001,
+ "max_logits_leaves": [
+  {
+   "path": "decoder/dense_layers/self_attention/attention_op/max_logits",
+   "shape": [
+    1,
+    1,
+    4
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_0/self_attention/attention_op/max_logits",
+   "shape": [
+    2,
+    1,
+    4
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_1/self_attention/attention_op/max_logits",
+   "shape": [
+    2,
+    1,
+    4
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_2/self_attention/attention_op/max_logits",
+   "shape": [
+    2,
+    1,
+    4
+   ]
+  },
+  {
+   "path": "decoder/moe_layers/layers_3/self_attention/attention_op/max_logits",
+   "shape": [
+    2,
+    1,
+    4
+   ]
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_0/self_attention/attention_op/max_logits",
+   "shape": [
+    1,
+    4
+   ]
+  },
+  {
+   "path": "decoder/moe_layers_remainder/layers_1/self_attention/attention_op/max_logits",
+   "shape": [
+    1,
+    4
+   ]
+  }
+ ],
+ "wq_b": [
+  {
+   "param": "decoder/dense_layers/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    1,
+    4,
+    48
+   ],
+   "sqrt_scale_per_layer_head": [
+    [
+     0.3112529516220093,
+     0.31332728266716003,
+     0.35376089811325073,
+     0.36575525999069214
+    ]
+   ],
+   "within_head_spread": 2.9802322387695312e-08,
+   "expected_sqrt_scale_per_layer_head": [
+    [
+     0.3112529516220093,
+     0.31332728266716003,
+     0.35376089811325073,
+     0.36575525999069214
+    ]
+   ],
+   "max_logits_shape": [
+    1,
+    1,
+    4
+   ]
+  },
+  {
+   "param": "decoder/moe_layers/layers_0/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    2,
+    4,
+    48
+   ],
+   "sqrt_scale_per_layer_head": [
+    [
+     0.34386080503463745,
+     0.3495863974094391,
+     0.30856817960739136,
+     0.3375888466835022
+    ],
+    [
+     0.3356189429759979,
+     0.2890126705169678,
+     0.3559247851371765,
+     0.3197462260723114
+    ]
+   ],
+   "within_head_spread": 2.9802322387695312e-08,
+   "expected_sqrt_scale_per_layer_head": [
+    [
+     0.34386080503463745,
+     0.3495863974094391,
+     0.30856817960739136,
+     0.3375888466835022
+    ],
+    [
+     0.3356189429759979,
+     0.2890126705169678,
+     0.3559247851371765,
+     0.3197462260723114
+    ]
+   ],
+   "max_logits_shape": [
+    2,
+    1,
+    4
+   ]
+  },
+  {
+   "param": "decoder/moe_layers/layers_1/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    2,
+    4,
+    48
+   ],
+   "sqrt_scale_per_layer_head": [
+    [
+     0.29008492827415466,
+     0.32342901825904846,
+     0.3494800925254822,
+     0.34938928484916687
+    ],
+    [
+     0.3601877987384796,
+     0.3352610170841217,
+     0.35924699902534485,
+     0.3313448131084442
+    ]
+   ],
+   "within_head_spread": 2.9802322387695312e-08,
+   "expected_sqrt_scale_per_layer_head": [
+    [
+     0.29008492827415466,
+     0.32342901825904846,
+     0.3494800925254822,
+     0.34938928484916687
+    ],
+    [
+     0.3601877987384796,
+     0.3352610170841217,
+     0.35924699902534485,
+     0.3313448131084442
+    ]
+   ],
+   "max_logits_shape": [
+    2,
+    1,
+    4
+   ]
+  },
+  {
+   "param": "decoder/moe_layers/layers_2/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    2,
+    4,
+    48
+   ],
+   "sqrt_scale_per_layer_head": [
+    [
+     0.32739153504371643,
+     0.33287110924720764,
+     0.365709513425827,
+     0.3194443881511688
+    ],
+    [
+     0.31379830837249756,
+     0.34128835797309875,
+     0.3515356183052063,
+     0.3356792628765106
+    ]
+   ],
+   "within_head_spread": 2.9802322387695312e-08,
+   "expected_sqrt_scale_per_layer_head": [
+    [
+     0.32739153504371643,
+     0.33287110924720764,
+     0.365709513425827,
+     0.3194443881511688
+    ],
+    [
+     0.31379830837249756,
+     0.34128835797309875,
+     0.3515356183052063,
+     0.3356792628765106
+    ]
+   ],
+   "max_logits_shape": [
+    2,
+    1,
+    4
+   ]
+  },
+  {
+   "param": "decoder/moe_layers/layers_3/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    2,
+    4,
+    48
+   ],
+   "sqrt_scale_per_layer_head": [
+    [
+     0.3526962399482727,
+     0.3360408842563629,
+     0.3165985941886902,
+     0.3228793740272522
+    ],
+    [
+     0.3362327814102173,
+     0.30538639426231384,
+     0.3116306960582733,
+     0.3041209578514099
+    ]
+   ],
+   "within_head_spread": 2.9802322387695312e-08,
+   "expected_sqrt_scale_per_layer_head": [
+    [
+     0.3526962399482727,
+     0.3360408842563629,
+     0.3165985941886902,
+     0.3228793740272522
+    ],
+    [
+     0.3362327814102173,
+     0.30538639426231384,
+     0.3116306960582733,
+     0.3041209578514099
+    ]
+   ],
+   "max_logits_shape": [
+    2,
+    1,
+    4
+   ]
+  },
+  {
+   "param": "decoder/moe_layers_remainder/layers_0/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    4,
+    48
+   ],
+   "sqrt_scale_per_layer_head": [
+    0.32156842947006226,
+    0.29834049940109253,
+    0.3370317816734314,
+    0.30504077672958374
+   ],
+   "within_head_spread": 2.9802322387695312e-08,
+   "expected_sqrt_scale_per_layer_head": [
+    0.32156842947006226,
+    0.29834049940109253,
+    0.3370317816734314,
+    0.30504077672958374
+   ],
+   "max_logits_shape": [
+    1,
+    4
+   ]
+  },
+  {
+   "param": "decoder/moe_layers_remainder/layers_1/self_attention/wq_b/kernel",
+   "shape": [
+    64,
+    4,
+    48
+   ],
+   "sqrt_scale_per_layer_head": [
+    0.34205442667007446,
+    0.3534727990627289,
+    0.3027500808238983,
+    0.35346829891204834
+   ],
+   "within_head_spread": 2.9802322387695312e-08,
+   "expected_sqrt_scale_per_layer_head": [
+    0.34205442667007446,
+    0.3534727990627289,
+    0.3027500808238983,
+    0.35346829891204834
+   ],
+   "max_logits_shape": [
+    1,
+    4
+   ]
+  }
+ ]
+}

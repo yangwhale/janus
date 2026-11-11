@@ -20,7 +20,7 @@ golden:   # GPU（已跑完）
   - {name: gb3-b..gb3-h, stage: B, steps: 1000, role: "同设置重跑：与 gb3-a 两两 28 对是 B 1000 步（t2b5-l4）的噪声尺子", location: "gs://<POC 桶>/janus/hunyuan4/golden-t2/gb3-*/"}
   - {name: gd3-a, stage: D1, steps: 1000, role: "D1 1000 步的基线；--save-batches 写下全部 batch", results: [t2d15-l4, t2d15-l0-settings], location: "gs://<POC 桶>/janus/hunyuan4/golden-t2/gd3-a/"}
   - {name: gd3-b..gd3-h, stage: D1, steps: 1000, role: "同设置重跑：与 gd3-a 两两 28 对是 D1 1000 步（t2d15-l4）的噪声尺子", location: "gs://<POC 桶>/janus/hunyuan4/golden-t2/gd3-*/"}
-test:     # TPU：第一代 tb2-a（NaN）/ td2-a；第二代 tb3-b / td3-a 已判；第三代 td4-a、tb4-a 已判；1000 步 td5-a、tb5-b 已判（tb5-a 未完成）；现行 1000 步 td5b-b、tb5b-a（含 M42b）已判
+test:     # TPU：第一代 tb2-a（NaN）/ td2-a；第二代 tb3-b / td3-a 已判；第三代 td4-a、tb4-a 已判；1000 步 td5-a、tb5-b 已判（tb5-a 未完成）；最近一代 1000 步 td5b-b、tb5b-a（含 M42b，base2 开，早于 M50）已判
   - {name: tb2-a, stage: B, steps: 300, role: "B 的被测（第一代），回放 gb2-a；2026-11-08 第 1 步更新后出 NaN，根因已知、M35 已修，由 tb3-b / tb4-a 重跑；跑的是 t1v 等价设置（M31 / M33 关），不是现在仓库里的 yml", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb2-a, results: [t2b-l0-settings], location: "gs://<POC 桶>/janus/hunyuan4/tpu/tb2-a/"}
   - {name: tb2-b, stage: B, steps: 300, role: "同设置重跑（只核逐位，不进尺子）；已取消", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb2-a}
   - {name: tb2dbg, stage: B, role: "NaN 定位运行（排查 tb2-a 的发散；不进判定），已提交"}
@@ -37,11 +37,11 @@ test:     # TPU：第一代 tb2-a（NaN）/ td2-a；第二代 tb3-b / td3-a 已�
   - {name: td2fp32, stage: D1, steps: 1, role: "诊断：第 1 步前向的 TPU FP32 + HIGHEST 版（与被测同源，不作定责；MaxText 64652880，FP32、HIGHEST、sparse_matmul false，开 M31、M33；与被测 td2-a 设置不同）", results: [t2d1-step1-vs-fp32]}
   - {name: td2-b, stage: D1, steps: 300, role: "同设置重跑（只核逐位，不进尺子）", config: frameworks/maxtext/hy4-t2-d1.yml, golden: gd2-a}
   - {name: td2diag, stage: D1, steps: 1, role: "第 1 步诊断，回放 gd2s-a；逐张量梯度对 gd2s-*", config: frameworks/maxtext/hy4-t2-d1.yml}
-  - {name: td5-a, stage: D1, steps: 1000, role: "D1 1000 步的被测（T2 yml 现在的全部开关，含 M39–M41；MaxText 3741e818、janus 2679a837），回放 gd3-a；已判 t2d15-l4（过 5、不过 1、待定 3）", config: frameworks/maxtext/hy4-t2-d1.yml, golden: gd3-a, results: [t2d15-l4, t2d15-l0-settings]}
+  - {name: td5-a, stage: D1, steps: 1000, role: "D1 1000 步的被测（T2 yml 当时的全部开关，含 M39–M41，base2 开；MaxText 3741e818、janus 2679a837），回放 gd3-a；已判 t2d15-l4（过 5、不过 1、待定 3）", config: frameworks/maxtext/hy4-t2-d1.yml, golden: gd3-a, results: [t2d15-l4, t2d15-l0-settings]}
   - {name: tb5-a, stage: B, steps: 1000, role: "B 1000 步的被测；约第 280 步中断，没有运行目录", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb3-a}
-  - {name: tb5-b, stage: B, steps: 1000, role: "B 1000 步的被测（同 tb5-a 的设置补跑），回放 gb3-a；已判 t2b5-l4（过 3、不过 0、待定 4）", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb3-a, results: [t2b5-l4, t2b5-l0-settings]}
-  - {name: td5b-b, stage: D1, steps: 1000, role: "D1 现行被测（T2 yml 当时的全部开关，含 M42b；早于 M50 进 yml，MaxText 提交未登记），回放 gd3-a", config: frameworks/maxtext/hy4-t2-d1.yml, golden: gd3-a, results: [t2d15b-l4]}
-  - {name: tb5b-a, stage: B, steps: 1000, role: "B 现行被测（T2 yml 当时的全部开关，含 M42b；早于 M50 进 yml，MaxText 提交未登记），回放 gb3-a", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb3-a, results: [t2b5b-l4]}
+  - {name: tb5-b, stage: B, steps: 1000, role: "B 1000 步的被测（同 tb5-a 的设置补跑；MaxText 3741e818、janus 2679a837，meta.json 已核），回放 gb3-a；已判 t2b5-l4（过 3、不过 0、待定 4）", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb3-a, results: [t2b5-l4, t2b5-l0-settings]}
+  - {name: td5b-b, stage: D1, steps: 1000, role: "D1 最近一代被测（T2 yml 当时的全部开关，含 M42b；sa_use_base2_exp 开，早于 M50；MaxText 2c28a4f4、janus 9c0f19a，meta.json 已核）。现行对齐配置（关 base2、含 M50）在 D1 上尚无运行。回放 gd3-a", config: frameworks/maxtext/hy4-t2-d1.yml, golden: gd3-a, results: [t2d15b-l4]}
+  - {name: tb5b-a, stage: B, steps: 1000, role: "B 最近一代被测（T2 yml 当时的全部开关，含 M42b；sa_use_base2_exp 开，早于 M50；MaxText 2c28a4f4、janus 9c0f19a，meta.json 已核）。现行对齐配置（关 base2、含 M50）在 B 上尚无运行。回放 gb3-a", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb3-a, results: [t2b5b-l4]}
 offline:  # CPU
   - {name: hy4-t2-aot-memory, role: "v5p 2x2x2 编译期显存（B、D1 与候选 hy4-mid）＋ B200 每卡显存估算", results: results/hy4-t2-aot-memory.json}
   - {name: "hy4-d1-{hf,maxtext-ckpt}", role: "D1 的 L0 本侧（model/t2_l0.sh，MaxText 5eaa12f3）", results: [hy4-d1-l0-ckpt-convert, hy4-d1-l0-rope]}

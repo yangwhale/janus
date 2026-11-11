@@ -103,7 +103,7 @@ flowchart TD
    - 换成 `dgrad-exact` 后，GPU param_norm 从 0 挪到 +1.24e-2（`rcx` 五份均值），是 TPU 生产 +2.09e-2 的 59%。
 2. GPU 精确轨迹 `rce-a` 走到 +1.86e-2（「剩下约四成：rc 配置下的精确轨迹（第一份）」行）。
 3. TPU 精确轨迹到 +2.73e-2，差在 GPU 一侧（「GPU 精确的输出头 dgrad」「GPU 精确 + 分段 dgrad：1000 步」两行）。
-   - GPU 精确只把输出头 dgrad 换成分段累加，就和 TPU 精确重合：带符号均值差 7.9e-8，TPU 执行噪声上限 9e-8。
+   - GPU 精确只把输出头 dgrad 换成分段累加，就和 TPU 精确重合：带符号均值差 7.9e-8，在 GPU 精确五份两两的上限 1.07e-7 内（`rce-a..e`，b..e 带 1e-6 / 3e-6 的权重扰动）。
 4. GPU 生产只修这一处（`rcc-a`），+2.071e-2；TPU 生产 +2.092e-2。带符号均值差 v5p +5.2e-8、v7x −5.5e-8，噪声上限 2.27e-7（「GPU 生产 + 精确输出头 dgrad `rcc-a`」行）。
 5. TPU 生产与 GPU 生产离真精确的剩余部分是同一件事：两侧都把 dlogits 舍成 BF16（下面「两侧共有的 dlogits 舍 BF16」）。
 
@@ -500,7 +500,7 @@ flowchart TD
 18. 并行方式
     - 假设：TPU 对精确轨迹剩下的那一份（param_norm 约 +2.4e-3）是不是并行方式带来的：TPU 现在非专家参数 FSDP 切 8 份、专家不切，GPU 是 DP8 + EP8
     - 测试：
-      - TPU 生产配置只改并行方式为 EP=8（`ici_fsdp_parallelism=1`、`ici_expert_parallelism=8`：非专家参数整份复制、批按 expert 轴切 8 份），1000 步：v7x `t-v7x-ep8-1000`、v5p `t-ep8-1000`；按第一层目录判（`phase2-v7x-acceptance-rce-ep8`、`phase2-acceptance-rce-ep8`）。
+      - TPU 生产配置只改并行方式为 EP=8（`ici_fsdp_parallelism=1`、`ici_expert_parallelism=8`：批按 expert 轴切 8 份；非专家参数不是整份复制，MaxText 的逻辑轴规则把 `embed` 维也映射到 expert 轴，等于沿 expert 轴做 FSDP 8，见下面判定末条），1000 步：v7x `t-v7x-ep8-1000`、v5p `t-ep8-1000`；按第一层目录判（`phase2-v7x-acceptance-rce-ep8`、`phase2-acceptance-rce-ep8`）。
       - GPU 反过来换成 Megatron-FSDP（`g-fsdp-1k-a/b`）在 rce 跑完后做。
     - 关键结果：
       - v7x EP=8：第 1 步 loss 11.465963（FSDP 版 11.465931，相对差 3e-6）。
@@ -515,9 +515,10 @@ flowchart TD
       - 判定 param_norm 不过（2.8 倍）、loss 两项待定、grad_norm 过（FSDP 版待定）。
     - 判定：
       - 🟡 并行方式只占一小部分：换成和 GPU 一样的 EP=8，param_norm 带符号均值 v5p 少 18%（3.52e-7 对 4.27e-7），v7x 反而多 17%（3.74e-7 对 3.19e-7）。
-        - 两个平台方向相反，差值 7.5e-8、5.5e-8 都在 TPU 执行噪声上限 9e-8 以内（「TPU 自己的一成：拆分臂（v7x）」行）。
+        - 两个平台方向相反，差值 7.5e-8、5.5e-8 都在 GPU 精确五份两两的上限 1.07e-7 以内（下面「GPU 精确 + 分段 dgrad：1000 步」行）。
         - EP = 8 仍是 2.8 – 3.0 倍噪声，不过；剩下的大部分不是切分方式带来的。
       - GPU 一侧换 Megatron-FSDP 的对照没做成（Megatron-FSDP 载入 `torch_dist` 检查点报缺 `sharded_state_dict`，torch FSDP2 在专家权重上报 `Invalid sharding pattern`，见 [`config-alignment.md`](../../../config-alignment.md)「切分方式」行），是已知限制。
+      - EP = 8 的词嵌入切法（2026-11-11 读优化后 HLO 核实，[`../results/ep8-embed-scatter-hlo.json`](../results/ep8-embed-scatter-hlo.json)）：词嵌入表沿隐藏维按 expert 轴切 8 份，每卡 [120832, 512]；反向 scatter-add 每卡收全部 32768 个 token，超过排序门槛 15104，v5p 上被排序，v7x 上交给 SparseCore；没有整表 all-reduce。所以 EP = 8 对词嵌入和 FSDP 8 是同一种切法，不是纯数据并行，混元 4 [案例 14](../../../../hunyuan4/cases/14-ddp-fsdp-embedding.md) 那种不排序、每加一次舍一次的问题在这里不出现（libtpu 0.0.46，CPU 离线编译）。
       - 它是确认性实验，结案不依赖它：对最终 golden `rcc-a`，TPU 的 FSDP 8 与 EP = 8 两种切分在 v5p、v7x 上 L4 都过（「最终 golden：第一层换成 rcc」行）。
 19. TPU 自己的一成：拆分臂（v7x）
     - 测试：当前对齐配置 `t-v7x-on-1000`（同提交重跑 `t-v7x-on-b-1000` 1000 步逐位相同）上一次改一处，1000 步：注意力 FP32 点积 `attn32`、输出头 logits 在 FP32 里乘 `logit32`、`matmul_precision=highest` `mmhi`，两两组合与三项合并；对 `rce-a` 量 param_norm 带符号均值、第 1000 步差、loss
@@ -661,7 +662,7 @@ flowchart TD
       - `g-bwc-1k`：`g-bw-1k` 的配置（`--fp32 --bf16-weights`、关 TF32、unfused 注意力）加这个臂，1000 步。
     - 关键结果：
       - 第 1000 步 param_norm 对 `rce-a`：`g-bwc-1k` +8.546e-3，TPU 精确 +8.697e-3（差 1.5e-4，不到一个记录刻度 2.44e-4；单个第 1000 步值分辨不了更小的差，下一条的带符号均值才是判据），GPU 精确 `g-bw-1k` 0。
-      - TPU 精确对 `g-bwc-1k` 的带符号均值 7.9e-8（TPU 执行噪声上限 9e-8，GPU 精确五份两两最大 1.07e-7）。
+      - TPU 精确对 `g-bwc-1k` 的带符号均值 7.9e-8，在 GPU 精确五份两两的最大值 1.07e-7 内。
       - 漂移比（对 GPU 精确）第 300 / 500 / 700 / 1000 步：`g-bwc-1k` 1.32 / 1.49 / 1.45 / 1.45，TPU 精确 1.41 / 1.53 / 1.48 / 1.45。
       - 301–1000 步 loss 对 `rce-a`：−1.1e-5（TPU 精确 −6e-6）。
     - 判定：
@@ -1795,7 +1796,8 @@ TPU 那一侧是不是也只是一个样本：TPU 生产程序是确定性的（
 - TPU 系综自己两两的散布：
   - v5p：loss 带符号均值最大 5.4e-5、grad_norm MARE 3.08e-2、param_norm 1.1e-7，都比 GPU `rcc` 45 对比较小（9.5e-5 / 3.30e-2 / 2.27e-7）。
   - v7x：grad_norm MARE 是 3.92e-2，比 GPU 宽 19%（loss 4.6e-5、param_norm 1.3e-7 仍比 GPU 小）。
-- 也就是说 v7x 上只改 splash 块大小，grad_norm 的逐步涨落就和 GPU 重跑同量级（3.92e-2 对 3.30e-2），sa1k 那一份的 1.02 落在这个范围里。
+- 判定只按 GPU 尺子：sa1k 那一份 grad_norm 落在待定区（1.02、1.15 倍）。TPU 系综自己的散布只作诊断参考，不拿来解释或放宽待定（尺子只来自参照一侧）。
+- 这也说明：被测只改 splash 块大小，v7x 的 L4 grad_norm 就可能从过落进待定区。验收的「过」是对正式被测那一个程序说的，换分块等执行参数要重判。
 - 原始数字在 [`../results/case01-rcc-ensemble.json`](../results/case01-rcc-ensemble.json)。
 
 ## 这次排查用到的 janus 能力

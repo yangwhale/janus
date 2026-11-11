@@ -55,3 +55,7 @@
 | 设置 | 默认设置（不设三个确定性变量，`deterministic_mode: false`）；分布式优化器关（`--full`）；TF32 开 |
 
 `rv-det`（回放验证）是确定性设置，只用来做逐位核对，不进噪声参照。
+
+## 软件版本
+
+本实践只有 GPU，版本同 [00 的「软件版本」](../00-gpu-noise-and-drills/setup.md#软件版本)。`rc-*` 的 `meta.json` 直接记了镜像 digest `fc75bf51…` 与 torch、CUDA 13.4、Megatron-Core 0.20.0、Megatron-Bridge 0.7.0、Transformer Engine 2.20.2+44f31bbe、NCCL 2.31.2（结果文件 [`remat-noise.results.json`](results/remat-noise.results.json) 记着它们的 `meta_sha256`）；cuBLAS 不记，按同一镜像是 13.8.0.4。

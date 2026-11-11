@@ -7,9 +7,9 @@ columns:
   b1: B · 第一代（tb2-a）
   d14: D1 · 第三代（td4-a）
   b4: B · 第三代（tb4-a）
-  d15b: D1 · 1000 步现行（td5b-b）
+  d15b: D1 · 1000 步 M42b 一代（td5b-b）
   d15: D1 · 1000 步（td5-a）
-  b5b: B · 1000 步现行（tb5b-a）
+  b5b: B · 1000 步 M42b 一代（tb5b-a）
   b5: B · 1000 步（tb5-b）
 
 header:
@@ -20,7 +20,8 @@ header:
   - "这一页回答：T2 比了哪些量、用什么门槛判、现在各是什么结果。页面由 `models/hunyuan4/dashboard/build.py` 按 [`dashboard/checks.yaml`](dashboard/checks.yaml) 从结果文件生成，数字和判定都不手写。"
   - ""
   - "- 判定同 T1（[mini 的检查清单](../01-mini/CHECKS.md)「怎么读」）：L4 每条序列算带符号均值、MARE、最大单步，各自对 GPU 8 份两两 28 对的噪声上限 N 判，≤ N 过、> 2N 不过；格子写最差那个判定量的 TPU 实测与倍数。r 只量两边差多大，不定责（[总览细节「读法」](../../dashboard/detail.md#读法)）。"
-  - "- 各列是 TPU 一侧的三代运行（设置见 [`config-alignment.md`](config-alignment.md)）；GPU golden 只有一代（`gb2-*`、`gd2-*`）。"
+  - "- 各列是 TPU 一侧五代运行：300 步三代（第一代到第三代，对 GPU `gb2-*` / `gd2-*`），1000 步两代（`td5-a` / `tb5-b`，与加了 M42b 的 `td5b-b` / `tb5b-a`，对 GPU `gb3-*` / `gd3-*`）。设置见 [`config-alignment.md`](config-alignment.md)。"
+  - "- 全部 TPU 运行 `sa_use_base2_exp` 开、早于 M50；2026-11-11 起的现行对齐配置（关 base2、含 M50）在 B、D1 上尚无运行。"
   - ""
 
 summary_lead:
@@ -69,11 +70,11 @@ levels:
     lead:
       - "目的：同一份权重、同一个 batch，整网跑第 1 步，比梯度。判法同 T1（含分辨率下限）。"
       - ""
-      - "L3 共 {rows} 项检查。参照是 CPU FP64 整网重算（GPU golden 同一套 Megatron-Core 代码，与 TPU 不同源）。第 1 步主 loss 对 FP64：D1 GPU +9.24e-4、TPU −2.23e-4（R 0.24）；B GPU +7.58e-4、TPU −9.29e-4（R 1.23）（对齐报告第 1 节；T2 L3 只看对 FP64 的 R，理由见对齐报告第 2 节）。"
+      - "L3 共 {rows} 项检查。参照是 CPU FP64 整网重算（GPU golden 同一套 Megatron-Core 代码，与 TPU 不同源）。第 1 步主 loss 对 FP64 的相对差（(x − FP64) ÷ FP64）：D1 GPU +6.81e-5、TPU −1.64e-5（R 0.24）；B GPU +6.48e-5、TPU −7.94e-5（R 1.23）（对齐报告 D19、D20；T2 L3 只看对 FP64 的 R，理由见对齐报告第 2 节）。"
     tables:
       - rows:
           - name: 第 1 步逐张量梯度
-            what: "TPU 第 1 步诊断（现行 T2 yml 的全部开关，含 M39–M41）`tb6diag` / `td6diag` 对 GPU 第 1 步参照 `gb2s-*` / `gd2s-*` 三份；超出 GPU 噪声的对 CPU FP64 整网重算定责（规则同 T1）"
+            what: "TPU 第 1 步诊断 `tb6diag` / `td6diag`（MaxText `3741e818`，当时 T2 yml 的全部开关：含 M39–M41，没有 M42b、M50，base2 开；格子挂在 1000 步一列下，证据是这两份诊断） 对 GPU 第 1 步参照 `gb2s-*` / `gd2s-*` 三份；超出 GPU 噪声的对 CPU FP64 整网重算定责（规则同 T1）"
             objects: 全部参数梯度（HF 名字；路由专家只比 GPU 抓数里的 0、1 号）
             agg: 逐张量算 r 与 R；有超 2N 而 R > 1.2 的判不过，只有 1–2N 的判待定
             src: {b5: "t2b-step1-grad-vs-fp64:L3.step1.grads.vs_gpu", d15: "t2d1-step1-grad-vs-fp64:L3.step1.grads.vs_gpu"}
@@ -85,7 +86,7 @@ levels:
     title: L4 · 多步训练
     purpose: 300 步逐步曲线在 GPU 重跑的噪声内
     lead:
-      - "目的：训练 300 步，看 TPU 被测对 GPU 基线的差是否落在 GPU 自己重跑的散布里。"
+      - "目的：训练 300 步与 1000 步，看 TPU 被测对 GPU 基线的差是否落在 GPU 自己重跑的散布里。"
       - ""
       - "L4 共 {rows} 项检查，检查条数 {checks}（D1 第二代 / B 第二代 / D1 第一代 / B 第一代 / D1 第三代 / B 第三代 / D1 1000 步 / B 1000 步）。窗口：主 loss 第 1–300 步与第 101–300 步，其余第 1–300 步（1000 步两列是第 1–1000 步与第 101–1000 步）；MTP loss 只有 D1；路由偏置 B 是第 1 层、D1 是 MTP 层（`PROTOCOL.md` 第 4 节 T2 一行）。"
     tables:
@@ -96,8 +97,8 @@ levels:
             src: {d1z: "t2d1z-l4:L4.loss", b: "t2bz-l4:L4.loss", d1: "t2d1-l4:L4.loss", d14: "t2d14-l4*:L4.loss", d15b: "t2d15b-l4:L4.loss", d15: "t2d15-l4*:L4.loss", b4: "t2b4-l4*:L4.loss", b5b: "t2b5b-l4:L4.loss", b5: "t2b5-l4*:L4.loss"}
             why: >-
               两种截层 TPU 的 loss 都偏低（按两边 `metrics.jsonl` 算），第 1 步前向就差：D1 −8.5e-5、B −1.5e-4，GPU 一侧 D1 的 8 份第 1 步逐位相同、B 份间 1.2e-6。
-              第 1 步对 CPU FP64：D1 的差主要在 GPU 一侧（主 loss GPU +9.24e-4、TPU −2.23e-4，R 0.24），B 两边差不多远、方向相反（GPU +7.58e-4、TPU −9.29e-4，R 1.23）；之后主 loss 的差同号、逐步衰减，带符号差约 100 步后回到噪声内，后段 MARE 仍略超 N（推断：第 1 步前向差的延续，对齐报告 D19）。
-              1000 步窗口（T2 yml 全部开关）主 loss 两种截层都不再不过：D1 `td5-a` 过（MARE：N 2.21e-5、TPU 2.08e-5，r 0.94），B `tb5-b` 待定（最大单步：N 1.18e-4、TPU 1.41e-4，r 1.19）。300 步：D1 三代都不过（第三代带符号均值：N 6.47e-6、TPU −1.70e-5，r 2.64）。B 第二、三代都是第 101 步以后在噪声内，超出都在前 100 步（第三代全程带符号均值：N 1.42e-5、TPU −3.26e-5，r 2.29；对齐报告 D20）。
+              第 1 步对 CPU FP64 的相对差：D1 的差主要在 GPU 一侧（主 loss GPU +6.81e-5、TPU −1.64e-5，R 0.24），B 两边差不多远、方向相反（GPU +6.48e-5、TPU −7.94e-5，R 1.23）；之后主 loss 的差同号、逐步衰减，带符号差约 100 步后回到噪声内，后段 MARE 仍略超 N（推断：第 1 步前向差的延续，对齐报告 D19）。
+              1000 步窗口主 loss 两种截层都不再不过：D1 `td5-a` 过（MARE：N 2.21e-5、TPU 2.08e-5，r 0.94），B `tb5-b` 待定（最大单步：N 1.18e-4、TPU 1.41e-4，r 1.19）。加了 M42b 的 `td5b-b` 主 loss 全程与后段由过变待定（全程 MARE：TPU 2.76e-5，r 1.25），param_norm、偏置标准差也由过变待定；`td5-a` 与 `td5b-b` 之间除 M42b 还换了 MaxText 提交（`3741e818` → `2c28a4f4`），变差来自哪里没拆，未查。300 步：D1 三代都不过（第三代带符号均值：N 6.47e-6、TPU −1.70e-5，r 2.64）。B 第二、三代都是第 101 步以后在噪声内，超出都在前 100 步（第三代全程带符号均值：N 1.42e-5、TPU −3.26e-5，r 2.29；对齐报告 D20）。
           - name: 主 loss 后段
             what: 第 101 步起
             objects: "`lm_loss`，第 101–300 步"
@@ -112,7 +113,7 @@ levels:
             what: 逐步索引器 KD loss
             objects: "`indexer_loss`，全程"
             src: {d1z: "t2d1z-l4:L4.indexer_loss", b: "t2bz-l4:L4.indexer_loss", d1: "t2d1-l4:L4.indexer_loss", d14: "t2d14-l4*:L4.indexer_loss", d15b: "t2d15b-l4:L4.indexer_loss", d15: "t2d15-l4*:L4.indexer_loss", b4: "t2b4-l4*:L4.indexer_loss", b5b: "t2b5b-l4:L4.indexer_loss", b5: "t2b5-l4*:L4.indexer_loss"}
-            why: 第一、二代待定，MARE 刚超 N（D1 第二代：N 7.08e-4、TPU 7.97e-4，r 1.13；B 第二代：N 4.54e-4、TPU 7.19e-4，r 1.58；B 第三代：TPU 7.30e-4，r 1.61，待定）。D1 第三代不过：带符号均值 N 3.44e-4、TPU +7.55e-4，r 2.20，TPU 偏高；这一代一起加了 M34、M36、M37 并重新打开 M25，来自哪个开关没有分开（对齐报告 D21）。
+            why: 第一、二代待定，MARE 刚超 N（D1 第二代：N 7.08e-4、TPU 7.97e-4，r 1.13；B 第二代：N 4.54e-4、TPU 7.19e-4，r 1.58；B 第三代：TPU 7.30e-4，r 1.61，待定）。D1 第三代不过：带符号均值 N 3.44e-4、TPU +7.55e-4，r 2.20，TPU 偏高；这一代一起加了 M34、M36、M37 并重新打开 M25，来自哪个开关没有分开；之后的 `td5-a`、`td5b-b`（1000 步）KD 仍不过，见对齐报告 D21。
           - name: grad_norm
             what: 逐步裁剪前全局梯度范数；分母用参照（2026-11-10 起，原为两边均值）
             objects: "`grad_norm`，全程"

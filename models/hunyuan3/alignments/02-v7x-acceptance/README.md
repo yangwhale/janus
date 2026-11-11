@@ -78,7 +78,7 @@
 - 2026-11-06 打开 `dense_fp32_accumulation` 后按当前配置重做（`r-v7x-l2-on`，v7x 逐层隔离回放）：
   - 四层前向 R 1.06 / 1.01 / 1.01 / 1.02，单算子全部 ≤ 1.16（`phase2-v7x-l2-replay-rratio-on`、`phase2-v7x-l1-ops-own-on`），和 v5p 当前配置的读数相同。
   - 只有 MoE 块（`L1.ops.kernel.moe`）第 2 层 R 1.27：4096 个 token 里有 1 个在近似平局处和 FP64 选了不同的专家，去掉它 R 0.95（`results/v7x-l1-moe-routeflip.json`）。
-  - 逐层反向 `phase2-v7x-l2-replay-bwd-on` 与 v5p 一样：第 0 层过，1–3 层超 GPU 噪声。原因是路由翻转，而 GPU 第 1 步反向噪声极小。
+  - 逐层反向现行按 FP64 R 比判，4 层全过（`phase2-v7x-l2-replay-bwd-fp64-on`）。按 GPU 噪声判的旧结果 `phase2-v7x-l2-replay-bwd-on` 与 v5p 一样：第 0 层过，1–3 层超；原因是路由翻转，而 GPU 第 1 步反向噪声极小、量不到。
 
 #### 5b. 更新后的 expert_bias 不再逐位
 
@@ -90,7 +90,7 @@
 
 - 优化器单步 / 连续 8 步重放过。
 - 路由对 FP64 与逐层路由集合过。
-- 逐层反向第 0 层过、1–3 层超 GPU 噪声两倍（v5p 相同）。
+- 逐层反向按 FP64 R 比判 4 层全过（按 GPU 噪声判的旧结果：第 0 层过、1–3 层超两倍，v5p 相同）。
 - 第 1 步梯度、梯度分布、两个动量对 GPU 噪声不过（v5p 相同，GPU 第 1 步噪声极小）。
 - 更新后主权重待定（v5p 相同）。
 - 覆盖率全比到。

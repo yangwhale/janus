@@ -10,6 +10,7 @@ sort、标了 indices_are_sorted=true（04-tpu-self/b1-grad-reduction.md 第四�
                ② 8 个设备上照 FSDP（表按列切、下标收齐）与 DP（各卡本地 scatter 再跨卡求和；另一份先在 JAX 里排序）各编一份，
                   数每个设备程序里的 sort；
                ③ 单设备每格（N × 标不标 indices_are_sorted × excess precision 开关）的优化后 HLO 存进 --out
+  check      （CPU）在自己的形状上判：表 [vocab, dim]、每卡一次 n 个下标，v5p / v7x 上插不插 sort（--bisect 另二分门槛）
   aot-one    （CPU）只编一格，给逐 pass 的 HLO dump 与 TPU 后端（LLO）dump 用，dump 开关由环境变量给（见文末）
   llo-count  数 LLO dump 里 scatter 那颗 kernel 的 final_bundles：bundle 数与几类向量指令的静态条数
   run        （TPU，单设备 + 8 设备）真算：表 [120832, 1024]，更新量 N(0, 1e-3²) 的 BF16（随机种子 0），下标取 prep 的 token：
@@ -28,6 +29,8 @@ sort、标了 indices_are_sorted=true（04-tpu-self/b1-grad-reduction.md 第四�
 
   python models/hunyuan4/analysis/emb_scatter_sort_probe.py prep --golden <GPU g3-a 运行目录> --out tokens.npz
   JAX_PLATFORMS=cpu python models/hunyuan4/analysis/emb_scatter_sort_probe.py aot --out <目录>
+  # 在自己的形状上判（libtpu 是当前环境装的版本）：
+  JAX_PLATFORMS=cpu python models/hunyuan4/analysis/emb_scatter_sort_probe.py check --vocab 120832 --dim 6144 --n 4096 8192 16384 [--bisect]
   # 每个 pass 之后的 HLO（找插 sort 的 pass）：
   JAX_PLATFORMS=cpu XLA_FLAGS="--xla_dump_to=<目录> --xla_dump_hlo_as_text --xla_dump_hlo_pass_re=.*" \
     python models/hunyuan4/analysis/emb_scatter_sort_probe.py aot-one --n 16384 --out <目录>
@@ -437,6 +440,63 @@ def cmd_llo_count(a):
         Path(a.out).write_text(json.dumps(res, ensure_ascii=False, indent=1) + "\n")
 
 
+# ---------------------------------------------------------------- check：在自己的形状上判
+def cmd_check(a):
+    """表 [vocab, dim] 的 BF16 scatter-add，每卡一次 n 个下标，为 v5p / v7x 单设备交叉编译（CPU，只编不跑），看优化后 HLO
+    里插没插 sort、scatter 标没标 indices_are_sorted、在不在 SparseCore 上执行；--bisect 另二分出最小的插 sort 的下标个数。
+    libtpu 版本就是当前环境装的那个：换版本要在装了那个版本的环境里再跑一次。"""
+    from importlib.metadata import version
+
+    import jax
+    import jax.numpy as jnp
+    from jax.experimental import topologies
+
+    topo = {"v5p": "v5p:2x2x1", "v7x": "tpu7x:2x2x1"}
+    res = {"libtpu": version("libtpu"), "jax": jax.__version__, "vocab": a.vocab, "dim": a.dim, "gens": {}}
+    for gen in a.gen:
+        sh = jax.sharding.SingleDeviceSharding(
+            topologies.get_topology_desc(platform="tpu", topology_name=topo[gen]).devices[0]
+        )
+
+        def facts(n):
+            def f(i, u):
+                return jnp.zeros((a.vocab, a.dim), jnp.bfloat16).at[i].add(u)
+
+            t = (
+                jax.jit(f)
+                .lower(
+                    jax.ShapeDtypeStruct((n,), jnp.int32, sharding=sh),
+                    jax.ShapeDtypeStruct((n, a.dim), jnp.bfloat16, sharding=sh),
+                )
+                .compile()
+                .as_text()
+            )
+            r = hlo_facts(t)
+            r["sorted"] = bool(r["n_sort"]) and r["n_scatter_sorted"] == r["n_scatter"]
+            r["sparsecore"] = 'execution_thread="sparsecore"' in t
+            return r
+
+        g = {"cells": {}}
+        for n in a.n:
+            g["cells"][str(n)] = facts(n)
+            print(gen, a.vocab, a.dim, n, json.dumps(g["cells"][str(n)]), flush=True)
+        if a.bisect:
+            lo, hi = 1, a.bisect_hi
+            if not facts(hi)["n_sort"]:
+                g["min_n_with_sort"], g["checked_up_to"] = None, hi
+            else:
+                while hi - lo > 1:
+                    m = (lo + hi) // 2
+                    lo, hi = (lo, m) if facts(m)["n_sort"] else (m, hi)
+                g["min_n_with_sort"] = hi
+            g["vocab_over_8"] = a.vocab / 8
+            print(gen, "min n with sort", g.get("min_n_with_sort"), flush=True)
+        res["gens"][gen] = g
+    print(json.dumps(res, ensure_ascii=False))
+    if a.out:
+        Path(a.out).write_text(json.dumps(res, ensure_ascii=False, indent=1) + "\n")
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sp = p.add_subparsers(dest="cmd", required=True)
@@ -453,6 +513,14 @@ def main(argv=None):
     q.add_argument("--flag", type=int, default=0, help="1 = indices_are_sorted=True")
     q.add_argument("--excess", type=int, default=1)
     q.add_argument("--out", required=True)
+    q = sp.add_parser("check", help="在自己的形状上判：每卡一次 n 个下标时插不插 sort")
+    q.add_argument("--vocab", type=int, required=True)
+    q.add_argument("--dim", type=int, required=True, help="每张卡上这张表的列数（表按列切时是切后的列数）")
+    q.add_argument("--n", type=int, nargs="+", required=True, help="每张卡一次 scatter 的下标个数")
+    q.add_argument("--gen", nargs="+", choices=("v5p", "v7x"), default=["v5p", "v7x"])
+    q.add_argument("--bisect", action="store_true", help="另二分出最小的插 sort 的下标个数")
+    q.add_argument("--bisect-hi", type=int, default=1 << 16)
+    q.add_argument("--out")
     q = sp.add_parser("llo-count")
     q.add_argument("dirs", nargs="+")
     q.add_argument("--out")
@@ -464,7 +532,14 @@ def main(argv=None):
     q.add_argument("--sharded", action="store_true")
     q.add_argument("--distributed", action="store_true", help="多主机切片上先 jax.distributed.initialize()")
     a = p.parse_args(argv)
-    {"prep": cmd_prep, "aot": cmd_aot, "aot-one": cmd_aot_one, "llo-count": cmd_llo_count, "run": cmd_run}[a.cmd](a)
+    {
+        "prep": cmd_prep,
+        "aot": cmd_aot,
+        "aot-one": cmd_aot_one,
+        "check": cmd_check,
+        "llo-count": cmd_llo_count,
+        "run": cmd_run,
+    }[a.cmd](a)
     return 0
 
 

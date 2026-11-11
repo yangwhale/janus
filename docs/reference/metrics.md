@@ -114,6 +114,8 @@
 
 R = rel_L2(被测输出, FP64 真值) ÷ rel_L2(GPU 输出, FP64 真值)，≤ 1.2 过。
 
+混元 4 有两个变体：TPU 自比的分母取 max(参照离 FP64, GPU 三份中位数)；GPU ↔ TPU 第 1 步有分辨率下限，GPU 噪声为 0、且两边离 FP64 都小于 u = 2^-8 的张量按下限判过（[尺子 2.3](../guide/ruler.md#23-两种用法)）。
+
 - FP64 真值：用同一份真实输入、同一份 BF16 权重在 FP64 里算，全程不舍入。前向用 [`fp64_forward.py`](../../models/hunyuan3/analysis/fp64_forward.py)，反向用 [`fp64_backward.py`](../../models/hunyuan3/analysis/fp64_backward.py)，整步梯度用 [`fp64_step.py`](../../models/hunyuan3/analysis/fp64_step.py)。
 - 两侧各用自己的输入，结果名带 `own`：被测对「被测输入上的真值」、GPU 对「GPU 输入上的真值」，上游差异不进来。
 - 门槛 1.2 是推断：只差舍入顺序时 R ≈ 1；多一次同量级的独立舍入，误差方差约翻倍，R ≈ √2 ≈ 1.41。GPU 侧 `L1.rratio.clean`（R = 1.00）与 `L1.rratio.drill`（多舍一次，被 1.2 抓到）是这条线的自检。

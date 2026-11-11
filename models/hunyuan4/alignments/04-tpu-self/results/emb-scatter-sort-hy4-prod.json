@@ -1,0 +1,566 @@
+{
+ "note": "混元 4 生产形状（Hy4-preview 公开配置：vocab_size 120832、hidden_size 6144）的词嵌入反向 BF16 scatter-add，单算子在 CPU 上为 v5p / v7x 单设备交叉编译（只编不跑），看优化后 HLO 插没插 sort。dim 6144：纯数据并行每卡整张表；dim 4096：混元 3 的隐藏维（假如整张表复制时）；dim 768：表沿 8 卡切列（FSDP 8 或 embedding_shard_over_data）后每卡的列数，下标是 8 张卡的合计。n 是每卡一次 scatter 的下标个数；min_n_with_sort 是二分出的最小插 sort 的下标个数（上限 checked_up_to）。0.0.46 在训练镜像（与 golden 同一镜像），0.0.52 在同一镜像只换 libtpu。脚本 models/hunyuan4/analysis/emb_scatter_sort_probe.py check。",
+ "runs": {
+  "libtpu0.0.46-dim4096": {
+   "libtpu": "0.0.46",
+   "jax": "0.11.1",
+   "vocab": 120832,
+   "dim": 4096,
+   "gens": {
+    "v5p": {
+     "cells": {
+      "4096": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "8192": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "16384": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": false
+      },
+      "32768": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": false
+      }
+     },
+     "min_n_with_sort": 15105,
+     "vocab_over_8": 15104.0
+    },
+    "v7x": {
+     "cells": {
+      "4096": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "8192": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "16384": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": false
+      },
+      "32768": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": false
+      }
+     },
+     "min_n_with_sort": 15105,
+     "vocab_over_8": 15104.0
+    }
+   }
+  },
+  "libtpu0.0.46-dim6144": {
+   "libtpu": "0.0.46",
+   "jax": "0.11.1",
+   "vocab": 120832,
+   "dim": 6144,
+   "gens": {
+    "v5p": {
+     "cells": {
+      "4096": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "8192": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "16384": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": false
+      },
+      "32768": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": false
+      }
+     },
+     "min_n_with_sort": 15105,
+     "vocab_over_8": 15104.0
+    },
+    "v7x": {
+     "cells": {
+      "4096": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "8192": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "16384": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": false
+      },
+      "32768": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": false
+      }
+     },
+     "min_n_with_sort": 15105,
+     "vocab_over_8": 15104.0
+    }
+   }
+  },
+  "libtpu0.0.46-dim768": {
+   "libtpu": "0.0.46",
+   "jax": "0.11.1",
+   "vocab": 120832,
+   "dim": 768,
+   "gens": {
+    "v5p": {
+     "cells": {
+      "32768": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": false
+      },
+      "65536": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": false
+      },
+      "131072": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": false
+      }
+     },
+     "min_n_with_sort": 15105,
+     "vocab_over_8": 15104.0
+    },
+    "v7x": {
+     "cells": {
+      "32768": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": true
+      },
+      "65536": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": true
+      },
+      "131072": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": true
+      }
+     },
+     "min_n_with_sort": 2,
+     "vocab_over_8": 15104.0
+    }
+   }
+  },
+  "libtpu0.0.52-dim4096": {
+   "libtpu": "0.0.52",
+   "jax": "0.11.1",
+   "vocab": 120832,
+   "dim": 4096,
+   "gens": {
+    "v5p": {
+     "cells": {
+      "4096": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "8192": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "16384": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "32768": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      }
+     },
+     "min_n_with_sort": 58198,
+     "vocab_over_8": 15104.0
+    },
+    "v7x": {
+     "cells": {
+      "4096": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "8192": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "16384": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "32768": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": false
+      }
+     },
+     "min_n_with_sort": 28964,
+     "vocab_over_8": 15104.0
+    }
+   }
+  },
+  "libtpu0.0.52-dim6144": {
+   "libtpu": "0.0.52",
+   "jax": "0.11.1",
+   "vocab": 120832,
+   "dim": 6144,
+   "gens": {
+    "v5p": {
+     "cells": {
+      "4096": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "8192": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "16384": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "32768": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      }
+     },
+     "min_n_with_sort": null,
+     "checked_up_to": 65536,
+     "vocab_over_8": 15104.0
+    },
+    "v7x": {
+     "cells": {
+      "4096": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "8192": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "16384": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      },
+      "32768": {
+       "n_sort": 0,
+       "n_scatter": 1,
+       "n_scatter_sorted": 0,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": false,
+       "sparsecore": false
+      }
+     },
+     "min_n_with_sort": 43648,
+     "vocab_over_8": 15104.0
+    }
+   }
+  },
+  "libtpu0.0.52-dim768": {
+   "libtpu": "0.0.52",
+   "jax": "0.11.1",
+   "vocab": 120832,
+   "dim": 768,
+   "gens": {
+    "v5p": {
+     "cells": {
+      "32768": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": false
+      },
+      "65536": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": false
+      },
+      "131072": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": false
+      }
+     },
+     "min_n_with_sort": 10815,
+     "vocab_over_8": 15104.0
+    },
+    "v7x": {
+     "cells": {
+      "32768": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": true
+      },
+      "65536": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": true
+      },
+      "131072": {
+       "n_sort": 1,
+       "n_scatter": 1,
+       "n_scatter_sorted": 1,
+       "scatter_out_dtypes": [
+        "bf16"
+       ],
+       "sorted": true,
+       "sparsecore": true
+      }
+     },
+     "min_n_with_sort": 2,
+     "vocab_over_8": 15104.0
+    }
+   }
+  }
+ }
+}

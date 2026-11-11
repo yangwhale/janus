@@ -21,3 +21,7 @@
 | 第一代 | `td2-a`、`tb2-a` | t1v 等价：有 M28，没有 M31、M33（`meta.json` 已核） |
 | 第二代 | `td3-a`、`tb3-b`（`tb3-a` 中断） | t1z 的开关（M28、M31、M33），M25 暂关；没有 M34、M36、M37 |
 | 第三代 | `td4-a`、`tb4-a` | 登记时同 T1 的诊断代 `t1zt`（t1zr 再加 M34、M37，M25 重新打开）；之后打包的还会带 M39–M41，以 `meta.json` 为准 |
+| 1000 步 | `td5-a`、`tb5-b` | 当时 T2 yml 的全部开关，含 M39–M41；MaxText `3741e818`、janus `2679a837`；base2 开，没有 M42b、M50（`meta.json` 已核） |
+| 1000 步加 M42b | `td5b-b`、`tb5b-a` | 再加 M42b（`splash_dsinks_gpu_order` 开，M42 关）；MaxText `2c28a4f4`、janus `9c0f19a`；base2 开，没有 M50（`meta.json` 已核） |
+
+2026-11-11 起的现行对齐配置（关 base2、含 M50）在 B、D1 上尚无运行。

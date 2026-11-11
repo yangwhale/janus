@@ -2,11 +2,11 @@
 
 # 混元 4 · GPU 侧 Megatron 版
 
-> **现状（2026-11-08）**：语义以 TPU 一侧为准（[`PROTOCOL.md`](../../PROTOCOL.md) 第 1.2 节），这个程序就是 T1 / T2 的 GPU golden，语义以 TPU 一侧 MaxText 为准（GPU 照它补齐结构，台账 G1）。T1 的训练设置是 Muon、权重衰减 0、索引器 KD 系数 0.1（`--indexer-loss 0.1`，台账 G4）、数据并行 8 + 专家并行 4，逐项见 [`../../alignments/01-mini/config-alignment.md`](../../alignments/01-mini/config-alignment.md)。下面提到「HF golden」、AdamW、分布式优化器与「索引器不训练」的几处（紧接着的两段、文件表 `train_hy4mg.py` 一行、「Megatron 没有、在这里补的」第 8 行、「和 HF golden 的数值差别」「等价性」两节）是 AdamW 时期的记录，保留作出处；那时的 `PLAN.md` 小节号见 git 历史。T1 / T2 的 golden 不开分布式优化器（`meta.json` 记 `distributed_optimizer: false`）。
+> **现状（2026-11-08）**：这个程序就是 T1 / T2 的 GPU golden，语义以 TPU 一侧 MaxText 为准（[`PROTOCOL.md`](../../PROTOCOL.md) 第 1.2 节；GPU 照它补齐结构，台账 G1）。T1 的训练设置是 Muon、权重衰减 0、索引器 KD 系数 0.1（`--indexer-loss 0.1`，台账 G4）、数据并行 8 + 专家并行 4，逐项见 [`../../alignments/01-mini/config-alignment.md`](../../alignments/01-mini/config-alignment.md)。下面提到「HF golden」、AdamW、分布式优化器与「索引器不训练」的几处（紧接着的两段、文件表 `train_hy4mg.py` 一行、「Megatron 没有、在这里补的」第 8 行、「和 HF golden 的数值差别」「等价性」两节）是 AdamW 时期的记录，保留作出处；那时的 `PLAN.md` 小节号见 git 历史。T1 / T2 的 golden 不开分布式优化器（`meta.json` 记 `distributed_optimizer: false`）。
 
 在 Megatron-Core 0.20.0（NeMo 26.10 镜像）上把混元 4（Hy4-preview）搭起来，作为 HF golden（[`../hf/`](../hf/)）之外的第二条 GPU 程序：Megatron 的 TE 层、分组 GEMM 的 MoE、EP 分发、分布式优化器、MTP 都是原样的，Megatron 没有的几样（下面「Megatron 没有、在这里补的」一表）在 janus 一侧补，不 fork Megatron。
 
-语义以 HF transformers `hy_v4` v5.22.1（`modeling_hy_v4.py` sha256 `e27ec64d…`）加公开 config 为准，再加 项目定下的两处读法（交错 RoPE；MLA latent norm eps 1e-5、索引器 k_norm eps 1e-6），与 HF golden 一侧相同。
+（AdamW 时期的标准，现行见上面「现状」）语义以 HF transformers `hy_v4` v5.22.1（`modeling_hy_v4.py` sha256 `e27ec64d…`）加公开 config 为准，再加 项目定下的两处读法（交错 RoPE；MLA latent norm eps 1e-5、索引器 k_norm eps 1e-6），与 HF golden 一侧相同。
 
 ## 文件
 
@@ -56,7 +56,7 @@
 python equiv_hf.py --hf <截好的 4 层 HF 目录> --layers 1 --seq 4096 --tokens tokens.npy --backward --json A.json
 ```
 
-结果见当时的 PR 正文。判据：每层输出、logits 相对 L2 ≤ 1e-5；DSA 选中集合逐 query 相同，或不同的 query 在 FP64 下第 2048 / 2049 名的相对分差 ≤ 1e-5（平局）；梯度相对 L2 ≤ 1e-4。负对照（`--hf-unpatched`，HF 原样 NeoX RoPE 与原样 eps）必须判不一致。
+结果没有入库：引入它的提交没有单独提 PR，并入的 #295 正文里也没有这份结果，要重跑才有。判据：每层输出、logits 相对 L2 ≤ 1e-5；DSA 选中集合逐 query 相同，或不同的 query 在 FP64 下第 2048 / 2049 名的相对分差 ≤ 1e-5（平局）；梯度相对 L2 ≤ 1e-4。负对照（`--hf-unpatched`，HF 原样 NeoX RoPE 与原样 eps）必须判不一致。
 
 ## 跑
 
@@ -152,7 +152,7 @@ TP 不支持。完整模型每卡一份的非专家参数靠 PP 分段放下（�
 
 ## sigmoid / silu 各处的实际算法
 
-T1 的 g2 / g3 设置（代码 `hy4_mcore.py` sha256 `4dab75aa…`，Megatron-Core 0.20.0，TE 版本未核（各运行的 `meta.json` 没有记；单卡探针 `analysis/sigmoid_silu_probe.py` 会打印 `te.__version__`，但输出没有入库），镜像 NeMo 26.10）。「实际执行」一栏的依据是源码路径，加上 L1 抓数里挂在 `linear_fc1` / `linear_fc2` 模块上的钩子都触发了（TE op fuser 的融合路径不经过这两个模块）。
+T1 的 g2 / g3 设置（代码 `hy4_mcore.py` sha256 `4dab75aa…`，Megatron-Core 0.20.0，TE 2.20.2（推断：各运行的 `meta.json` 没有记，按同一镜像 digest 推，见 [mini 的「软件版本」](../../alignments/01-mini/setup.md#软件版本)；下面 sigmoid / silu 探针在训练镜像里读到 `2.20.2+44f31bbe`，torch 构建与各运行 `meta.json` 记的相同），镜像 NeMo 26.10）。「实际执行」一栏的依据是源码路径，加上 L1 抓数里挂在 `linear_fc1` / `linear_fc2` 模块上的钩子都触发了（TE op fuser 的融合路径不经过这两个模块）。
 
 | # | 位置 | 输入 dtype | 计算 dtype | 实际执行 | 输出 dtype；舍入成 BF16 的地方 |
 |---|---|---|---|---|---|
@@ -187,4 +187,4 @@ T1 的 g2 / g3 设置（代码 `hy4_mcore.py` sha256 `4dab75aa…`，Megatron-Co
 | `silu(a) × b`（第 5、6 行的写法） | BF16，400 万个 | 73.0% 相等，其余差 1 ulp |
 | TE `ops.SwiGLU`（只作参照，训练路径没用到） | BF16，400 万个 | 99.9994% 相等，最大 1 ulp（只在输出舍入一次） |
 
-  结果文件：POC 桶 `analysis/sigmoid-silu-probe/probe_result.json`。
+  结果文件：[`results/b200-sigmoid-silu-probe.json`](../../results/b200-sigmoid-silu-probe.json)（探针 [`analysis/sigmoid_silu_probe.py`](../../analysis/sigmoid_silu_probe.py) 打印的原样输出）。

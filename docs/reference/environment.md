@@ -31,6 +31,27 @@
 - 两者版本以镜像为准：Megatron-Core 0.20.0、Megatron-Bridge 0.7.0（复现审计在容器里用 `importlib.metadata` 读到）。
 - TPU 侧对照前要补上。
 
+## 两个模型实测用的版本
+
+GPU ↔ TPU 对齐的现行运行（混元 3 的正式验收，混元 4 各尺寸的现行比较）都在下面这一套上。逐项出处在各实践 `setup.md` 的「软件版本」一节（混元 3：[01](../../models/hunyuan3/alignments/01-v5p-acceptance/setup.md#软件版本)；混元 4：[mini](../../models/hunyuan4/alignments/01-mini/setup.md#软件版本)）。
+
+| 侧 | 组件 | 版本 | 备注 |
+|---|---|---|---|
+| TPU | 镜像 | MaxText 官方 `tpu_pre_training` 0.2.5，digest `b152355a…` | 钉在两个模型的 `frameworks/maxtext/run.sh` |
+| TPU | jax / jaxlib | 0.11.1 / 0.11.1 | `meta.json` 的 `versions` |
+| TPU | libtpu | 0.0.46，构建 `cl/963683785`（2026-08-12） | 混元 4 后期的运行在 `versions.libtpu_pip` 记了版本号；更早的运行和混元 3 只记了构建号，按构建号认 |
+| TPU | flax / optax / orbax-checkpoint | 0.12.9 / 0.2.8 / 0.12.4 | `meta.json` 的 `versions` |
+| TPU | tokamax | 0.0.14（镜像自带的包） | `meta.json` 不记；读镜像层里的 `tokamax-0.0.14.dist-info` 核过（2026-11-11） |
+| TPU | MaxText | 混元 3：`hunyuan` 分支 `0622774a`；混元 4：集成分支，各尺寸的提交不同 | 各实践 `setup.md` |
+| GPU | 镜像 | NeMo 26.10，digest `fc75bf51…` | `meta.json` 的 `image`（混元 3 第一阶段只记了 tag） |
+| GPU | torch / CUDA / NCCL | 2.14.0a0+b2c75dd062.nv26.09 / 13.4 / 2.31.2 | `meta.json` 的 `versions` |
+| GPU | Megatron-Core / Megatron-Bridge | 0.20.0 / 0.7.0（容器自带，提交未登记） | 混元 4 不用 Megatron-Bridge |
+| GPU | Transformer Engine | 2.20.2+44f31bbe | 混元 3 的 `meta.json` 记了；混元 4 的不记，按同一镜像推断 |
+| GPU | cuBLAS | 13.8.0.4 | 混元 3 第一阶段在容器里读到（`phase1-l1.results.json`）；之后的运行都不记，按同一镜像推断 |
+
+- **libtpu 以构建号和 `libtpu_pip` 为准，不以镜像 digest 为准。** 混元 4 TPU 自比的 0.0.45、0.0.47、0.0.48、0.0.52 臂都是在同一个 digest 上 `pip install --no-deps` 换装的（[自比设置「变种」](../../models/hunyuan4/alignments/04-tpu-self/setup.md#变种)），只看 digest 会把它们判成同一版本。
+- **结论只对这一套版本成立。** 换 libtpu 或 jax，按 [`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md) 的做法先离线编译看哪些程序变了，再重建 golden、重测。混元 4 的 TPU 自比另在 0.0.45、0.0.47、0.0.48、0.0.52 上测过，GPU ↔ TPU 对齐没有。
+
 ## GPU 侧
 
 ### 第一阶段的环境（混元 3）
@@ -124,15 +145,9 @@
 
 ## TPU 侧
 
-### 现状与已定的
+### 已定的
 
-脚本与配置在 CPU 上核对过（`models/hunyuan3/frameworks/maxtext/README.md`）。已在 TPU v5p-8 上跑过：
-
-- 30 步只看 loss 的 `t-loss30`；
-- 第 1 步全量抓数的 1000 步 `t-a`；
-- 结果与结论见 [`../../models/hunyuan3/alignments/01-v5p-acceptance/README.md`](../../models/hunyuan3/alignments/01-v5p-acceptance/README.md)。
-
-已定的：
+各模型在 TPU 上跑到哪一步、结论是什么，看各自的报告：[混元 3](../../models/hunyuan3/ALIGNMENT-REPORT.md)、[混元 4](../../models/hunyuan4/README.md)。这里只记跨模型的约定（下面镜像、代码、配置三条的例子取混元 3）：
 
 - 镜像 MaxText 官方 `tpu_pre_training` 0.2.5，按 digest 钉死（`models/hunyuan3/frameworks/maxtext/run.sh`）。
 - 代码 `maxtext` 的 `hunyuan` 分支，提交号写进 `meta.json`。
@@ -153,19 +168,19 @@
     - 11 个臂各重跑 500 步逐位相同。
   - 每个模型、每个平台仍要自己实测一次。
 - **开关两边语义对齐**。一边开、一边关的开关，按「配置不一致」处理，不按「精度差」处理。
-- **对齐期间不引入额外精度**。
+- **excess precision 保持默认开，要照 GPU 舍入点的地方局部卡住**。
   - 编译器可能在某些地方用比声明更高的精度算（excess precision），这会让 TPU 和 GPU 的舍入位置不同。
-  - 对齐测试期间按 GPU 的舍入位置来：开关是 `--xla_allow_excess_precision=false`（下表）。
-  - 要固定某一处的舍入，用 `jax.lax.reduce_precision`，它不会被 excess precision 优化掉；`astype` 来回转可能会被消掉。
+  - 但不要用 `--xla_allow_excess_precision=false` 全局关掉：关掉后不是更像 GPU，而是更远。混元 4 上，v5p 那次排好序的词嵌入 scatter 从「FP32 里加完只舍一次」退回「加一次舍一次」，TPU 自比曲线 r 13.3，第 1 步词嵌入梯度离 FP64 是 golden / GPU 里较远那个的 26.1 倍（libtpu 0.0.46；0.0.52 上 r 12.6、R 26.1，[TPU 自比「关掉编译器的省舍入」](../../models/hunyuan4/alignments/04-tpu-self/impacts/02-excess-precision.md)；[差异清单 F1](tpu-vs-gpu-differences.md#f1-xla-默认允许-excess-precision)）。
+  - 要固定某一处的舍入，用 `jax.lax.reduce_precision`，它不会被 excess precision 优化掉；`astype` 来回转可能会被消掉（[差异清单 A6](tpu-vs-gpu-differences.md#a6-编译器省掉了-gpu-一定会做的-bf16-往返后端省长跑归因见-u12)）。
 - **只改执行方式的开关，是噪声参照的来源**。
   - remat 档位、编译器片上内存上限、调度类开关如果确实不改数学，就拿来做扰动臂；
   - 改不改数学，要先用「同程序、只改这一个开关」验证。
 
-### 待第二阶段确认
+### 测试模型上的答案（换到被测模型要再核）
 
-表的右边一栏是此前排查在测试模型上已经给出的答案。
+表的右边一栏是此前排查在测试模型上已经给出的答案；注里另写了混元 3 / 4 上实测到的结论，哪条在被测模型上核过就写在哪条下面。
 
-- 都是缩小模型、单次运行的结论，换到被测模型要按本仓库的检查再核一次。
+- 此前排查的答案都是缩小模型、单次运行的结论，换到被测模型要按本仓库的检查再核一次。
 - 每个模型对这些答案的采用情况写在它的配置对照里（混元 3：`models/hunyuan3/config-alignment.md`）。
 
 | 项 | 要确认什么 | 此前排查已有的答案 |
@@ -189,6 +204,7 @@
 - 单个算子关掉后多与逐算子执行逐位相同，但**不更准**（有些算子默认更接近正确舍入）。
 - 它让前向与重算、DP 与 FSDP 的舍入位置不同。
 - 改的是舍入位置，不能当扰动臂。
+- 混元 4 实测：整网关掉明显变坏（v5p 曲线 r 13.3、词嵌入梯度 R 26.1），保持默认开（见上文「原则」）。
 
 注 3（RNG 相关开关）：
 - 不加 `--xla_tpu_spmd_rng_bit_generator_unsafe=false` 时，随机初始化的权重随并行方式变。
@@ -201,7 +217,7 @@
 - 另外，跨算子融合本身也会改求和（注意力后 RMSNorm 被融进输出投影的输出端），见 `levels.md`「隔离融合与逐算子执行」。
 
 注 5（注意力 kernel 的实现选项）：
-- Tokamax Splash 默认 `sa_use_base2_exp=True`，多一次 BF16 舍入，建议两边都设 `False`；
+- Tokamax Splash 默认 `sa_use_base2_exp=True`。混元 4 上查明主效应是常数：内核写 `q *= LOG2E`，q 是 BF16，常数跟着舍成 1.4453125（比 log2 e 大 1.81e-3），注意力 logits（不含 sink）整体乘 1.0018，另加 q 多舍一次 BF16。TPU 一侧设 `False`（GPU 没有这个开关）；混元 4 对齐配置 2026-11-11 起也关（[差异清单 A11](tpu-vs-gpu-differences.md#a11-splash-的-base2-指数把注意力-logits-放大-10018-倍q-多舍一次-bf16生产与对齐都关)、[混元 4 根源一览第 24 行](../../models/hunyuan4/ROOT-CAUSES.md#r24)）；
 - 旧 Splash 的 softmax 在 FP32 里算；
 - dot-product 路径的 softmax 默认 BF16，要 `float32_logits`。
 

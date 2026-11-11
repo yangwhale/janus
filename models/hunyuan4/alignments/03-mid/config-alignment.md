@@ -13,4 +13,4 @@
 | 层 | 1 稠密 + 6 MoE + 1 MTP | 同 mini |
 | 初始权重 | `make_tiny_hf.py --config mini --layers 7 --mtp 1 --seed 0` | `make_tiny_hf.py --config mid --layers 7 --mtp 1 --seed 0`（权重矩阵标准差 0.006，同 mini） |
 | 参数量 | 427,783,489 | 5,189,678,849 |
-| 已跑的 TPU 运行 | 现行比较 `t1zg-a` 等（见 mini） | `tm-a`：MaxText `469dbb85`、janus `fd796f6`，与 T1 诊断代 `t1zt` 同一个 MaxText 提交；之后又加了 M39（MaxText 代码）与 M40、M41、M42b（yml 开关），`tm-a` 都没有 |
+| 已跑的 TPU 运行 | 现行比较 `t1zg-a` 等（见 mini） | `tm-a`：MaxText `469dbb85`、janus `fd796f6`，与 T1 诊断代 `t1zt` 同一个 MaxText 提交；之后又加了 M39（MaxText 代码）与 M40、M41、M42b（yml 开关），`tm-a` 都没有。`tm-b`：MaxText `2c28a4f4`、janus `9c0f19a`，含 M39–M41 与 M42b，base2 开，没有 M50（`meta.json` 已核）；现行对齐配置（关 base2、含 M50）在 mid 上尚无运行 |

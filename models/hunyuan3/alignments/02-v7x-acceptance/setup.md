@@ -31,6 +31,21 @@
   - `maxtext` @ `64cd9a640b8e…`、janus @ `16af8f7b116b…`；
   - 配置 sha256 `66a03bf31d35…`，命令行另加 `mtp_num_layers=0`。
 
+## 软件版本
+
+以 v7x 正式验收为准：TPU `t-v7x-on-1000` 对最终 golden `rcc-a`（`phase2-v7x-acceptance-rcc`）。和 01 只差硬件，软件逐项同 [01 的「软件版本」](../01-v5p-acceptance/setup.md#软件版本)：
+
+| 侧 | 组件 | 版本 | 证据出处 |
+|---|---|---|---|
+| TPU | 镜像 | `tpu_pre_training`，digest `b152355a…`（同 01） | `t-v7x-on-1000` 的 `meta.json` 的 `image` |
+| TPU | MaxText / janus | `hunyuan` 分支 `0622774a` / `958d173e`（同 01 的 `t-rmap-on-1000`） | `meta.json` 的 `code` |
+| TPU | jax / jaxlib | 0.11.1 / 0.11.1 | `meta.json` 的 `versions` |
+| TPU | libtpu | 0.0.46（推断；TPU7x 版，构建 `cl/963683785`） | `meta.json` 只记构建号；推断同 01 |
+| TPU | 配置 | `hy3-4layers.yml` sha256 `a238883b…`，命令行另加 `mtp_num_layers=0` 与 remat 覆盖（同 01 `t-rmap-on-1000`） | `meta.json` 的 `config`；登记见 [`runs.yaml`](runs.yaml) |
+| GPU | 全部 | 同 01（golden 是同一批 `rcc-*`） | — |
+
+结果文件 [`phase2-v7x-acceptance-rcc.results.json`](results/phase2-v7x-acceptance-rcc.results.json) 记着 `t-v7x-on-1000` 的 `meta_sha256`。**结论在这些版本上测得**；换 libtpu 或 jax 要按混元 4 [`libtpu-052.md`](../../../hunyuan4/alignments/04-tpu-self/libtpu-052.md) 的做法重测。
+
 ## 在哪跑
 
 - TPU v7x 4 片切片（2x2x1，1 台主机），`run.sh` 的 `PLATFORM=v7x`。
@@ -165,4 +180,4 @@
 ## 已知要先定的
 
 - v7x 4 芯片是 8 个 device。FSDP 8 与 `per_device_batch_size` 沿用 v5p-8 的写法，就能让每个 device 拿到的行和 GPU rank 对应（上面的冒烟按这个跑）。
-- 要不要换成别的切分，等 L2 逐层比较时再看。
+- 切分定为 FSDP 8；EP = 8 也对过一次（`t-v7x-ep8-1000`，对 `rcc-a` L4 都在噪声内，[`phase2-v7x-acceptance-rcc-ep8`](results/phase2-v7x-acceptance-rcc-ep8.report.md)）。

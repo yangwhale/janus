@@ -10,7 +10,7 @@ MaxText（optax 0.2.8）与原版 Megatron-Core（emerging_optimizers 0.3.0）�
 
 | # | 量 | MaxText 原来 | 原版 Megatron-Core | 开关（台账） |
 |---|---|---|---|---|
-| 1 | Nesterov 方向 | optax 的写法（台账只记新写法「不做偏差修正」） | β·mu_t + (1−β)·g_t，不做偏差修正 | `muon_mcore_nesterov`（M15，只支持 `optax_muon`） |
+| 1 | Nesterov 方向 | β·mu_t / (1 − β^(t+1)) + (1−β)·g_t / (1 − β^t)，两项各做偏差修正（optax 0.2.8 `contrib/_muon.py`） | β·mu_t + (1−β)·g_t，不做偏差修正 | `muon_mcore_nesterov`（M15，只支持 `optax_muon`） |
 | 2 | 标量参数的 Adam 分支 | 随 Muon 的 Nesterov 变成 NAdam | 普通 Adam | `muon_adam_plain`（M16） |
 | 3 | Newton–Schulz 前的归一化 | x / (‖x‖ + eps)，eps 取 `adam_eps` | x / max(‖x‖, 1e-7) | `muon_mcore_ns_normalize`（M17） |
 | 4 | QK-Clip 缩放的分母 | min(1, τ / (max_logit + 1e-6)) | min(1, τ / max_logit) | `qk_clip_mcore_denominator`（M18） |

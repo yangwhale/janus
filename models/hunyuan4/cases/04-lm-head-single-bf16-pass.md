@@ -29,7 +29,7 @@ MaxText 的 `logits_dot_in_fp32` 只把操作数转成 FP32，矩阵乘精度仍
 
 - 训练后权重的重放（[案例 13](13-weight-side-switch-step1-blind-spot.md)）：换上第 8 步的 FP32 主权重，输出头 logits 对 FP64（FP32 权重）开时 8.3e-8，关时 2.73e-3。
 - 第 1 步开关前后（`tw-sw-base` / `tw-sw-m13`）输出头 logits 前向逐位相同；`lm_head.weight` 梯度 TPU 对 GPU 都是 1.81e-3（GPU 三份之间 1.01e-3）。
-- 第 1 步 `lm_head.weight` 梯度对 CPU FP64（`t1diag15`）：GPU 3.66e-3、TPU 3.63e-3，R 0.99（[`t1s-step1-grad-vs-fp64.json`](../alignments/01-mini/results/t1s-step1-grad-vs-fp64.json)）。只把输出头设成 HIGHEST 不改变第 1 步逐张量结论（提交 `0a39dd5`，没有单独的结果文件）；那里的普遍偏大来自舍入位置（[案例 01](01-step1-grad-rounding-switches.md)）。
+- 第 1 步 `lm_head.weight` 梯度对 CPU FP64（`t1diag15`）：GPU 3.66e-3、TPU 3.63e-3，R 0.99（[`t1s-step1-grad-vs-fp64.json`](../alignments/01-mini/results/t1s-step1-grad-vs-fp64.json)）。只把输出头设成 HIGHEST 不改变第 1 步逐张量结论（上一条的 `tw-sw-base` / `tw-sw-m13`，[`t1-switch-isolation-tpu.json`](../alignments/01-mini/results/t1-switch-isolation-tpu.json) 的 M13 段）；那里的普遍偏大来自舍入位置（[案例 01](01-step1-grad-rounding-switches.md)）。
 
 ## 结论
 

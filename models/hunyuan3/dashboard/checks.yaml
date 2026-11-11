@@ -49,7 +49,7 @@ how_to_read:
   - "|---|---|---|"
   - "| 逐位 | L0 数据、权重、配置；续训 | 两边逐位相同才过 |"
   - "| R 比 ≤ 1.2 | L1 单算子；L2 逐层前向、反向；L3 logits 与逐 token loss | R = TPU 离 FP64 真值的 rel_L2 ÷ GPU 离 FP64 真值的 rel_L2。TPU 不比 GPU 离精确算术远就过 |"
-  - "| 噪声上限 N | L2、L3 的第 1 步梯度与状态；L4 的逐步曲线 | N 是 GPU（第 1 步再并上 TPU 只改执行参数）自己重跑两两之间的最大差。实测 ≤ N 过，> 2N 不过，之间待定 |"
+  - "| 噪声上限 N | L2、L3 的第 1 步梯度与状态；L4 的逐步曲线 | N 是 GPU 自己重跑两两之间的最大差（第 1 步只用 GPU 第 1 步重跑 3 对；2026-11-08 起，之前并上 TPU 只改执行参数的 21 对，已撤回）。实测 ≤ N 过，> 2N 不过，之间待定 |"
   - ""
   - "定义与依据见 [`docs/reference/judging.md`](../../docs/reference/judging.md)。"
   - ""
@@ -140,7 +140,7 @@ levels:
             objects: 全部 1781 个 HF 张量逐位，加转换前后两份 dtype 清单
             src: {v5p: "phase2-ckpt-convert:L0.ckpt.*", v7x: "phase2-ckpt-convert:L0.ckpt.*"}
           - name: 续训的数据位置
-            what: 从存档恢复后，数据是否从正确的位置接着读
+            what: 从存档恢复后，数据是否从正确的位置接着读。TPU 侧数据是按步号回放 golden 的 batch，这一项只验证回放的步号索引，不覆盖原生加载器（Grain 迭代器）状态的存取
             objects: 恢复后各步、各 rank 的输入指纹
             src: {v5p: "phase2-resume:L0.resume.data", v7x: "phase2-v7x-resume:L0.resume.data"}
           - name: TPU 原生数据加载器
@@ -486,7 +486,7 @@ levels:
             objects: "`buffer_after.*` 3 个张量（每层 192 个专家）"
             src: {v5p: "phase2-st1-on-state-gpuonly:L3.step1.bias_after", v7x: "phase2-v7x-st1-on-state-gpuonly:L3.step1.bias_after"}
             why: >-
-              v7x 第 1 层 65 号专家的偏置更新方向和 GPU 相反（192 个里 1 个，台账 #17）。噪声的 24 对里没有一对翻号，所以 N = 0，任何翻号都判不过。
+              v7x 第 1 层 65 号专家的偏置更新方向和 GPU 相反（192 个里 1 个，台账 #17）。GPU 第 1 步重跑 3 对里没有一对翻号（撤回前的并集 24 对里也没有），所以 N = 0，任何翻号都判不过。
               按 FP64 这个专家选中 2730 个 token，比平均 2730.67 少 0.67，偏置应当加：v7x 和精确算术一致，GPU 三份与 v5p 都减。
           - name: 主权重与动量是真 FP32
             what: FP32 张量的低 16 位是否几乎全 0（是的话说明实际只存了 BF16 精度）
@@ -815,7 +815,7 @@ unlisted_reasons:
   phase2-v7x-l2-replay-bwd-on-xnoise: "v7x 逐层反向按两侧执行噪声并集判的对照，同上，只报"
   phase2-st1-prod-state: "v5p 第 1 步整步更早的判法（GPU 3 对，被测是改配置前的 TPU 运行）；现行判法 `phase2-st1-on-state-gpuonly`"
   phase2-v7x-st1-prod-state: "v7x 第 1 步整步更早的判法，同上；现行判法 `phase2-v7x-st1-on-state-gpuonly`"
-  phase2-st1-on-state-xnoise: "v5p 第 1 步整步按两侧执行噪声并集判的旧结果（2026-11-07 撤回：尺子只来自 GPU）；现行 `phase2-st1-on-state-gpuonly`，留作判法变更记录"
+  phase2-st1-on-state-xnoise: "v5p 第 1 步整步按两侧执行噪声并集判的旧结果（2026-11-08 撤回：尺子只来自 GPU）；现行 `phase2-st1-on-state-gpuonly`，留作判法变更记录"
   phase2-v7x-st1-on-state-xnoise: "v7x 第 1 步整步的并集旧结果，同上；现行 `phase2-v7x-st1-on-state-gpuonly`"
   phase2-st1-gradfp32-xnoise: "三个梯度 FP32 开关全开时的并集旧结果，同上；现行 `phase2-st1-gradfp32-gpuonly`"
   phase2-obs-grad: "v5p 观测构建（每一步都加抓数钩子）第 1 步梯度的标定：没过，所以观测构建的张量不当正式证据（L4「加抓数不改数值」一行）"
