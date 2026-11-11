@@ -157,7 +157,7 @@
     - 输出头 dgrad 第 1 / 100 步沿 ŵ̄（所有 logits 一起升降的方向）偏 −6.51e-4 / −6.10e-4。
   - GPU（cuBLAS FP32 一次累加，即 `dgrad-exact`、`rce` 的写法）：关 TF32 也还偏。
     - 对 FP64 的 rel_L2 是 CPU FP32 的 59 – 129 倍。
-    - 沿 ŵ̄ 第 1 步 −1.8e-6、第 300 步的状态 −2.6e-4。
+    - 沿 ŵ̄ 第 1 步 −1.8e-6、θ₂₉₉（第 300 步开始时的状态）−2.6e-4。
     - 容器里能找到的开关（`fp32_precision=ieee`、去掉 TF32 override、cuBLAS 后端与 emulation 设置）都不改变结果，只有分段能去掉（[`case01-cublas-fp32-longk.json`](alignments/01-v5p-acceptance/results/case01-cublas-fp32-longk.json)）。
   - 消融：`rcc` 去掉偏差靠的是分段，不是 FP32（案例 01「输出头 dgrad 消融：分段还是 FP32」行）。
     - 同一份训练实际张量（第 1 / 100 / 300 步），沿 ŵ̄：FP32 一次乘完 −1.7e-6 / −2.6e-4 / −2.6e-4，不分段就去不掉。
@@ -368,7 +368,7 @@
 | 精度 | `rr_arms.py` 的 `wgrad-bf16`（输出层权重梯度每个 microbatch 先舍 BF16） | FP32 累加进 main_grad | 不用 | 试过，无影响 | GPU 向 TPU | 同上 |
 | 精度 | `rr_arms.py` 的 `attn-scale-bf16` / `attn-qscale-mt`（注意力缩放系数用 BF16 舍过的 0.08837890625） | 1/√128 精确值 | 不用 | 试过，无影响 | GPU 向 TPU | 同上。MaxText 在 BF16 的 query 上乘 Python 标量，JAX 按弱类型把它转成 BF16 常量（`rr_arms.py` 文件头） |
 | 精度 | `rr_arms.py` 的 `resid-fp32`（残差流用 FP32） | BF16 残差 | 不用（`rce` 里由全程 FP32 覆盖） | 试过，无影响（1000 步） | GPU 向 TPU | 单步能去掉一半剩余偏差，1000 步不动（见注 31） |
-| 精度 | `rr_arms.py` 的 `moe-combine-f32`（路由权重在 fc2 之后乘，k 个专家的输出在 FP32 里加权求和） | 先把 act·p 舍成 BF16 再进 fc2 | 不用 | 试过，无影响 | GPU 向 TPU | 300 步同上；单步 `g-s3-mc`（第 300 步状态上单步开这一臂）−0.22%（和只开 `dgrad-exact` 一样）；1000 步 `g-dxrm-1k`（`dgrad-exact` 加残差 FP32 和 MoE 合并 FP32）和只开 `dgrad-exact` 一样 |
+| 精度 | `rr_arms.py` 的 `moe-combine-f32`（路由权重在 fc2 之后乘，k 个专家的输出在 FP32 里加权求和） | 先把 act·p 舍成 BF16 再进 fc2 | 不用 | 试过，无影响 | GPU 向 TPU | 300 步同上；单步 `g-s3-mc`（θ₂₉₉ 上算第 300 步的 batch，单步开这一臂）−0.22%（和只开 `dgrad-exact` 一样）；1000 步 `g-dxrm-1k`（`dgrad-exact` 加残差 FP32 和 MoE 合并 FP32）和只开 `dgrad-exact` 一样 |
 | 精度 | `rr_arms.py` 的 `router-bwd-bf16`（路由 logits 的梯度先舍 BF16 再进路由 GEMM 反向） | TF32 | 不用 | 试过，无影响 | GPU 向 TPU | 第 300 步输出层 −0.08；第 3 层路由偏置标准差 z = +0.5，TPU 是 −11.1（案例 01「反向复现（续）」行） |
 | 精度 | 上面八处一起开，再加 `dgrad-exact`（`g-dxall-1k`） | — | 不用 | 试过，无影响 | GPU 向 TPU | 第 1000 步 param_norm +1.28e-2、输出层平方和 +78，和只开 `dgrad-exact` 一样（案例 01 第 0 节「剩下 1/3」行） |
 | 诊断 | [`frameworks/megatron/router_fp32.py`](frameworks/megatron/router_fp32.py)（`--router-true-fp32`：路由权重留成 FP32 参数，路由 GEMM 前向、反向都是 FP32 × FP32） | TE `general_gemm`，BF16 入、FP32 出 | 不用 | 只作诊断 | GPU 向 TPU | 用来给路由 GEMM 的精度定责（见注 32） |
@@ -426,7 +426,7 @@
   - 规范分量不是根因（案例 01「dh 里的 logit 水平分量」「规范分量（GPU 侧）」行）。
 - 注 34（`dgrad-exact`）：
   - 第 1 步对 FP64 沿 ŵ̄ −1.7e-6，看着精确。
-  - 训练中途 cuBLAS FP32 长累加有偏（θ_299 −2.6e-4）。
+  - 训练中途 cuBLAS FP32 长累加有偏（θ₂₉₉ −2.6e-4）。
   - 第 1000 步 param_norm：[`rcx`](../../docs/glossary.md#rcx) − `rc` +1.24e-2，[`rcc`](../../docs/glossary.md#rcc) − `rc` +2.07e-2（案例 01「GPU 精确的输出头 dgrad」行）。
 
 ### 参考：精确轨迹 `rce` / `rcec` 在 rcc 之外多改的（交叉核对用，不是最终 golden）
@@ -511,7 +511,7 @@
   - **更正（2026-11-06）：`rce` 和 `rcx` 的这一次乘法都还有偏**。
     - 两者都用 cuBLAS 的 FP32 乘法（关 TF32）一次累加整个词表。
     - 在 B200 上它对 FP64 的 rel_L2 是 CPU FP32 的 59 – 129 倍（ALIGNMENT-REPORT 台账「cuBLAS FP32 长累加」行）。
-    - 沿 ŵ̄ 第 1 步 −1.8e-6，到第 300 步的状态长到 −2.6e-4（BF16 的六成）。
+    - 沿 ŵ̄ 第 1 步 −1.8e-6，到 θ₂₉₉（第 300 步开始时的状态）长到 −2.6e-4（BF16 的六成）。
     - 容器里能找到的开关（`fp32_precision=ieee`、去掉 TF32 override、cuBLAS 后端与 emulation 设置）都不改变结果。
     - 只有把词表分段、段间 FP32 累加（`rr_arms.py` 的 `dgrad-chunk` 臂）能去掉。
     - 默认配置下精确轨迹加这个臂（`g-bwc-1k`），1000 步 param_norm 比 `rce-a` 多 +8.55e-3，和 TPU 精确重合（案例 01「GPU 精确的输出头 dgrad」「GPU 精确 + 分段 dgrad」两行）。

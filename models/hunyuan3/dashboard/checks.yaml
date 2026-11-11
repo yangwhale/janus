@@ -421,10 +421,10 @@ levels:
             objects: 第 1–3 层，每层 4096 个 token
             src: {v5p: "phase2-l2-replay-rratio-on:L2.layer*.router", v7x: "phase2-v7x-l2-replay-rratio-on:L2.layer*.router"}
           - name: 各层参数梯度
-            what: 第 1 步每层的参数梯度，对 GPU golden；噪声取两侧执行噪声的并集（GPU 重跑 3 对 ∪ TPU 只改执行参数 21 对）
+            what: 第 1 步每层的参数梯度，对 GPU golden；噪声只用 GPU 第 1 步重跑 3 对（2026-11-08 起；之前并上 TPU 只改执行参数 21 对，结果留作历史）
             objects: 第 0 层 8 个、第 1–3 层各 13 个张量（见上表）
             src: {v5p: "phase2-st1-on-state-gpuonly:L2.layer*.grads", v7x: "phase2-v7x-st1-on-state-gpuonly:L2.layer*.grads"}
-            agg: "逐张量算 rel_L2、cos、范数比（每个张量拉直）；每层各有自己的 N（v5p 第 0–3 层 rel_L2 的 N 依次 1.47e-3、1.84e-2、4.75e-2、7.95e-2），每层按「实测 ÷ 本层 N」取最差，4 层再取最大比值，判法栏的 N 是起决定作用那一层的；这些梯度来自整网第 1 步，按层分组，不是逐层隔离回放"
+            agg: "逐张量算 rel_L2、cos、范数比（每个张量拉直）；每层各有自己的 N（第 0–3 层 rel_L2 的 N 依次 5.34e-4、5.27e-4、1.36e-4、3.85e-6；GPU 重跑后几层几乎逐位相同，N 很小），每层按「实测 ÷ 本层 N」取最差，4 层再取最大比值，判法栏的 N 是起决定作用那一层的；这些梯度来自整网第 1 步，按层分组，不是逐层隔离回放"
             why: >-
               第 1 步每层 0.44% – 0.56% 的路由槽位在近似平局处两边各落一边，分到 token 少的专家梯度相对差到 0.10（台账 #5）；
               第 0 层是稠密层、没有路由，它的超出来自一维 norm 权重的梯度先以 BF16 落地（台账 #20，可选开关能消掉）。
@@ -461,7 +461,7 @@ levels:
             objects: "`logits`，4096 × 120832"
             src: {v5p: "phase2-ff-chain:L3.step1.logits", v7x: "phase2-v7x-ff-chain:L3.step1.logits"}
           - name: 全部参数梯度
-            what: 第 1 步全部参数梯度对 GPU golden；噪声取两侧执行噪声的并集
+            what: 第 1 步全部参数梯度对 GPU golden；噪声只用 GPU 第 1 步重跑 3 对（2026-11-08 起）
             objects: "`grad.*` 50 个张量"
             src: {v5p: "phase2-st1-on-state-gpuonly:L3.step1.grads.all", v7x: "phase2-v7x-st1-on-state-gpuonly:L3.step1.grads.all"}
             agg: "逐张量算 rel_L2、cos、范数比，取 50 个里最差的张量；对齐报告里「整网只差 1.3e-3」是同一批梯度按能量合成的数，只用于定责"
@@ -470,7 +470,7 @@ levels:
             what: 同一批梯度的标准差比、零元素比例差、逐元素相对误差 p99
             objects: "`grad.*` 50 个张量"
             src: {v5p: "phase2-st1-on-state-gpuonly:L3.step1.grads.dist", v7x: "phase2-v7x-st1-on-state-gpuonly:L3.step1.grads.dist"}
-            why: 同「全部参数梯度」：被路由翻转的专家梯度把逐元素 p99 推到噪声上限的 1.05 倍。
+            why: 同「全部参数梯度」：被路由翻转的专家梯度把逐元素相对误差 p99 推到 1.68，GPU 3 对的上限只有 0.043（约 39 倍；当时并集的上限是 1.6，1.05 倍）。
           - name: 优化器状态
             what: 第 1 步更新后的一阶、二阶动量。第 1 步的一阶动量就是 0.1 × 梯度，所以这一格和「全部参数梯度」几乎相同
             objects: "`exp_avg.*`、`exp_avg_sq.*` 100 个张量"
@@ -549,7 +549,7 @@ levels:
             why: "剩下的超线张量是第 2 层 MLP 前 RMSNorm（1.79）与第 2 层 1 号专家的 fc2（1.32），都经过路由，随近似平局翻转变（台账 #5）。"
           - name: 第 1 步整步（开关打开）
             info: true
-            what: 同「对 GPU 比」一表的梯度、状态、更新后权重，噪声同样取两侧并集
+            what: 同「对 GPU 比」一表的梯度、状态、更新后权重，噪声同样只用 GPU 3 对
             objects: 梯度 50、主权重 50、动量 100、路由偏置 3
             src: {v5p: ["phase2-st1-gradfp32-gpuonly:L2.layer*.grads", "phase2-st1-gradfp32-gpuonly:L3.step1.*"]}
             why: "只用 GPU 3 对作尺子（2026-11-08 起）：第 0 层参数梯度 10.6 → 5.41 倍 N（仍不过），更新后主权重 1.63 → 1.30 倍 N（仍待定）；其余格子由路由近似平局主导（台账 #5）。并集尺子下（历史）是 2.12 → 1.34、1.11 → 1.001。"

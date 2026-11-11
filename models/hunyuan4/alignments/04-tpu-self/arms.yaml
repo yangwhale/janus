@@ -39,7 +39,7 @@ arms:
   - {id: B2c, run: ts-f16-dp2, long: ts-f16-dp2-1k, chips: 16, change: v5p 16 设备 数据并行 2 × FSDP 8、累积 1, plain: 16 卡上混合切分, scenario: 扩卡 + 混合切分, expect: 不逐位, fix: —}
   - {id: B2g, run: ts-fx-dp16-embf32, long: ts-fx-dp16-embf32-1ks, chips: 16, change: "B2e + embedding_grad_fp32=true（修复后的 MaxText，累积 1）", plain: 16 卡纯数据并行 + 词嵌入梯度用 FP32 累加, scenario: 扩卡 + DDP 的修法, expect: 在噪声内, fix: 不用管}
   - {id: B2d, run: ts-f16-tp2, chips: 16, change: v5p 16 设备 FSDP 8 × 张量并行 2、累积 1, plain: 16 卡上加张量并行, scenario: 扩卡 + TP, expect: 不逐位, fix: —}
-  - {id: B2e, issue: dp, run: ts-f16-dp16, chips: 16, change: v5p 16 设备 纯数据并行 16、累积 1, plain: 16 卡纯数据并行, scenario: 扩卡 + DDP, expect: 超（词嵌入梯度 16 路 BF16 求和）, fix: 打开词嵌入梯度 FP32 累加}
+  - {id: B2e, issue: dp, run: ts-f16-dp16, chips: 16, change: v5p 16 设备 纯数据并行 16、累积 1, plain: 16 卡纯数据并行, scenario: 扩卡 + DDP, expect: 超（词嵌入梯度在本卡 BF16 scatter 里累加，每卡仍 4096 个下标、不排序；与跨卡几路求和无关）, fix: 打开词嵌入梯度 FP32 累加}
   - {id: B2f, run: ts-f16-scar, chips: 16, vs: ts-f16, change: 在 B2 上 all-reduce 交给 SparseCore, plain: 16 卡上 all-reduce 交给 SparseCore, scenario: 通信卸载, expect: 同 C6, fix: —}
   - {id: B3, run: ts-tp2, long: ts-tp2-1k, change: FSDP 4 × 张量并行 2, plain: 加张量并行, scenario: 加 TP, expect: 不逐位, fix: —}
   - {id: B4, run: ts-mb2, long: ts-mb2-1k, change: 每设备微批 2 × 累积 1（全局批不变）, plain: 微批 1×2 改成 2×1, scenario: 调微批与累积, expect: 不逐位, fix: —}

@@ -266,7 +266,7 @@
     - 301–1000 步 loss 相对差 −1.37e-4（v5p）/ 约 −1.08e-4（v7x）。
     - v7x 那个数是推断：v7x 对 `rcc-a` 的 +6.32e-5 加上 `rcc-a` 对 `rc` 均值的 −1.71e-4；v7x 当前配置的逐步序列没有入库，没有直接算。
   - 为什么分段：关 TF32 的 cuBLAS FP32 一次累加整个词表（`dgrad-exact` 的写法）在 B200 上也有偏。
-    - 沿 ŵ̄ 第 1 步 −1.8e-6、第 300 步的状态 −2.6e-4（[`case01-cublas-fp32-longk.json`](alignments/01-v5p-acceptance/results/case01-cublas-fp32-longk.json)）。
+    - 沿 ŵ̄ 第 1 步 −1.8e-6、θ₂₉₉（第 300 步开始时的状态）−2.6e-4（[`case01-cublas-fp32-longk.json`](alignments/01-v5p-acceptance/results/case01-cublas-fp32-longk.json)）。
     - 分段累加才精确。
   - 历史（已取消，只作排查记录）：
     - 2026-11-05 曾以 `rcx-a..e`（生产 golden，输出头 dgrad 换 FP32 一次累加，即 `dgrad-exact`）为第一层；

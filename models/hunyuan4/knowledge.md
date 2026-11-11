@@ -37,7 +37,7 @@
 | golden | 基准运行：拿来对照的那次运行。GPU ↔ TPU 对齐里是 GPU 上同设置的标准训练（基线是其中事先指定的一份）；TPU 自比里是一次确认过、换机器重跑每一位都相同的 TPU 运行 `ts-g-a` |
 | 被测 | 拿来和 golden 比的那次运行 |
 | 份 / 对 | 一份是一次运行；两份配成一对比较，8 份两两配对得 28 对，16 份得 120 对 |
-| N、噪声上限、尺子 | 同一个东西：GPU 自己同设置重跑能差多少（几份两两比，取最大值）。mini 现行比较用 8 份 28 对；TPU 自比的 1000 步用 16 份 120 对。2026-11-10 前 TPU 自比与 GPU 扩展的文档把它叫「刻度」；现在「刻度」只指 FP32 记录值的分辨率（如混元 3 的 param_norm 在 3042 附近一个刻度是 2.44e-4） |
+| N、噪声上限、尺子 | 同一个东西：GPU 自己同设置重跑能差多少（几份两两比，取最大值）。按窗口取：mini 现行比较与 TPU 自比都是前 300 步 `g2-a … g2-h` 8 份 28 对、1000 步 `g3-a … g3-p` 16 份 120 对（1000 步 2026-11-11 起换 16 份）；真实权重截层、mid 各自 8 份 28 对。2026-11-10 前 TPU 自比与 GPU 扩展的文档把它叫「刻度」；现在「刻度」只指 FP32 记录值的分辨率（如混元 3 的 param_norm 在 3042 附近一个刻度是 2.44e-4） |
 | r | 差是尺子的几倍：TPU 对 GPU（或被测对 golden）的差 ÷ N；≤ 1 算对上，> 2 算不过 |
 | R、R 比 | 谁离精确值远：TPU（或被测）离精确值的距离 ÷ GPU（或参照）离精确值的距离；≤ 1.2 算不比对方差 |
 | 精确值、FP64 | 同一套 GPU 代码在 CPU 上用 64 位浮点重算的结果 |
@@ -143,7 +143,7 @@
 | 要点 | 出处 |
 |---|---|
 | GPU 1000 步重跑从 8 份扩到 16 份（`g3-a` … `g3-p`，同一代码包、同一参数），两两 120 对的上限是 8 份 28 对的 1.0–2.1 倍；放大最多的是带符号均值（梯度范数 1.84 倍（2026-11-10 统一分母前 1.70 倍）、路由偏置均值 2.07 倍）。份数少时上限会低估噪声 | [`g3x16-noise-vs-8.json`](alignments/01-mini/gpu-noise/results/g3x16-noise-vs-8.json) |
-| mini 现行比较 `t1zga-l4` 换用 16 份上限后 9 项全过（8 份时过 7、待定 2）：grad_norm 1.23 → 0.995（MARE，贴线；2026-11-10 统一分母前 1.25 → 0.999）、路由偏置标准差 1.14 → 0.91，其余 7 项也都变小或不变。**只作旁注**：对齐报告与 01-mini 的判档仍按 8 份，等项目负责人定要不要换 | [`t1zga-l4-n16.report.md`](alignments/01-mini/gpu-noise/results/t1zga-l4-n16.report.md)、目录 [`t1zga-l4-n16.yaml`](alignments/01-mini/gpu-noise/catalogs/t1zga-l4-n16.yaml)；8 份版本 [`t1zga-l4.report.md`](alignments/01-mini/results/t1zga-l4.report.md) |
+| 当时的 mini 现行比较 `t1zga-l4` 换用 16 份上限后 9 项全过（8 份时过 7、待定 2）：grad_norm 1.23 → 0.995（MARE，贴线；2026-11-10 统一分母前 1.25 → 0.999）、路由偏置标准差 1.14 → 0.91，其余 7 项也都变小或不变。当时只作旁注；2026-11-11 起 PROTOCOL 定 1000 步一律用 16 份（前 300 步仍是 8 份 28 对），现行比较已换成 `tz-off-rep` | [`t1zga-l4-n16.report.md`](alignments/01-mini/gpu-noise/results/t1zga-l4-n16.report.md)、目录 [`t1zga-l4-n16.yaml`](alignments/01-mini/gpu-noise/catalogs/t1zga-l4-n16.yaml)；8 份版本 [`t1zga-l4.report.md`](alignments/01-mini/results/t1zga-l4.report.md) |
 | TPU 自比的 1000 步臂已全部换成 16 份重判：8 份时 r 2–3 的灰区六臂落到 1.19–1.64，GPU 16 份留一法最大值 1.82，全部与重跑噪声分不开 | [04 实验矩阵「L 长跑」](alignments/04-tpu-self/MATRIX.md#l-长跑300-步在噪声内的改动1000-步会不会显形)、[`gpu-rerun-loo-r-1000.json`](alignments/04-tpu-self/results/gpu-rerun-loo-r-1000.json) |
 | 「留一法最大值」有两种口径，不能互比：TPU 自比的是整次比较（300 步 8 项、1000 步 9 项检查 × 3 个量）最差那一项、golden 也轮换，16 份时 1.82；GPU 一侧的是每条检查各自的最大值、golden 固定 `g3-a`，16 份时 1.0–1.35 | [PROTOCOL](PROTOCOL.md) 变更记录 2026-11-10 |
 

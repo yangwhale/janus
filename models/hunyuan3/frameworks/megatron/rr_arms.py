@@ -39,11 +39,11 @@ train_hy3.py 的 `--rr-arm a,b,...` 选臂；`install_global` 在建模型之前
   dgrad-exact  同上，但乘法时临时关掉 TF32（allow_tf32 = False，FP32 非张量核），第 1 步对 FP64 沿 û 的相对误差 −1.7e-6；
                前 4 次调用打印改前 / 改后 / GPU 上 FP64 精确值沿 û 的总和
   dgrad-chunk  同 dgrad-exact，但收缩维（词表 120832）按 1024 一段分开乘、段间 FP32 累加。B200 上 cuBLAS 的 FP32
-               矩阵乘（关 TF32）一次乘完整个词表时，第 300 步状态下 dh 对 FP64 rel_l2 4.2e-5、沿 û −2.6e-4（第 1 步只有 −1.8e-6）；
+               矩阵乘（关 TF32）一次乘完整个词表时，θ_299（第 300 步开始时的状态）下 dh 对 FP64 rel_l2 4.2e-5、沿 û −2.6e-4（第 1 步只有 −1.8e-6）；
                分段后 5.9e-7、+1e-7（案例 01「GPU 精确的输出头 dgrad」行）
   dgrad-chunk-bf16  同 dgrad-chunk，但不升 FP32：词表按 1024 一段，每段是 BF16 dlogits × BF16 W 的张量核乘法、输出留 FP32
                （torch.mm(..., out_dtype=float32)），段间 FP32 累加，最后舍回 BF16。消融里去掉偏差的是分段而不是 FP32
-               （案例 01「输出头 dgrad 消融：分段还是 FP32」行）：第 300 步状态沿 û +3.1e-7，与 dgrad-chunk 同量级，单次乘法快约 10 倍。
+               （案例 01「输出头 dgrad 消融：分段还是 FP32」行）：θ_299 上沿 û +3.1e-7，与 dgrad-chunk 同量级，单次乘法快约 10 倍。
                与 dgrad-exact / dgrad-chunk 互斥
   dlogits-bf16 流进输出层反向的 dlogits 先按 RNE 舍到 BF16 再进 dgrad 与权重梯度（全程 FP32 程序里模仿生产程序的 BF16 dlogits；
                对应 TPU `train_hy3.py --head-round cotangent`）。要和 dgrad-chunk 一起用时，这个钩子先注册、先执行
