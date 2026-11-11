@@ -1,0 +1,9 @@
+janus — GPU / TPU training numerics alignment toolkit
+Copyright 2026 Chris Yang
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+janus depends on, but does not include, numpy, ml_dtypes, PyYAML and
+(optionally) matplotlib. The training integrations call into Megatron-LM /
+Megatron-Bridge and MaxText, which are not part of this repository and keep
+their own licenses.

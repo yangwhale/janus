@@ -31,13 +31,13 @@ SITE_SPECIFIC = [
     re.compile("共享" + r"(集群|容量| ?v5p| ?v7x)"),
 ]
 # 文档不写个人标识与内部过程用语：谁拍的板写「项目负责人」或直接写规则；不提 AI 助手；不用 issue 的内部简写。
-# AGENTS.md 本来就是写给 AI 助手的，不查。
+# AGENTS.md 本来就是写给 AI 助手的，LICENSE / NOTICE 的版权行写版权人姓名，都不查。
 PROCESS = [
     re.compile(r"\b" + "Chr" + r"is\b"),
     re.compile(r"\b[Aa]" + "gent" + r"s?\b"),
     re.compile(r"\b" + "PM" + r"#\d"),
 ]
-PROCESS_SKIP = {"AGENTS.md"}
+PROCESS_SKIP = {"AGENTS.md", "LICENSE", "NOTICE"}  # 许可证的版权行写版权人姓名
 # 公开版不引用没公开的仓库、它们的 issue / PR 号与评论链接，也不写协作关系（见 docs/public-edition.md）。
 PRIVATE_REFS = [
     re.compile("tomur" + "top", re.I),

@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "GPU（Megatron）与 TPU（MaxText）训练的数值对齐工具：分级检查、噪声参照判定、两侧统一抓数格式"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "See LICENSE." }
+license = { text = "Apache-2.0" }
 authors = [{ name = "the janus contributors" }]
 keywords = ["numerics", "alignment", "tpu", "gpu", "megatron", "maxtext", "jax"]
 classifiers = [

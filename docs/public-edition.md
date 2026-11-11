@@ -21,4 +21,4 @@
 
 ## 许可
 
-见 [`LICENSE`](../LICENSE)。
+Apache License 2.0，见 [`LICENSE`](../LICENSE) 与 [`NOTICE`](../NOTICE)。
