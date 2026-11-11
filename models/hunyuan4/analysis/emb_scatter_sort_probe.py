@@ -5,7 +5,7 @@ sort、标了 indices_are_sorted=true（04-tpu-self/b1-grad-reduction.md 第四�
 子命令：
 
   prep       （CPU）从 golden 运行目录取第 1 步全局批的 token（16 × 4096），存成 npz，给 run 用
-  aot        （CPU，只编不跑）用 libtpu 为 v5p 交叉编译：
+  aot        （CPU，只编不跑）用 libtpu 为 v5p（--gen v7x 换成 v7x）交叉编译：
                ① 插不插 sort 的门槛：表行数 V × 列数 D 的几组，各二分出最小的插 sort 的下标个数 N；
                ② 8 个设备上照 FSDP（表按列切、下标收齐）与 DP（各卡本地 scatter 再跨卡求和；另一份先在 JAX 里排序）各编一份，
                   数每个设备程序里的 sort；
@@ -132,7 +132,8 @@ def cmd_aot(a):
 
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
-    topo1 = topologies.get_topology_desc(platform="tpu", topology_name="v5p:2x2x1")
+    t1, t8 = {"v5p": ("v5p:2x2x1", "v5p:2x2x2"), "v7x": ("tpu7x:2x2x1", "tpu7x:2x2x1")}[a.gen]
+    topo1 = topologies.get_topology_desc(platform="tpu", topology_name=t1)
     sh1 = jax.sharding.SingleDeviceSharding(topo1.devices[0])
 
     def S(s, d, sh=sh1):
@@ -145,7 +146,16 @@ def cmd_aot(a):
         c = jax.jit(f).lower(S((n,), jnp.int32), S((n, d), jnp.bfloat16))
         return c.compile(compiler_options={"xla_allow_excess_precision": excess}).as_text()
 
-    res = {"platform_version": None, "threshold": [], "cells": {}, "sharded": {}}
+    from importlib.metadata import version
+
+    res = {
+        "platform_version": None,
+        "gen": a.gen,
+        "libtpu": version("libtpu"),
+        "threshold": [],
+        "cells": {},
+        "sharded": {},
+    }
     try:
         from jax.extend.backend import get_backend
 
@@ -176,7 +186,7 @@ def cmd_aot(a):
                 (out / f"{name}.hlo.txt").write_text(t)
                 res["cells"][name] = hlo_facts(t)
     # ② 8 个设备：FSDP（表按列切）与 DP（各卡本地 scatter + 跨卡求和）
-    topo8 = topologies.get_topology_desc(platform="tpu", topology_name="v5p:2x2x2")
+    topo8 = topologies.get_topology_desc(platform="tpu", topology_name=t8)
     mesh = Mesh(np.array(topo8.devices).reshape(8), ("x",))
     nl = 4096
 
@@ -435,6 +445,9 @@ def main(argv=None):
     q.add_argument("--out", required=True)
     q = sp.add_parser("aot")
     q.add_argument("--out", required=True)
+    q.add_argument(
+        "--gen", choices=("v5p", "v7x"), default="v5p", help="为哪一代编：v7x 的 8 个设备是 tpu7x:2x2x1（4 片）"
+    )
     q = sp.add_parser("aot-one")
     q.add_argument("--n", type=int, default=4096)
     q.add_argument("--flag", type=int, default=0, help="1 = indices_are_sorted=True")

@@ -9,9 +9,11 @@
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 import yaml
@@ -54,6 +56,21 @@ def reading(c, d, steps=300):
     return "临界：贴着 GPU 重跑的最大值" if r > 0.95 * lm else SAME_AS_RERUN
 
 
+@functools.lru_cache(maxsize=1)
+def screen_results():
+    """跑前离线筛（hlo_screen.py）的结果：{臂编号: 记录}；没有结果文件就空。"""
+    p = HERE / "results" / "hlo-screen.json"
+    return {r["arm"]: r for r in json.loads(p.read_text())["arms"]} if p.exists() else {}
+
+
+SCREEN_SHORT = {"程序相同": "相同", "程序不同": "不同", "无法离线判断": "判不了"}
+
+
+def screen_cell(aid):
+    r = screen_results().get(aid)
+    return "—" if r is None or not r.get("verdict") else SCREEN_SHORT[r["verdict"]]
+
+
 def result(arm):
     run, vs = arm.get("run"), arm.get("vs", GOLDEN)
     if not run:
@@ -86,24 +103,77 @@ def cells(d):
             "pk": e(pk), "hlo": d["hlo"].get("program_equal")}
 
 
+LIBTPU_DEFAULT = "0.0.46"  # golden 镜像自带；arms.yaml 里不写 libtpu 的臂都是它
+
+
+def libtpu_of(a):
+    return a.get("libtpu", LIBTPU_DEFAULT)
+
+
 def matrix_table(cls, arms):
-    rows = ["| 编号 | 运行 | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 出处 |",
-            "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    rows = ["| 编号 | 运行 | libtpu | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 离线筛 | 出处 |",
+            "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for a in arms:
         if a["id"][0] != cls:
             continue
         d = result(a)
         run = f"`{a['run']}`" + (f" 对 `{a['vs']}`" if a.get("vs") else "") if a.get("run") else "—"
         if d is None:
-            rows.append(f"| {a['id']} | {run} | {a['change']} | {a['expect']} | {a.get('note', '待跑')} |  |  |  |  |  |  |  |  |  |")
+            rows.append(f"| {a['id']} | {run} | {libtpu_of(a)} | {a['change']} | {a['expect']} | {a.get('note', '待跑')} |  |  |  |  |  |  |  |  | {screen_cell(a['id'])} |  |")
             continue
         c = cells(d)
         src = f"[结果](results/{Path(a['run']).name}-vs-{'golden' if a.get('vs', GOLDEN) == GOLDEN else a['vs']}.json)"
         hlo = {True: "是", False: "否", None: "—"}[c["hlo"]]
         rd = reading(c, d, 1000 if a["id"].startswith("L") else 300)
-        rows.append(f"| {a['id']} | {run} | {a['change']} | {a['expect']} | {c['band']} | {c['r']} | {c['lead']} | {rd} | {c['d']} | {c['fp']} | "
-                    f"{c['st']} | {c['pk']} | {hlo} | {src} |")
+        rows.append(f"| {a['id']} | {run} | {libtpu_of(a)} | {a['change']} | {a['expect']} | {c['band']} | {c['r']} | {c['lead']} | {rd} | {c['d']} | {c['fp']} | "
+                    f"{c['st']} | {c['pk']} | {hlo} | {screen_cell(a['id'])} | {src} |")
     return rows
+
+
+def screen_table(arms):
+    """跑前离线筛的回测：每个筛过的臂，预判对 TPU 上的实际（程序相同否、档）。
+    预判「程序相同」而实际不逐位，是筛选本身错了，直接报错退出，不出表（不许靠改表掩盖）。"""
+    sr = screen_results()
+    rows = ["| 编号 | 改什么 | 离线筛 | 理由 | CPU 编的与 TPU 存的程序相同 | TPU 上程序相同 | 实际档 | 符不符 |", "|---|---|---|---|---|---|---|---|"]
+    n = Counter()
+    comp = {}   # 编译按规格去重（同一个对照被很多臂共用，只编一次）
+    for a in arms:
+        r = sr.get(a["id"])
+        if r is None or not r.get("verdict"):
+            continue
+        d = result(a)
+        band = cells(d)["band"] if d else "未出结果"
+        # TPU 上两次运行存下的程序是否相同：用 hlo_screen.py 的规范化（含重编号）比的结果；没有再退回结果文件里的程序指纹
+        tpu_same = r.get("tpu_program_equal", None if d is None else d["hlo"].get("program_equal"))
+        v = r["verdict"]
+        if v == "程序相同":
+            ok = ("符" if tpu_same is not False else "符（但 TPU 上存下的两个程序不同，要查）") if band == "逐位相同" else None
+            if d is not None and ok is None:
+                raise SystemExit(f"{a['id']} 离线筛判「程序相同」，TPU 上实际是「{band}」：筛选有误，先查原因")
+            ok = ok or "—（未出结果）"
+        elif v == "程序不同":
+            ok = ("不符（TPU 上是同一个程序）" if tpu_same else "符（程序不同，结果仍逐位：多跑一次，不漏）" if band == "逐位相同" else "符")
+        else:
+            ok = "—（不判）"
+        n[v] += 1
+        n[ok.split("（")[0]] += 1
+        cvt = r.get("cpu_vs_tpu") or {}
+        cv = "—" if not cvt else ("是" if all(cvt.values()) else "否：" + "、".join(k for k, x in cvt.items() if not x))
+        why = r["reason"] if v != "无法离线判断" else r["reason"].split("：")[0]
+        rows.append(f"| {a['id']} | {a['plain']} | {SCREEN_SHORT[v]} | {why} | {cv} | {({True: '是', False: '否', None: '—'})[tpu_same]} | {band} | {ok} |")
+        for c in (r.get("compile") or {}).values():
+            if c.get("seconds"):
+                comp[c["hash"]] = c
+    total = n["程序相同"] + n["程序不同"] + n["无法离线判断"]
+    head = [f"筛了 {total} 个臂：判程序相同 {n['程序相同']} 个、程序不同 {n['程序不同']} 个、无法离线判断 {n['无法离线判断']} 个；"
+            f"对上 TPU 实际的「符」{n['符']} 个、「不符」{n['不符']} 个。"]
+    if comp:
+        secs = sorted(c["seconds"] for c in comp.values())
+        wall = sorted(c["wall_seconds"] for c in comp.values())
+        rss = [c["max_rss_gib"] for c in comp.values()]
+        head.append(f"一共编了 {len(comp)} 份不同的规格，每份一次：XLA 编译 {secs[0]:.0f}–{secs[-1]:.0f} s，连追踪与建抽象状态整次 "
+                    f"{wall[0]:.0f}–{wall[-1]:.0f} s（中位数 {wall[len(wall) // 2]:.0f} s）；单进程峰值内存 {min(rss):.1f}–{max(rss):.1f} GiB。")
+    return head + [""] + rows
 
 
 def temper_table(arms, classes):
@@ -252,13 +322,22 @@ def heaps(arms):
 
 
 def overview_lines(arms, spec):
+    # V 类是同一批改动在 libtpu 0.0.52 上的重测，不算新的改动：主计数不含它，另起一句
+    hv, nv = heaps([a for a in arms if a["id"].startswith("V")])
+    arms = [a for a in arms if not a["id"].startswith("V")]
     h, n = heaps(arms)
     k = len({a["issue"] for a in h["issue"]})
     nl = sum(1 for a in arms if a["id"].startswith("L"))
+    tail = (
+        f"另有 {nv} 次是同一批改动在 libtpu 0.0.52 上的重测（V 类，[`libtpu-052.md`](libtpu-052.md)）：逐位相同 {len(hv['same'])} 次，"
+        f"跟 GPU 重跑一样大 {len(hv['noise'])} 次，真有影响 {len(hv['issue'])} 次；下面各表里标「libtpu 0.0.52」的就是它们。"
+        if nv
+        else ""
+    )
     return [f"一共 **{n} 种改动**（其中 {nl} 种另外跑到 1000 步）：逐位相同 {len(h['same'])} 种；变了、但跟 GPU 重跑一样大 {len(h['noise'])} 种；"
             f"真有影响 {len(h['issue'])} 种，归成 {k} 件；动了精度、但这把尺子量不出来 {len(h['blind'])} 种；"
             f"故意改坏、用来证明工具抓得到的 {len(h['broken'])} 种；登记了、没出结果的 {len(h['missing'])} 种。"
-            f"{len(h['same'])} + {len(h['noise'])} + {len(h['issue'])} + {len(h['blind'])} + {len(h['broken'])} + {len(h['missing'])} = {n}。"]
+            f"{len(h['same'])} + {len(h['noise'])} + {len(h['issue'])} + {len(h['blind'])} + {len(h['broken'])} + {len(h['missing'])} = {n}。" + tail]
 
 
 def same_table(arms):
@@ -362,7 +441,7 @@ def main(argv=None):
     arms, classes = spec["arms"], spec["classes"]
     changed = []
     matrix_parts = [(f"matrix-{k}", matrix_table(k, arms)) for k in classes]
-    matrix_parts += [("temper", temper_table(arms, classes)), ("summary", summary_table(arms, classes))]
+    matrix_parts += [("temper", temper_table(arms, classes)), ("summary", summary_table(arms, classes)), ("screen", screen_table(arms))]
     readme_parts = [("overview", overview_lines(arms, spec)), ("same", same_table(arms)), ("noise", noise_table(arms, classes)),
                     ("issues", issue_table(arms, spec)), ("broken", broken_table(arms)), ("blind", blind_table(arms))]
     for fname, parts in (("MATRIX.md", matrix_parts), ("README.md", readme_parts)):

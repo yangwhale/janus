@@ -138,6 +138,8 @@
 - 代码 `maxtext` 的 `hunyuan` 分支，提交号写进 `meta.json`。
 - 配置逐项对 GPU：`models/hunyuan3/frameworks/maxtext/hy3-4layers.yml`（每行注明 GPU 一侧的值与出处）。
 - 对齐阶段不加性能类 libtpu 参数（`LIBTPU_INIT_ARGS` 默认空）。
+- libtpu 0.0.50 / 0.0.50.1 有已知的 scatter 正确性问题（会丢有效更新），0.0.51 已修；对齐实验不要用这两个版本。
+- 换 libtpu 版本不一定只换求和顺序：新版本可能改默认行为（混元 4 上 0.0.46 → 0.0.52 就改了 scatter 插排序的门槛，并让「RMSNorm 多舍一次」的影响变大）。换版本先重建 golden、把已知敏感的改动重测一遍，结论只对实测过的版本对成立（`models/hunyuan4/alignments/04-tpu-self/libtpu-052.md`）。libtpu 0.0.52 没有配套的官方 jax；在 jax 0.11.1 的镜像里只换 libtpu 能正常训练（v5p、v7x 实测）。
 - 多主机（v5p 2x2x2 两台主机）的 Pod 必须 `hostNetwork: true` + `dnsPolicy: ClusterFirstWithHostNet`，否则 `jax.distributed` 初始化卡住。
 
 下面的原则与待定项仍然有效。已实测的开关和取值写进对齐实践的 `setup.md`，这里只留跨模型通用的。

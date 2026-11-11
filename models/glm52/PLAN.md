@@ -32,7 +32,7 @@
 | G0 | 截层 checkpoint；Bridge 载入再导出 | 截出的张量 sha256 对上原件；往返逐位相同 |
 | G1 | Megatron 对 HF `glm_moe_dsa`，FP32，逐层等价 | 层输出、logits、梯度相对差 ≤ 1e-5；loss 逐位相同；top-k 不同的行都是平局；负对照必须判不一致 |
 | G2 | B200 冒烟：Muon + QK-Clip + 整层重算，10 步 | 能跑；记步时与显存峰值；降低阈值时 QK-Clip 确实触发；每种结构都跑到 |
-| G3 | 确定性：同设置 2 份 | 是否逐位相同，决定协议里噪声怎么取 |
+| G3 | 确定性：默认设置、确定性设置各 2 份 | 默认设置下重跑散开（第 2 步起不逐位），确定性设置下逐位相同；默认设置也逐位相同时先查 GPU 程序，不改噪声规则（[`PROTOCOL.md`](PROTOCOL.md) 第 3 节） |
 | G4 | 正式 golden：8 份 × 300 步 + 第 1 步全量抓数 3 份 | 照 [`PROTOCOL.md`](PROTOCOL.md) |
 
 ## 3. 「生产配置」与必须不同的地方
@@ -58,16 +58,17 @@
 
 ## 4. TPU 一侧（现在只做编译期显存分析）
 
-- MaxText 的 DeepSeek 解码器（MLA + DSA）上写一份 GLM-5.2 的模型配置；v5p 2x2x2（8 个设备）、FSDP 8、整层重算、Muon + QK-Clip。
+- 走上游 MaxText 的 DeepSeek 解码器（MLA + DSA）接入代码，不是 maxtext 的混元 4 集成分支；在上面写一份 GLM-5.2 的模型配置；v5p 2x2x2（8 个设备）、FSDP 8、整层重算、Muon + QK-Clip。
 - 编译三档：阶段 1；阶段 1 + MTP；阶段 1 + 第 7 层。尽量在 CPU 上按拓扑离线编译，不占 TPU。结果写进 `alignments/01-v5p-acceptance/results/`。编译期数字只作初筛，最终以 TPU 上的实测峰值为准。
 - TPU 训练等 GPU 参照跑通（G4 完成）之后再开始。
 
 ## 5. 级别与份数
 
-照混元 3（[`docs/reference/levels.md`](../../docs/reference/levels.md)）：L0 地基逐位 → L1 / L2 单算子与逐层隔离回放对 FP64 的 R 比 → L3 第 1 步整步 → L4 多步。份数与判法见 [`PROTOCOL.md`](PROTOCOL.md)。
+照 janus 现行判法（[`docs/reference/levels.md`](../../docs/reference/levels.md)）：L0 地基逐位 → L1 / L2 单算子与逐层隔离回放对 FP64 的 R 比 → L3 第 1 步整步 → L4 多步。份数与判法见 [`PROTOCOL.md`](PROTOCOL.md)。
 
 ## 6. 变更记录
 
 | 日期 | 改了什么 | 原因 |
 |---|---|---|
 | 2026-11-07 | 初版 | — |
+| 2026-11-11 | G3 判据改成「默认设置散开、确定性设置逐位」；第 4 节写明 TPU 走上游 MaxText 接入代码；第 5 节判法改指 janus 现行判法 | 协议撤回并集（[`PROTOCOL.md`](PROTOCOL.md) 变更记录 2026-11-11） |

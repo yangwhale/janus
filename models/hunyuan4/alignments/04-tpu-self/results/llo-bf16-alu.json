@@ -1,0 +1,242 @@
+[
+ {
+  "platform": "v5p",
+  "libtpu": "0.0.52",
+  "by_tag": {
+   "other": {
+    "kernels": 1537,
+    "kernels_with_bf16_arith": 0,
+    "bf16_arith": {},
+    "f32_arith": 1705324,
+    "top": []
+   },
+   "rmsnorm": {
+    "kernels": 94,
+    "kernels_with_bf16_arith": 0,
+    "bf16_arith": {},
+    "f32_arith": 242527,
+    "top": []
+   },
+   "ihc": {
+    "kernels": 119,
+    "kernels_with_bf16_arith": 0,
+    "bf16_arith": {},
+    "f32_arith": 209014,
+    "top": []
+   }
+  }
+ },
+ {
+  "platform": "v7x",
+  "libtpu": "0.0.46 cl/963683785",
+  "by_tag": {
+   "other": {
+    "kernels": 1432,
+    "kernels_with_bf16_arith": 40,
+    "bf16_arith": {
+     "vmul.bf16": 1680,
+     "vmac.bf16": 240,
+     "vmax.bf16": 2408,
+     "vadd.bf16": 5292
+    },
+    "f32_arith": 1276942,
+    "top": [
+     [
+      "bitcast_add_fusion.391",
+      {
+       "vadd.bf16": 1536
+      }
+     ],
+     [
+      "pad_add_fusion.330",
+      {
+       "vadd.bf16": 1154
+      }
+     ],
+     [
+      "pad_add_fusion.338",
+      {
+       "vadd.bf16": 1154
+      }
+     ],
+     [
+      "multiply_bitcast_fusion.112",
+      {
+       "vmul.bf16": 512
+      }
+     ],
+     [
+      "fusion.18520",
+      {
+       "vmul.bf16": 512
+      }
+     ],
+     [
+      "bitcast_add_fusion.368",
+      {
+       "vmax.bf16": 384
+      }
+     ],
+     [
+      "fusion.19376",
+      {
+       "vmax.bf16": 16,
+       "vadd.bf16": 256
+      }
+     ],
+     [
+      "fusion.19375",
+      {
+       "vmax.bf16": 16,
+       "vadd.bf16": 256
+      }
+     ],
+     [
+      "fusion.19067",
+      {
+       "vmax.bf16": 16,
+       "vadd.bf16": 256
+      }
+     ],
+     [
+      "convert_reduce_fusion.27",
+      {
+       "vmul.bf16": 16,
+       "vmac.bf16": 240
+      }
+     ]
+    ]
+   },
+   "rmsnorm": {
+    "kernels": 104,
+    "kernels_with_bf16_arith": 1,
+    "bf16_arith": {
+     "vmul.bf16": 16,
+     "vmac.bf16": 1008
+    },
+    "f32_arith": 382470,
+    "top": [
+     [
+      "fusion.18017",
+      {
+       "vmul.bf16": 16,
+       "vmac.bf16": 1008
+      }
+     ]
+    ]
+   },
+   "ihc": {
+    "kernels": 121,
+    "kernels_with_bf16_arith": 0,
+    "bf16_arith": {},
+    "f32_arith": 302203,
+    "top": []
+   }
+  }
+ },
+ {
+  "platform": "v7x",
+  "libtpu": "0.0.52",
+  "by_tag": {
+   "other": {
+    "kernels": 1520,
+    "kernels_with_bf16_arith": 42,
+    "bf16_arith": {
+     "vmax.bf16": 2064,
+     "vadd.bf16": 7102,
+     "vmul.bf16": 2048
+    },
+    "f32_arith": 1730231,
+    "top": [
+     [
+      "bitcast_add_fusion.932",
+      {
+       "vadd.bf16": 1936
+      }
+     ],
+     [
+      "pad_add_fusion.323",
+      {
+       "vadd.bf16": 1154
+      }
+     ],
+     [
+      "pad_add_fusion.329",
+      {
+       "vadd.bf16": 1154
+      }
+     ],
+     [
+      "pad_add_fusion.385",
+      {
+       "vadd.bf16": 1154
+      }
+     ],
+     [
+      "multiply_bitcast_fusion.112",
+      {
+       "vmul.bf16": 512
+      }
+     ],
+     [
+      "fusion.18170",
+      {
+       "vmul.bf16": 512
+      }
+     ],
+     [
+      "fusion.18505",
+      {
+       "vmul.bf16": 512
+      }
+     ],
+     [
+      "bitcast_add_fusion.931",
+      {
+       "vmax.bf16": 384
+      }
+     ],
+     [
+      "fusion.18969",
+      {
+       "vmax.bf16": 16,
+       "vadd.bf16": 256
+      }
+     ],
+     [
+      "fusion.18929",
+      {
+       "vmax.bf16": 16,
+       "vadd.bf16": 256
+      }
+     ]
+    ]
+   },
+   "rmsnorm": {
+    "kernels": 112,
+    "kernels_with_bf16_arith": 1,
+    "bf16_arith": {
+     "vmul.bf16": 4,
+     "vmac.bf16": 28
+    },
+    "f32_arith": 386729,
+    "top": [
+     [
+      "fusion.18034",
+      {
+       "vmul.bf16": 4,
+       "vmac.bf16": 28
+      }
+     ]
+    ]
+   },
+   "ihc": {
+    "kernels": 110,
+    "kernels_with_bf16_arith": 0,
+    "bf16_arith": {},
+    "f32_arith": 251874,
+    "top": []
+   }
+  }
+ }
+]

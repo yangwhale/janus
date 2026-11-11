@@ -69,8 +69,8 @@
    "compiled_modules": 1
   },
   "program_fingerprint": {
-   "test": "c365423450494ef7c967f265e18258f4d0e28e69da4d82058527a58e359de398",
-   "golden": "eb02a8756934d7a1ad552ff3ece67f527f067d5295d83e6e245f4172d7e73cd0"
+   "test": "cdd07d5a9b9f3fca53b8759e66cd1af7fbca12310812b6d611f55107b545ac00",
+   "golden": "70bd4939bd437d1e53324dd83d1eeb016b76a1d2a65b58c14eaa856b86fce4a6"
   },
   "program_equal": false,
   "op_counts_diff": {

@@ -24,7 +24,9 @@ FMT_PATHS ?= janus/__init__.py janus/__main__.py janus/cli.py janus/demo.py janu
              models/hunyuan4/analysis/step1_base2_emulation.py models/hunyuan4/frameworks/maxtext/splash_base2_probe.py \
              models/hunyuan4/analysis/emb_scatter_sort_probe.py models/hunyuan4/analysis/step1_base2_ab_vs_fp64.py models/hunyuan4/analysis/rw3_base2_replay.py models/hunyuan4/analysis/mini_base2_loo.py models/hunyuan4/analysis/export_train_grads.py models/hunyuan4/analysis/derive_max_logit.py \
              models/hunyuan4/analysis/kd_input_rounding.py models/hunyuan4/analysis/kd_bf16_vs_fp64.py models/hunyuan4/analysis/kd_gpu_dump_vs_fp64.py models/hunyuan4/analysis/kd_cpu16_vs_gpu_dump.py models/hunyuan4/analysis/kd_noise_scaling.py models/hunyuan4/analysis/kpe_round_emul.py models/hunyuan4/analysis/kd_gpu_bias_summary.py \
-             models/hunyuan4/analysis/mla_rope16_emul.py models/hunyuan4/analysis/round_sites_emul.py models/hunyuan4/analysis/main_loss_sites_summary.py models/hunyuan4/analysis/same_state_grads.py models/hunyuan4/analysis/emb_grad_row_groups.py
+             models/hunyuan4/analysis/mla_rope16_emul.py models/hunyuan4/analysis/round_sites_emul.py models/hunyuan4/analysis/main_loss_sites_summary.py models/hunyuan4/analysis/same_state_grads.py models/hunyuan4/analysis/emb_grad_row_groups.py \
+             models/hunyuan4/alignments/04-tpu-self/hlo_screen.py models/hunyuan4/frameworks/maxtext/aot_hlo.py tests/models/hunyuan4/test_hlo_screen.py models/hunyuan4/analysis/refresh_program_fingerprint.py \
+             models/hunyuan4/alignments/04-tpu-self/hlo_screen_libtpu.py models/hunyuan4/analysis/llo_bf16_alu.py
 
 .PHONY: help install dev test test-fast lint fmt docs-check check dist dashboard dashboard-check clean
 

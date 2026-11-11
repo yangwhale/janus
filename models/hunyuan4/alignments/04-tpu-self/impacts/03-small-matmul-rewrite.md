@@ -8,7 +8,7 @@
 
 ## 影响多大
 
-曲线最差 r 0.94（梯度范数的 MARE），曲线在噪声内。
+libtpu 0.0.46 上，曲线最差 r 0.94（梯度范数的 MARE），曲线在噪声内。
 
 ## 问题出在哪
 
@@ -31,6 +31,10 @@ RMSNorm 乘 scale 的那一步，MaxText 写成 `einsum("...k,k->...k", normed, 
 于是归一化后的值在乘 scale 之前、在算 scale 梯度之前都多舍了一次 BF16。`enorm` 与 `hc_head` 的梯度是大量项的相互抵消，多一次舍入就显出来（`hc_head` 经过最后那层 RMSNorm 的反向）。
 
 验证：关掉改写，同时把这 4 处 einsum 的精度改成 HIGHEST（测试分支 `test/68-n2-norm-highest`，MaxText `880e3cd5`，只作消融），第 1 步 `enorm` 回到 1.85e-3、`hc_head_base` 回到 [6.1, 7.8, 9.6, 11.2]e-6，与 golden 相同（`ts-n2-nosrb-hi`）。
+
+## 换 libtpu 版本
+
+在 libtpu 0.0.52 上重测（V6，v5p，对 `ts-g52-a` 比；[`libtpu-052.md`](../libtpu-052.md)）：曲线最差 r 1.00（0.0.46 是 0.94）；第 1 步变远的仍是 MTP `enorm`，R 1.35（0.0.46 是 1.40）。这两个版本、这个配置下结论相同。
 
 ## 能不能忍
 

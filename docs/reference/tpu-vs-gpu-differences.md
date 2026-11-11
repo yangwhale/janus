@@ -125,7 +125,7 @@
 
 ### A6 编译器省掉了 GPU 一定会做的 BF16 往返（后端省；长跑归因见 U12）
 
-- **原理**：GPU（eager）每次把 iHC 分支输入与更新后的流存成 BF16；TPU 写了 astype，excess precision 下这次往返在后端被省掉一部分。训练步优化后 HLO 里 convert(bf16)→convert(f32) 都在（14 个前向融合逐一核过），所以 HLO 看不出；v5p 最小复现的 LLO 里，RMSNorm 均方那颗 kernel 用的是没舍的 FP32（`vpack.i.bf16` 0 条），归一化那颗读的是舍过的 BF16，同一个值两处不一致；加 `reduce_precision` 后两处都真舍（[TPU 自比影响逐件「iHC 不强制舍成 BF16」](../../models/hunyuan4/alignments/04-tpu-self/impacts/05-ihc-bf16-rounding.md)）。
+- **原理**：GPU（eager）每次把 iHC 分支输入与更新后的流存成 BF16；TPU 写了 astype，excess precision 下这次往返在后端被省掉一部分：融合内部的来回 convert 不产生舍入指令，跨融合边界的值按声明的 BF16 写回内存（实验确认）。训练步优化后 HLO 里 convert(bf16)→convert(f32) 都在（14 个前向融合逐一核过），所以 HLO 看不出；v5p 最小复现的 LLO 里，RMSNorm 均方那颗 kernel 用的是没舍的 FP32（`vpack.i.bf16` 0 条），归一化那颗读的是舍过的 BF16，同一个值两处不一致；加 `reduce_precision` 后两处都真舍（[TPU 自比影响逐件「iHC 不强制舍成 BF16」](../../models/hunyuan4/alignments/04-tpu-self/impacts/05-ihc-bf16-rounding.md)）。
 - **量到**：1000 步主 loss 带符号均值：N 3.78e-6，TPU 7.99e-6 → 2.87e-6，r 2.12 → 0.76。
 - **开关与生产**：`ihc_force_bf16_rounding: true`（M36）。不开（只为照 GPU），+0.1%。**规则：要和 GPU 的舍入点一致，用 `reduce_precision`，不用 astype**（F5）。（详见 [r16]）
 

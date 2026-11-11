@@ -59,16 +59,17 @@
 <!-- BEGIN:summary -->
 | 类 | 实验数 | 逐位相同 | 和 GPU 重跑分不开 | 分得开 | 未出结果 | 分得开的是哪几个 |
 |---|---|---|---|---|---|---|
-| 校准（按理不该变的） | 6 | 6 | 0 | 0 | 0 | — |
+| 校准（按理不该变的） | 8 | 8 | 0 | 0 | 0 | — |
 | 并行与切分 | 30 | 4 | 20 | 4 | 2 | FSDP 改成纯数据并行（r 2.62）；纯数据并行 + 词嵌入梯度用 FP32 累加（修复前，有 bug）（r 611.29）；纯数据并行、不做梯度累积（r 3.69）；16 卡纯数据并行（r 2.65） |
 | 编译开关 | 20 | 9 | 9 | 2 | 0 | 关掉编译器的省舍入（r 13.28）；关小矩阵乘改写（第 1 步有梯度离精确值更远） |
 | 数学上等价的代码改写 | 12 | 7 | 5 | 0 | 0 | — |
 | 会影响精度的真实改动 | 13 | 1 | 6 | 6 | 0 | 输出头矩阵乘降回默认精度（r 5.94）；路由偏置改零均值更新（r 2.97）；RMSNorm 的 ε 改小（r 342.70）；RMSNorm 多舍一次（第 1 步有梯度离精确值更远）；Adam 的 ε 改大（r 412.01）；iHC 不强制舍成 BF16（第 1 步有梯度离精确值更远） |
-| 软件版本 | 7 | 1 | 4 | 0 | 2 | — |
+| 软件版本 | 8 | 1 | 5 | 0 | 2 | — |
 | 上下文并行 | 8 | 2 | 3 | 2 | 1 | 加上下文并行（写了 float32_logits，旧代码不生效）（第 1 步有梯度离精确值更远）；加上下文并行（不做负载均衡）（第 1 步有梯度离精确值更远） |
-| 硬件（v5p ↔ v7x） | 8 | 2 | 3 | 2 | 1 | v7x 上关掉编译器的省舍入（r 3.43）；v7x 上 FSDP 改纯数据并行（第 1 步有梯度离精确值更远） |
+| 硬件（v5p ↔ v7x） | 9 | 2 | 3 | 3 | 1 | v7x 上关掉编译器的省舍入（r 3.43）；v7x 上 FSDP 改纯数据并行（第 1 步有梯度离精确值更远）；v7x 上纯数据并行、不做梯度累积（r 4.06） |
 | 灵敏度（故意埋的 bug 扫大小） | 11 | 0 | 2 | 9 | 0 | 学习率偏大 1e-4（r 4.11）；学习率偏大 1e-3（r 46.25）；学习率偏大 1e-2（r 461.42）；学习率偏大 1e-1（r 4505.22）；一部分梯度偏大 1e-3（r 50.12）；一部分梯度偏大 1e-2（r 501.85）；一部分梯度偏大 1e-1（r 5010.57）；loss 多乘 1.01（r 94.50）；loss 多乘 2（r 9676.75） |
 | 长跑（1000 步） | 33 | 0 | 32 | 1 | 0 | iHC 不强制舍成 BF16、跑 1000 步（第 1 步有梯度离精确值更远） |
+| libtpu 0.0.52 上重测（只换 libtpu，对 0.0.52 的 golden ts-g52-a 或同版本的底比） | 18 | 4 | 9 | 5 | 0 | libtpu 0.0.52：FSDP 改成纯数据并行（r 2.82）；libtpu 0.0.52：关掉编译器的省舍入（r 12.56）；libtpu 0.0.52：关小矩阵乘改写（第 1 步有梯度离精确值更远）；libtpu 0.0.52：RMSNorm 多舍一次（r 5.50）；libtpu 0.0.52：iHC 不强制舍成 BF16（第 1 步有梯度离精确值更远） |
 <!-- END:summary -->
 
 <details>
@@ -83,6 +84,8 @@
 | 校准（按理不该变的） | 再换一批机器重跑 | 换节点池 | 逐位相同 | 0.00 | — | — | — | +0.6% | 不用管 |
 | 校准（按理不该变的） | 换一个集群重跑 | 换集群 / 换区域 | 逐位相同 | 0.00 | — | — | — | +0.5% | 不用管 |
 | 校准（按理不该变的） | 升级到只加了默认关功能的版本 | 升级代码 | 逐位相同 | 0.00 | — | — | — | +0.1% | 不用管 |
+| 校准（按理不该变的） | libtpu 0.0.52 的基准运行换一组机器重跑 | 重跑 / 换机器 | 逐位相同 | 0.00 | — | — | — | -0.1% | 不用管 |
+| 校准（按理不该变的） | libtpu 0.0.52 的基准运行重跑 1000 步 | 重跑 / 换机器 | 逐位相同 | 0.00 | — | — | — | +0.1% | 不用管 |
 | 并行与切分 | FSDP 改成纯数据并行 | DDP ↔ FSDP | 超 | 2.62 | — | 梯度范数·带符号均值 | 分得开 | -3.4% | 打开词嵌入梯度 FP32 累加（MaxText d5c9b113 起梯度累积下也可用），或只在本地 FP32 累加、跨卡仍 BF16（f70d74cb 起），或只把词嵌入表沿数据并行轴切开（9099c8ce 起） |
 | 并行与切分 | 纯数据并行 + 词嵌入梯度用 FP32 累加（修复前，有 bug） | DDP 的修法 | 超 | 611.29 | — | 主 loss·带符号均值 | 分得开 | -4.3% | 已修（MaxText d5c9b113），见下一行 |
 | 并行与切分 | 纯数据并行 + 词嵌入梯度用 FP32 累加（修复后） | DDP 的修法 | 在噪声内 | 0.98 | 略超 1.09（和 GPU 重跑分不开） | 梯度范数·MARE | — | -2.8% | 不用管 |
@@ -161,6 +164,7 @@
 | 软件版本 | libtpu 0.0.46 → 0.0.47 | 升版本 | 在噪声内 | 0.97 | 在噪声内 0.92 | 梯度范数·MARE | — | -0.2% | 不用管 |
 | 软件版本 | libtpu 0.0.47 → 0.0.48 | 升版本 | 逐位相同 | 0.00 | — | — | — | -1.0% | 不用管 |
 | 软件版本 | all-reduce 走 SparseCore 时 libtpu 0.0.46 → 0.0.45 | 实际排查中遇到的路径 | 在噪声内 | 0.99 | 在噪声内 0.93 | 梯度范数·最大单步 | — | -0.3% | 不用管 |
+| 软件版本 | libtpu 0.0.46 → 0.0.52 | 升版本 | 在噪声内 | 0.99 | 在噪声内 0.96 | 路由偏置标准差·带符号均值 | — | -5.5% | 不用管 |
 | 上下文并行 | 上下文并行重跑 | 重跑 | 逐位相同 | 0.00 | — | — | — | -0.2% | 不用管 |
 | 上下文并行 | 注意力换普通实现、写了 float32_logits（旧代码不生效） | 上下文并行修法的对照 | 略超 | 1.41 | — | 参数范数·最大单步 | 和 GPU 重跑分不开 | -3.2% | — |
 | 上下文并行 | softmax 走 FP32 这个开关本身 | 核开关有没有生效 | 逐位相同 | 0.00 | — | — | — | -0.0% | 不用管 |
@@ -175,6 +179,7 @@
 | 硬件（v5p ↔ v7x） | v7x 上 all-reduce 交给 SparseCore | 换硬件后重测开关 | 逐位相同 | 0.00 | — | — | — | +0.0% | 不用管 |
 | 硬件（v5p ↔ v7x） | v7x 上关掉编译器的省舍入 | 换硬件后重测开关 | 超 | 3.43 | — | 梯度范数·带符号均值 | 分得开 | -0.3% | — |
 | 硬件（v5p ↔ v7x） | v7x 上 FSDP 改纯数据并行 | 换硬件后重测 | 超 | 2.21 | — | 梯度范数·带符号均值 | 分得开 | -11.1% | — |
+| 硬件（v5p ↔ v7x） | v7x 上纯数据并行、不做梯度累积 | 换硬件后重测 | 超 | 4.06 | — | 主 loss·带符号均值 | 分得开 | -6.9% | 打开词嵌入梯度 FP32 累加，或升 libtpu 0.0.52（这种跑法在 0.0.52 上排序，见 V17） |
 | 灵敏度（故意埋的 bug 扫大小） | 学习率偏大 1e-5 | 故意埋 bug，逐档加大 | 略超 | 1.21 | — | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | +0.1% | — |
 | 灵敏度（故意埋的 bug 扫大小） | 学习率偏大 3e-5 | 故意埋 bug，逐档加大 | 略超 | 1.06 | — | 主 loss·带符号均值 | 和 GPU 重跑分不开 | +0.5% | — |
 | 灵敏度（故意埋的 bug 扫大小） | 学习率偏大 1e-4 | 故意埋 bug，逐档加大 | 超 | 4.11 | — | 主 loss·带符号均值 | 分得开 | +0.6% | — |
@@ -186,6 +191,24 @@
 | 灵敏度（故意埋的 bug 扫大小） | 一部分梯度偏大 1e-1 | 故意埋 bug，逐档加大 | 超 | 5010.57 | — | MTP loss·带符号均值 | 分得开 | +0.6% | — |
 | 灵敏度（故意埋的 bug 扫大小） | loss 多乘 1.01 | 故意埋 bug（漏除常数） | 超 | 94.50 | — | 梯度范数·带符号均值 | 分得开 | +0.2% | — |
 | 灵敏度（故意埋的 bug 扫大小） | loss 多乘 2 | 故意埋 bug（漏除常数） | 超 | 9676.75 | — | 梯度范数·带符号均值 | 分得开 | +0.6% | — |
+| libtpu 0.0.52 上重测（只换 libtpu，对 0.0.52 的 golden ts-g52-a 或同版本的底比） | libtpu 0.0.52：FSDP 改成纯数据并行 | DDP ↔ FSDP | 超 | 2.82 | — | 主 loss（第 101 步起）·带符号均值 | 分得开 | -0.1% | 同 B1 |
+| libtpu 0.0.52 上重测（只换 libtpu，对 0.0.52 的 golden ts-g52-a 或同版本的底比） | libtpu 0.0.52：纯数据并行 + 词嵌入梯度用 FP32 累加 | DDP 的修法 | 略超 | 1.55 | 在噪声内 0.92 | 主 loss·带符号均值 | 和 GPU 重跑分不开 | +0.2% | 不用管 |
+| libtpu 0.0.52 上重测（只换 libtpu，对 0.0.52 的 golden ts-g52-a 或同版本的底比） | libtpu 0.0.52：纯数据并行 + 词嵌入梯度本地 FP32 累加、BF16 跨卡求和 | DDP 的修法（跨卡仍传 BF16） | 略超 | 1.20 | 略超 1.28（和 GPU 重跑分不开） | 主 loss·带符号均值 | 和 GPU 重跑分不开 | +1.4% | 不用管 |
+| libtpu 0.0.52 上重测（只换 libtpu，对 0.0.52 的 golden ts-g52-a 或同版本的底比） | libtpu 0.0.52：纯数据并行 + 只把词嵌入表按 FSDP 的方式切开 | DDP 的修法（词嵌入不再整表跨卡求和） | 略超 | 1.23 | 在噪声内 0.97 | 主 loss（第 101 步起）·带符号均值 | 和 GPU 重跑分不开 | -2.6% | 不用管 |
+| libtpu 0.0.52 上重测（只换 libtpu，对 0.0.52 的 golden ts-g52-a 或同版本的底比） | libtpu 0.0.52：关掉编译器的省舍入 | 编译开关 | 超 | 12.56 | — | 梯度范数·带符号均值 | 分得开 | +0.8% | 别关 |
+| libtpu 0.0.52 上重测（只换 libtpu，对 0.0.52 的 golden ts-g52-a 或同版本的底比） | libtpu 0.0.52：关小矩阵乘改写 | 调性能 | 超 | 1.00 | — | 梯度范数·带符号均值 | 分得开 | +11.2% | 别关 |
+| libtpu 0.0.52 上重测（只换 libtpu，对 0.0.52 的 golden ts-g52-a 或同版本的底比） | libtpu 0.0.52：RMSNorm 多舍一次 | 少开一个对齐开关 | 超 | 5.50 | 超 3.68（分得开） | 主 loss·带符号均值 | 分得开 | +0.4% | 开着 rmsnorm_single_rounding |
+| libtpu 0.0.52 上重测（只换 libtpu，对 0.0.52 的 golden ts-g52-a 或同版本的底比） | libtpu 0.0.52 上 RMSNorm 多舍一次重跑 | 重跑 | 逐位相同 | 0.00 | — | — | — | +0.1% | 不用管 |
+| libtpu 0.0.52 上重测（只换 libtpu，对 0.0.52 的 golden ts-g52-a 或同版本的底比） | libtpu 0.0.52：iHC 不强制舍成 BF16 | 少开一个对齐开关 | 超 | 1.18 | 超 1.02（分得开） | 索引器 loss·MARE | 分得开 | -0.2% | 对齐时开着 ihc_force_bf16_rounding |
+| libtpu 0.0.52 上重测（只换 libtpu，对 0.0.52 的 golden ts-g52-a 或同版本的底比） | libtpu 0.0.52：注意力换成普通实现 | 上下文并行的底 | 略超 | 1.42 | — | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | -3.9% | — |
+| libtpu 0.0.52 上重测（只换 libtpu，对 0.0.52 的 golden ts-g52-a 或同版本的底比） | libtpu 0.0.52：加上下文并行（不做负载均衡） | 长序列 | 在噪声内 | 0.95 | — | 路由偏置标准差·带符号均值 | — | +35.2% | 不用管 |
+| libtpu 0.0.52 上重测（只换 libtpu，对 0.0.52 的 golden ts-g52-a 或同版本的底比） | libtpu 0.0.52：注意力换普通实现且 softmax 真走 FP32 | 上下文并行修法的底 | 在噪声内 | 0.96 | — | MTP loss·最大单步 | — | +1.2% | 不用管 |
+| libtpu 0.0.52 上重测（只换 libtpu，对 0.0.52 的 golden ts-g52-a 或同版本的底比） | libtpu 0.0.52：加上下文并行（softmax 真走 FP32） | #10 sink 线索的修法 | 在噪声内 | 0.84 | — | 路由偏置标准差·最大单步 | — | +45.7% | 不用管 |
+| libtpu 0.0.52 上重测（只换 libtpu，对 0.0.52 的 golden ts-g52-a 或同版本的底比） | libtpu 0.0.52：基准运行用加开关后的代码重跑 | 抽查「程序相同就不用上卡」 | 逐位相同 | 0.00 | — | — | — | +0.1% | 不用管 |
+| libtpu 0.0.52 上重测（只换 libtpu，对 0.0.52 的 golden ts-g52-a 或同版本的底比） | libtpu 0.0.52：关异步集合通信融合 | 抽查「程序相同就不用上卡」 | 逐位相同 | 0.00 | — | — | — | +0.1% | 不用管 |
+| libtpu 0.0.52 上重测（只换 libtpu，对 0.0.52 的 golden ts-g52-a 或同版本的底比） | libtpu 0.0.52：跨副本求和用 BF16 | 抽查「程序相同就不用上卡」 | 逐位相同 | 0.00 | — | — | — | -0.1% | 不用管 |
+| libtpu 0.0.52 上重测（只换 libtpu，对 0.0.52 的 golden ts-g52-a 或同版本的底比） | v7x 上 libtpu 0.0.46 → 0.0.52 | 升版本 | 在噪声内 | 0.92 | — | 梯度范数·MARE | — | -0.8% | 不用管 |
+| libtpu 0.0.52 上重测（只换 libtpu，对 0.0.52 的 golden ts-g52-a 或同版本的底比） | v7x 上 libtpu 0.0.52：纯数据并行、不做梯度累积 | 换版本后排序门槛变了 | 在噪声内 | 0.89 | — | 索引器 loss·MARE | — | -0.8% | 不用管 |
 <!-- END:temper -->
 
 </details>
@@ -206,14 +229,16 @@
 ## A · 校准
 
 <!-- BEGIN:matrix-A -->
-| 编号 | 运行 | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 出处 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| A1 | `ts-g-b` | 不改，换切片重跑 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 是 | [结果](results/ts-g-b-vs-golden.json) |
-| A2 | `ts-c300` | 同一命令跑 300 步（golden 1000 步，学习率恒定） | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.494 | 1.82e+09 | 是 | [结果](results/ts-c300-vs-golden.json) |
-| A3 | `ts-a-8c` | 换到另一个节点池重跑 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 是 | [结果](results/ts-a-8c-vs-golden.json) |
-| A4 | `ts-a-8f` | 再换一个节点池重跑 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 是 | [结果](results/ts-a-8f-vs-golden.json) |
-| A6 | `ts-a-shared` | golden 的命令在另一个 v5p 集群（另一个区域）上跑 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 是 | [结果](results/ts-a-shared-vs-golden.json) |
-| A5 | `t1zg-b` | 上一个 MaxText 提交（只少一个默认关的开关） | 逐位相同 | 逐位相同 | 0.00 | — | — | — | — | 0.494 | 1.82e+09 | — | [结果](results/t1zg-b-vs-golden.json) |
+| 编号 | 运行 | libtpu | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 离线筛 | 出处 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| A1 | `ts-g-b` | 0.0.46 | 不改，换切片重跑 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 是 | 相同 | [结果](results/ts-g-b-vs-golden.json) |
+| A2 | `ts-c300` | 0.0.46 | 同一命令跑 300 步（golden 1000 步，学习率恒定） | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.494 | 1.82e+09 | 是 | 相同 | [结果](results/ts-c300-vs-golden.json) |
+| A3 | `ts-a-8c` | 0.0.46 | 换到另一个节点池重跑 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 是 | 相同 | [结果](results/ts-a-8c-vs-golden.json) |
+| A4 | `ts-a-8f` | 0.0.46 | 再换一个节点池重跑 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 是 | 相同 | [结果](results/ts-a-8f-vs-golden.json) |
+| A6 | `ts-a-shared` | 0.0.46 | golden 的命令在另一个 v5p 集群（另一个区域）上跑 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 是 | 相同 | [结果](results/ts-a-shared-vs-golden.json) |
+| A5 | `t1zg-b` | 0.0.46 | 上一个 MaxText 提交（只少一个默认关的开关） | 逐位相同 | 逐位相同 | 0.00 | — | — | — | — | 0.494 | 1.82e+09 | — | 相同 | [结果](results/t1zg-b-vs-golden.json) |
+| A7 | `ts-g52-b` 对 `ts-g52-a` | 0.0.52 | F5（libtpu 0.0.52 的 golden）换一组机器重跑 300 步，对 F5 的前 300 步比 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.466 | 1.79e+09 | 是 | — | [结果](results/ts-g52-b-vs-ts-g52-a.json) |
+| A8 | `ts-g52-c` 对 `ts-g52-a-1000` | 0.0.52 | F5（libtpu 0.0.52 的 golden）换一组机器重跑 1000 步，对 F5 的 1000 步比 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.467 | 1.79e+09 | 是 | — | [结果](results/ts-g52-c-vs-ts-g52-a-1000.json) |
 <!-- END:matrix-A -->
 
 ## B · 并行与切分
@@ -222,38 +247,38 @@
 - 张量并行时 batch 只切在 FSDP 轴上（4 份各 4 行），回放的行序不变。
 
 <!-- BEGIN:matrix-B -->
-| 编号 | 运行 | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 出处 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| B1 | `ts-dp8` | 纯数据并行 8（ici_data_parallelism=8、ici_fsdp_parallelism=1） | 不逐位 | 超 | 2.62 | 梯度范数·带符号均值 | 分得开 | 4.23e-03 | 0.993 | 0.477 | 6.16e+09 | 否 | [结果](results/ts-dp8-vs-golden.json) |
-| B1b | `ts-dp8-embf32` | 在 B1 上词嵌入梯度改在 FP32 里累加（embedding_grad_fp32=true） | 词嵌入梯度回到噪声内 | 超 | 611.29 | 主 loss·带符号均值 | 分得开 | 4.23e-03 | 0.993 | 0.472 | 6.16e+09 | 否 | [结果](results/ts-dp8-embf32-vs-golden.json) |
-| B1f | `ts-fx-dp8-embf32` | B1b 换成修复后的 MaxText（d5c9b113） | 在噪声内 | 在噪声内 | 0.98 | 梯度范数·MARE | — | 4.20e-03 | 1.003 | 0.480 | 6.16e+09 | 否 | [结果](results/ts-fx-dp8-embf32-vs-golden.json) |
-| B1g | `ts-fx-g` | golden 换成修复后的 MaxText（d5c9b113）重跑 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.495 | 1.82e+09 | 是 | [结果](results/ts-fx-g-vs-golden.json) |
-| B1h | `ts-ebc-dp8` | 在 B1 上 embedding_grad_fp32_local_bf16_comm=true（MaxText f70d74cb：本地 FP32 scatter-add、舍一次 BF16、BF16 跨卡 all-reduce） | 词嵌入梯度回到噪声内 | 在噪声内 | 0.93 | 梯度范数·MARE | — | 4.20e-03 | 1.003 | 0.481 | 6.16e+09 | 否 | [结果](results/ts-ebc-dp8-vs-golden.json) |
-| B1i | `ts-ebc-g` | golden 换成加了这个开关（关着）的 MaxText（f70d74cb）重跑 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 是 | [结果](results/ts-ebc-g-vs-golden.json) |
-| B1j | `ts-esd-dp8` | 在 B1 上 embedding_shard_over_data=true（MaxText 9099c8ce：只把词嵌入表的隐藏维再沿 data 轴切开，其余参数仍是纯数据并行） | 词嵌入梯度回到噪声内、跨卡字节减少 | 略超 | 1.02 | 梯度范数·MARE | 和 GPU 重跑分不开 | 4.21e-03 | 0.992 | 0.478 | 4.46e+09 | 否 | [结果](results/ts-esd-dp8-vs-golden.json) |
-| B1k | `ts-esd-g` | golden 换成加了这个开关（关着）的 MaxText（9099c8ce）重跑 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.495 | 1.82e+09 | 是 | [结果](results/ts-esd-g-vs-golden.json) |
-| B1d | `ts-dp8-ga1` | 纯数据并行 8，每设备微批 2 × 累积 1 | 不逐位 | 超 | 3.69 | 主 loss·带符号均值 | 分得开 | 4.35e-03 | 1.024 | 0.462 | 6.16e+09 | 否 | [结果](results/ts-dp8-ga1-vs-golden.json) |
-| B1e | `ts-dp8-embf32-ga1` | 在 B1d 上 embedding_grad_fp32=true | 词嵌入梯度回到噪声内 | 略超 | 1.01 | 索引器 loss·MARE | 和 GPU 重跑分不开 | 4.35e-03 | 1.024 | 0.464 | 6.16e+09 | 否 | [结果](results/ts-dp8-embf32-ga1-vs-golden.json) |
-| B1c | — | 在 B1 上优化器状态按数据并行切分（shard_optimizer_over_data=true，ZeRO-1） | 不逐位 | 未跑通：本仓库训练入口载入检查点时的状态切分与 ZeRO-1 不一致（jit 报 sharding 不符） |  |  |  |  |  |  |  |  |  |
-| B2 | `ts-f16` | v5p 2x2x4（16 设备）FSDP 16、累积 2→1、全局批不变 | 在噪声内 | 在噪声内 | 0.90 | 主 loss·MARE | — | 3.89e-03 | 1.018 | 0.321 | 1.48e+09 | 否 | [结果](results/ts-f16-vs-golden.json) |
-| B2b | `ts-f16b` 对 `ts-f16` | B2 在同一个 16 片池子上重跑 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.321 | 1.48e+09 | 是 | [结果](results/ts-f16b-vs-ts-f16.json) |
-| B2c | `ts-f16-dp2` | v5p 16 设备 数据并行 2 × FSDP 8、累积 1 | 不逐位 | 略超 | 1.20 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 4.27e-03 | 1.008 | 0.309 | 1.74e+09 | 否 | [结果](results/ts-f16-dp2-vs-golden.json) |
-| B2g | `ts-fx-dp16-embf32` | B2e + embedding_grad_fp32=true（修复后的 MaxText，累积 1） | 在噪声内 | 在噪声内 | 0.99 | 路由偏置标准差·带符号均值 | — | 4.32e-03 | 1.009 | 0.262 | 6.16e+09 | 否 | [结果](results/ts-fx-dp16-embf32-vs-golden.json) |
-| B2d | `ts-f16-tp2` | v5p 16 设备 FSDP 8 × 张量并行 2、累积 1 | 不逐位 | 略超 | 1.24 | 主 loss·MARE | 和 GPU 重跑分不开 | 4.14e-03 | 0.989 | 0.454 | 1.63e+09 | 否 | [结果](results/ts-f16-tp2-vs-golden.json) |
-| B2e | `ts-f16-dp16` | v5p 16 设备 纯数据并行 16、累积 1 | 超（词嵌入梯度在本卡 BF16 scatter 里累加，每卡仍 4096 个下标、不排序；与跨卡几路求和无关） | 超 | 2.65 | 主 loss（第 101 步起）·带符号均值 | 分得开 | 4.36e-03 | 1.009 | 0.262 | 6.16e+09 | 否 | [结果](results/ts-f16-dp16-vs-golden.json) |
-| B2f | `ts-f16-scar` 对 `ts-f16` | 在 B2 上 all-reduce 交给 SparseCore | 同 C6 | 略超 | 1.08 | MTP loss·最大单步 | 和 GPU 重跑分不开 | 0.00e+00 | 1.000 | 0.313 | 1.41e+09 | 否 | [结果](results/ts-f16-scar-vs-ts-f16.json) |
-| B3 | `ts-tp2` | FSDP 4 × 张量并行 2 | 不逐位 | 略超 | 1.09 | 主 loss·MARE | 和 GPU 重跑分不开 | 3.89e-03 | 0.972 | 0.851 | 1.92e+09 | 否 | [结果](results/ts-tp2-vs-golden.json) |
-| B4 | `ts-mb2` | 每设备微批 2 × 累积 1（全局批不变） | 不逐位 | 略超 | 1.03 | 梯度范数·MARE | 和 GPU 重跑分不开 | 2.46e-03 | 0.999 | 0.479 | 1.91e+09 | 否 | [结果](results/ts-mb2-vs-golden.json) |
-| B5 | `ts-dp2f4` | 数据并行 2 × FSDP 4 | 不逐位 | 略超 | 1.03 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 4.23e-03 | 0.992 | 0.501 | 2.35e+09 | 否 | [结果](results/ts-dp2f4-vs-golden.json) |
-| B6 | `ts-ep-base` | 关 moe_mcore_prob_before_fc2（专家并行的前提） | 不逐位 | 略超 | 1.01 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 2.57e-03 | 1.000 | 0.493 | 1.81e+09 | 否 | [结果](results/ts-ep-base-vs-golden.json) |
-| B7 | `ts-ep2` 对 `ts-ep-base` | 在 B6 上专家并行 2 | 不逐位 | 在噪声内 | 0.93 | 主 loss·MARE | — | 1.91e-03 | 1.000 | 0.552 | 1.36e+09 | 否 | [结果](results/ts-ep2-vs-ts-ep-base.json) |
-| B8 | `ts-ep4` 对 `ts-ep-base` | 在 B6 上专家并行 4 | 不逐位 | 在噪声内 | 0.87 | 路由偏置标准差·最大单步 | — | 1.90e-03 | 1.000 | 0.581 | 1.34e+09 | 否 | [结果](results/ts-ep4-vs-ts-ep-base.json) |
-| B9 | `ts-ep8` 对 `ts-ep-base` | 在 B6 上专家并行 8 | 不逐位 | 在噪声内 | 0.84 | 梯度范数·最大单步 | — | 1.90e-03 | 1.000 | 0.576 | 1.33e+09 | 否 | [结果](results/ts-ep8-vs-ts-ep-base.json) |
-| B10 | `ts-remat-full` | 重算策略 custom → full | 逐位或极近 | 略超 | 1.18 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 1.86e-03 | 1.000 | 0.496 | 1.82e+09 | 否 | [结果](results/ts-remat-full-vs-golden.json) |
-| B11 | `ts-remat-min` | 重算策略 → minimal | 逐位或极近 | 略超 | 1.04 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | 2.66e-03 | 1.007 | 0.479 | 1.79e+09 | 否 | [结果](results/ts-remat-min-vs-golden.json) |
-| B12 | `ts-remat-all` | 重算策略 → save_everything | 逐位或极近 | 在噪声内 | 0.95 | 梯度范数·MARE | — | 4.41e-03 | 1.017 | 0.466 | 1.74e+09 | 否 | [结果](results/ts-remat-all-vs-golden.json) |
-| B13 | — | scan_layers=false | — | 不支持：索引器隔层共享要求层扫描，配置检查拒绝 |  |  |  |  |  |  |  |  |  |
-| B14 | `ts-dense-moe` | MoE 稠密实现（sparse_matmul=false、megablox=false） | 不逐位 | 略超 | 1.20 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 2.70e-03 | 1.001 | 0.501 | 1.81e+09 | 否 | [结果](results/ts-dense-moe-vs-golden.json) |
+| 编号 | 运行 | libtpu | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 离线筛 | 出处 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| B1 | `ts-dp8` | 0.0.46 | 纯数据并行 8（ici_data_parallelism=8、ici_fsdp_parallelism=1） | 不逐位 | 超 | 2.62 | 梯度范数·带符号均值 | 分得开 | 4.23e-03 | 0.993 | 0.477 | 6.16e+09 | 否 | 不同 | [结果](results/ts-dp8-vs-golden.json) |
+| B1b | `ts-dp8-embf32` | 0.0.46 | 在 B1 上词嵌入梯度改在 FP32 里累加（embedding_grad_fp32=true） | 词嵌入梯度回到噪声内 | 超 | 611.29 | 主 loss·带符号均值 | 分得开 | 4.23e-03 | 0.993 | 0.472 | 6.16e+09 | 否 | 不同 | [结果](results/ts-dp8-embf32-vs-golden.json) |
+| B1f | `ts-fx-dp8-embf32` | 0.0.46 | B1b 换成修复后的 MaxText（d5c9b113） | 在噪声内 | 在噪声内 | 0.98 | 梯度范数·MARE | — | 4.20e-03 | 1.003 | 0.480 | 6.16e+09 | 否 | 不同 | [结果](results/ts-fx-dp8-embf32-vs-golden.json) |
+| B1g | `ts-fx-g` | 0.0.46 | golden 换成修复后的 MaxText（d5c9b113）重跑 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.495 | 1.82e+09 | 是 | 相同 | [结果](results/ts-fx-g-vs-golden.json) |
+| B1h | `ts-ebc-dp8` | 0.0.46 | 在 B1 上 embedding_grad_fp32_local_bf16_comm=true（MaxText f70d74cb：本地 FP32 scatter-add、舍一次 BF16、BF16 跨卡 all-reduce） | 词嵌入梯度回到噪声内 | 在噪声内 | 0.93 | 梯度范数·MARE | — | 4.20e-03 | 1.003 | 0.481 | 6.16e+09 | 否 | 不同 | [结果](results/ts-ebc-dp8-vs-golden.json) |
+| B1i | `ts-ebc-g` | 0.0.46 | golden 换成加了这个开关（关着）的 MaxText（f70d74cb）重跑 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 是 | 相同 | [结果](results/ts-ebc-g-vs-golden.json) |
+| B1j | `ts-esd-dp8` | 0.0.46 | 在 B1 上 embedding_shard_over_data=true（MaxText 9099c8ce：只把词嵌入表的隐藏维再沿 data 轴切开，其余参数仍是纯数据并行） | 词嵌入梯度回到噪声内、跨卡字节减少 | 略超 | 1.02 | 梯度范数·MARE | 和 GPU 重跑分不开 | 4.21e-03 | 0.992 | 0.478 | 4.46e+09 | 否 | 不同 | [结果](results/ts-esd-dp8-vs-golden.json) |
+| B1k | `ts-esd-g` | 0.0.46 | golden 换成加了这个开关（关着）的 MaxText（9099c8ce）重跑 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.495 | 1.82e+09 | 是 | 相同 | [结果](results/ts-esd-g-vs-golden.json) |
+| B1d | `ts-dp8-ga1` | 0.0.46 | 纯数据并行 8，每设备微批 2 × 累积 1 | 不逐位 | 超 | 3.69 | 主 loss·带符号均值 | 分得开 | 4.35e-03 | 1.024 | 0.462 | 6.16e+09 | 否 | 不同 | [结果](results/ts-dp8-ga1-vs-golden.json) |
+| B1e | `ts-dp8-embf32-ga1` | 0.0.46 | 在 B1d 上 embedding_grad_fp32=true | 词嵌入梯度回到噪声内 | 略超 | 1.01 | 索引器 loss·MARE | 和 GPU 重跑分不开 | 4.35e-03 | 1.024 | 0.464 | 6.16e+09 | 否 | 不同 | [结果](results/ts-dp8-embf32-ga1-vs-golden.json) |
+| B1c | — | 0.0.46 | 在 B1 上优化器状态按数据并行切分（shard_optimizer_over_data=true，ZeRO-1） | 不逐位 | 未跑通：本仓库训练入口载入检查点时的状态切分与 ZeRO-1 不一致（jit 报 sharding 不符） |  |  |  |  |  |  |  |  | — |  |
+| B2 | `ts-f16` | 0.0.46 | v5p 2x2x4（16 设备）FSDP 16、累积 2→1、全局批不变 | 在噪声内 | 在噪声内 | 0.90 | 主 loss·MARE | — | 3.89e-03 | 1.018 | 0.321 | 1.48e+09 | 否 | 不同 | [结果](results/ts-f16-vs-golden.json) |
+| B2b | `ts-f16b` 对 `ts-f16` | 0.0.46 | B2 在同一个 16 片池子上重跑 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.321 | 1.48e+09 | 是 | 相同 | [结果](results/ts-f16b-vs-ts-f16.json) |
+| B2c | `ts-f16-dp2` | 0.0.46 | v5p 16 设备 数据并行 2 × FSDP 8、累积 1 | 不逐位 | 略超 | 1.20 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 4.27e-03 | 1.008 | 0.309 | 1.74e+09 | 否 | 不同 | [结果](results/ts-f16-dp2-vs-golden.json) |
+| B2g | `ts-fx-dp16-embf32` | 0.0.46 | B2e + embedding_grad_fp32=true（修复后的 MaxText，累积 1） | 在噪声内 | 在噪声内 | 0.99 | 路由偏置标准差·带符号均值 | — | 4.32e-03 | 1.009 | 0.262 | 6.16e+09 | 否 | 不同 | [结果](results/ts-fx-dp16-embf32-vs-golden.json) |
+| B2d | `ts-f16-tp2` | 0.0.46 | v5p 16 设备 FSDP 8 × 张量并行 2、累积 1 | 不逐位 | 略超 | 1.24 | 主 loss·MARE | 和 GPU 重跑分不开 | 4.14e-03 | 0.989 | 0.454 | 1.63e+09 | 否 | 不同 | [结果](results/ts-f16-tp2-vs-golden.json) |
+| B2e | `ts-f16-dp16` | 0.0.46 | v5p 16 设备 纯数据并行 16、累积 1 | 超（词嵌入梯度在本卡 BF16 scatter 里累加，每卡仍 4096 个下标、不排序；与跨卡几路求和无关） | 超 | 2.65 | 主 loss（第 101 步起）·带符号均值 | 分得开 | 4.36e-03 | 1.009 | 0.262 | 6.16e+09 | 否 | 不同 | [结果](results/ts-f16-dp16-vs-golden.json) |
+| B2f | `ts-f16-scar` 对 `ts-f16` | 0.0.46 | 在 B2 上 all-reduce 交给 SparseCore | 同 C6 | 略超 | 1.08 | MTP loss·最大单步 | 和 GPU 重跑分不开 | 0.00e+00 | 1.000 | 0.313 | 1.41e+09 | 否 | 判不了 | [结果](results/ts-f16-scar-vs-ts-f16.json) |
+| B3 | `ts-tp2` | 0.0.46 | FSDP 4 × 张量并行 2 | 不逐位 | 略超 | 1.09 | 主 loss·MARE | 和 GPU 重跑分不开 | 3.89e-03 | 0.972 | 0.851 | 1.92e+09 | 否 | 不同 | [结果](results/ts-tp2-vs-golden.json) |
+| B4 | `ts-mb2` | 0.0.46 | 每设备微批 2 × 累积 1（全局批不变） | 不逐位 | 略超 | 1.03 | 梯度范数·MARE | 和 GPU 重跑分不开 | 2.46e-03 | 0.999 | 0.479 | 1.91e+09 | 否 | 不同 | [结果](results/ts-mb2-vs-golden.json) |
+| B5 | `ts-dp2f4` | 0.0.46 | 数据并行 2 × FSDP 4 | 不逐位 | 略超 | 1.03 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 4.23e-03 | 0.992 | 0.501 | 2.35e+09 | 否 | 不同 | [结果](results/ts-dp2f4-vs-golden.json) |
+| B6 | `ts-ep-base` | 0.0.46 | 关 moe_mcore_prob_before_fc2（专家并行的前提） | 不逐位 | 略超 | 1.01 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 2.57e-03 | 1.000 | 0.493 | 1.81e+09 | 否 | 不同 | [结果](results/ts-ep-base-vs-golden.json) |
+| B7 | `ts-ep2` 对 `ts-ep-base` | 0.0.46 | 在 B6 上专家并行 2 | 不逐位 | 在噪声内 | 0.93 | 主 loss·MARE | — | 1.91e-03 | 1.000 | 0.552 | 1.36e+09 | 否 | 不同 | [结果](results/ts-ep2-vs-ts-ep-base.json) |
+| B8 | `ts-ep4` 对 `ts-ep-base` | 0.0.46 | 在 B6 上专家并行 4 | 不逐位 | 在噪声内 | 0.87 | 路由偏置标准差·最大单步 | — | 1.90e-03 | 1.000 | 0.581 | 1.34e+09 | 否 | 不同 | [结果](results/ts-ep4-vs-ts-ep-base.json) |
+| B9 | `ts-ep8` 对 `ts-ep-base` | 0.0.46 | 在 B6 上专家并行 8 | 不逐位 | 在噪声内 | 0.84 | 梯度范数·最大单步 | — | 1.90e-03 | 1.000 | 0.576 | 1.33e+09 | 否 | 不同 | [结果](results/ts-ep8-vs-ts-ep-base.json) |
+| B10 | `ts-remat-full` | 0.0.46 | 重算策略 custom → full | 逐位或极近 | 略超 | 1.18 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 1.86e-03 | 1.000 | 0.496 | 1.82e+09 | 否 | 不同 | [结果](results/ts-remat-full-vs-golden.json) |
+| B11 | `ts-remat-min` | 0.0.46 | 重算策略 → minimal | 逐位或极近 | 略超 | 1.04 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | 2.66e-03 | 1.007 | 0.479 | 1.79e+09 | 否 | 不同 | [结果](results/ts-remat-min-vs-golden.json) |
+| B12 | `ts-remat-all` | 0.0.46 | 重算策略 → save_everything | 逐位或极近 | 在噪声内 | 0.95 | 梯度范数·MARE | — | 4.41e-03 | 1.017 | 0.466 | 1.74e+09 | 否 | 不同 | [结果](results/ts-remat-all-vs-golden.json) |
+| B13 | — | 0.0.46 | scan_layers=false | — | 不支持：索引器隔层共享要求层扫描，配置检查拒绝 |  |  |  |  |  |  |  |  | — |  |
+| B14 | `ts-dense-moe` | 0.0.46 | MoE 稠密实现（sparse_matmul=false、megablox=false） | 不逐位 | 略超 | 1.20 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 2.70e-03 | 1.001 | 0.501 | 1.81e+09 | 否 | 不同 | [结果](results/ts-dense-moe-vs-golden.json) |
 <!-- END:matrix-B -->
 
 ## C · 编译开关
@@ -261,28 +286,28 @@
 开关名与默认值取自 golden 编译时记下的开关表（`hlo/train_step.0.flagfile`）；每个臂把一个开关改成非默认值，用 `LIBTPU_INIT_ARGS` 传入，C1 是 XLA 开关，用 `XLA_FLAGS`。
 
 <!-- BEGIN:matrix-C -->
-| 编号 | 运行 | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 出处 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| C1 | `ts-c-noexcess` | XLA_FLAGS --xla_allow_excess_precision=false | 不逐位 | 超 | 13.28 | 梯度范数·带符号均值 | 分得开 | 4.46e-03 | 1.022 | 0.501 | 1.82e+09 | 否 | [结果](results/ts-c-noexcess-vs-golden.json) |
-| C2 | `ts-c-mmhigh` | matmul_precision=highest | 不逐位、离 FP64 更近 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 否 | [结果](results/ts-c-mmhigh-vs-golden.json) |
-| C3 | `ts-c-nolhs` | xla_tpu_enable_latency_hiding_scheduler=false | 逐位或极近 | 在噪声内 | 0.91 | 梯度范数·MARE | — | 6.50e-08 | 1.000 | 0.497 | 1.82e+09 | 否 | [结果](results/ts-c-nolhs-vs-golden.json) |
-| C4 | `ts-c-noacf` | xla_tpu_enable_async_collective_fusion=false | 逐位或极近 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 是 | [结果](results/ts-c-noacf-vs-golden.json) |
-| C5 | `ts-c-nodparb` | xla_tpu_enable_data_parallel_all_reduce_opt=false | 逐位或极近 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 是 | [结果](results/ts-c-nodparb-vs-golden.json) |
-| C6 | `ts-c-scar` | xla_tpu_enable_sparse_core_collective_offload_all_reduce=true | 可能不逐位 | 略超 | 1.03 | 梯度范数·MARE | 和 GPU 重跑分不开 | 0.00e+00 | 1.000 | 0.489 | 1.73e+09 | 否 | [结果](results/ts-c-scar-vs-golden.json) |
-| C7 | `ts-c-scrs` | xla_tpu_enable_sparse_core_collective_offload_reduce_scatter=true | 可能不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 否 | [结果](results/ts-c-scrs-vs-golden.json) |
-| C8 | `ts-c-scag` | xla_tpu_enable_sparse_core_collective_offload_all_gather=true | 逐位 | 略超 | 1.14 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 8.93e-04 | 1.000 | 0.477 | 1.63e+09 | 否 | [结果](results/ts-c-scag-vs-golden.json) |
-| C9 | `ts-c-scf32` | xla_sc_force_bf16_collective_reductions_to_f32=true | 可能变 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 是 | [结果](results/ts-c-scf32-vs-golden.json) |
-| C10 | `ts-c-crsbf16b` | xla_jf_bf16_inside_cross_replica_sum=true | 不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 是 | [结果](results/ts-c-crsbf16b-vs-golden.json) |
-| C11 | `ts-c-autorp` | xla_tpu_auto_reduce_precision=true | 不逐位 | 略超 | 1.06 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | 0.00e+00 | 1.000 | 0.497 | 1.42e+09 | 否 | [结果](results/ts-c-autorp-vs-golden.json) |
-| C12 | `ts-c-nowe` | xla_tpu_enable_windowed_einsum_for_all_gather=false | 逐位或极近 | 在噪声内 | 1.00 | 梯度范数·带符号均值 | — | 4.22e-03 | 0.988 | 0.481 | 1.80e+09 | 否 | [结果](results/ts-c-nowe-vs-golden.json) |
-| C13 | `ts-c-norwb` | xla_tpu_rwb_fusion=false | 可能不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 否 | [结果](results/ts-c-norwb-vs-golden.json) |
-| C14 | `ts-c-nodd` | xla_tpu_dot_dot_fusion=false | 可能不逐位 | 略超 | 1.02 | 梯度范数·MARE | 和 GPU 重跑分不开 | 0.00e+00 | 1.000 | 0.495 | 1.82e+09 | 否 | [结果](results/ts-c-nodd-vs-golden.json) |
-| C15 | `ts-c-nosrb` | xla_tpu_enable_dot_strength_reduction=false | 可能不逐位 | 超 | 0.94 | 梯度范数·MARE | 分得开 | 1.18e-03 | 1.000 | 0.545 | 1.83e+09 | 否 | [结果](results/ts-c-nosrb-vs-golden.json) |
-| C16 | `ts-c-nocopy` | xla_tpu_enable_copy_fusion=false | 逐位 | 在噪声内 | 1.00 | 参数范数·最大单步 | — | 0.00e+00 | 1.000 | 0.496 | 1.81e+09 | 否 | [结果](results/ts-c-nocopy-vs-golden.json) |
-| C17 | `ts-c-nobf16p` | xla_jf_bf16_propagation=false | 不逐位 | 略超 | 1.12 | 主 loss·MARE | 和 GPU 重跑分不开 | 4.07e-03 | 0.986 | 0.498 | 1.81e+09 | 否 | [结果](results/ts-c-nobf16p-vs-golden.json) |
-| C18 | `ts-c-noovl` | xla_tpu_overlap_compute_collective_tc=false | 逐位或极近 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.494 | 1.82e+09 | 是 | [结果](results/ts-c-noovl-vs-golden.json) |
-| C19 | `ts-c-vmem` | xla_tpu_scoped_vmem_limit_kib=65536 | 可能不逐位 | 在噪声内 | 0.89 | 梯度范数·MARE | — | 2.58e-03 | 1.009 | 0.508 | 1.97e+09 | 否 | [结果](results/ts-c-vmem-vs-golden.json) |
-| C20 | `ts-c-mfags` | xla_tpu_megacore_fusion_allow_ags=true | 可能不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.495 | 1.82e+09 | 是 | [结果](results/ts-c-mfags-vs-golden.json) |
+| 编号 | 运行 | libtpu | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 离线筛 | 出处 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| C1 | `ts-c-noexcess` | 0.0.46 | XLA_FLAGS --xla_allow_excess_precision=false | 不逐位 | 超 | 13.28 | 梯度范数·带符号均值 | 分得开 | 4.46e-03 | 1.022 | 0.501 | 1.82e+09 | 否 | 不同 | [结果](results/ts-c-noexcess-vs-golden.json) |
+| C2 | `ts-c-mmhigh` | 0.0.46 | matmul_precision=highest | 不逐位、离 FP64 更近 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 否 | 不同 | [结果](results/ts-c-mmhigh-vs-golden.json) |
+| C3 | `ts-c-nolhs` | 0.0.46 | xla_tpu_enable_latency_hiding_scheduler=false | 逐位或极近 | 在噪声内 | 0.91 | 梯度范数·MARE | — | 6.50e-08 | 1.000 | 0.497 | 1.82e+09 | 否 | 不同 | [结果](results/ts-c-nolhs-vs-golden.json) |
+| C4 | `ts-c-noacf` | 0.0.46 | xla_tpu_enable_async_collective_fusion=false | 逐位或极近 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 是 | 相同 | [结果](results/ts-c-noacf-vs-golden.json) |
+| C5 | `ts-c-nodparb` | 0.0.46 | xla_tpu_enable_data_parallel_all_reduce_opt=false | 逐位或极近 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 是 | 相同 | [结果](results/ts-c-nodparb-vs-golden.json) |
+| C6 | `ts-c-scar` | 0.0.46 | xla_tpu_enable_sparse_core_collective_offload_all_reduce=true | 可能不逐位 | 略超 | 1.03 | 梯度范数·MARE | 和 GPU 重跑分不开 | 0.00e+00 | 1.000 | 0.489 | 1.73e+09 | 否 | 判不了 | [结果](results/ts-c-scar-vs-golden.json) |
+| C7 | `ts-c-scrs` | 0.0.46 | xla_tpu_enable_sparse_core_collective_offload_reduce_scatter=true | 可能不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 否 | 判不了 | [结果](results/ts-c-scrs-vs-golden.json) |
+| C8 | `ts-c-scag` | 0.0.46 | xla_tpu_enable_sparse_core_collective_offload_all_gather=true | 逐位 | 略超 | 1.14 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 8.93e-04 | 1.000 | 0.477 | 1.63e+09 | 否 | 判不了 | [结果](results/ts-c-scag-vs-golden.json) |
+| C9 | `ts-c-scf32` | 0.0.46 | xla_sc_force_bf16_collective_reductions_to_f32=true | 可能变 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 是 | 判不了 | [结果](results/ts-c-scf32-vs-golden.json) |
+| C10 | `ts-c-crsbf16b` | 0.0.46 | xla_jf_bf16_inside_cross_replica_sum=true | 不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 是 | 相同 | [结果](results/ts-c-crsbf16b-vs-golden.json) |
+| C11 | `ts-c-autorp` | 0.0.46 | xla_tpu_auto_reduce_precision=true | 不逐位 | 略超 | 1.06 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | 0.00e+00 | 1.000 | 0.497 | 1.42e+09 | 否 | 不同 | [结果](results/ts-c-autorp-vs-golden.json) |
+| C12 | `ts-c-nowe` | 0.0.46 | xla_tpu_enable_windowed_einsum_for_all_gather=false | 逐位或极近 | 在噪声内 | 1.00 | 梯度范数·带符号均值 | — | 4.22e-03 | 0.988 | 0.481 | 1.80e+09 | 否 | 不同 | [结果](results/ts-c-nowe-vs-golden.json) |
+| C13 | `ts-c-norwb` | 0.0.46 | xla_tpu_rwb_fusion=false | 可能不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 是 | 相同 | [结果](results/ts-c-norwb-vs-golden.json) |
+| C14 | `ts-c-nodd` | 0.0.46 | xla_tpu_dot_dot_fusion=false | 可能不逐位 | 略超 | 1.02 | 梯度范数·MARE | 和 GPU 重跑分不开 | 0.00e+00 | 1.000 | 0.495 | 1.82e+09 | 否 | 不同 | [结果](results/ts-c-nodd-vs-golden.json) |
+| C15 | `ts-c-nosrb` | 0.0.46 | xla_tpu_enable_dot_strength_reduction=false | 可能不逐位 | 超 | 0.94 | 梯度范数·MARE | 分得开 | 1.18e-03 | 1.000 | 0.545 | 1.83e+09 | 否 | 不同 | [结果](results/ts-c-nosrb-vs-golden.json) |
+| C16 | `ts-c-nocopy` | 0.0.46 | xla_tpu_enable_copy_fusion=false | 逐位 | 在噪声内 | 1.00 | 参数范数·最大单步 | — | 0.00e+00 | 1.000 | 0.496 | 1.81e+09 | 否 | 不同 | [结果](results/ts-c-nocopy-vs-golden.json) |
+| C17 | `ts-c-nobf16p` | 0.0.46 | xla_jf_bf16_propagation=false | 不逐位 | 略超 | 1.12 | 主 loss·MARE | 和 GPU 重跑分不开 | 4.07e-03 | 0.986 | 0.498 | 1.81e+09 | 否 | 不同 | [结果](results/ts-c-nobf16p-vs-golden.json) |
+| C18 | `ts-c-noovl` | 0.0.46 | xla_tpu_overlap_compute_collective_tc=false | 逐位或极近 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.494 | 1.82e+09 | 是 | 相同 | [结果](results/ts-c-noovl-vs-golden.json) |
+| C19 | `ts-c-vmem` | 0.0.46 | xla_tpu_scoped_vmem_limit_kib=65536 | 可能不逐位 | 在噪声内 | 0.89 | 梯度范数·MARE | — | 2.58e-03 | 1.009 | 0.508 | 1.97e+09 | 否 | 不同 | [结果](results/ts-c-vmem-vs-golden.json) |
+| C20 | `ts-c-mfags` | 0.0.46 | xla_tpu_megacore_fusion_allow_ags=true | 可能不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.495 | 1.82e+09 | 是 | 相同 | [结果](results/ts-c-mfags-vs-golden.json) |
 <!-- END:matrix-C -->
 
 ## D · 数学上等价的代码改写
@@ -290,20 +315,20 @@
 在 MaxText 上各开一个提交（都从 `b87a55aa` 出发，一个提交只改一处，分支 `test/68-tpu-self-<臂名>`）；D8、D9、D12 只改配置。
 
 <!-- BEGIN:matrix-D -->
-| 编号 | 运行 | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 出处 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| D1 | `ts-d-square` | RMSNorm：lax.square(x) → x * x | 逐位 | 略超 | 1.09 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 3.84e-04 | 1.000 | 0.492 | 1.82e+09 | 否 | [结果](results/ts-d-square-vs-golden.json) |
-| D2 | `ts-d-meansum` | RMSNorm：mean(x²) → sum(x²) / n | 可能不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 是 | [结果](results/ts-d-meansum-vs-golden.json) |
-| D3 | `ts-d-einsum` | RMSNorm：einsum("...k,k->...k") → 广播乘 | 逐位或极近 | 略超 | 1.10 | 梯度范数·MARE | 和 GPU 重跑分不开 | 1.04e-03 | 1.001 | 0.494 | 1.82e+09 | 否 | [结果](results/ts-d-einsum-vs-golden.json) |
-| D4 | `ts-d-rsqrt` | RMSNorm：x * rsqrt(m + ε) → x / sqrt(m + ε) | 不逐位 | 在噪声内 | 0.98 | 梯度范数·MARE | — | 3.20e-03 | 1.012 | 0.493 | 1.82e+09 | 否 | [结果](results/ts-d-rsqrt-vs-golden.json) |
-| D5 | `ts-d-ckname` | RMSNorm 输出加一个重算名字（重算策略里没有它） | 逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.495 | 1.82e+09 | 是 | [结果](results/ts-d-ckname-vs-golden.json) |
-| D6 | `ts-d-helper` | RMSNorm 的计算挪进辅助函数 | 逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 是 | [结果](results/ts-d-helper-vs-golden.json) |
-| D7 | `ts-d-commute` | x * rsqrt(·) → rsqrt(·) * x | 逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 否 | [结果](results/ts-d-commute-vs-golden.json) |
-| D8 | `ts-d-metrics` | record_internal_nn_metrics=1（每层多记三个统计量） | 逐位 | 在噪声内 | 0.91 | 索引器 loss·MARE | — | 7.95e-04 | 1.000 | 0.503 | 1.82e+09 | 否 | [结果](results/ts-d-metrics-vs-golden.json) |
-| D9 | `ts-d-qklog` | qk_clip_log_per_head=true（多记逐头最大 logit） | 逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 否 | [结果](results/ts-d-qklog-vs-golden.json) |
-| D10 | `ts-d-lossdiv` | 梯度累积：g / n → g * (1 / n) | 不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.494 | 1.82e+09 | 否 | [结果](results/ts-d-lossdiv-vs-golden.json) |
-| D11 | `ts-d-clip` | 梯度裁剪：optax 写法 → 手写 g · min(1, 阈值 / 范数) | 可能不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.81e+09 | 否 | [结果](results/ts-d-clip-vs-golden.json) |
-| D12 | `ts-d-dotattn` | attention=dot_product（不走 splash 核） | 不逐位 | 略超 | 1.41 | 参数范数·最大单步 | 和 GPU 重跑分不开 | 4.04e-03 | 0.998 | 0.478 | 1.79e+09 | 否 | [结果](results/ts-d-dotattn-vs-golden.json) |
+| 编号 | 运行 | libtpu | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 离线筛 | 出处 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| D1 | `ts-d-square` | 0.0.46 | RMSNorm：lax.square(x) → x * x | 逐位 | 略超 | 1.09 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 3.84e-04 | 1.000 | 0.492 | 1.82e+09 | 否 | 不同 | [结果](results/ts-d-square-vs-golden.json) |
+| D2 | `ts-d-meansum` | 0.0.46 | RMSNorm：mean(x²) → sum(x²) / n | 可能不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 是 | 相同 | [结果](results/ts-d-meansum-vs-golden.json) |
+| D3 | `ts-d-einsum` | 0.0.46 | RMSNorm：einsum("...k,k->...k") → 广播乘 | 逐位或极近 | 略超 | 1.10 | 梯度范数·MARE | 和 GPU 重跑分不开 | 1.04e-03 | 1.001 | 0.494 | 1.82e+09 | 否 | 不同 | [结果](results/ts-d-einsum-vs-golden.json) |
+| D4 | `ts-d-rsqrt` | 0.0.46 | RMSNorm：x * rsqrt(m + ε) → x / sqrt(m + ε) | 不逐位 | 在噪声内 | 0.98 | 梯度范数·MARE | — | 3.20e-03 | 1.012 | 0.493 | 1.82e+09 | 否 | 不同 | [结果](results/ts-d-rsqrt-vs-golden.json) |
+| D5 | `ts-d-ckname` | 0.0.46 | RMSNorm 输出加一个重算名字（重算策略里没有它） | 逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.495 | 1.82e+09 | 是 | 相同 | [结果](results/ts-d-ckname-vs-golden.json) |
+| D6 | `ts-d-helper` | 0.0.46 | RMSNorm 的计算挪进辅助函数 | 逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 是 | 相同 | [结果](results/ts-d-helper-vs-golden.json) |
+| D7 | `ts-d-commute` | 0.0.46 | x * rsqrt(·) → rsqrt(·) * x | 逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 否 | 不同 | [结果](results/ts-d-commute-vs-golden.json) |
+| D8 | `ts-d-metrics` | 0.0.46 | record_internal_nn_metrics=1（每层多记三个统计量） | 逐位 | 在噪声内 | 0.91 | 索引器 loss·MARE | — | 7.95e-04 | 1.000 | 0.503 | 1.82e+09 | 否 | 不同 | [结果](results/ts-d-metrics-vs-golden.json) |
+| D9 | `ts-d-qklog` | 0.0.46 | qk_clip_log_per_head=true（多记逐头最大 logit） | 逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 否 | 不同 | [结果](results/ts-d-qklog-vs-golden.json) |
+| D10 | `ts-d-lossdiv` | 0.0.46 | 梯度累积：g / n → g * (1 / n) | 不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.494 | 1.82e+09 | 否 | 不同 | [结果](results/ts-d-lossdiv-vs-golden.json) |
+| D11 | `ts-d-clip` | 0.0.46 | 梯度裁剪：optax 写法 → 手写 g · min(1, 阈值 / 范数) | 可能不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.81e+09 | 否 | 不同 | [结果](results/ts-d-clip-vs-golden.json) |
+| D12 | `ts-d-dotattn` | 0.0.46 | attention=dot_product（不走 splash 核） | 不逐位 | 略超 | 1.41 | 参数范数·最大单步 | 和 GPU 重跑分不开 | 4.04e-03 | 0.998 | 0.478 | 1.79e+09 | 否 | 不同 | [结果](results/ts-d-dotattn-vs-golden.json) |
 <!-- END:matrix-D -->
 
 ## E · 会影响精度的真实改动
@@ -311,21 +336,21 @@
 用来量「真改坏了」的典型 r，证明工具抓得到。
 
 <!-- BEGIN:matrix-E -->
-| 编号 | 运行 | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 出处 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| E1 | `ts-pc-logits` | logits_matmul_precision=default | 超 | 超 | 5.94 | 主 loss·最大单步 | 分得开 | 7.82e-04 | 1.000 | 0.403 | 1.81e+09 | 否 | [结果](results/ts-pc-logits-vs-golden.json) |
-| E2 | `ts-pc-zm` | routed_bias_zero_mean_update=true | 超 | 超 | 2.97 | 路由偏置均值·最大单步 | 分得开 | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 否 | [结果](results/ts-pc-zm-vs-golden.json) |
-| E3 | `ts-e-bf16acc` | dense_fp32_accumulation=false（对齐开关关掉，投影回到 MaxText 默认写法） | 超 | 在噪声内 | 0.97 | 梯度范数·MARE | — | 6.25e-03 | 0.947 | 0.492 | 1.81e+09 | 否 | [结果](results/ts-e-bf16acc-vs-golden.json) |
-| E4 | `ts-e-approx` | transcendental_accuracy_highest=false（指数 / log / sigmoid 回到 TPU 默认近似） | 超 | 在噪声内 | 0.91 | 主 loss（第 101 步起）·带符号均值 | — | 3.38e-03 | 0.995 | 0.481 | 1.77e+09 | 否 | [结果](results/ts-e-approx-vs-golden.json) |
-| E5 | `ts-e-eps` | normalization_layer_epsilon 1e-5 → 1e-6 | 超 | 超 | 342.70 | 索引器 loss·带符号均值 | 分得开 | 4.64e-02 | 5.576 | 0.494 | 1.82e+09 | 否 | [结果](results/ts-e-eps-vs-golden.json) |
-| E6 | `ts-e-rms2r` | rmsnorm_single_rounding=false | 超或略超 | 超 | 1.06 | 路由偏置标准差·带符号均值 | 分得开 | 5.35e-04 | 1.000 | 0.497 | 1.82e+09 | 否 | [结果](results/ts-e-rms2r-vs-golden.json) |
-| E7 | `ts-e-adameps` | adam_eps 1e-10 → 1e-8 | 超 | 超 | 412.01 | 参数范数·MARE | 分得开 | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 否 | [结果](results/ts-e-adameps-vs-golden.json) |
-| E8 | `ts-e-ihcr` | ihc_force_bf16_rounding=false | 略超或超 | 超 | 1.09 | 索引器 loss·MARE | 分得开 | 5.52e-03 | 0.931 | 0.496 | 1.82e+09 | 否 | [结果](results/ts-e-ihcr-vs-golden.json) |
-| E9 | `ts-e-swiglu` | mlp_activation_round_per_op=false | 略超或超 | 在噪声内 | 0.98 | 梯度范数·MARE | — | 3.60e-03 | 0.994 | 0.497 | 1.82e+09 | 否 | [结果](results/ts-e-swiglu-vs-golden.json) |
-| E10 | `ts-e-nsfp32` | muon_mcore_ns_bf16=false | 超 | 在噪声内 | 0.98 | 梯度范数·MARE | — | 0.00e+00 | 1.000 | 0.490 | 1.81e+09 | 否 | [结果](results/ts-e-nsfp32-vs-golden.json) |
-| E11 | `ts-e-lossorder` | loss 先按行求和再求总和 | 不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 否 | [结果](results/ts-e-lossorder-vs-golden.json) |
-| E13 | `ts-e-embf32` | embedding_grad_fp32=true | 不逐位、词嵌入梯度更近 FP64 | 略超 | 1.02 | 梯度范数·MARE | 和 GPU 重跑分不开 | 5.97e-08 | 1.000 | 0.495 | 1.81e+09 | 否 | [结果](results/ts-e-embf32-vs-golden.json) |
-| E12 | `ts-e-idx32` | indexer_fp32_scores=false | 超 | 略超 | 1.06 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 2.28e-03 | 1.001 | 0.467 | 1.81e+09 | 否 | [结果](results/ts-e-idx32-vs-golden.json) |
+| 编号 | 运行 | libtpu | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 离线筛 | 出处 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| E1 | `ts-pc-logits` | 0.0.46 | logits_matmul_precision=default | 超 | 超 | 5.94 | 主 loss·最大单步 | 分得开 | 7.82e-04 | 1.000 | 0.403 | 1.81e+09 | 否 | 不同 | [结果](results/ts-pc-logits-vs-golden.json) |
+| E2 | `ts-pc-zm` | 0.0.46 | routed_bias_zero_mean_update=true | 超 | 超 | 2.97 | 路由偏置均值·最大单步 | 分得开 | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 否 | 不同 | [结果](results/ts-pc-zm-vs-golden.json) |
+| E3 | `ts-e-bf16acc` | 0.0.46 | dense_fp32_accumulation=false（对齐开关关掉，投影回到 MaxText 默认写法） | 超 | 在噪声内 | 0.97 | 梯度范数·MARE | — | 6.25e-03 | 0.947 | 0.492 | 1.81e+09 | 否 | 不同 | [结果](results/ts-e-bf16acc-vs-golden.json) |
+| E4 | `ts-e-approx` | 0.0.46 | transcendental_accuracy_highest=false（指数 / log / sigmoid 回到 TPU 默认近似） | 超 | 在噪声内 | 0.91 | 主 loss（第 101 步起）·带符号均值 | — | 3.38e-03 | 0.995 | 0.481 | 1.77e+09 | 否 | 不同 | [结果](results/ts-e-approx-vs-golden.json) |
+| E5 | `ts-e-eps` | 0.0.46 | normalization_layer_epsilon 1e-5 → 1e-6 | 超 | 超 | 342.70 | 索引器 loss·带符号均值 | 分得开 | 4.64e-02 | 5.576 | 0.494 | 1.82e+09 | 否 | 不同 | [结果](results/ts-e-eps-vs-golden.json) |
+| E6 | `ts-e-rms2r` | 0.0.46 | rmsnorm_single_rounding=false | 超或略超 | 超 | 1.06 | 路由偏置标准差·带符号均值 | 分得开 | 5.35e-04 | 1.000 | 0.497 | 1.82e+09 | 否 | 不同 | [结果](results/ts-e-rms2r-vs-golden.json) |
+| E7 | `ts-e-adameps` | 0.0.46 | adam_eps 1e-10 → 1e-8 | 超 | 超 | 412.01 | 参数范数·MARE | 分得开 | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 否 | 不同 | [结果](results/ts-e-adameps-vs-golden.json) |
+| E8 | `ts-e-ihcr` | 0.0.46 | ihc_force_bf16_rounding=false | 略超或超 | 超 | 1.09 | 索引器 loss·MARE | 分得开 | 5.52e-03 | 0.931 | 0.496 | 1.82e+09 | 否 | 不同 | [结果](results/ts-e-ihcr-vs-golden.json) |
+| E9 | `ts-e-swiglu` | 0.0.46 | mlp_activation_round_per_op=false | 略超或超 | 在噪声内 | 0.98 | 梯度范数·MARE | — | 3.60e-03 | 0.994 | 0.497 | 1.82e+09 | 否 | 不同 | [结果](results/ts-e-swiglu-vs-golden.json) |
+| E10 | `ts-e-nsfp32` | 0.0.46 | muon_mcore_ns_bf16=false | 超 | 在噪声内 | 0.98 | 梯度范数·MARE | — | 0.00e+00 | 1.000 | 0.490 | 1.81e+09 | 否 | 不同 | [结果](results/ts-e-nsfp32-vs-golden.json) |
+| E11 | `ts-e-lossorder` | 0.0.46 | loss 先按行求和再求总和 | 不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 是 | 相同 | [结果](results/ts-e-lossorder-vs-golden.json) |
+| E13 | `ts-e-embf32` | 0.0.46 | embedding_grad_fp32=true | 不逐位、词嵌入梯度更近 FP64 | 略超 | 1.02 | 梯度范数·MARE | 和 GPU 重跑分不开 | 5.97e-08 | 1.000 | 0.495 | 1.81e+09 | 否 | 不同 | [结果](results/ts-e-embf32-vs-golden.json) |
+| E12 | `ts-e-idx32` | 0.0.46 | indexer_fp32_scores=false | 超 | 略超 | 1.06 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 2.28e-03 | 1.001 | 0.467 | 1.81e+09 | 否 | 不同 | [结果](results/ts-e-idx32-vs-golden.json) |
 <!-- END:matrix-E -->
 
 ## F · 软件版本
@@ -333,15 +358,16 @@
 golden 的 libtpu 是 0.0.46、jax 0.11.1（`ts-c300` 起运行记录里写 pip 版本号）。用 `PIP_EXTRA` 在 Pod 里换装。
 
 <!-- BEGIN:matrix-F -->
-| 编号 | 运行 | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 出处 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| F1 | `ts-f-ltpu48` | libtpu 0.0.46 → 0.0.48 | 不逐位 | 在噪声内 | 0.97 | 梯度范数·MARE | — | 8.63e-04 | 0.999 | 0.488 | 1.83e+09 | 否 | [结果](results/ts-f-ltpu48-vs-golden.json) |
-| F2 | `ts-f-ltpu45` | libtpu 0.0.46 → 0.0.45 | 不逐位或装不上 | 略超 | 1.30 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 3.11e-04 | 1.000 | 0.493 | 1.82e+09 | 否 | [结果](results/ts-f-ltpu45-vs-golden.json) |
-| F1b | `ts-f-ltpu47` | libtpu 0.0.46 → 0.0.47 | 不逐位 | 在噪声内 | 0.97 | 梯度范数·MARE | — | 8.63e-04 | 0.999 | 0.493 | 1.82e+09 | 否 | [结果](results/ts-f-ltpu47-vs-golden.json) |
-| F1c | `ts-f-ltpu48` 对 `ts-f-ltpu47` | libtpu 0.0.47 → 0.0.48（对 F1b 比） | 不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.488 | 1.83e+09 | 否 | [结果](results/ts-f-ltpu48-vs-ts-f-ltpu47.json) |
-| F2b | `ts-f-sc45s2` 对 `ts-c-scar` | 两版都强制 all-reduce 走 SparseCore：libtpu 0.0.45 对 0.0.46（C6） | — | 在噪声内 | 0.99 | 梯度范数·最大单步 | — | 3.11e-04 | 1.000 | 0.488 | 1.74e+09 | 否 | [结果](results/ts-f-sc45s2-vs-ts-c-scar.json) |
-| F3 | — | jax / jaxlib 0.11.1 → 0.11.2 | 不逐位或装不上 | 跑不起来：镜像里的库与 jax 0.11.2 不兼容（jax.experimental.hijax 没有 HiPrimitive） |  |  |  |  |  |  |  |  |  |
-| F4 | — | 在 F1 上 jax / jaxlib 0.11.1 → 0.11.2 | 不逐位 | 跑不起来：同 F3 |  |  |  |  |  |  |  |  |  |
+| 编号 | 运行 | libtpu | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 离线筛 | 出处 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| F1 | `ts-f-ltpu48` | 0.0.48 | libtpu 0.0.46 → 0.0.48 | 不逐位 | 在噪声内 | 0.97 | 梯度范数·MARE | — | 8.63e-04 | 0.999 | 0.488 | 1.83e+09 | 否 | 判不了 | [结果](results/ts-f-ltpu48-vs-golden.json) |
+| F2 | `ts-f-ltpu45` | 0.0.45 | libtpu 0.0.46 → 0.0.45 | 不逐位或装不上 | 略超 | 1.30 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 3.11e-04 | 1.000 | 0.493 | 1.82e+09 | 否 | 判不了 | [结果](results/ts-f-ltpu45-vs-golden.json) |
+| F1b | `ts-f-ltpu47` | 0.0.47 | libtpu 0.0.46 → 0.0.47 | 不逐位 | 在噪声内 | 0.97 | 梯度范数·MARE | — | 8.63e-04 | 0.999 | 0.493 | 1.82e+09 | 否 | 判不了 | [结果](results/ts-f-ltpu47-vs-golden.json) |
+| F1c | `ts-f-ltpu48` 对 `ts-f-ltpu47` | 0.0.48 | libtpu 0.0.47 → 0.0.48（对 F1b 比） | 不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.488 | 1.83e+09 | 否 | 判不了 | [结果](results/ts-f-ltpu48-vs-ts-f-ltpu47.json) |
+| F2b | `ts-f-sc45s2` 对 `ts-c-scar` | 0.0.45 | 两版都强制 all-reduce 走 SparseCore：libtpu 0.0.45 对 0.0.46（C6） | — | 在噪声内 | 0.99 | 梯度范数·最大单步 | — | 3.11e-04 | 1.000 | 0.488 | 1.74e+09 | 否 | 判不了 | [结果](results/ts-f-sc45s2-vs-ts-c-scar.json) |
+| F3 | — | 0.0.46 | jax / jaxlib 0.11.1 → 0.11.2 | 不逐位或装不上 | 跑不起来：镜像里的库与 jax 0.11.2 不兼容（jax.experimental.hijax 没有 HiPrimitive） |  |  |  |  |  |  |  |  | — |  |
+| F4 | — | 0.0.46 | 在 F1 上 jax / jaxlib 0.11.1 → 0.11.2 | 不逐位 | 跑不起来：同 F3 |  |  |  |  |  |  |  |  | — |  |
+| F5 | `ts-g52-a` | 0.0.52 | libtpu 0.0.46 → 0.0.52（jax 0.11.1 不动，Pod 里 pip 换 libtpu；同一命令跑 1000 步，前 300 步对 golden 前 300 步比） | 不逐位 | 在噪声内 | 0.99 | 路由偏置标准差·带符号均值 | — | 3.41e-03 | 1.006 | 0.466 | 1.79e+09 | 否 | — | [结果](results/ts-g52-a-vs-golden.json) |
 <!-- END:matrix-F -->
 
 ## G · 上下文并行
@@ -349,16 +375,16 @@ golden 的 libtpu 是 0.0.46、jax 0.11.1（`ts-c300` 起运行记录里写 pip 
 MaxText 对混元 4 的上下文并行：splash 注意力下 all_gather / ring / ulysses / usp 都被配置检查拒绝（sink、索引器、QK-Clip 任一不支持），只有 `attention=dot_product` + all_gather 没有被拒，所以 G1 对 D12 比。
 
 <!-- BEGIN:matrix-G -->
-| 编号 | 运行 | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 出处 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| G1 | — | 在 D12 上上下文并行 2（all_gather，默认负载均衡） | 不逐位 | 不支持：MTP 不支持上下文并行的负载均衡（MaxText 运行时报错） |  |  |  |  |  |  |  |  |  |
-| G2b | `ts-cp2c` 对 `ts-cp2b` | G2 重跑（核 TPU 自己可复现） | 与 G2 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.654 | 1.84e+09 | 是 | [结果](results/ts-cp2c-vs-ts-cp2b.json) |
-| G3a | `ts-dotattn-f32e` | attention=dot_product + float32_logits=true（旧代码里 MLA 没接这个开关，不生效） | — | 略超 | 1.41 | 参数范数·最大单步 | 和 GPU 重跑分不开 | 4.04e-03 | 0.998 | 0.478 | 1.79e+09 | 否 | [结果](results/ts-dotattn-f32e-vs-golden.json) |
-| G3c | `ts-dotattn-f32e` 对 `ts-d-dotattn` | G3a 对 D12（只差 float32_logits=true） | 不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.478 | 1.79e+09 | 是 | [结果](results/ts-dotattn-f32e-vs-ts-d-dotattn.json) |
-| G3 | `ts-cp2-f32` 对 `ts-dotattn-f32e` | 在 G3a 上上下文并行 2（关负载均衡） | sink 梯度不再离 FP64 更远 | 超 | 1.27 | 主 loss·带符号均值 | 分得开 | 3.66e-03 | 1.012 | 0.654 | 1.84e+09 | 否 | [结果](results/ts-cp2-f32-vs-ts-dotattn-f32e.json) |
-| G2 | `ts-cp2b` 对 `ts-d-dotattn` | 在 D12 上上下文并行 2（all_gather，关负载均衡 context_parallel_load_balance=false） | 不逐位 | 超 | 1.27 | 主 loss·带符号均值 | 分得开 | 3.66e-03 | 1.012 | 0.655 | 1.84e+09 | 否 | [结果](results/ts-cp2b-vs-ts-d-dotattn.json) |
-| G4a | `ts-n2-dotf32w-300` | attention=dot_product + float32_logits=true（MaxText 56492817，开关接上之后） | — | 略超 | 1.03 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 4.21e-03 | 0.987 | 0.502 | 1.79e+09 | 否 | [结果](results/ts-n2-dotf32w-300-vs-golden.json) |
-| G4 | `ts-n2-cp2f32w-300` 对 `ts-n2-dotf32w-300` | 在 G4a 上上下文并行 2（关负载均衡） | sink 梯度不再离 FP64 更远 | 在噪声内 | 1.00 | 主 loss·带符号均值 | — | 3.41e-03 | 1.000 | 0.737 | 1.84e+09 | 否 | [结果](results/ts-n2-cp2f32w-300-vs-ts-n2-dotf32w-300.json) |
+| 编号 | 运行 | libtpu | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 离线筛 | 出处 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| G1 | — | 0.0.46 | 在 D12 上上下文并行 2（all_gather，默认负载均衡） | 不逐位 | 不支持：MTP 不支持上下文并行的负载均衡（MaxText 运行时报错） |  |  |  |  |  |  |  |  | — |  |
+| G2b | `ts-cp2c` 对 `ts-cp2b` | 0.0.46 | G2 重跑（核 TPU 自己可复现） | 与 G2 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.654 | 1.84e+09 | 是 | 相同 | [结果](results/ts-cp2c-vs-ts-cp2b.json) |
+| G3a | `ts-dotattn-f32e` | 0.0.46 | attention=dot_product + float32_logits=true（旧代码里 MLA 没接这个开关，不生效） | — | 略超 | 1.41 | 参数范数·最大单步 | 和 GPU 重跑分不开 | 4.04e-03 | 0.998 | 0.478 | 1.79e+09 | 否 | 不同 | [结果](results/ts-dotattn-f32e-vs-golden.json) |
+| G3c | `ts-dotattn-f32e` 对 `ts-d-dotattn` | 0.0.46 | G3a 对 D12（只差 float32_logits=true） | 不逐位 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.478 | 1.79e+09 | 是 | 相同 | [结果](results/ts-dotattn-f32e-vs-ts-d-dotattn.json) |
+| G3 | `ts-cp2-f32` 对 `ts-dotattn-f32e` | 0.0.46 | 在 G3a 上上下文并行 2（关负载均衡） | sink 梯度不再离 FP64 更远 | 超 | 1.27 | 主 loss·带符号均值 | 分得开 | 3.66e-03 | 1.012 | 0.654 | 1.84e+09 | 否 | 不同 | [结果](results/ts-cp2-f32-vs-ts-dotattn-f32e.json) |
+| G2 | `ts-cp2b` 对 `ts-d-dotattn` | 0.0.46 | 在 D12 上上下文并行 2（all_gather，关负载均衡 context_parallel_load_balance=false） | 不逐位 | 超 | 1.27 | 主 loss·带符号均值 | 分得开 | 3.66e-03 | 1.012 | 0.655 | 1.84e+09 | 否 | 不同 | [结果](results/ts-cp2b-vs-ts-d-dotattn.json) |
+| G4a | `ts-n2-dotf32w-300` | 0.0.46 | attention=dot_product + float32_logits=true（MaxText 56492817，开关接上之后） | — | 略超 | 1.03 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 4.21e-03 | 0.987 | 0.502 | 1.79e+09 | 否 | 不同 | [结果](results/ts-n2-dotf32w-300-vs-golden.json) |
+| G4 | `ts-n2-cp2f32w-300` 对 `ts-n2-dotf32w-300` | 0.0.46 | 在 G4a 上上下文并行 2（关负载均衡） | sink 梯度不再离 FP64 更远 | 在噪声内 | 1.00 | 主 loss·带符号均值 | — | 3.41e-03 | 1.000 | 0.737 | 1.84e+09 | 否 | 不同 | [结果](results/ts-n2-cp2f32w-300-vs-ts-n2-dotf32w-300.json) |
 <!-- END:matrix-G -->
 
 - **G2 的线索**：上下文并行 2 后，第 1 步只有一个张量离 FP64 更远——第 6 层注意力的 sink 参数（`learnable_sink_param`），被测离 FP64 4.16e-2，对照 2.10e-2，GPU 三份中位数 3.28e-2，比值 1.27（> 1.2）；其余梯度都是换求和顺序。
@@ -378,16 +404,17 @@ MaxText 对混元 4 的上下文并行：splash 注意力下 all_gather / ring /
 同一镜像、同一 libtpu，只换芯片。v7x 每片 2 个 TensorCore，各算一个 JAX 设备，所以 4 片就是 8 个设备。H4（v7x 上重测 C 类最敏感的开关）等 C 类结果再定。
 
 <!-- BEGIN:matrix-H -->
-| 编号 | 运行 | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 出处 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| H1 | `ts-h-v7c` 对 `ts-h-v7b` | v7x 2x2x1（8 设备）同配置跑两次 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.343 | 1.02e+09 | 是 | [结果](results/ts-h-v7c-vs-ts-h-v7b.json) |
-| H2 | `ts-h-v7b` | 同程序换到 v7x 2x2x1（4 片 8 设备） | 不逐位 | 略超 | 1.02 | 梯度范数·MARE | 和 GPU 重跑分不开 | 3.89e-03 | 1.013 | 0.343 | 1.02e+09 | 否 | [结果](results/ts-h-v7b-vs-golden.json) |
-| H3 | `ts-h-v7f16c` | v7x 2x2x2（16 设备）FSDP 16、累积 1；运行目录取回时节点被回收，只判曲线（逐步指标来自运行中镜像） | 不逐位 | 略超 | 1.01 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | — | — | 0.212 | — | — | [结果](results/ts-h-v7f16c-vs-golden.json) |
-| H3b | `ts-h-v7f16c` 对 `ts-f16` | H3 对 v5p 16 片 FSDP 16（B2）比：换硬件与换切分叠不叠加 | — | 略超 | 1.08 | MTP loss·最大单步 | 和 GPU 重跑分不开 | — | — | 0.212 | — | — | [结果](results/ts-h-v7f16c-vs-ts-f16.json) |
-| H4a | `ts-h-v7-scar2` 对 `ts-h-v7b` | v7x 上 all-reduce 交给 SparseCore（对 v7x 的 FSDP 8 比） | 同 C6 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.343 | 1.02e+09 | 是 | [结果](results/ts-h-v7-scar2-vs-ts-h-v7b.json) |
-| H4b | `ts-h-v7-noexcess3` 对 `ts-h-v7b` | v7x 上关 excess precision | 同 C1 | 超 | 3.43 | 梯度范数·带符号均值 | 分得开 | 4.40e-03 | 1.007 | 0.342 | 1.02e+09 | 否 | [结果](results/ts-h-v7-noexcess3-vs-ts-h-v7b.json) |
-| H4c | `ts-h-v7-dp8b` 对 `ts-h-v7b` | v7x 上纯数据并行 8 | 同 B1 | 超 | 2.21 | 梯度范数·带符号均值 | 分得开 | 5.42e-03 | 0.964 | 0.305 | 6.20e+09 | 否 | [结果](results/ts-h-v7-dp8b-vs-ts-h-v7b.json) |
-| H5 | — | 8 个设备落在 4 片 vs 8 片各用一个 TensorCore | — | 没做：能否在 8 片的切片上每片只用一个 TensorCore 未核，v7x 2x2x2 的抢占式节点也一直没起稳 |  |  |  |  |  |  |  |  |  |
+| 编号 | 运行 | libtpu | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 离线筛 | 出处 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| H1 | `ts-h-v7c` 对 `ts-h-v7b` | 0.0.46 | v7x 2x2x1（8 设备）同配置跑两次 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.343 | 1.02e+09 | 是 | 相同 | [结果](results/ts-h-v7c-vs-ts-h-v7b.json) |
+| H2 | `ts-h-v7b` | 0.0.46 | 同程序换到 v7x 2x2x1（4 片 8 设备） | 不逐位 | 略超 | 1.02 | 梯度范数·MARE | 和 GPU 重跑分不开 | 3.89e-03 | 1.013 | 0.343 | 1.02e+09 | 否 | 判不了 | [结果](results/ts-h-v7b-vs-golden.json) |
+| H3 | `ts-h-v7f16c` | 0.0.46 | v7x 2x2x2（16 设备）FSDP 16、累积 1；运行目录取回时节点被回收，只判曲线（逐步指标来自运行中镜像） | 不逐位 | 略超 | 1.01 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | — | — | 0.212 | — | — | 判不了 | [结果](results/ts-h-v7f16c-vs-golden.json) |
+| H3b | `ts-h-v7f16c` 对 `ts-f16` | 0.0.46 | H3 对 v5p 16 片 FSDP 16（B2）比：换硬件与换切分叠不叠加 | — | 略超 | 1.08 | MTP loss·最大单步 | 和 GPU 重跑分不开 | — | — | 0.212 | — | — | 判不了 | [结果](results/ts-h-v7f16c-vs-ts-f16.json) |
+| H4a | `ts-h-v7-scar2` 对 `ts-h-v7b` | 0.0.46 | v7x 上 all-reduce 交给 SparseCore（对 v7x 的 FSDP 8 比） | 同 C6 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.343 | 1.02e+09 | 是 | 判不了 | [结果](results/ts-h-v7-scar2-vs-ts-h-v7b.json) |
+| H4b | `ts-h-v7-noexcess3` 对 `ts-h-v7b` | 0.0.46 | v7x 上关 excess precision | 同 C1 | 超 | 3.43 | 梯度范数·带符号均值 | 分得开 | 4.40e-03 | 1.007 | 0.342 | 1.02e+09 | 否 | 不同 | [结果](results/ts-h-v7-noexcess3-vs-ts-h-v7b.json) |
+| H4c | `ts-h-v7-dp8b` 对 `ts-h-v7b` | 0.0.46 | v7x 上纯数据并行 8 | 同 B1 | 超 | 2.21 | 梯度范数·带符号均值 | 分得开 | 5.42e-03 | 0.964 | 0.305 | 6.20e+09 | 否 | 不同 | [结果](results/ts-h-v7-dp8b-vs-ts-h-v7b.json) |
+| H4d | `ts-h-v7-dp8-ga1` 对 `ts-h-v7b` | 0.0.46 | v7x 上纯数据并行 8、每设备微批 2 × 累积 1（每卡 8192 个下标），libtpu 0.0.46，对 H2 比（V17 的 0.0.46 对照） | 同 B1d | 超 | 4.06 | 主 loss·带符号均值 | 分得开 | 5.88e-03 | 0.998 | 0.319 | 6.20e+09 | 否 | — | [结果](results/ts-h-v7-dp8-ga1-vs-ts-h-v7b.json) |
+| H5 | — | 0.0.46 | 8 个设备落在 4 片 vs 8 片各用一个 TensorCore | — | 没做：能否在 8 片的切片上每片只用一个 TensorCore 未核，v7x 2x2x2 的抢占式节点也一直没起稳 |  |  |  |  |  |  |  |  | — |  |
 <!-- END:matrix-H -->
 
 ## S · 灵敏度（故意埋的 bug 扫大小）
@@ -395,19 +422,19 @@ MaxText 对混元 4 的上下文并行：splash 注意力下 all_gather / ring /
 故意埋一个已知大小的 bug，看多大才被抓到：学习率 × (1 + ε)、MTP loss 权重 × (1 + ε)（只改一部分梯度）、loss 多乘一个常数（漏除常数）。
 
 <!-- BEGIN:matrix-S -->
-| 编号 | 运行 | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 出处 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| S0a | `ts-s-lr1e-5` | 学习率 × (1 + 1e-5) | — | 略超 | 1.21 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 0.00e+00 | 1.000 | 0.494 | 1.82e+09 | 否 | [结果](results/ts-s-lr1e-5-vs-golden.json) |
-| S0b | `ts-s-lr3e-5` | 学习率 × (1 + 3e-5) | — | 略超 | 1.06 | 主 loss·带符号均值 | 和 GPU 重跑分不开 | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 否 | [结果](results/ts-s-lr3e-5-vs-golden.json) |
-| S1 | `ts-s-lr1e-4` | 学习率 × (1 + 1e-4) | — | 超 | 4.11 | 主 loss·带符号均值 | 分得开 | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 否 | [结果](results/ts-s-lr1e-4-vs-golden.json) |
-| S2 | `ts-s-lr1e-3` | 学习率 × (1 + 1e-3) | — | 超 | 46.25 | 主 loss·带符号均值 | 分得开 | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 否 | [结果](results/ts-s-lr1e-3-vs-golden.json) |
-| S3 | `ts-s-lr1e-2` | 学习率 × (1 + 1e-2) | — | 超 | 461.42 | 主 loss·带符号均值 | 分得开 | 0.00e+00 | 1.000 | 0.495 | 1.82e+09 | 否 | [结果](results/ts-s-lr1e-2-vs-golden.json) |
-| S4 | `ts-s-lr1e-1` | 学习率 × (1 + 1e-1) | — | 超 | 4505.22 | 主 loss·带符号均值 | 分得开 | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 否 | [结果](results/ts-s-lr1e-1-vs-golden.json) |
-| S5 | `ts-s-mtp1e-3` | MTP loss 权重 × (1 + 1e-3) | — | 超 | 50.12 | MTP loss·带符号均值 | 分得开 | 8.18e-04 | 1.001 | 0.496 | 1.82e+09 | 否 | [结果](results/ts-s-mtp1e-3-vs-golden.json) |
-| S6 | `ts-s-mtp1e-2` | MTP loss 权重 × (1 + 1e-2) | — | 超 | 501.85 | MTP loss·带符号均值 | 分得开 | 1.26e-03 | 1.007 | 0.494 | 1.82e+09 | 否 | [结果](results/ts-s-mtp1e-2-vs-golden.json) |
-| S7 | `ts-s-mtp1e-1` | MTP loss 权重 × (1 + 1e-1) | — | 超 | 5010.57 | MTP loss·带符号均值 | 分得开 | 7.75e-03 | 1.463 | 0.497 | 1.82e+09 | 否 | [结果](results/ts-s-mtp1e-1-vs-golden.json) |
-| S8 | `ts-s-loss101` | 梯度累积路径的 loss 多乘 1.01（MaxText 提交） | 只有梯度范数变 | 超 | 94.50 | 梯度范数·带符号均值 | 分得开 | 9.96e-03 | 1.359 | 0.495 | 1.82e+09 | 否 | [结果](results/ts-s-loss101-vs-golden.json) |
-| S9 | `ts-s-loss2` | 梯度累积路径的 loss 多乘 2（MaxText 提交） | 只有梯度范数变 | 超 | 9676.75 | 梯度范数·带符号均值 | 分得开 | 9.87e-01 | 97.758 | 0.497 | 1.82e+09 | 否 | [结果](results/ts-s-loss2-vs-golden.json) |
+| 编号 | 运行 | libtpu | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 离线筛 | 出处 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| S0a | `ts-s-lr1e-5` | 0.0.46 | 学习率 × (1 + 1e-5) | — | 略超 | 1.21 | 路由偏置标准差·带符号均值 | 和 GPU 重跑分不开 | 0.00e+00 | 1.000 | 0.494 | 1.82e+09 | 否 | 不同 | [结果](results/ts-s-lr1e-5-vs-golden.json) |
+| S0b | `ts-s-lr3e-5` | 0.0.46 | 学习率 × (1 + 3e-5) | — | 略超 | 1.06 | 主 loss·带符号均值 | 和 GPU 重跑分不开 | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 否 | 不同 | [结果](results/ts-s-lr3e-5-vs-golden.json) |
+| S1 | `ts-s-lr1e-4` | 0.0.46 | 学习率 × (1 + 1e-4) | — | 超 | 4.11 | 主 loss·带符号均值 | 分得开 | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 否 | 不同 | [结果](results/ts-s-lr1e-4-vs-golden.json) |
+| S2 | `ts-s-lr1e-3` | 0.0.46 | 学习率 × (1 + 1e-3) | — | 超 | 46.25 | 主 loss·带符号均值 | 分得开 | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 否 | 不同 | [结果](results/ts-s-lr1e-3-vs-golden.json) |
+| S3 | `ts-s-lr1e-2` | 0.0.46 | 学习率 × (1 + 1e-2) | — | 超 | 461.42 | 主 loss·带符号均值 | 分得开 | 0.00e+00 | 1.000 | 0.495 | 1.82e+09 | 否 | 不同 | [结果](results/ts-s-lr1e-2-vs-golden.json) |
+| S4 | `ts-s-lr1e-1` | 0.0.46 | 学习率 × (1 + 1e-1) | — | 超 | 4505.22 | 主 loss·带符号均值 | 分得开 | 0.00e+00 | 1.000 | 0.496 | 1.82e+09 | 否 | 不同 | [结果](results/ts-s-lr1e-1-vs-golden.json) |
+| S5 | `ts-s-mtp1e-3` | 0.0.46 | MTP loss 权重 × (1 + 1e-3) | — | 超 | 50.12 | MTP loss·带符号均值 | 分得开 | 8.18e-04 | 1.001 | 0.496 | 1.82e+09 | 否 | 不同 | [结果](results/ts-s-mtp1e-3-vs-golden.json) |
+| S6 | `ts-s-mtp1e-2` | 0.0.46 | MTP loss 权重 × (1 + 1e-2) | — | 超 | 501.85 | MTP loss·带符号均值 | 分得开 | 1.26e-03 | 1.007 | 0.494 | 1.82e+09 | 否 | 不同 | [结果](results/ts-s-mtp1e-2-vs-golden.json) |
+| S7 | `ts-s-mtp1e-1` | 0.0.46 | MTP loss 权重 × (1 + 1e-1) | — | 超 | 5010.57 | MTP loss·带符号均值 | 分得开 | 7.75e-03 | 1.463 | 0.497 | 1.82e+09 | 否 | 不同 | [结果](results/ts-s-mtp1e-1-vs-golden.json) |
+| S8 | `ts-s-loss101` | 0.0.46 | 梯度累积路径的 loss 多乘 1.01（MaxText 提交） | 只有梯度范数变 | 超 | 94.50 | 梯度范数·带符号均值 | 分得开 | 9.96e-03 | 1.359 | 0.495 | 1.82e+09 | 否 | 不同 | [结果](results/ts-s-loss101-vs-golden.json) |
+| S9 | `ts-s-loss2` | 0.0.46 | 梯度累积路径的 loss 多乘 2（MaxText 提交） | 只有梯度范数变 | 超 | 9676.75 | 梯度范数·带符号均值 | 分得开 | 9.87e-01 | 97.758 | 0.497 | 1.82e+09 | 否 | 不同 | [结果](results/ts-s-loss2-vs-golden.json) |
 <!-- END:matrix-S -->
 
 ## L · 长跑（1000 步）
@@ -415,42 +442,195 @@ MaxText 对混元 4 的上下文并行：splash 注意力下 all_gather / ring /
 300 步落在噪声内的改动，跑到 1000 步会不会显形；对 golden 的 1000 步比（[`catalogs/vs-golden-1000.yaml`](catalogs/vs-golden-1000.yaml)，尺子换成 GPU 1000 步的 16 份两两 120 对）。L3 是只换顺序的对照。2026-11-10 起尺子从 8 份 28 对换成 16 份 120 对，全部 1000 步臂重判；8 份时的结果在 git 历史里（`d2747c9`），变化见下面「L 长跑」。
 
 <!-- BEGIN:matrix-L -->
-| 编号 | 运行 | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 出处 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| L1 | `ts-e-bf16acc-1k` 对 `ts-g-a-1000` | E3 跑 1000 步，对 golden 1000 步比（尺子 GPU g3 28 对） | — | 略超 | 1.64 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | 6.25e-03 | 0.947 | 0.492 | 1.81e+09 | 否 | [结果](results/ts-e-bf16acc-1k-vs-ts-g-a-1000.json) |
-| L2 | `ts-e-approx-1k` 对 `ts-g-a-1000` | E4 跑 1000 步 | — | 略超 | 1.07 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | 3.38e-03 | 0.995 | 0.481 | 1.77e+09 | 否 | [结果](results/ts-e-approx-1k-vs-ts-g-a-1000.json) |
-| L3 | `ts-mb2-1k` 对 `ts-g-a-1000` | B4 跑 1000 步（只换顺序的对照） | — | 在噪声内 | 0.96 | 路由偏置标准差·MARE | — | 2.46e-03 | 0.999 | 0.478 | 1.91e+09 | 否 | [结果](results/ts-mb2-1k-vs-ts-g-a-1000.json) |
-| L4 | `ts-tp2-1k` 对 `ts-g-a-1000` | B3（FSDP 4 × 张量并行 2）跑 1000 步 | — | 略超 | 1.14 | 参数范数·最大单步 | 和 GPU 重跑分不开 | 3.89e-03 | 0.972 | 0.853 | 1.92e+09 | 否 | [结果](results/ts-tp2-1k-vs-ts-g-a-1000.json) |
-| L5 | `ts-remat-full-1k` 对 `ts-g-a-1000` | B10（全重算）跑 1000 步 | — | 在噪声内 | 0.92 | 梯度范数·MARE | — | 1.86e-03 | 1.000 | 0.495 | 1.82e+09 | 否 | [结果](results/ts-remat-full-1k-vs-ts-g-a-1000.json) |
-| L6 | `ts-f-ltpu45-1k` 对 `ts-g-a-1000` | F2（libtpu 0.0.45）跑 1000 步 | — | 略超 | 1.19 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | 3.11e-04 | 1.000 | 0.495 | 1.82e+09 | 否 | [结果](results/ts-f-ltpu45-1k-vs-ts-g-a-1000.json) |
-| L7 | `ts-h-v7-1k3` 对 `ts-g-a-1000` | H2（同程序换 v7x）跑 1000 步 | — | 在噪声内 | 0.91 | 梯度范数·MARE | — | 3.89e-03 | 1.013 | 0.343 | 1.02e+09 | 否 | [结果](results/ts-h-v7-1k3-vs-ts-g-a-1000.json) |
-| L8 | `ts-f16-1k` 对 `ts-g-a-1000` | B2（16 设备 FSDP 16、累积 1）跑 1000 步 | — | 略超 | 1.11 | 主 loss（第 101 步起）·带符号均值 | 和 GPU 重跑分不开 | 3.89e-03 | 1.018 | 0.321 | 1.48e+09 | 否 | [结果](results/ts-f16-1k-vs-ts-g-a-1000.json) |
-| L9 | `ts-f-ltpu47-1k` 对 `ts-g-a-1000` | F1b（libtpu 0.0.47）跑 1000 步 | — | 在噪声内 | 0.92 | 梯度范数·MARE | — | 8.63e-04 | 0.999 | 0.493 | 1.82e+09 | 否 | [结果](results/ts-f-ltpu47-1k-vs-ts-g-a-1000.json) |
-| L10 | `ts-f-ltpu48-1k` 对 `ts-g-a-1000` | F1（libtpu 0.0.48）跑 1000 步 | — | 在噪声内 | 0.92 | 梯度范数·MARE | — | 8.63e-04 | 0.999 | 0.487 | 1.83e+09 | 否 | [结果](results/ts-f-ltpu48-1k-vs-ts-g-a-1000.json) |
-| L11 | `ts-c-scar-1k` 对 `ts-g-a-1000` | C6（all-reduce 交给 SparseCore）跑 1000 步 | — | 在噪声内 | 0.88 | 主 loss·MARE | — | 0.00e+00 | 1.000 | 0.488 | 1.73e+09 | 否 | [结果](results/ts-c-scar-1k-vs-ts-g-a-1000.json) |
-| L12 | `ts-d-square-1ks` 对 `ts-g-a-1000` | D1（x*x 代替 lax.square）跑 1000 步 | — | 在噪声内 | 0.96 | 梯度范数·MARE | — | 3.84e-04 | 1.000 | 0.494 | 1.82e+09 | 否 | [结果](results/ts-d-square-1ks-vs-ts-g-a-1000.json) |
-| L13 | `ts-dense-moe-1k` 对 `ts-g-a-1000` | B14（MoE 稠密实现）跑 1000 步 | — | 略超 | 1.16 | 梯度范数·最大单步 | 和 GPU 重跑分不开 | 2.70e-03 | 1.001 | 0.499 | 1.81e+09 | 否 | [结果](results/ts-dense-moe-1k-vs-ts-g-a-1000.json) |
-| L14 | `ts-e-ihcr-1k` 对 `ts-g-a-1000` | E8（iHC 不强制舍成 BF16）跑 1000 步 | — | 超 | 1.36 | 主 loss（第 101 步起）·带符号均值 | 分得开 | 5.52e-03 | 0.931 | 0.496 | 1.82e+09 | 否 | [结果](results/ts-e-ihcr-1k-vs-ts-g-a-1000.json) |
-| L15 | `ts-fx-dp8-embf32-1ks2` 对 `ts-g-a-1000` | B1f（数据并行 8 + 累积 2 + FP32 词嵌入梯度，修复后）跑 1000 步 | — | 略超 | 1.09 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | 4.20e-03 | 1.003 | 0.480 | 6.16e+09 | 否 | [结果](results/ts-fx-dp8-embf32-1ks2-vs-ts-g-a-1000.json) |
-| L16 | `ts-fx-dp16-embf32-1ks` 对 `ts-g-a-1000` | B2g（16 设备纯数据并行 + FP32 词嵌入梯度）跑 1000 步 | — | 略超 | 1.30 | 参数范数·最大单步 | 和 GPU 重跑分不开 | 4.32e-03 | 1.009 | 0.263 | 6.16e+09 | 否 | [结果](results/ts-fx-dp16-embf32-1ks-vs-ts-g-a-1000.json) |
-| L17 | `ts-e-swiglu-1ks` 对 `ts-g-a-1000` | E9（SwiGLU 少舍一次）跑 1000 步 | — | 略超 | 1.37 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | 3.60e-03 | 0.994 | 0.496 | 1.82e+09 | 否 | [结果](results/ts-e-swiglu-1ks-vs-ts-g-a-1000.json) |
-| L18 | `ts-e-nsfp32-1ks` 对 `ts-g-a-1000` | E10（Muon 正交化 FP32）跑 1000 步 | — | 在噪声内 | 0.97 | 梯度范数·MARE | — | 0.00e+00 | 1.000 | 0.490 | 1.81e+09 | 否 | [结果](results/ts-e-nsfp32-1ks-vs-ts-g-a-1000.json) |
-| L19 | `ts-e-idx32-1ks` 对 `ts-g-a-1000` | E12（索引器打分不用真 FP32）跑 1000 步 | — | 略超 | 1.06 | 梯度范数·MARE | 和 GPU 重跑分不开 | 2.28e-03 | 1.001 | 0.468 | 1.81e+09 | 否 | [结果](results/ts-e-idx32-1ks-vs-ts-g-a-1000.json) |
-| L20 | `ts-dp2f4-1k` 对 `ts-g-a-1000` | 一半数据并行一半 FSDP、跑 1000 步 | — | 略超 | 1.19 | 梯度范数·MARE | 和 GPU 重跑分不开 | 4.23e-03 | 0.992 | 0.500 | 2.35e+09 | 否 | [结果](results/ts-dp2f4-1k-vs-ts-g-a-1000.json) |
-| L21 | `ts-d-einsum-1k` 对 `ts-g-a-1000` | einsum 换广播乘、跑 1000 步 | — | 略超 | 1.33 | 梯度范数·最大单步 | 和 GPU 重跑分不开 | 1.04e-03 | 1.001 | 0.492 | 1.82e+09 | 否 | [结果](results/ts-d-einsum-1k-vs-ts-g-a-1000.json) |
-| L22 | `ts-c-scag-1k` 对 `ts-g-a-1000` | all-gather 交给 SparseCore、跑 1000 步 | — | 略超 | 1.08 | 梯度范数·MARE | 和 GPU 重跑分不开 | 8.93e-04 | 1.000 | 0.476 | 1.63e+09 | 否 | [结果](results/ts-c-scag-1k-vs-ts-g-a-1000.json) |
-| L23 | `ts-c-autorp-1k` 对 `ts-g-a-1000` | 编译器自动降精度、跑 1000 步 | — | 略超 | 1.17 | 参数范数·最大单步 | 和 GPU 重跑分不开 | 0.00e+00 | 1.000 | 0.498 | 1.42e+09 | 否 | [结果](results/ts-c-autorp-1k-vs-ts-g-a-1000.json) |
-| L24 | `ts-d-metrics-1k` 对 `ts-g-a-1000` | 每层多记统计量、跑 1000 步 | — | 略超 | 1.40 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | 7.95e-04 | 1.000 | 0.504 | 1.82e+09 | 否 | [结果](results/ts-d-metrics-1k-vs-ts-g-a-1000.json) |
-| L25 | `ts-d-dotattn-1k` 对 `ts-g-a-1000` | 注意力换普通实现、跑 1000 步 | — | 略超 | 1.15 | 主 loss（第 101 步起）·带符号均值 | 和 GPU 重跑分不开 | 4.04e-03 | 0.998 | 0.478 | 1.79e+09 | 否 | [结果](results/ts-d-dotattn-1k-vs-ts-g-a-1000.json) |
-| L26 | `ts-remat-min-1k` 对 `ts-g-a-1000` | 重算策略少量保存、跑 1000 步 | — | 在噪声内 | 0.96 | 梯度范数·MARE | — | 2.66e-03 | 1.007 | 0.480 | 1.79e+09 | 否 | [结果](results/ts-remat-min-1k-vs-ts-g-a-1000.json) |
-| L27 | `ts-remat-all-1k` 对 `ts-g-a-1000` | 不重算、跑 1000 步 | — | 略超 | 1.05 | L4.mtp_loss.tail·带符号均值 | 和 GPU 重跑分不开 | 4.41e-03 | 1.017 | 0.465 | 1.74e+09 | 否 | [结果](results/ts-remat-all-1k-vs-ts-g-a-1000.json) |
-| L28 | `ts-c-nolhs-1k` 对 `ts-g-a-1000` | 关延迟隐藏调度、跑 1000 步 | — | 略超 | 1.02 | 主 loss·MARE | 和 GPU 重跑分不开 | 6.50e-08 | 1.000 | 0.497 | 1.82e+09 | 否 | [结果](results/ts-c-nolhs-1k-vs-ts-g-a-1000.json) |
-| L29 | `ts-c-nowe-1k` 对 `ts-g-a-1000` | 关 all-gather 与矩阵乘的重叠、跑 1000 步 | — | 略超 | 1.26 | 参数范数·最大单步 | 和 GPU 重跑分不开 | 4.22e-03 | 0.988 | 0.480 | 1.80e+09 | 否 | [结果](results/ts-c-nowe-1k-vs-ts-g-a-1000.json) |
-| L30 | `ts-d-rsqrt-1k` 对 `ts-g-a-1000` | 乘倒数平方根换除以平方根、跑 1000 步 | — | 在噪声内 | 0.93 | 路由偏置标准差·MARE | — | 3.20e-03 | 1.012 | 0.494 | 1.82e+09 | 否 | [结果](results/ts-d-rsqrt-1k-vs-ts-g-a-1000.json) |
-| L31 | `ts-c-nodd-1k` 对 `ts-g-a-1000` | 关矩阵乘之间的融合、跑 1000 步 | — | 略超 | 1.49 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 否 | [结果](results/ts-c-nodd-1k-vs-ts-g-a-1000.json) |
-| L32 | `ts-f16-dp2-1k` 对 `ts-g-a-1000` | 16 卡混合切分、跑 1000 步 | — | 在噪声内 | 1.00 | 梯度范数·MARE | — | 4.27e-03 | 1.008 | 0.309 | 1.74e+09 | 否 | [结果](results/ts-f16-dp2-1k-vs-ts-g-a-1000.json) |
-| L33 | `ts-ebc-dp8-1k` 对 `ts-g-a-1000` | B1h（数据并行 8 + 累积 2 + 本地 FP32 累加、BF16 跨卡）跑 1000 步 | — | 略超 | 1.07 | 梯度范数·MARE | 和 GPU 重跑分不开 | 4.20e-03 | 1.003 | 0.481 | 6.16e+09 | 否 | [结果](results/ts-ebc-dp8-1k-vs-ts-g-a-1000.json) |
+| 编号 | 运行 | libtpu | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 离线筛 | 出处 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| L1 | `ts-e-bf16acc-1k` 对 `ts-g-a-1000` | 0.0.46 | E3 跑 1000 步，对 golden 1000 步比（尺子 GPU g3 28 对） | — | 略超 | 1.64 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | 6.25e-03 | 0.947 | 0.492 | 1.81e+09 | 否 | — | [结果](results/ts-e-bf16acc-1k-vs-ts-g-a-1000.json) |
+| L2 | `ts-e-approx-1k` 对 `ts-g-a-1000` | 0.0.46 | E4 跑 1000 步 | — | 略超 | 1.07 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | 3.38e-03 | 0.995 | 0.481 | 1.77e+09 | 否 | — | [结果](results/ts-e-approx-1k-vs-ts-g-a-1000.json) |
+| L3 | `ts-mb2-1k` 对 `ts-g-a-1000` | 0.0.46 | B4 跑 1000 步（只换顺序的对照） | — | 在噪声内 | 0.96 | 路由偏置标准差·MARE | — | 2.46e-03 | 0.999 | 0.478 | 1.91e+09 | 否 | — | [结果](results/ts-mb2-1k-vs-ts-g-a-1000.json) |
+| L4 | `ts-tp2-1k` 对 `ts-g-a-1000` | 0.0.46 | B3（FSDP 4 × 张量并行 2）跑 1000 步 | — | 略超 | 1.14 | 参数范数·最大单步 | 和 GPU 重跑分不开 | 3.89e-03 | 0.972 | 0.853 | 1.92e+09 | 否 | — | [结果](results/ts-tp2-1k-vs-ts-g-a-1000.json) |
+| L5 | `ts-remat-full-1k` 对 `ts-g-a-1000` | 0.0.46 | B10（全重算）跑 1000 步 | — | 在噪声内 | 0.92 | 梯度范数·MARE | — | 1.86e-03 | 1.000 | 0.495 | 1.82e+09 | 否 | — | [结果](results/ts-remat-full-1k-vs-ts-g-a-1000.json) |
+| L6 | `ts-f-ltpu45-1k` 对 `ts-g-a-1000` | 0.0.45 | F2（libtpu 0.0.45）跑 1000 步 | — | 略超 | 1.19 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | 3.11e-04 | 1.000 | 0.495 | 1.82e+09 | 否 | — | [结果](results/ts-f-ltpu45-1k-vs-ts-g-a-1000.json) |
+| L7 | `ts-h-v7-1k3` 对 `ts-g-a-1000` | 0.0.46 | H2（同程序换 v7x）跑 1000 步 | — | 在噪声内 | 0.91 | 梯度范数·MARE | — | 3.89e-03 | 1.013 | 0.343 | 1.02e+09 | 否 | — | [结果](results/ts-h-v7-1k3-vs-ts-g-a-1000.json) |
+| L8 | `ts-f16-1k` 对 `ts-g-a-1000` | 0.0.46 | B2（16 设备 FSDP 16、累积 1）跑 1000 步 | — | 略超 | 1.11 | 主 loss（第 101 步起）·带符号均值 | 和 GPU 重跑分不开 | 3.89e-03 | 1.018 | 0.321 | 1.48e+09 | 否 | — | [结果](results/ts-f16-1k-vs-ts-g-a-1000.json) |
+| L9 | `ts-f-ltpu47-1k` 对 `ts-g-a-1000` | 0.0.47 | F1b（libtpu 0.0.47）跑 1000 步 | — | 在噪声内 | 0.92 | 梯度范数·MARE | — | 8.63e-04 | 0.999 | 0.493 | 1.82e+09 | 否 | — | [结果](results/ts-f-ltpu47-1k-vs-ts-g-a-1000.json) |
+| L10 | `ts-f-ltpu48-1k` 对 `ts-g-a-1000` | 0.0.48 | F1（libtpu 0.0.48）跑 1000 步 | — | 在噪声内 | 0.92 | 梯度范数·MARE | — | 8.63e-04 | 0.999 | 0.487 | 1.83e+09 | 否 | — | [结果](results/ts-f-ltpu48-1k-vs-ts-g-a-1000.json) |
+| L11 | `ts-c-scar-1k` 对 `ts-g-a-1000` | 0.0.46 | C6（all-reduce 交给 SparseCore）跑 1000 步 | — | 在噪声内 | 0.88 | 主 loss·MARE | — | 0.00e+00 | 1.000 | 0.488 | 1.73e+09 | 否 | — | [结果](results/ts-c-scar-1k-vs-ts-g-a-1000.json) |
+| L12 | `ts-d-square-1ks` 对 `ts-g-a-1000` | 0.0.46 | D1（x*x 代替 lax.square）跑 1000 步 | — | 在噪声内 | 0.96 | 梯度范数·MARE | — | 3.84e-04 | 1.000 | 0.494 | 1.82e+09 | 否 | — | [结果](results/ts-d-square-1ks-vs-ts-g-a-1000.json) |
+| L13 | `ts-dense-moe-1k` 对 `ts-g-a-1000` | 0.0.46 | B14（MoE 稠密实现）跑 1000 步 | — | 略超 | 1.16 | 梯度范数·最大单步 | 和 GPU 重跑分不开 | 2.70e-03 | 1.001 | 0.499 | 1.81e+09 | 否 | — | [结果](results/ts-dense-moe-1k-vs-ts-g-a-1000.json) |
+| L14 | `ts-e-ihcr-1k` 对 `ts-g-a-1000` | 0.0.46 | E8（iHC 不强制舍成 BF16）跑 1000 步 | — | 超 | 1.36 | 主 loss（第 101 步起）·带符号均值 | 分得开 | 5.52e-03 | 0.931 | 0.496 | 1.82e+09 | 否 | — | [结果](results/ts-e-ihcr-1k-vs-ts-g-a-1000.json) |
+| L15 | `ts-fx-dp8-embf32-1ks2` 对 `ts-g-a-1000` | 0.0.46 | B1f（数据并行 8 + 累积 2 + FP32 词嵌入梯度，修复后）跑 1000 步 | — | 略超 | 1.09 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | 4.20e-03 | 1.003 | 0.480 | 6.16e+09 | 否 | — | [结果](results/ts-fx-dp8-embf32-1ks2-vs-ts-g-a-1000.json) |
+| L16 | `ts-fx-dp16-embf32-1ks` 对 `ts-g-a-1000` | 0.0.46 | B2g（16 设备纯数据并行 + FP32 词嵌入梯度）跑 1000 步 | — | 略超 | 1.30 | 参数范数·最大单步 | 和 GPU 重跑分不开 | 4.32e-03 | 1.009 | 0.263 | 6.16e+09 | 否 | — | [结果](results/ts-fx-dp16-embf32-1ks-vs-ts-g-a-1000.json) |
+| L17 | `ts-e-swiglu-1ks` 对 `ts-g-a-1000` | 0.0.46 | E9（SwiGLU 少舍一次）跑 1000 步 | — | 略超 | 1.37 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | 3.60e-03 | 0.994 | 0.496 | 1.82e+09 | 否 | — | [结果](results/ts-e-swiglu-1ks-vs-ts-g-a-1000.json) |
+| L18 | `ts-e-nsfp32-1ks` 对 `ts-g-a-1000` | 0.0.46 | E10（Muon 正交化 FP32）跑 1000 步 | — | 在噪声内 | 0.97 | 梯度范数·MARE | — | 0.00e+00 | 1.000 | 0.490 | 1.81e+09 | 否 | — | [结果](results/ts-e-nsfp32-1ks-vs-ts-g-a-1000.json) |
+| L19 | `ts-e-idx32-1ks` 对 `ts-g-a-1000` | 0.0.46 | E12（索引器打分不用真 FP32）跑 1000 步 | — | 略超 | 1.06 | 梯度范数·MARE | 和 GPU 重跑分不开 | 2.28e-03 | 1.001 | 0.468 | 1.81e+09 | 否 | — | [结果](results/ts-e-idx32-1ks-vs-ts-g-a-1000.json) |
+| L20 | `ts-dp2f4-1k` 对 `ts-g-a-1000` | 0.0.46 | 一半数据并行一半 FSDP、跑 1000 步 | — | 略超 | 1.19 | 梯度范数·MARE | 和 GPU 重跑分不开 | 4.23e-03 | 0.992 | 0.500 | 2.35e+09 | 否 | — | [结果](results/ts-dp2f4-1k-vs-ts-g-a-1000.json) |
+| L21 | `ts-d-einsum-1k` 对 `ts-g-a-1000` | 0.0.46 | einsum 换广播乘、跑 1000 步 | — | 略超 | 1.33 | 梯度范数·最大单步 | 和 GPU 重跑分不开 | 1.04e-03 | 1.001 | 0.492 | 1.82e+09 | 否 | — | [结果](results/ts-d-einsum-1k-vs-ts-g-a-1000.json) |
+| L22 | `ts-c-scag-1k` 对 `ts-g-a-1000` | 0.0.46 | all-gather 交给 SparseCore、跑 1000 步 | — | 略超 | 1.08 | 梯度范数·MARE | 和 GPU 重跑分不开 | 8.93e-04 | 1.000 | 0.476 | 1.63e+09 | 否 | — | [结果](results/ts-c-scag-1k-vs-ts-g-a-1000.json) |
+| L23 | `ts-c-autorp-1k` 对 `ts-g-a-1000` | 0.0.46 | 编译器自动降精度、跑 1000 步 | — | 略超 | 1.17 | 参数范数·最大单步 | 和 GPU 重跑分不开 | 0.00e+00 | 1.000 | 0.498 | 1.42e+09 | 否 | — | [结果](results/ts-c-autorp-1k-vs-ts-g-a-1000.json) |
+| L24 | `ts-d-metrics-1k` 对 `ts-g-a-1000` | 0.0.46 | 每层多记统计量、跑 1000 步 | — | 略超 | 1.40 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | 7.95e-04 | 1.000 | 0.504 | 1.82e+09 | 否 | — | [结果](results/ts-d-metrics-1k-vs-ts-g-a-1000.json) |
+| L25 | `ts-d-dotattn-1k` 对 `ts-g-a-1000` | 0.0.46 | 注意力换普通实现、跑 1000 步 | — | 略超 | 1.15 | 主 loss（第 101 步起）·带符号均值 | 和 GPU 重跑分不开 | 4.04e-03 | 0.998 | 0.478 | 1.79e+09 | 否 | — | [结果](results/ts-d-dotattn-1k-vs-ts-g-a-1000.json) |
+| L26 | `ts-remat-min-1k` 对 `ts-g-a-1000` | 0.0.46 | 重算策略少量保存、跑 1000 步 | — | 在噪声内 | 0.96 | 梯度范数·MARE | — | 2.66e-03 | 1.007 | 0.480 | 1.79e+09 | 否 | — | [结果](results/ts-remat-min-1k-vs-ts-g-a-1000.json) |
+| L27 | `ts-remat-all-1k` 对 `ts-g-a-1000` | 0.0.46 | 不重算、跑 1000 步 | — | 略超 | 1.05 | L4.mtp_loss.tail·带符号均值 | 和 GPU 重跑分不开 | 4.41e-03 | 1.017 | 0.465 | 1.74e+09 | 否 | — | [结果](results/ts-remat-all-1k-vs-ts-g-a-1000.json) |
+| L28 | `ts-c-nolhs-1k` 对 `ts-g-a-1000` | 0.0.46 | 关延迟隐藏调度、跑 1000 步 | — | 略超 | 1.02 | 主 loss·MARE | 和 GPU 重跑分不开 | 6.50e-08 | 1.000 | 0.497 | 1.82e+09 | 否 | — | [结果](results/ts-c-nolhs-1k-vs-ts-g-a-1000.json) |
+| L29 | `ts-c-nowe-1k` 对 `ts-g-a-1000` | 0.0.46 | 关 all-gather 与矩阵乘的重叠、跑 1000 步 | — | 略超 | 1.26 | 参数范数·最大单步 | 和 GPU 重跑分不开 | 4.22e-03 | 0.988 | 0.480 | 1.80e+09 | 否 | — | [结果](results/ts-c-nowe-1k-vs-ts-g-a-1000.json) |
+| L30 | `ts-d-rsqrt-1k` 对 `ts-g-a-1000` | 0.0.46 | 乘倒数平方根换除以平方根、跑 1000 步 | — | 在噪声内 | 0.93 | 路由偏置标准差·MARE | — | 3.20e-03 | 1.012 | 0.494 | 1.82e+09 | 否 | — | [结果](results/ts-d-rsqrt-1k-vs-ts-g-a-1000.json) |
+| L31 | `ts-c-nodd-1k` 对 `ts-g-a-1000` | 0.0.46 | 关矩阵乘之间的融合、跑 1000 步 | — | 略超 | 1.49 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | 0.00e+00 | 1.000 | 0.497 | 1.82e+09 | 否 | — | [结果](results/ts-c-nodd-1k-vs-ts-g-a-1000.json) |
+| L32 | `ts-f16-dp2-1k` 对 `ts-g-a-1000` | 0.0.46 | 16 卡混合切分、跑 1000 步 | — | 在噪声内 | 1.00 | 梯度范数·MARE | — | 4.27e-03 | 1.008 | 0.309 | 1.74e+09 | 否 | — | [结果](results/ts-f16-dp2-1k-vs-ts-g-a-1000.json) |
+| L33 | `ts-ebc-dp8-1k` 对 `ts-g-a-1000` | 0.0.46 | B1h（数据并行 8 + 累积 2 + 本地 FP32 累加、BF16 跨卡）跑 1000 步 | — | 略超 | 1.07 | 梯度范数·MARE | 和 GPU 重跑分不开 | 4.20e-03 | 1.003 | 0.481 | 6.16e+09 | 否 | — | [结果](results/ts-ebc-dp8-1k-vs-ts-g-a-1000.json) |
 <!-- END:matrix-L -->
+
+## V · libtpu 0.0.52 上重测
+
+只换 libtpu（Pod 里 `pip install --no-deps libtpu==0.0.52`，jax 0.11.1 不动），其余同对应的 0.0.46 臂；对 0.0.52 的 golden `ts-g52-a`（F5）或同版本的底比，尺子不变（[`catalogs/vs-ts-g52-a.yaml`](catalogs/vs-ts-g52-a.yaml)、1000 步 [`vs-ts-g52-a-1000.yaml`](catalogs/vs-ts-g52-a-1000.yaml)）。两个版本的对照与解读见 [`libtpu-052.md`](libtpu-052.md)。
+
+<!-- BEGIN:matrix-V -->
+| 编号 | 运行 | libtpu | 改什么 | 预期 | 档 | 曲线最差 r | 领头 | 和 GPU 重跑比（事后解读） | 第 1 步梯度相对差中位数 | 对 FP64 | 步时 s | 显存峰值 B | 程序相同 | 离线筛 | 出处 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| V1 | `ts52-dp8` 对 `ts-g52-a` | 0.0.52 | B1（纯数据并行 8）换 libtpu 0.0.52 | 同 B1 | 超 | 2.82 | 主 loss（第 101 步起）·带符号均值 | 分得开 | 4.26e-03 | 0.998 | 0.466 | 6.16e+09 | 否 | — | [结果](results/ts52-dp8-vs-ts-g52-a.json) |
+| V2 | `ts52-fx-dp8-embf32` 对 `ts-g52-a` | 0.0.52 | B1f（纯数据并行 + 词嵌入梯度 FP32 累加，MaxText d5c9b113）换 libtpu 0.0.52 | 在噪声内 | 略超 | 1.55 | 主 loss·带符号均值 | 和 GPU 重跑分不开 | 4.20e-03 | 1.009 | 0.468 | 6.16e+09 | 否 | — | [结果](results/ts52-fx-dp8-embf32-vs-ts-g52-a.json) |
+| V3 | `ts52-ebc-dp8` 对 `ts-g52-a` | 0.0.52 | B1h（本地 FP32 累加、BF16 跨卡，MaxText 6d2179a0）换 libtpu 0.0.52 | 在噪声内 | 略超 | 1.20 | 主 loss·带符号均值 | 和 GPU 重跑分不开 | 4.20e-03 | 1.009 | 0.473 | 6.16e+09 | 否 | — | [结果](results/ts52-ebc-dp8-vs-ts-g52-a.json) |
+| V4 | `ts52-esd-dp8` 对 `ts-g52-a` | 0.0.52 | B1j（只把词嵌入表沿数据并行轴切开，MaxText 9099c8ce）换 libtpu 0.0.52 | 在噪声内 | 略超 | 1.23 | 主 loss（第 101 步起）·带符号均值 | 和 GPU 重跑分不开 | 4.16e-03 | 0.998 | 0.454 | 4.43e+09 | 否 | — | [结果](results/ts52-esd-dp8-vs-ts-g52-a.json) |
+| V5 | `ts52-c-noexcess` 对 `ts-g52-a` | 0.0.52 | C1（--xla_allow_excess_precision=false）换 libtpu 0.0.52 | 同 C1 | 超 | 12.56 | 梯度范数·带符号均值 | 分得开 | 4.83e-03 | 1.013 | 0.470 | 1.39e+09 | 否 | — | [结果](results/ts52-c-noexcess-vs-ts-g52-a.json) |
+| V6 | `ts52-c-nosrb` 对 `ts-g52-a` | 0.0.52 | C15（xla_tpu_enable_dot_strength_reduction=false）换 libtpu 0.0.52 | 同 C15 | 超 | 1.00 | 梯度范数·带符号均值 | 分得开 | 1.03e-03 | 1.000 | 0.518 | 1.80e+09 | 否 | — | [结果](results/ts52-c-nosrb-vs-ts-g52-a.json) |
+| V7 | `ts52-e-rms2r` 对 `ts-g52-a` | 0.0.52 | E6（rmsnorm_single_rounding=false）换 libtpu 0.0.52 | 同 E6 | 超 | 5.50 | 主 loss·带符号均值 | 分得开 | 8.89e-04 | 1.000 | 0.468 | 1.79e+09 | 否 | — | [结果](results/ts52-e-rms2r-vs-ts-g52-a.json) |
+| V7b | `ts52-e-rms2r-b` 对 `ts52-e-rms2r` | 0.0.52 | V7 换一组机器重跑（核 0.0.52 上 E6 的结果可复现） | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.469 | 1.79e+09 | 是 | — | [结果](results/ts52-e-rms2r-b-vs-ts52-e-rms2r.json) |
+| V8 | `ts52-e-ihcr` 对 `ts-g52-a` | 0.0.52 | E8（ihc_force_bf16_rounding=false）换 libtpu 0.0.52 | 同 E8 | 超 | 1.18 | 索引器 loss·MARE | 分得开 | 5.54e-03 | 0.923 | 0.465 | 1.79e+09 | 否 | — | [结果](results/ts52-e-ihcr-vs-ts-g52-a.json) |
+| V9 | `ts52-d-dotattn-r2` 对 `ts-g52-a` | 0.0.52 | D12（attention=dot_product）换 libtpu 0.0.52（第一次 spot 被收回，-r2 跑成） | 不逐位 | 略超 | 1.42 | 梯度范数·带符号均值 | 和 GPU 重跑分不开 | 4.01e-03 | 0.987 | 0.448 | 1.77e+09 | 否 | — | [结果](results/ts52-d-dotattn-r2-vs-ts-g52-a.json) |
+| V10 | `ts52-cp2b` 对 `ts52-d-dotattn-r2` | 0.0.52 | G2（在 D12 上上下文并行 2、关负载均衡）换 libtpu 0.0.52，对 V9 比 | 同 G2 | 在噪声内 | 0.95 | 路由偏置标准差·带符号均值 | — | 3.49e-03 | 1.004 | 0.606 | 1.80e+09 | 否 | — | [结果](results/ts52-cp2b-vs-ts52-d-dotattn-r2.json) |
+| V11 | `ts52-n2-dotf32w` 对 `ts-g52-a` | 0.0.52 | G4a（attention=dot_product + float32_logits=true，MaxText 56492817）换 libtpu 0.0.52 | — | 在噪声内 | 0.96 | MTP loss·最大单步 | — | 4.12e-03 | 0.970 | 0.472 | 1.77e+09 | 否 | — | [结果](results/ts52-n2-dotf32w-vs-ts-g52-a.json) |
+| V12 | `ts52-n2-cp2f32w` 对 `ts52-n2-dotf32w` | 0.0.52 | G4（在 G4a 上上下文并行 2、关负载均衡）换 libtpu 0.0.52，对 V11 比 | 在噪声内 | 在噪声内 | 0.84 | 路由偏置标准差·最大单步 | — | 3.26e-03 | 1.005 | 0.688 | 1.81e+09 | 否 | — | [结果](results/ts52-n2-cp2f32w-vs-ts52-n2-dotf32w.json) |
+| V13 | `ts52-esd-g` 对 `ts-g52-a` | 0.0.52 | B1k（golden 换成加了 embedding_shard_over_data 开关、关着的 MaxText 9099c8ce）换 libtpu 0.0.52；离线判「程序相同」，上卡抽查 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.467 | 1.79e+09 | 是 | — | [结果](results/ts52-esd-g-vs-ts-g52-a.json) |
+| V14 | `ts52-c-noacf` 对 `ts-g52-a` | 0.0.52 | C4（xla_tpu_enable_async_collective_fusion=false）换 libtpu 0.0.52；离线判「程序相同」，上卡抽查 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.467 | 1.79e+09 | 是 | — | [结果](results/ts52-c-noacf-vs-ts-g52-a.json) |
+| V15 | `ts52-c-crsbf16` 对 `ts-g52-a` | 0.0.52 | C10（xla_jf_bf16_inside_cross_replica_sum=true）换 libtpu 0.0.52；离线判「程序相同」，上卡抽查 | 逐位相同 | 逐位相同 | 0.00 | — | — | 0.00e+00 | 1.000 | 0.466 | 1.79e+09 | 是 | — | [结果](results/ts52-c-crsbf16-vs-ts-g52-a.json) |
+| V16 | `ts52-h-v7b-r1` 对 `ts-h-v7b` | 0.0.52 | H2（v7x 2x2x1 FSDP 8）libtpu 0.0.46 → 0.0.52（第一次没取回，-r1 跑成） | 不逐位 | 在噪声内 | 0.92 | 梯度范数·MARE | — | 3.96e-03 | 0.996 | 0.340 | 9.62e+08 | 否 | — | [结果](results/ts52-h-v7b-r1-vs-ts-h-v7b.json) |
+| V17 | `ts52-h-v7-dp8-ga1-r1` 对 `ts52-h-v7b-r1` | 0.0.52 | v7x 上纯数据并行 8、每设备微批 2 × 累积 1（每卡 8192 个下标），libtpu 0.0.52，对 V16 比：0.0.52 在这里开始排序（libtpu-052.md） | 词嵌入梯度不再变远 | 在噪声内 | 0.89 | 索引器 loss·MARE | — | 4.62e-03 | 1.003 | 0.337 | 6.21e+09 | 否 | — | [结果](results/ts52-h-v7-dp8-ga1-r1-vs-ts52-h-v7b-r1.json) |
+<!-- END:matrix-V -->
+
+## 跑前离线筛：回测
+
+上 TPU 之前先在 CPU 上编一次、比程序（[`hlo_screen.py`](hlo_screen.py)，用法与规则见 [`setup.md`「跑前离线筛」](setup.md#跑前离线筛)）。下表拿已经有 TPU 结论的臂回测：每个臂的规格从 `arms.yaml` 的 `screen` 推出，并核对过与运行时 `meta.json` 记的一致。
+
+- 「CPU 编的与 TPU 存的程序相同」：CPU 上编出的被测、对照两个程序，和这两次运行在 TPU 上实际存下的训练步 HLO 是否一字不差（规范化以后）。
+- 「符不符」：预判程序相同的，实际必须逐位相同（不是的话 `build_tables.py` 直接报错）；预判程序不同的，TPU 上存下的程序也必须不同；结果仍逐位相同的另外注明（多跑了一次，不会漏）。
+- 由 `build_tables.py` 按 [`results/hlo-screen.json`](results/hlo-screen.json) 与各臂的结果文件生成。
+- 「TPU 上程序相同」用同一套规范化比两次运行在 TPU 上存下的 HLO。各臂结果文件里的程序指纹（`tpu_self_compare.py`）2026-11-11 起也用这套规范化：之前不做名字重编号，C13（关一种融合）、E11（loss 求和换顺序）被记成程序不同，重算后是同一个程序（`analysis/refresh_program_fingerprint.py`，只改了这两份的判定）。
+
+<!-- BEGIN:screen -->
+筛了 109 个臂：判程序相同 23 个、程序不同 72 个、无法离线判断 14 个；对上 TPU 实际的「符」95 个、「不符」0 个。
+一共编了 95 份不同的规格，每份一次：XLA 编译 75–215 s，连追踪与建抽象状态整次 114–265 s（中位数 184 s）；单进程峰值内存 13.2–16.9 GiB。
+
+| 编号 | 改什么 | 离线筛 | 理由 | CPU 编的与 TPU 存的程序相同 | TPU 上程序相同 | 实际档 | 符不符 |
+|---|---|---|---|---|---|---|---|
+| A1 | 同一作业换一组机器重跑 | 相同 | 程序规格与对照完全相同（只换机器、集群或重跑），不用编 | — | 是 | 逐位相同 | 符 |
+| A2 | 只跑前 300 步 | 相同 | 优化后程序逐字相同（去掉元数据、重编号后） | 是 | 是 | 逐位相同 | 符 |
+| A3 | 换一批机器重跑 | 相同 | 优化后程序逐字相同（去掉元数据、重编号后） | 是 | 是 | 逐位相同 | 符 |
+| A4 | 再换一批机器重跑 | 相同 | 优化后程序逐字相同（去掉元数据、重编号后） | 是 | 是 | 逐位相同 | 符 |
+| A6 | 换一个集群重跑 | 相同 | 优化后程序逐字相同（去掉元数据、重编号后） | 是 | 是 | 逐位相同 | 符 |
+| A5 | 升级到只加了默认关功能的版本 | 相同 | 优化后程序逐字相同（去掉元数据、重编号后） | 是 | — | 逐位相同 | 符 |
+| B1 | FSDP 改成纯数据并行 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| B1b | 纯数据并行 + 词嵌入梯度用 FP32 累加（修复前，有 bug） | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| B1f | 纯数据并行 + 词嵌入梯度用 FP32 累加（修复后） | 不同 | 优化后程序不同 | 是 | 否 | 在噪声内 | 符 |
+| B1g | 基准运行用修复后的代码重跑 | 相同 | 优化后程序逐字相同（去掉元数据、重编号后） | 是 | 是 | 逐位相同 | 符 |
+| B1h | 纯数据并行 + 词嵌入梯度本地 FP32 累加、BF16 跨卡求和 | 不同 | 优化后程序不同 | 是 | 否 | 在噪声内 | 符 |
+| B1i | 基准运行用加开关后的代码重跑 | 相同 | 优化后程序逐字相同（去掉元数据、重编号后） | 是 | 是 | 逐位相同 | 符 |
+| B1j | 纯数据并行 + 只把词嵌入表按 FSDP 的方式切开 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| B1k | 基准运行用加开关后的代码重跑 | 相同 | 优化后程序逐字相同（去掉元数据、重编号后） | 是 | 是 | 逐位相同 | 符 |
+| B1d | 纯数据并行、不做梯度累积 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| B1e | 纯数据并行、不累积，词嵌入梯度用 FP32 累加 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| B2 | 卡数翻倍、全局批不变 | 不同 | 优化后程序不同 | 是 | 否 | 在噪声内 | 符 |
+| B2b | 16 卡配置重跑 | 相同 | 程序规格与对照完全相同（只换机器、集群或重跑），不用编 | — | 是 | 逐位相同 | 符 |
+| B2c | 16 卡上混合切分 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| B2g | 16 卡纯数据并行 + 词嵌入梯度用 FP32 累加 | 不同 | 优化后程序不同 | 是 | 否 | 在噪声内 | 符 |
+| B2d | 16 卡上加张量并行 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| B2e | 16 卡纯数据并行 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| B2f | 16 卡上 all-reduce 交给 SparseCore | 判不了 | SparseCore 开关 --xla_tpu_enable_sparse_core_collective_offload_all_reduce | 是 | 否 | 略超 | —（不判） |
+| B3 | 加张量并行 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| B4 | 微批 1×2 改成 2×1 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| B5 | 一半数据并行一半 FSDP | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| B6 | 路由权重相乘的位置改到专家输出之后 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| B7 | 专家并行 2 | 不同 | 优化后程序不同 | 是 | 否 | 在噪声内 | 符 |
+| B8 | 专家并行 4 | 不同 | 优化后程序不同 | 是 | 否 | 在噪声内 | 符 |
+| B9 | 专家并行 8 | 不同 | 优化后程序不同 | 是 | 否 | 在噪声内 | 符 |
+| B10 | 重算策略改成全重算 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| B11 | 重算策略改成少量保存 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| B12 | 不重算 | 不同 | 优化后程序不同 | 是 | 否 | 在噪声内 | 符 |
+| B14 | MoE 换成稠密实现 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| C1 | 关掉编译器的省舍入 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| C2 | 全局矩阵乘最高精度 | 不同 | 优化后程序不同 | 是 | 否 | 逐位相同 | 符（程序不同，结果仍逐位：多跑一次，不漏） |
+| C3 | 关延迟隐藏调度 | 不同 | 优化后程序不同 | 是 | 否 | 在噪声内 | 符 |
+| C4 | 关异步集合通信融合 | 相同 | 优化后程序逐字相同（去掉元数据、重编号后） | 是 | 是 | 逐位相同 | 符 |
+| C5 | 关数据并行 all-reduce 优化 | 相同 | 优化后程序逐字相同（去掉元数据、重编号后） | 是 | 是 | 逐位相同 | 符 |
+| C6 | all-reduce 交给 SparseCore | 判不了 | SparseCore 开关 --xla_tpu_enable_sparse_core_collective_offload_all_reduce | 是 | 否 | 略超 | —（不判） |
+| C7 | reduce-scatter 交给 SparseCore | 判不了 | SparseCore 开关 --xla_tpu_enable_sparse_core_collective_offload_reduce_scatter | 是 | 否 | 逐位相同 | —（不判） |
+| C8 | all-gather 交给 SparseCore | 判不了 | SparseCore 开关 --xla_tpu_enable_sparse_core_collective_offload_all_gather | 是 | 否 | 略超 | —（不判） |
+| C9 | 集合通信的 BF16 归约强制 FP32 | 判不了 | SparseCore 开关 --xla_sc_force_bf16_collective_reductions_to_f32 | 是 | 是 | 逐位相同 | —（不判） |
+| C10 | 跨副本求和用 BF16 | 相同 | 优化后程序逐字相同（去掉元数据、重编号后） | 是 | 是 | 逐位相同 | 符 |
+| C11 | 编译器自动降精度 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| C12 | 关 all-gather 与矩阵乘的重叠 | 不同 | 优化后程序不同 | 是 | 否 | 在噪声内 | 符 |
+| C13 | 关一种融合 | 相同 | 优化后程序逐字相同（去掉元数据、重编号后） | 是 | 是 | 逐位相同 | 符 |
+| C14 | 关矩阵乘之间的融合 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| C15 | 关小矩阵乘改写 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| C16 | 关拷贝融合 | 不同 | 优化后程序不同 | 是 | 否 | 在噪声内 | 符 |
+| C17 | 关 BF16 传播 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| C18 | 关计算与通信重叠 | 相同 | 优化后程序逐字相同（去掉元数据、重编号后） | 是 | 是 | 逐位相同 | 符 |
+| C19 | 调片上缓存上限 | 不同 | 优化后程序不同 | 是 | 否 | 在噪声内 | 符 |
+| C20 | 开一种融合 | 相同 | 优化后程序逐字相同（去掉元数据、重编号后） | 是 | 是 | 逐位相同 | 符 |
+| D1 | 平方换一种写法 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| D2 | 求平均换成求和再除 | 相同 | 优化后程序逐字相同（去掉元数据、重编号后） | 是 | 是 | 逐位相同 | 符 |
+| D3 | einsum 换成广播乘 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| D4 | 乘倒数平方根换成除以平方根 | 不同 | 优化后程序不同 | 是 | 否 | 在噪声内 | 符 |
+| D5 | 给中间值起个名字 | 相同 | 优化后程序逐字相同（去掉元数据、重编号后） | 是 | 是 | 逐位相同 | 符 |
+| D6 | 拆出一个函数 | 相同 | 优化后程序逐字相同（去掉元数据、重编号后） | 是 | 是 | 逐位相同 | 符 |
+| D7 | 乘法换个顺序 | 不同 | 优化后程序不同 | 是 | 否 | 逐位相同 | 符（程序不同，结果仍逐位：多跑一次，不漏） |
+| D8 | 每层多记几个统计量 | 不同 | 优化后程序不同 | 是 | 否 | 在噪声内 | 符 |
+| D9 | 多记一个监控量 | 不同 | 优化后程序不同 | 是 | 否 | 逐位相同 | 符（程序不同，结果仍逐位：多跑一次，不漏） |
+| D10 | 除以 n 换成乘 1/n | 不同 | 优化后程序不同 | 是 | 否 | 逐位相同 | 符（程序不同，结果仍逐位：多跑一次，不漏） |
+| D11 | 梯度裁剪换一种写法 | 不同 | 优化后程序不同 | 是 | 否 | 逐位相同 | 符（程序不同，结果仍逐位：多跑一次，不漏） |
+| D12 | 注意力换成普通实现 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| E1 | 输出头矩阵乘降回默认精度 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| E2 | 路由偏置改零均值更新 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| E3 | 关掉「投影照 GPU 的 FP32 累加」对齐开关 | 不同 | 优化后程序不同 | 是 | 否 | 在噪声内 | 符 |
+| E4 | 指数等函数回到 TPU 默认近似 | 不同 | 优化后程序不同 | 是 | 否 | 在噪声内 | 符 |
+| E5 | RMSNorm 的 ε 改小 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| E6 | RMSNorm 多舍一次 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| E7 | Adam 的 ε 改大 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| E8 | iHC 不强制舍成 BF16 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| E9 | SwiGLU 少舍一次 | 不同 | 优化后程序不同 | 是 | 否 | 在噪声内 | 符 |
+| E10 | Muon 正交化改 FP32 | 不同 | 优化后程序不同 | 是 | 否 | 在噪声内 | 符 |
+| E11 | loss 求和换个顺序 | 相同 | 优化后程序逐字相同（去掉元数据、重编号后） | 是 | 是 | 逐位相同 | 符 |
+| E13 | 词嵌入梯度改在 FP32 里累加 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| E12 | 索引器打分不用真 FP32 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| F1 | libtpu 0.0.46 → 0.0.48 | 判不了 | 换 libtpu 版本（0.0.46 cl/963683785 → 0.0.48 cl/981334199） | — | 否 | 在噪声内 | —（不判） |
+| F2 | libtpu 0.0.46 → 0.0.45 | 判不了 | 换 libtpu 版本（0.0.46 cl/963683785 → 0.0.45 cl/957406610） | — | 否 | 略超 | —（不判） |
+| F1b | libtpu 0.0.46 → 0.0.47 | 判不了 | 换 libtpu 版本（0.0.46 cl/963683785 → 0.0.47 cl/972931731） | — | 否 | 在噪声内 | —（不判） |
+| F1c | libtpu 0.0.47 → 0.0.48 | 判不了 | 换 libtpu 版本（0.0.47 cl/972931731 → 0.0.48 cl/981334199） | — | 否 | 逐位相同 | —（不判） |
+| F2b | all-reduce 走 SparseCore 时 libtpu 0.0.46 → 0.0.45 | 判不了 | 换 libtpu 版本（0.0.46 cl/963683785 → 0.0.45 cl/957406610） | — | 否 | 在噪声内 | —（不判） |
+| G2b | 上下文并行重跑 | 相同 | 程序规格与对照完全相同（只换机器、集群或重跑），不用编 | — | 是 | 逐位相同 | 符 |
+| G3a | 注意力换普通实现、写了 float32_logits（旧代码不生效） | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| G3c | softmax 走 FP32 这个开关本身 | 相同 | 优化后程序逐字相同（去掉元数据、重编号后） | 是 | 是 | 逐位相同 | 符 |
+| G3 | 加上下文并行（写了 float32_logits，旧代码不生效） | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| G2 | 加上下文并行（不做负载均衡） | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| G4a | 注意力换普通实现且 softmax 真走 FP32 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| G4 | 加上下文并行（softmax 真走 FP32） | 不同 | 优化后程序不同 | 是 | 否 | 在噪声内 | 符 |
+| H1 | v7x 上重跑 | 相同 | 程序规格与对照完全相同（只换机器、集群或重跑），不用编 | — | 是 | 逐位相同 | 符 |
+| H2 | v5p 换 v7x | 判不了 | 换硬件代际（v5p → v7x） | — | 否 | 略超 | —（不判） |
+| H3 | v7x 上卡数翻倍（只看曲线） | 判不了 | 换硬件代际（v5p → v7x-16） | — | — | 略超 | —（不判） |
+| H3b | v7x 16 设备对 v5p 16 设备 | 判不了 | 换硬件代际（v5p-16 → v7x-16） | — | — | 略超 | —（不判） |
+| H4a | v7x 上 all-reduce 交给 SparseCore | 判不了 | SparseCore 开关 --xla_tpu_enable_sparse_core_collective_offload_all_reduce | 是 | 是 | 逐位相同 | —（不判） |
+| H4b | v7x 上关掉编译器的省舍入 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| H4c | v7x 上 FSDP 改纯数据并行 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| S0a | 学习率偏大 1e-5 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| S0b | 学习率偏大 3e-5 | 不同 | 优化后程序不同 | 是 | 否 | 略超 | 符 |
+| S1 | 学习率偏大 1e-4 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| S2 | 学习率偏大 1e-3 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| S3 | 学习率偏大 1e-2 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| S4 | 学习率偏大 1e-1 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| S5 | 一部分梯度偏大 1e-3 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| S6 | 一部分梯度偏大 1e-2 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| S7 | 一部分梯度偏大 1e-1 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| S8 | loss 多乘 1.01 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+| S9 | loss 多乘 2 | 不同 | 优化后程序不同 | 是 | 否 | 超 | 符 |
+<!-- END:screen -->
 
 ## 已修
 
@@ -481,7 +661,7 @@ MaxText 对混元 4 的上下文并行：splash 注意力下 all_gather / ring /
 | 第 1 步离 FP64 | 4.00e-3 | 1.51e-2（R 3.62，分母取 GPU 三份中位数 4.17e-3；只对 golden 是 3.77 倍） |
 
 - 其余 204 个张量离 FP64 和 golden 一样近（比值中位数 0.99）。纯数据并行下以 BF16 跨卡求和的还有路由专家和索引器 `wk`/`wq_b`，但它们在 FSDP 下同样是 BF16；注意力投影与共享专家的 all-reduce 是 FP32 求和、求完舍一次 BF16，和 FSDP 的 FP32 窗口化 reduce-scatter 舍入次数相同。
-- 词嵌入多出的误差集中在 39 个高频 token 的行（占梯度范数平方 0.90），随每张卡一次 scatter 的 token 数涨（4096 个 1.57e-2、8192 个 3.07e-2），与 all-reduce 是 8 路还是 16 路无关。主因是本卡那次不排序的 BF16 scatter-add 累加，不是 BF16 跨卡求和；FSDP 那次排好序的 scatter 在 excess precision 下不丢精度（关掉 excess precision 后同一个 scatter 远 35 倍）。后半句已由单算子实验核实：scatter 标了 `indices_are_sorted=true` 时 TPU 后端在片上 FP32 累加器里加、写出时舍一次（要 excess precision 开着），没标时每加一次舍一次 BF16；排序是 pass `tpu_scatter_gather_optimizer` 在一次 scatter 的下标数超过词表行数 1/8（15104）时插的，FSDP 每卡 32768 个过线、纯数据并行每卡 4096 个不过线（[B1 梯度的跨卡归约](b1-grad-reduction.md)第七节）。
+- 词嵌入多出的误差集中在 39 个高频 token 的行（占梯度范数平方 0.90），随每张卡一次 scatter 的 token 数涨（4096 个 1.57e-2、8192 个 3.07e-2），与 all-reduce 是 8 路还是 16 路无关。主因是本卡那次不排序的 BF16 scatter-add 累加，不是 BF16 跨卡求和；FSDP 那次排好序的 scatter 在 excess precision 下不丢精度（关掉 excess precision 后同一个 scatter 远 35 倍）。后半句已由单算子实验核实：scatter 标了 `indices_are_sorted=true` 时 TPU 后端把表按块搬进片上 FP32 缓冲，块内所有更新加完再写回，每行只舍一次；下标有序时块才能顺序推进（LLO 实验确认）（要 excess precision 开着），没标时每加一次舍一次 BF16；排序是 pass `tpu_scatter_gather_optimizer` 在一次 scatter 的下标数超过词表行数 1/8（libtpu 0.0.46 上即超过 15104 个；换版本要重测）时插的，FSDP 每卡 32768 个过线、纯数据并行每卡 4096 个不过线（[B1 梯度的跨卡归约](b1-grad-reduction.md)第七节）。
 - HLO 里集合通信整体换了：FSDP 的 622 个 all-gather、900 对 collective-permute 没了，all-reduce 从 38 个变成 32 个。
 
 ### B1h 修法②：本地 FP32 累加、跨卡仍 BF16
@@ -552,14 +732,15 @@ MaxText 对混元 4 的上下文并行：splash 注意力下 all_gather / ring /
 
 | 改写 | 训练步 HLO（只看程序的指纹） | 结果 |
 |---|---|---|
-| 加重算名字、拆辅助函数、乘法换顺序、mean 换 sum / n、除以 n 换乘 1 / n | 相同 | 逐位相同 |
+| 加重算名字、拆辅助函数、mean 换 sum / n | 相同 | 逐位相同 |
+| 乘法换顺序、除以 n 换乘 1 / n、梯度裁剪换写法 | 不同 | 逐位相同 |
 | `lax.square(x)` → `x * x` | 不同（指令个数相同，融合内部不同） | 第 1 步梯度相对差中位数 3.8e-4，r 1.09 |
 | `einsum` → 广播乘 | 不同（融合少 18 个、convert 少 50 个） | 1.0e-3，r 1.10 |
 | `x * rsqrt(·)` → `x / sqrt(·)` | 不同 | r 0.98 |
 
 - 程序相同就一定逐位相同；程序不同也可能逐位（reduce-scatter 交给 SparseCore 那一臂）。
-- 做法：改完代码先只编译、比一下训练步优化后 HLO 的程序指纹（`tpu_self_compare.py` 里的 `hlo_program_fingerprint`，去掉元数据与源码位置表）。相同就不用再跑；不同再跑 300 步看档。
-- 推断：`jnp.mean` 本身就展开成求和再除以 n；TPU 上除法本来就按「乘倒数」编译。所以这两种写法改了还是同一个程序。
+- 做法：改完代码先在 CPU 上只编译、和对照比训练步优化后的程序（[`hlo_screen.py`](hlo_screen.py)，见下面[跑前离线筛：回测](#跑前离线筛回测)）。相同就不用再跑；不同再跑 300 步看档。
+- 推断：`jnp.mean` 本身就展开成求和再除以 n，所以 mean 换 sum / n 还是同一个程序。除以 n 换乘 1 / n 编出的程序不同（两次运行在 TPU 上存下的 HLO 规范化后比），结果仍逐位相同。
 
 ### B10–B12 重算策略
 

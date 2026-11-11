@@ -14,6 +14,7 @@
 | base2 | **自比的 golden 仍是开 base2 的一代（`ts-g-a`），对齐配置 2026-11-11 起已改成关，两者不冲突**：自比比的是同一个起点上只改一样东西前后的差，不依赖 base2 取什么值；golden 和各臂都是开 base2，比较内部一致。关 base2 的同一起点已有几份（`tz-off-nolhs`、`tz-off-vm32`、`tz-off-vm64`），要用关 base2 作底比时另写目录（PROTOCOL 变更记录 2026-11-11） |
 | 初始权重、数据 | 同 mini：同一份 HF 目录转换的检查点；原样回放 GPU `g3-a` 写下的 1000 步 batch 与 loss_mask |
 | 镜像 | MaxText `tpu_pre_training`（digest 见 `frameworks/maxtext/run.sh`） |
+| libtpu | 镜像自带的 0.0.46。0.0.52 上另有一份 golden `ts-g52-a`（同一命令，Pod 里只换 libtpu），0.0.52 上的臂（V 类）对它比，见 [`libtpu-052.md`](libtpu-052.md) |
 | 学习率 | 恒定 1e-5，所以 1000 步运行的前 300 步与 300 步运行的学习率相同 |
 
 命令（[`frameworks/maxtext/README.md`](../../frameworks/maxtext/README.md) 的写法）：
@@ -36,6 +37,65 @@ XLA_DUMP=1 YML=hy4-mini-t1.yml STAGE=mini GOLDEN=<GPU g3-a 运行目录> bash ru
 | libtpu / jax 版本 | `PIP_EXTRA="libtpu==<版本>"`（Pod 里先 `pip install --no-deps`，运行记录 `meta.versions.libtpu_pip` 记下版本号） |
 | 代码写法 | MaxText 上从同一提交拉一个只改一处的提交，用它打包 |
 | 硬件 | `PLATFORM=v5p-16`（2x2x4）、`v7x`（2x2x1，8 个 TensorCore）、`v7x-16`（2x2x2） |
+
+## 跑前离线筛
+
+新的变种上 TPU 之前，先在 CPU 上把它和它的对照各编一次训练步（0 张卡），比编出来的程序。TPU 上同一个程序重跑逐位相同，所以程序相同就预判逐位相同，这个变种可以不跑。
+
+**1. 在 [`arms.yaml`](arms.yaml) 里写这个臂的 `screen`**：对它的对照（`vs`，默认 golden）改了什么，只写改了的项。
+
+| 键 | 写法 | 例 |
+|---|---|---|
+| `args` | 追加的 MaxText `key=value` | `args: [ici_data_parallelism=8, ici_fsdp_parallelism=1]` |
+| `xla_flags`、`libtpu_args` | 追加的 `XLA_FLAGS`、`LIBTPU_INIT_ARGS` 开关 | `libtpu_args: [--xla_tpu_dot_dot_fusion=false]` |
+| `maxtext` | 换 MaxText 提交（改代码的臂） | `maxtext: <完整提交号>` |
+| `steps` | 换步数（300 步的臂写 `steps: 300`） | `steps: 300` |
+| `platform`、`libtpu` | 换切片（`v5p`、`v5p-16`、`v7x`、`v7x-16`）、换 libtpu 版本 | `platform: v5p-16` |
+
+只换机器、换集群、重跑，写 `screen: {}`。golden 的规格在 `arms.yaml` 开头的 `screen_base`。已经跑过的臂，`hlo_screen.py derive --root <运行目录根> --arms <编号>` 从运行目录的 `meta.json` 推出 `screen`。
+
+**2. 编译、比较**（要 docker，镜像是 golden 的那个，digest 在 `screen_base.image`；要一份有对应提交的 `maxtext` 克隆）：
+
+```bash
+python models/hunyuan4/alignments/04-tpu-self/hlo_screen.py run --arms <编号,…> \
+  --maxtext-repo <maxtext 克隆> --cache <缓存目录> [--root <运行目录根>]
+python models/hunyuan4/alignments/04-tpu-self/build_tables.py   # 结果填进 MATRIX.md 的「离线筛」一列与回测表
+```
+
+- 每份规格编一次，按规格缓存；同一个对照只编一次。一次编译的耗时与内存见 [MATRIX「跑前离线筛：回测」](MATRIX.md#跑前离线筛回测)。
+- 一次只编一份：`--mem` 是容器内存上限（默认 250g）。
+- 结果写 [`results/hlo-screen.json`](results/hlo-screen.json)：每个臂的预判、理由、规格增量、两边的编译耗时与编译期显存、程序比较和 diff 摘要。
+- 给了 `--root`（本地有运行目录）时另做两项核对：`arms.yaml` 推出的规格与运行时 `meta.json` 记的是否一致；CPU 编出的程序与那次运行在 TPU 上存下的是否相同（`cpu_vs_tpu`）。
+
+**3. 看预判**：
+
+| 预判 | 意思 | 怎么办 |
+|---|---|---|
+| 程序相同 | 优化后的训练步程序和对照的一字不差 | 预判逐位相同，可以不上 TPU |
+| 程序不同 | 程序变了；diff 摘要列出多了、少了哪些集合通信，dtype 怎么变，scatter 有没有标 `indices_are_sorted`，编译期显存 | 上 TPU 跑 300 步，按下面「比较」判档。程序不同也可能逐位相同（只换了不影响结果的写法） |
+| 无法离线判断 | 编不出来，或者改的东西在编译产物里看不出来 | 上 TPU 跑 |
+
+**无法离线判断的几类**，脚本按规格增量直接判，不看 HLO：
+
+| 改了什么 | 为什么离线判不了 |
+|---|---|
+| libtpu 版本 | 编译器后端和运行时一起换了；优化后 HLO 之后的代码生成也变，HLO 相同不代表机器码相同 |
+| 镜像 | 库的版本可能一起换了 |
+| 硬件代际（v5p ↔ v7x） | 两边本来就是两个程序，比不出「相同」 |
+| SparseCore 卸载的开关（名字里有 `sparse_core` 或 `sc_`） | 集合通信卸到 SparseCore 上执行，效果不一定反映在优化后 HLO 里（v5p 上把 SparseCore 归约强制 FP32、v7x 上把 all-reduce 交给 SparseCore，程序都和默认一字不差） |
+| 编不出来 | 没有程序可比 |
+
+同代换卡数（`v5p` → `v5p-16`）照常编、照常比。
+
+**什么叫程序相同**：取 XLA 优化后的训练步 HLO（`after_optimizations`），做五件事以后逐字比较：
+
+1. 去掉 `metadata`（op_name、源码文件与行号）和 `stack_frame_id`；
+2. 去掉头部的源码位置表；
+3. 指令与计算的名字按出现顺序重新编号：名字里的序号取决于 JAX 追踪时建过多少个同名中间量，CPU 上编和 TPU 上编会差几十，不影响程序；
+4. `replica_groups` 的 mesh 写法展开成设备号列表：真卡和拓扑描述打印的写法不同，指的是同一组设备。
+5. 每个计算里的 `parameter` 指令按参数号排到最前：parameter 没有副作用，归约子计算里 `parameter(0)`、`parameter(1)` 打印的先后偶尔相反。
+
+CPU 上编用的是 MaxText 的拓扑描述（`compile_topology`，`v5p` 对应 `v5p-16`，即 8 片），配置、jit、mesh 与 TPU 上的 `train_hy4.py` 相同（[`frameworks/maxtext/aot_hlo.py`](../../frameworks/maxtext/aot_hlo.py)）。
 
 ## 比较
 

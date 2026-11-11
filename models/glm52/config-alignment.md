@@ -20,7 +20,7 @@
 | 优化器 | Muon 超参 | — | momentum 0.95、nesterov、NS 5 步、spectral 缩放、NS 精度 "medium"（从 Bridge 源码读出后填实际生效值） | 待查 | 待查 | L3 |
 | 优化器 | Muon 处理 MLA 投影的方式 | — | 待查（Megatron-Core 对 MLA 不拆分） | 待查 | 待查 | L3 |
 | 优化器 | **QK-Clip** | — | 开，alpha 0.5、阈值 100（Megatron-Core 默认） | 开，MaxText QK-Clip，同 alpha / 阈值 | 待查（必须核对的一行） | 每个头的统计量、缩放的分配方式与参与的层逐项对照；降低阈值的触发测试两边各做一次；L4 比被裁的头 |
-| 优化器 | 学习率 | — | 配方的 warmup + cosine，按步数缩放（数字见协议第 7 节） | 同 | 待查 | L4 学习率逐位 |
+| 优化器 | 学习率 | — | 配方的 warmup + cosine，按步数缩放（数字见协议第 7 节） | 同 | 待查 | L0 设置核对：学习率逐步等于登记值 |
 | 优化器 | 权重衰减、梯度裁剪、Adam β / ε | — | 待查（实际生效值） | 待查 | 待查 | L0 配置对照 |
 | 路由 | 无辅助损失偏置更新 | `topk_method: noaux_tc` | 待查（更新率与公式） | 待查 | 待查 | L4 路由偏置曲线 |
 | 数据 | 全局批 / microbatch / 累积 | — | 16 = 8 卡 × 1 × 2 | `per_device_batch_size: 1`、`gradient_accumulation_steps: 2` | 待查 | L0 输入指纹逐位 |

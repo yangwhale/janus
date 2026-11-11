@@ -12,8 +12,8 @@
   尺子 = GPU 自己重跑的波动上限，只当尺子，不是 TPU 的门槛。
 - 档 3「超出噪声上限」：其余；曲线最差 r ≤ 2 且第 1 步没有未定责张量记「略超」，否则记「超」。
 
-另报（不进判档）：第 1 步训练梯度两边各自离 CPU FP64 多远、谁更近；优化后 HLO 指纹是否相同（另有只看程序、不看源码位置表的
-指纹 program_fingerprint）、各类指令个数之差；步时中位数（第 11 步起）、显存峰值；第 1 步梯度按层汇总。
+另报（不进判档）：第 1 步训练梯度两边各自离 CPU FP64 多远、谁更近；优化后 HLO 指纹是否相同（另有只看程序的指纹 program_fingerprint，
+规范化同 04-tpu-self/hlo_screen.py）、各类指令个数之差；步时中位数（第 11 步起）、显存峰值；第 1 步梯度按层汇总。
 
 第 1 步训练梯度从全量抓数的动量反推（同 l3_optim_step1.py）：Adam 参数 m / (1 − β1)、Muon 参数 buf / (1 − β)，
 得到裁剪后的梯度，再乘 max(1, 第 1 步 raw_grad_norm) 还原成裁剪前（与 GPU 导出、FP64 参照同口径）。
@@ -264,25 +264,19 @@ HLO_KEEP = ("all-reduce", "all-gather", "reduce-scatter", "all-to-all", "collect
             "custom-call")
 
 
-HLO_TABLES = ("FileNames", "FunctionNames", "FileLocations", "StackFrames")
-
-
 def hlo_program_fingerprint(text: str) -> str:
-    """只看程序本身的指纹：在 hlo_fingerprint 的基础上，再去掉 HLO 头部的源码位置表（FileNames、FunctionNames、
-    FileLocations、StackFrames 四节）。训练脚本改了行号、程序没变时，hlo_fingerprint 会变（表里记着行号），这个不变。"""
-    import hashlib as _h
+    """只看程序本身的指纹：用跑前离线筛（04-tpu-self/hlo_screen.py）同一套规范化——去掉 metadata、stack_frame_id 与
+    头部源码位置表，名字按出现顺序重新编号，replica_groups 的 mesh 写法展开，每个计算里的 parameter 按参数号排前——再算 sha256。
+    不重编号时，同一个程序会因为追踪时中间量个数不同、名字序号不同而记成「不同」（C13、E11 两臂就是这样）。"""
+    import sys as _sys
+    from pathlib import Path as _P
 
-    from janus.checks.extra import HLO_METADATA, HLO_STACK
-    keep, skip = [], False
-    for line in HLO_STACK.sub("", HLO_METADATA.sub("", text)).splitlines():
-        if line.strip() in HLO_TABLES:
-            skip = True
-            continue
-        if skip and (not line.strip() or re.match(r"^\d+ ", line)):
-            continue
-        skip = False
-        keep.append(line)
-    return _h.sha256("\n".join(keep).encode()).hexdigest()
+    d = str(_P(__file__).resolve().parents[1] / "alignments" / "04-tpu-self")
+    if d not in _sys.path:
+        _sys.path.insert(0, d)
+    import hlo_screen
+
+    return hlo_screen.program_fp(hlo_screen.canon_lines(text))
 
 
 def hlo_text(run_dir):

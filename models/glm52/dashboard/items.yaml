@@ -13,6 +13,7 @@ groups:
       - {name: 权重转换往返逐位, gpu: todo, v5p: todo}
       - {name: 配置逐项对照（含 Muon、QK-Clip）, gpu: todo, v5p: todo}
       - {name: 数据逐样本回放, gpu: todo, v5p: todo}
+      - {name: 设置核对：学习率逐步, gpu: todo, v5p: todo}
   - name: L1 单算子（对 FP64 的 R 比）
     items:
       - {name: MLA 各投影与 latent norm, gpu: todo, v5p: todo}
@@ -35,6 +36,5 @@ groups:
       - {name: loss, gpu: todo, v5p: todo}
       - {name: grad_norm, gpu: todo, v5p: todo}
       - {name: param_norm, gpu: todo, v5p: todo}
-      - {name: 学习率, gpu: todo, v5p: todo}
       - {name: 路由偏置曲线, gpu: todo, v5p: todo}
       - {name: QK-Clip 触发, gpu: todo, v5p: todo}

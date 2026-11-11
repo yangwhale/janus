@@ -54,6 +54,7 @@
 | `logits_dense_wgrad_fp32` | 看情况 | 未测 | 输出层权重梯度以 FP32 落地；混元 4 上没单独量 | [第 22 行](../../ROOT-CAUSES.md#r22) |
 | 路由 logits 精度 `float32_gate_logits` + `router_matmul_precision: highest` | 开（对齐配置已设） | 在重跑波动内（−0.11% 至 +0.22%） | 路由 logits 对 FP64：GPU 1.13e-6，TPU 1.20e-7；没有关掉的对照 | — |
 | `sa_use_base2_exp`（M43） | 生产设 `false`；对齐设 `false`（2026-11-11 起，之前对齐开） | +0.1% | 前向 logsumexp 对 FP64 最大绝对差：`true` 8.5e-5–1.5e-4，`false` 3.6e-6–4.3e-6；但设 `false` 时整网离 GPU 更远（1000 步主 loss 带符号均值：N 3.78e-6，TPU 1.36e-6 → 7.21e-6；对 8 份 GPU 的 r 中位数 0.51 → 2.06）。换 16 份尺子并各补一份只改执行方式的重跑后，开、关两组交叠（主 loss r：开 0.90、1.24，关 1.55、1.06），开、关各补到 4 份后两组完全交叠（主 loss r 开 0.90、1.24、1.02、1.69，关 1.55、1.06、0.93、0.95；GPU 16 份留一法 0.77–0.97），是轨迹偶然。8 份 TPU 主 loss 都偏高约 +4.3e-6，与 base2 无关（[知识库](../../knowledge.md#mini-上关-base2-为什么离-gpu-更远要点与出处)） | [第 24 行](../../ROOT-CAUSES.md#r24) |
+| `hc_head_force_bf16_rounding`（M52） | 不开（只为对齐；T1 还没开，见第 28 行） | 未测 | 多舍一次 BF16（同 M36）；对 FP64 未测 | [第 28 行](../../ROOT-CAUSES.md#r28) |
 
 对齐开关全开对全关：hy4-mini +44.6%（300 步，不含 M42b、M50），hy4-mid +46.8%（40 步，不含 M39–M41），两边量法不同不宜直接比；mid 上 M13 一项约占 60%。无开关、已默认生效的修 bug：M1、M19、M35。
 
@@ -232,7 +233,7 @@ GPU golden 改过一处（台账 G17），同一代 TPU 也改了四处（[根�
 
 | 项 | 读数（N，TPU，r） | 现在知道什么 |
 |---|---|---|
-| 主 loss（1000 步全程与第 101 步起，前 300 步全程） | 1000 步带符号均值：N 4.65e-6，TPU +7.21e-6，r 1.55；第 101 步起 N 5.02e-6，TPU +7.62e-6，r 1.52；前 300 步 N 3.01e-6，TPU 3.31e-6，r 1.10 | 不是 base2：开、关 base2 各 4 份 1000 步（3 份只改执行方式）两组交叠，主 loss r 开 0.90–1.69、关 0.93–1.55。8 份 TPU 主 loss 都比 GPU 16 份均值高，平均 +4.3e-6，原因待查（[知识库](../../knowledge.md#mini-上关-base2-为什么离-gpu-更远要点与出处)） |
+| 主 loss（1000 步全程与第 101 步起，前 300 步全程） | 1000 步带符号均值：N 4.65e-6，TPU +7.21e-6，r 1.55；第 101 步起 N 5.02e-6，TPU +7.62e-6，r 1.52；前 300 步 N 3.01e-6，TPU 3.31e-6，r 1.10 | 不是 base2：开、关 base2 各 4 份 1000 步（3 份只改执行方式）两组交叠，主 loss r 开 0.90–1.69、关 0.93–1.55。8 份 TPU 主 loss 都比 GPU 16 份均值高，平均 +4.3e-6，几乎全部来自第 501–1000 步；同一份权重上前向没有这个差，是训练轨迹的差，前段小鼓包定到 hc_head 输出没舍 BF16，后段根因未定（[D30](#d30)、[知识库](../../knowledge.md#mini-主-loss-共同偏高要点与出处)） |
 | grad_norm（前 300 步，MARE） | N 3.85e-4，TPU 4.74e-4，r 1.23；1000 步过（0.81） | base2 开的上一代同一项 1.32 倍，已定责、已接受（[D2](#d2)）；那套同一状态证据是在开 base2 的状态上做的，关后没有重做 |
 | QK-Clip 全局最大 logit（`tz-off-qkq`） | 1000 步 MARE：N 1.86e-3，TPU 2.02e-3，r 1.09；前 300 步单步最大：N 4.34e-2，TPU 4.54e-2，r 1.05 | base2 开的上一代（1000 步 1.02、前 300 步带符号均值 1.77）已定责、已接受（[D29](#d29)）；关 base2 后同一状态单步没有重做 |
 
@@ -362,14 +363,14 @@ golden 是 janus 的 Megatron-Core 训练入口加 eager 注意力，不是生�
 | <a id="d25"></a>D25 | 路由权重乘的位置；SwiGLU 上投影 dX 的舍入次数 | 已修；单开 M41 变差待查 | [第 19 行](../../ROOT-CAUSES.md#r19)、[第 20 行](../../ROOT-CAUSES.md#r20)、[还没查明](../../ROOT-CAUSES.md#u-m41) |
 | <a id="d26"></a>D26 | 开 M28 后 1000 步主 loss TPU 同号偏高 | 已修 | [第 16 行](../../ROOT-CAUSES.md#r16) |
 | <a id="d29"></a>D29 | L4 QK-Clip 全局最大 logit 略超 | 已定责、已接受 | [定责、不修](../../ROOT-CAUSES.md#u-qkclip-l4) |
-| <a id="d30"></a>D30 | 关 base2 后现行比较主 loss 略超；开、关各 4 份 TPU 都偏高约 +4.3e-6 | 待查（与 base2 无关） | [还没查明](../../ROOT-CAUSES.md#u-mini-tpu-high) |
+| <a id="d30"></a>D30 | 关 base2 后现行比较主 loss 略超；开、关各 4 份 TPU 都偏高约 +4.3e-6 | 部分定位：是训练轨迹的差（同一份权重上前向没有）；前段小鼓包定到 hc_head 输出没舍 BF16（[第 28 行](../../ROOT-CAUSES.md#r28)），后段（占几乎全部）根因未定 | [还没查明](../../ROOT-CAUSES.md#u-mini-tpu-high)、[第 28 行](../../ROOT-CAUSES.md#r28)、[知识库](../../knowledge.md#mini-主-loss-共同偏高要点与出处) |
 | <a id="d31"></a>D31 | 关 base2 后低阈值 QK-Clip 第 1 步第 4 层逐头最大 logit 超线 | 待查 | [还没查明](../../ROOT-CAUSES.md#u-qkclip-base2off) |
 
 D6 空缺（那一行记的是量法，见 [TPU 与 GPU 差异清单](../../../../docs/reference/tpu-vs-gpu-differences.md) G9）；D19–D22 在 [real-weight 的报告](../02-real-weight/ALIGNMENT-REPORT.md#3-偏差台账)，D27、D28 在 [mid 的报告](../03-mid/ALIGNMENT-REPORT.md)。
 
 ## 6. 开关表：怎样做到在可解释范围内对齐
 
-打开全部开关以后，仍剩待查的 D12（param_norm 已过线）与已定责、已接受的 D2、D11、D13、D14、D23、D29。
+打开全部开关以后，仍剩待查的 D12（param_norm 已过线）、D30（主 loss 后段的轨迹差）、D31，与已定责、已接受的 D2、D11、D13、D14、D23、D29。
 
 每个开关的代价与生产建议在首屏「生产配置建议」。代价是 hy4-mini 上的单开关 A/B：全开 0.4767 s/步，每次只关一个开关跑 300 步，取第 11–300 步的中位数，代价 = 全开 ÷ 只关该开关 − 1；取自各运行 `metrics.jsonl` 的 `step_time`，没有单独的结果文件。显存没有逐开关量。
 

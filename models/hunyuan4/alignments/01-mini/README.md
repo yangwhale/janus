@@ -28,7 +28,7 @@ hy4-mini 保留混元 4 的全部结构与每头维度，只缩宽度与个数�
 
 | 比较 | 步数 | 被测 / 基线 | 结果 |
 |---|---|---|---|
-| [`t1zo-l4`](results/t1zo-l4.report.md) | 1000 | TPU `tz-off-rep`（现行对齐配置，含 M50，base2 关）/ GPU `g3-a` | 过 7、不过 0、待定 2（主 loss 全程与后段，r 1.55 / 1.52；与 base2 无关，待查，[D30](DETAILS.md#d30)）；上一代（base2 开的 `t1zg-a`）见[历代比较](../../dashboard/history.md) |
+| [`t1zo-l4`](results/t1zo-l4.report.md) | 1000 | TPU `tz-off-rep`（现行对齐配置，含 M50，base2 关）/ GPU `g3-a` | 过 7、不过 0、待定 2（主 loss 全程与后段，r 1.55 / 1.52；与 base2 无关，是第 500 步以后攒出来的训练轨迹差，同一份权重上前向没有，后段根因未定，[D30](DETAILS.md#d30)）；上一代（base2 开的 `t1zg-a`）见[历代比较](../../dashboard/history.md) |
 
 | mini 挡签字的项 | 状态 |
 |---|---|

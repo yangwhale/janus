@@ -1,0 +1,238 @@
+{
+ "note": "同 emb-scatter-sort-aot.json 的做法，为 v7x 编（--gen v7x），libtpu 0.0.46。列数 128 的表交给 SparseCore 执行，任何下标数都先排序，所以门槛记 2。 脚本 models/hunyuan4/analysis/emb_scatter_sort_probe.py aot [--gen v7x]。",
+ "platform_version": null,
+ "gen": "v7x",
+ "libtpu": "0.0.46",
+ "threshold": [
+  {
+   "V": 1000,
+   "D": 1024,
+   "min_n_with_sort": null,
+   "checked_up_to": 65536
+  },
+  {
+   "V": 30000,
+   "D": 128,
+   "min_n_with_sort": 2,
+   "V_over_8": 3750.0
+  },
+  {
+   "V": 30000,
+   "D": 1024,
+   "min_n_with_sort": 3751,
+   "V_over_8": 3750.0
+  },
+  {
+   "V": 60000,
+   "D": 128,
+   "min_n_with_sort": 2,
+   "V_over_8": 7500.0
+  },
+  {
+   "V": 120832,
+   "D": 128,
+   "min_n_with_sort": 2,
+   "V_over_8": 15104.0
+  },
+  {
+   "V": 120832,
+   "D": 1024,
+   "min_n_with_sort": 15105,
+   "V_over_8": 15104.0
+  },
+  {
+   "V": 480000,
+   "D": 128,
+   "min_n_with_sort": 2,
+   "V_over_8": 60000.0
+  }
+ ],
+ "cells": {
+  "n2048_noflag_excess_on": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 0,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n2048_noflag_excess_off": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 0,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n2048_flag_excess_on": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n2048_flag_excess_off": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n4096_noflag_excess_on": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 0,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n4096_noflag_excess_off": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 0,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n4096_flag_excess_on": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n4096_flag_excess_off": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n8192_noflag_excess_on": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 0,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n8192_noflag_excess_off": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 0,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n8192_flag_excess_on": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n8192_flag_excess_off": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n16384_noflag_excess_on": {
+   "n_sort": 1,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n16384_noflag_excess_off": {
+   "n_sort": 1,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n16384_flag_excess_on": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n16384_flag_excess_off": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n32768_noflag_excess_on": {
+   "n_sort": 1,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n32768_noflag_excess_off": {
+   "n_sort": 1,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n32768_flag_excess_on": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "n32768_flag_excess_off": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  }
+ },
+ "sharded": {
+  "fsdp8": {
+   "n_sort": 1,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "dp8": {
+   "n_sort": 0,
+   "n_scatter": 1,
+   "n_scatter_sorted": 0,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  },
+  "dp8_jaxsort": {
+   "n_sort": 1,
+   "n_scatter": 1,
+   "n_scatter_sorted": 1,
+   "scatter_out_dtypes": [
+    "bf16"
+   ]
+  }
+ }
+}

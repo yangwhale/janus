@@ -40,7 +40,7 @@
 1. **纯数据并行下，大部分矩阵乘权重的跨卡求和是 FP32，求完和才舍成 BF16；真正以 BF16 跨卡求和的是路由专家、索引器 `wk`/`wq_b` 和词嵌入。** 32 个 all-reduce 里，归约函数是 BF16 加法的有 10 个（路由专家 6 个、索引器 2 个、词嵌入 2 个）。注意力 6 个投影和共享专家 3 个矩阵（第 1–6 层）的 all-reduce 输入 FP32、归约函数 FP32、输出 BF16。其余都是 FP32。
 2. **这几类权重在 FSDP 下的数据类型和舍入次数与纯数据并行一样。** 路由专家在 FSDP 下也是 8 路 BF16 all-reduce；索引器 `wk`/`wq_b` 是 BF16 部分和的窗口化 reduce-scatter；FP32→BF16 那一类在 FSDP 下是 FP32 部分和的窗口化 reduce-scatter，求完和舍一次 BF16。所以这 204 个张量只是换了求和顺序：矩阵乘、路由专家、索引器、RMSNorm 这几类第 1 步离 FP64 的比值（纯数据并行 ÷ golden）在 0.87–1.07；204 个张量里除 6 个 iHC 小参数（数值上病态，本来就定不了责，01-mini D11）外，全部在噪声内或定责为换了顺序。
 3. **词嵌入丢精度的主因不在 8 路 BF16 all-reduce，而在每张卡本地那次 BF16 scatter-add 的累加。** 两边 HLO 里 scatter 都声明为 BF16、归约函数都是 BF16 加；差别是 FSDP 先按 token 号排序、清零在融合内部，纯数据并行不排序、往外面传进来的零缓冲上加。多出来的误差集中在 39 个高频 token 的行，随每张卡一次 scatter 的 token 数涨（4096 个 1.57e-2，8192 个 3.07e-2），与 all-reduce 是 8 路还是 16 路无关；而 FSDP 关掉 excess precision 后，scatter 的 HLO 一字不差，高频行却远 35 倍。
-   【实测】（第七节）scatter 标了 `indices_are_sorted=true` 时，TPU 后端换一种写法：每行的连续更新在片上 FP32 累加器里加完、写出时舍一次 BF16，前提是 excess precision 开着；没标时每个更新都对 BF16 输出读、加、舍、写一次，开不开 excess precision 都一样。排序是编译器 pass `tpu_scatter_gather_optimizer` 插的，条件是这一次 scatter 的下标个数超过表行数的 1/8（词表 120832 行即超过 15104 个），和切不切分无关：FSDP 每张卡的 scatter 收的是 8 张卡全部 32768 个 token，过线；纯数据并行每张卡 4096 个（不累积时 8192 个），不过线。
+   【实测】（第七节）scatter 标了 `indices_are_sorted=true` 时，TPU 后端换一种写法：表按块搬进片上 FP32 缓冲，块内所有更新加完再写回，每行只舍一次；下标有序时块才能顺序推进（LLO 实验确认），前提是 excess precision 开着；没标时每个更新都对 BF16 输出读、加、舍、写一次，开不开 excess precision 都一样。排序是编译器 pass `tpu_scatter_gather_optimizer` 插的，在 libtpu 0.0.46 上，条件是这一次 scatter 的下标个数超过表行数的 1/8（严格大于；词表 120832 行即超过 15104 个；前提是整张表按 FP32 放不进片上内存），和切不切分无关：FSDP 每张卡的 scatter 收的是 8 张卡全部 32768 个 token，过线；纯数据并行每张卡 4096 个（不累积时 8192 个），不过线。
 4. **修复（`embedding_grad_fp32`）后**，词嵌入两个 `bf16[120832,1024]` all-reduce 变成循环里一个 `f32[120832,1024]` all-reduce（主输入与 MTP 输入合进一次 FP32 scatter），每步执行 2 次。修复前那份把这个 FP32 all-reduce 挪到了循环外，循环体里用 `select(convert(partition-id), 0, 累加器)` 把非 0 号分区的累加器每次清零。
 
 ## 一、纯数据并行的 32 个 all-reduce
@@ -167,7 +167,7 @@
 ### 机制（第七节实测）
 
 - 纯数据并行那份 scatter 没标排序，后端对每个更新都把输出里那一行 BF16 读出来、加上、舍成 BF16 写回，同一个 token 的几十到几百次更新各舍一次，高频行的误差因此随本卡 token 数增长。8 路 BF16 all-reduce 是次要的。
-- FSDP 那份由编译器先排序、标 `indices_are_sorted=true`，后端用另一种写法：同一行的一段连续更新在片上的 FP32 累加器里加完，写出时舍一次；excess precision 关掉后，同样的程序在每次加法后多一次舍成 BF16（排序后 32768 个更新顺序累加，所以更糟）。这一层在 HLO 里看不到，第七节在后端代码（LLO）里看到了。
+- FSDP 那份由编译器先排序、标 `indices_are_sorted=true`，后端用另一种写法：表按块搬进片上 FP32 缓冲，块内所有更新加完再写回，每行只舍一次；下标有序时块才能顺序推进（LLO 实验确认）；excess precision 关掉后，同样的程序在每次加法后多一次舍成 BF16（排序后 32768 个更新顺序累加，所以更糟）。这一层在 HLO 里看不到，第七节在后端代码（LLO）里看到了。
 - 原先的推断「排好序的 scatter 在 excess precision 下留在 FP32 里累加」成立，要补两处：起作用的是 `indices_are_sorted` 这个标记选中的写法，光把数据排好序不标没有用；累加器在片上 VMEM，不一定在寄存器里。「零缓冲从外面传进来」不是原因，是不排序那种写法要先清零再就地加的结果。
 - 所以之前「纯数据并行把词嵌入梯度改成 BF16 跨卡求和，所以丢精度」的说法不准：跨卡求和确实是 BF16，但主要的损失在跨卡之前。修法 `embedding_grad_fp32` 把 scatter 和 all-reduce 都换成 FP32，两处一起解决。
 
@@ -264,7 +264,7 @@ rel_L2（全部被更新的行），每格都逐位等于括号里的仿真：
 
 【实测】逐 pass 的 HLO（`--xla_dump_hlo_pass_re=.*`，N = 16384）里，`sort` 第一次出现在 `Pre_main_fusion` 流水线里的 `tpu_scatter_gather_optimizer` 之后，前一个 dump（`layout_fixup`）里还没有。它插的是：对 `(下标, iota)` 稳定排序（比较函数先比下标、相等再比 iota）→ 按排序后的置换 gather 更新量 → scatter 标 `indices_are_sorted=true`。N = 8192 时这个 pass 没有改动模块。
 
-这是 TPU 后端（libtpu）自己的 pass，openxla/xla 公开代码里没有（按名字搜不到），触发条件只能从实验反推。对不同的表形状各二分出最小的插排序的 N：
+这是 TPU 后端（libtpu）自己的 pass，openxla/xla 公开代码里没有（按名字搜不到），触发条件只能从实验反推。在 libtpu 0.0.46 上对不同的表形状各二分出最小的插排序的 N：
 
 | 表行数 V | 列数 D | 最小插排序的 N | V / 8 |
 |---|---|---|---|
@@ -276,10 +276,12 @@ rel_L2（全部被更新的行），每格都逐位等于括号里的仿真：
 | 120832 | 1024 | 15105 | 15104 |
 | 480000 | 128 | 60001 | 60000 |
 
-- 条件是 **N > V / 8**，和列数无关；表太小时不插（30000 × 128 的 BF16 表约 7.7 MB 不插，60000 × 128 约 15 MB 插；中间没细分，这条只是推断）。同一个 libtpu 为 v7x、v6e 编译，V = 120832 的门槛也是 15104 / 15105。
+- 条件是 **N > V / 8**（严格大于；混元 4 词表 120832 行，门槛是超过 15104 个），7 种表形状全部吻合；前提是整张表按 FP32 放不进片上内存，放得进的小表（前两行）不插。同一个 libtpu（libtpu 0.0.46）为 v7x、v6e 编译，V = 120832 的门槛也是 15104 / 15105。
+- 这个门槛只对 libtpu 0.0.46 实测过。更新的 libtpu 门槛会随列宽和芯片代际变化，换版本要重测，或者直接看 HLO 里有没有 `sort` 和 `indices_are_sorted=true`。
+- libtpu 0.0.52 上用同一个脚本离线编译重测（[`libtpu-052.md`](libtpu-052.md#词嵌入那次-scatter排不排序)）：门槛不再是 1/8。120832 × 1024 的表 v5p 14420、v7x 7181；120832 × 128 的表 v5p 1783，v7x 上交给 SparseCore 执行、下标数到 2 就排序。下表各运行在 v5p 上排不排序，0.0.52 和 0.0.46 一样；变的只有 v7x 上每卡 8192 个下标的纯数据并行（不做梯度累积），0.0.52 开始排序，上卡实测词嵌入梯度不再变远。
 - 和切分无关：FSDP 一侧过线，是因为每张卡的那次 scatter 收的是 8 张卡全部的 token。已有训练步 HLO 全部对得上：
 
-| 运行 | 每张卡一次 scatter 的下标数 | > 15104 | scatter 标 sorted |
+| 运行 | 每张卡一次 scatter 的下标数 | > 15104（libtpu 0.0.46） | scatter 标 sorted |
 |---|---|---|---|
 | `ts-g-a`（golden，FSDP 8）、`ts-c-noexcess`、`ts-h-v7b`（v7x FSDP） | 32768 | 是 | 是 |
 | `ts-f16`（FSDP 16） | 65536 | 是 | 是 |
@@ -298,12 +300,12 @@ rel_L2（全部被更新的行），每格都逐位等于括号里的仿真：
 | 排序 + 标记，excess 关 | `scatter_custom_fusion` | 25708 | 4096 | 7418 | 12288 |
 
 - **不排序**：循环体对每个更新做「`vld` 读输出里那一行 BF16 → `vunpack` 成 FP32 → `vadd.f32` → `vpack.c.bf16` 舍回 BF16 → `vst` 写回」。值在两次更新之间住在 BF16 的输出里，excess precision 没地方省这次舍入，所以开关不影响结果。清零是另一颗 kernel 先做的。
-- **排序 + 标记**：换成另一颗 kernel，清零并在里面（第四节「清零在融合内部」就是它）。累加器是片上 VMEM 里的 FP32 缓冲：`vld` 读 FP32 → `vadd.f32` → `vst` 写 FP32，中间没有舍入；BF16 只在写出时舍。
-- 同一份 HLO 只关掉 excess precision，排序那颗 kernel 多出 12288 条 `vpack.i.bf16`，夹在每次 `vadd.f32` 前后（它的作用是把值舍到 BF16 精度，由指令名和数值结果逐位等于 E2 推断）。这就是「HLO 一字不差、高频行远 35 倍」在后端的样子。
+- **排序 + 标记**：换成另一颗 kernel，清零并在里面（第四节「清零在融合内部」就是它）。表按块搬进片上 FP32 缓冲，块内所有更新加完再写回，每行只舍一次；下标有序时块才能顺序推进（LLO 实验确认）。累加器是片上 VMEM 里的 FP32 缓冲：`vld` 读 FP32 → `vadd.f32` → `vst` 写 FP32，中间没有舍入；BF16 只在写出时舍。
+- 同一份 HLO 只关掉 excess precision，排序那颗 kernel 多出 12288 条 `vpack.i.bf16`，夹在每次 `vadd.f32` 前后（它的作用是把值舍到 BF16 精度：LLO 和单算子数值都对得上，结果逐位等于 E2）。这就是「HLO 一字不差、高频行远 35 倍」在后端的样子。
 - 条数是静态的，不是执行次数；结论只说「在哪里舍入」，不说耗时。
 
 ### 能不能让纯数据并行也走这条路、代价多少
 
-- **开关**：没找到能调低门槛的开关。libtpu 里 scatter / sort 相关的开关名扫过一遍，试了 `xla_tpu_gather_scatter_flatten_min_index_count=1` 和 `xla_tpu_enable_offloading_scatter_to_sparsecore=true`，N = 4096 时都不插排序。没有逐个试完。
+- **开关**：没找到能调低门槛的开关（libtpu 0.0.46）。libtpu 里 scatter / sort 相关的开关名扫过一遍，试了 `xla_tpu_gather_scatter_flatten_min_index_count=1` 和 `xla_tpu_enable_offloading_scatter_to_sparsecore=true`，N = 4096 时都不插排序。没有逐个试完。
 - **在 JAX 里显式排序**：单算子里有效，结果逐位等于 E1（上面四格的 `jaxsort` 与 8 卡的第三行）。耗时（单设备，20 次中位数）：N = 4096 时 0.80 → 0.94 ms，N = 8192 时 1.31 → 1.00 ms（排好序的写法反而更快）。估算：混元 4 mini 纯数据并行每步 4 次这样的 scatter（2 个微批 × 主输入与 MTP 输入），最多多 0.6 ms，约占 0.494 s 步时的 1e-3；修法① 实测多 0.6–0.8 个百分点（[影响逐件「纯数据并行」](impacts/01-data-parallel.md#代价)）。
 - **能不能不开 `embedding_grad_fp32` 就修好**：推断能修到和修法② 一样（同一种舍入结构，修法② 训练里 r 0.93），但**没在训练里跑过**。MaxText 里要改词嵌入的反向（例如前向用排好序的 token 号取行、再按逆置换还原，让自动微分出来的 scatter 带上 `indices_are_sorted=True`；或者写 `custom_vjp`）。它还依赖两件隐含的事：excess precision 开着（默认开），以及 libtpu 排序 scatter 的这种写法不变。`embedding_grad_fp32` 不依赖这些，仍是推荐修法。

@@ -1,0 +1,1109 @@
+{
+ "what": "第 1 步梯度对 FP64 的误差投到主 loss 部分与 MTP 部分：g_X − g_full ≈ α g_main + β g_mtp",
+ "full": "CPU FP64 第 1 步全量梯度（step1_ref.py）",
+ "main": "CPU FP64 第 1 步梯度，--mtp off",
+ "x": {
+  "bf16_gpu_form": "cpu_bf16_gpu_forward.py --backward",
+  "bf16_final32": "cpu_bf16_gpu_forward.py --backward --final32"
+ },
+ "summary": {
+  "attn": {
+   "n": 49,
+   "mtp_frac_median": 0.075664783283905
+  },
+  "embed": {
+   "n": 1,
+   "mtp_frac_median": 0.07582697515645688,
+   "bf16_gpu_form": {
+    "alpha_median": -0.007742254777014965,
+    "beta_median": -0.009912154799407692
+   },
+   "bf16_final32": {
+    "alpha_median": -0.008367268912582023,
+    "beta_median": -0.011337129763626953
+   }
+  },
+  "hc_head+norm": {
+   "n": 4,
+   "mtp_frac_median": 0.026777853978451935,
+   "bf16_gpu_form": {
+    "alpha_median": -0.03202053597041572,
+    "beta_median": -0.07097517160927022
+   },
+   "bf16_final32": {
+    "alpha_median": 0.002410629948953718,
+    "beta_median": -0.10700376663764806
+   }
+  },
+  "ihc": {
+   "n": 42,
+   "mtp_frac_median": 0.07499061149520106
+  },
+  "lm_head": {
+   "n": 1,
+   "mtp_frac_median": 0.0759900109284147,
+   "bf16_gpu_form": {
+    "alpha_median": -4.855151356891872e-05,
+    "beta_median": -0.0025207849413846394
+   },
+   "bf16_final32": {
+    "alpha_median": -4.237425909476481e-05,
+    "beta_median": -0.0025379564894563453
+   }
+  },
+  "mlp": {
+   "n": 39,
+   "mtp_frac_median": 0.07564596132628798
+  },
+  "norm": {
+   "n": 28,
+   "mtp_frac_median": 0.0770339129292151
+  }
+ },
+ "rows": [
+  {
+   "tensor": "lm_head.weight",
+   "group": "lm_head",
+   "mtp_frac": 0.0759900109284147,
+   "cos_main_mtp": -0.0024180150976560637,
+   "bf16_gpu_form": {
+    "alpha": -4.855151356891872e-05,
+    "beta": -0.0025207849413846394,
+    "rel_err": 0.0036567818070444456
+   },
+   "bf16_final32": {
+    "alpha": -4.237425909476481e-05,
+    "beta": -0.0025379564894563453,
+    "rel_err": 0.0036505866959181893
+   }
+  },
+  {
+   "tensor": "model.embed_tokens.weight",
+   "group": "embed",
+   "mtp_frac": 0.07582697515645688,
+   "cos_main_mtp": 0.14738495748577285,
+   "bf16_gpu_form": {
+    "alpha": -0.007742254777014965,
+    "beta": -0.009912154799407692,
+    "rel_err": 0.015323170652922767
+   },
+   "bf16_final32": {
+    "alpha": -0.008367268912582023,
+    "beta": -0.011337129763626953,
+    "rel_err": 0.01550701688084161
+   }
+  },
+  {
+   "tensor": "model.hc_head.hc_head_base",
+   "group": "hc_head+norm",
+   "mtp_frac": 0.024521813749176613,
+   "cos_main_mtp": 0.037566266724308434,
+   "bf16_gpu_form": {
+    "alpha": -0.03035060738964678,
+    "beta": -0.5799570809327066,
+    "rel_err": 0.04885896926339635
+   },
+   "bf16_final32": {
+    "alpha": 0.00478108942692939,
+    "beta": -0.6463261300528924,
+    "rel_err": 0.03358975115852833
+   }
+  },
+  {
+   "tensor": "model.hc_head.hc_head_fn",
+   "group": "hc_head+norm",
+   "mtp_frac": 0.029033894207727253,
+   "cos_main_mtp": 0.04634112000251664,
+   "bf16_gpu_form": {
+    "alpha": -0.033690464551184664,
+    "beta": -0.1409335484177731,
+    "rel_err": 0.07292268577885015
+   },
+   "bf16_final32": {
+    "alpha": 0.004981416165395225,
+    "beta": -0.2142103310374667,
+    "rel_err": 0.056337650876607415
+   }
+  },
+  {
+   "tensor": "model.hc_head.hc_head_scale",
+   "group": "hc_head+norm",
+   "mtp_frac": 0.014229978471697498,
+   "cos_main_mtp": -1.0,
+   "bf16_gpu_form": {
+    "alpha": -0.03588431401436204,
+    "beta": 1.083859267577474,
+    "rel_err": 0.05181824107423533
+   },
+   "bf16_final32": {
+    "alpha": -0.007666846498085105,
+    "beta": 0.5201229744979377,
+    "rel_err": 0.015177284288439586
+   }
+  },
+  {
+   "tensor": "model.layers.0.hc_attn_layer.hc_pre.hc_base",
+   "group": "ihc",
+   "mtp_frac": 0.09678724924508392,
+   "cos_main_mtp": -0.9999894088965889
+  },
+  {
+   "tensor": "model.layers.0.hc_attn_layer.hc_pre.hc_fn",
+   "group": "ihc",
+   "mtp_frac": 0.0752998269794914,
+   "cos_main_mtp": -0.11458461659218179
+  },
+  {
+   "tensor": "model.layers.0.hc_attn_layer.hc_pre.hc_scale",
+   "group": "ihc",
+   "mtp_frac": 0.09044556299980197,
+   "cos_main_mtp": -0.9999344701598535
+  },
+  {
+   "tensor": "model.layers.0.hc_mlp_layer.hc_pre.hc_base",
+   "group": "ihc",
+   "mtp_frac": 0.019456573623076994,
+   "cos_main_mtp": -0.9949229927211681
+  },
+  {
+   "tensor": "model.layers.0.hc_mlp_layer.hc_pre.hc_fn",
+   "group": "ihc",
+   "mtp_frac": 0.08134042998436064,
+   "cos_main_mtp": 0.21338567008887077
+  },
+  {
+   "tensor": "model.layers.0.hc_mlp_layer.hc_pre.hc_scale",
+   "group": "ihc",
+   "mtp_frac": 0.0487253437608506,
+   "cos_main_mtp": 0.9997001049009137
+  },
+  {
+   "tensor": "model.layers.0.input_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.07606347389743524,
+   "cos_main_mtp": 0.23718140542847324
+  },
+  {
+   "tensor": "model.layers.0.mlp.down_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.07698514805202752,
+   "cos_main_mtp": 0.14224880095406822
+  },
+  {
+   "tensor": "model.layers.0.mlp.gate_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.07612868284474916,
+   "cos_main_mtp": 0.13730255581908385
+  },
+  {
+   "tensor": "model.layers.0.mlp.up_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.07651616232634993,
+   "cos_main_mtp": 0.15761252151005645
+  },
+  {
+   "tensor": "model.layers.0.post_attention_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.07874739802779854,
+   "cos_main_mtp": 0.132988450772027
+  },
+  {
+   "tensor": "model.layers.0.self_attn.kv_a_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.06355138244820102,
+   "cos_main_mtp": 0.04680636394889486
+  },
+  {
+   "tensor": "model.layers.0.self_attn.kv_a_proj_with_mqa.weight",
+   "group": "attn",
+   "mtp_frac": 0.07652209094348449,
+   "cos_main_mtp": 0.14505923209165972
+  },
+  {
+   "tensor": "model.layers.0.self_attn.kv_b_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.07551305467126028,
+   "cos_main_mtp": 0.1450538869446788
+  },
+  {
+   "tensor": "model.layers.0.self_attn.learnable_sink_param",
+   "group": "attn",
+   "mtp_frac": 0.05796860987113135,
+   "cos_main_mtp": 0.30876332265859774
+  },
+  {
+   "tensor": "model.layers.0.self_attn.linear_gate.weight",
+   "group": "attn",
+   "mtp_frac": 0.07554232157703943,
+   "cos_main_mtp": 0.1264842073339356
+  },
+  {
+   "tensor": "model.layers.0.self_attn.o_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.07582432990957136,
+   "cos_main_mtp": 0.13874230145486358
+  },
+  {
+   "tensor": "model.layers.0.self_attn.q_a_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.07019507468455868,
+   "cos_main_mtp": 0.10932003521226541
+  },
+  {
+   "tensor": "model.layers.0.self_attn.q_a_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.07306456367288096,
+   "cos_main_mtp": 0.10006557764003814
+  },
+  {
+   "tensor": "model.layers.0.self_attn.q_b_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.0733548835454491,
+   "cos_main_mtp": 0.1327989581423845
+  },
+  {
+   "tensor": "model.layers.1.hc_attn_layer.hc_pre.hc_base",
+   "group": "ihc",
+   "mtp_frac": 0.03559587259557105,
+   "cos_main_mtp": 0.9999546665540976
+  },
+  {
+   "tensor": "model.layers.1.hc_attn_layer.hc_pre.hc_fn",
+   "group": "ihc",
+   "mtp_frac": 0.05058579379041359,
+   "cos_main_mtp": 0.35938899390307844
+  },
+  {
+   "tensor": "model.layers.1.hc_attn_layer.hc_pre.hc_scale",
+   "group": "ihc",
+   "mtp_frac": 0.48617329862762054,
+   "cos_main_mtp": 0.9910996046287416
+  },
+  {
+   "tensor": "model.layers.1.hc_mlp_layer.hc_pre.hc_base",
+   "group": "ihc",
+   "mtp_frac": 0.07612472407420712,
+   "cos_main_mtp": -0.9999927764060526
+  },
+  {
+   "tensor": "model.layers.1.hc_mlp_layer.hc_pre.hc_fn",
+   "group": "ihc",
+   "mtp_frac": 0.06765471678978403,
+   "cos_main_mtp": -0.5750937226038062
+  },
+  {
+   "tensor": "model.layers.1.hc_mlp_layer.hc_pre.hc_scale",
+   "group": "ihc",
+   "mtp_frac": 0.0022167966944615218,
+   "cos_main_mtp": -0.7290674151340265
+  },
+  {
+   "tensor": "model.layers.1.input_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.07870436735351681,
+   "cos_main_mtp": 0.12998758273421862
+  },
+  {
+   "tensor": "model.layers.1.mlp.experts.down_proj",
+   "group": "mlp",
+   "mtp_frac": 0.0771688895193255,
+   "cos_main_mtp": 0.1360172208705266
+  },
+  {
+   "tensor": "model.layers.1.mlp.experts.gate_up_proj",
+   "group": "mlp",
+   "mtp_frac": 0.07764334432030924,
+   "cos_main_mtp": 0.10615678042474143
+  },
+  {
+   "tensor": "model.layers.1.mlp.gate.weight",
+   "group": "mlp",
+   "mtp_frac": 0.09135822153280411,
+   "cos_main_mtp": 0.34126576054504526
+  },
+  {
+   "tensor": "model.layers.1.mlp.shared_experts.down_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.07774111365727626,
+   "cos_main_mtp": 0.1413897747704568
+  },
+  {
+   "tensor": "model.layers.1.mlp.shared_experts.gate_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.07834564284567774,
+   "cos_main_mtp": 0.17190845251601022
+  },
+  {
+   "tensor": "model.layers.1.mlp.shared_experts.up_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.0781483211739337,
+   "cos_main_mtp": 0.18456462867836196
+  },
+  {
+   "tensor": "model.layers.1.post_attention_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.0766284517183685,
+   "cos_main_mtp": 0.11332844661678794
+  },
+  {
+   "tensor": "model.layers.1.self_attn.kv_a_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.07705995689406962,
+   "cos_main_mtp": 0.13973576518468098
+  },
+  {
+   "tensor": "model.layers.1.self_attn.kv_a_proj_with_mqa.weight",
+   "group": "attn",
+   "mtp_frac": 0.07746407207560714,
+   "cos_main_mtp": 0.11861858867743055
+  },
+  {
+   "tensor": "model.layers.1.self_attn.kv_b_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.0815881794331055,
+   "cos_main_mtp": 0.1209225747723187
+  },
+  {
+   "tensor": "model.layers.1.self_attn.learnable_sink_param",
+   "group": "attn",
+   "mtp_frac": 0.09701636580862483,
+   "cos_main_mtp": -0.10979565214285161
+  },
+  {
+   "tensor": "model.layers.1.self_attn.linear_gate.weight",
+   "group": "attn",
+   "mtp_frac": 0.08021057742385851,
+   "cos_main_mtp": 0.14560858511895627
+  },
+  {
+   "tensor": "model.layers.1.self_attn.o_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.07758650600972197,
+   "cos_main_mtp": 0.1438898084445876
+  },
+  {
+   "tensor": "model.layers.1.self_attn.q_a_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.08404170381734304,
+   "cos_main_mtp": 0.14123629360422832
+  },
+  {
+   "tensor": "model.layers.1.self_attn.q_a_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.08723865217490047,
+   "cos_main_mtp": 0.17377173237601953
+  },
+  {
+   "tensor": "model.layers.1.self_attn.q_b_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.08744660795460084,
+   "cos_main_mtp": 0.13363256949665445
+  },
+  {
+   "tensor": "model.layers.2.hc_attn_layer.hc_pre.hc_base",
+   "group": "ihc",
+   "mtp_frac": 0.09146900191486687,
+   "cos_main_mtp": 0.9999266285697054
+  },
+  {
+   "tensor": "model.layers.2.hc_attn_layer.hc_pre.hc_fn",
+   "group": "ihc",
+   "mtp_frac": 0.10018641726830776,
+   "cos_main_mtp": 0.7203153185171417
+  },
+  {
+   "tensor": "model.layers.2.hc_attn_layer.hc_pre.hc_scale",
+   "group": "ihc",
+   "mtp_frac": 0.017564438379940955,
+   "cos_main_mtp": -0.9999132605193222
+  },
+  {
+   "tensor": "model.layers.2.hc_mlp_layer.hc_pre.hc_base",
+   "group": "ihc",
+   "mtp_frac": 0.052850045249606896,
+   "cos_main_mtp": -0.9999816366974307
+  },
+  {
+   "tensor": "model.layers.2.hc_mlp_layer.hc_pre.hc_fn",
+   "group": "ihc",
+   "mtp_frac": 0.06022597523578427,
+   "cos_main_mtp": -0.7011615296414816
+  },
+  {
+   "tensor": "model.layers.2.hc_mlp_layer.hc_pre.hc_scale",
+   "group": "ihc",
+   "mtp_frac": 0.1167621175257888,
+   "cos_main_mtp": 0.9965958586033284
+  },
+  {
+   "tensor": "model.layers.2.input_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.081028797079835,
+   "cos_main_mtp": 0.23312683936772027
+  },
+  {
+   "tensor": "model.layers.2.mlp.experts.down_proj",
+   "group": "mlp",
+   "mtp_frac": 0.07543502805646123,
+   "cos_main_mtp": 0.056598919101640784
+  },
+  {
+   "tensor": "model.layers.2.mlp.experts.gate_up_proj",
+   "group": "mlp",
+   "mtp_frac": 0.07335113905383198,
+   "cos_main_mtp": 0.06402554580676989
+  },
+  {
+   "tensor": "model.layers.2.mlp.gate.weight",
+   "group": "mlp",
+   "mtp_frac": 0.07526934203425413,
+   "cos_main_mtp": -0.09286039365046728
+  },
+  {
+   "tensor": "model.layers.2.mlp.shared_experts.down_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.07525669413809356,
+   "cos_main_mtp": 0.057211455538372036
+  },
+  {
+   "tensor": "model.layers.2.mlp.shared_experts.gate_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.08406543093959976,
+   "cos_main_mtp": 0.04710463942423237
+  },
+  {
+   "tensor": "model.layers.2.mlp.shared_experts.up_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.09688868944499707,
+   "cos_main_mtp": 0.04347195774402639
+  },
+  {
+   "tensor": "model.layers.2.post_attention_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.07906440201054199,
+   "cos_main_mtp": 0.002602712128011884
+  },
+  {
+   "tensor": "model.layers.2.self_attn.kv_a_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.07601802680507252,
+   "cos_main_mtp": 0.2197168382728821
+  },
+  {
+   "tensor": "model.layers.2.self_attn.kv_a_proj_with_mqa.weight",
+   "group": "attn",
+   "mtp_frac": 0.0787091931781564,
+   "cos_main_mtp": 0.17884806790424143
+  },
+  {
+   "tensor": "model.layers.2.self_attn.kv_b_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.07447597296171304,
+   "cos_main_mtp": 0.09546009645095507
+  },
+  {
+   "tensor": "model.layers.2.self_attn.learnable_sink_param",
+   "group": "attn",
+   "mtp_frac": 0.0686725587295624,
+   "cos_main_mtp": -0.28596516451876713
+  },
+  {
+   "tensor": "model.layers.2.self_attn.linear_gate.weight",
+   "group": "attn",
+   "mtp_frac": 0.07197004998473508,
+   "cos_main_mtp": 0.09012942683927035
+  },
+  {
+   "tensor": "model.layers.2.self_attn.o_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.07522602580693447,
+   "cos_main_mtp": 0.05577645855664179
+  },
+  {
+   "tensor": "model.layers.2.self_attn.q_a_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.08452222888597866,
+   "cos_main_mtp": 0.13315205499820848
+  },
+  {
+   "tensor": "model.layers.2.self_attn.q_a_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.0787918590292892,
+   "cos_main_mtp": 0.14448668169264534
+  },
+  {
+   "tensor": "model.layers.2.self_attn.q_b_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.0797535262768298,
+   "cos_main_mtp": 0.10532689193767657
+  },
+  {
+   "tensor": "model.layers.3.hc_attn_layer.hc_pre.hc_base",
+   "group": "ihc",
+   "mtp_frac": 1.1027194119653838,
+   "cos_main_mtp": -0.9999840432536989
+  },
+  {
+   "tensor": "model.layers.3.hc_attn_layer.hc_pre.hc_fn",
+   "group": "ihc",
+   "mtp_frac": 0.28296641430615327,
+   "cos_main_mtp": -0.4566410791887721
+  },
+  {
+   "tensor": "model.layers.3.hc_attn_layer.hc_pre.hc_scale",
+   "group": "ihc",
+   "mtp_frac": 0.16677210980610377,
+   "cos_main_mtp": -0.9999996010713971
+  },
+  {
+   "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_base",
+   "group": "ihc",
+   "mtp_frac": 0.11946695267141363,
+   "cos_main_mtp": -0.9999015360501506
+  },
+  {
+   "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_fn",
+   "group": "ihc",
+   "mtp_frac": 0.08072545167613256,
+   "cos_main_mtp": -0.18006516095134617
+  },
+  {
+   "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_scale",
+   "group": "ihc",
+   "mtp_frac": 0.08187247162813958,
+   "cos_main_mtp": -0.9993505747329876
+  },
+  {
+   "tensor": "model.layers.3.input_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.08223647549331799,
+   "cos_main_mtp": 0.00586420329590483
+  },
+  {
+   "tensor": "model.layers.3.mlp.experts.down_proj",
+   "group": "mlp",
+   "mtp_frac": 0.07582865239965074,
+   "cos_main_mtp": 0.07967250312861707
+  },
+  {
+   "tensor": "model.layers.3.mlp.experts.gate_up_proj",
+   "group": "mlp",
+   "mtp_frac": 0.07915451779151586,
+   "cos_main_mtp": 0.024460358930141465
+  },
+  {
+   "tensor": "model.layers.3.mlp.gate.weight",
+   "group": "mlp",
+   "mtp_frac": 0.0700430554546681,
+   "cos_main_mtp": -0.3111211294090977
+  },
+  {
+   "tensor": "model.layers.3.mlp.shared_experts.down_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.07564596132628798,
+   "cos_main_mtp": 0.08170415116521224
+  },
+  {
+   "tensor": "model.layers.3.mlp.shared_experts.gate_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.06858807317961857,
+   "cos_main_mtp": 0.1136480314469854
+  },
+  {
+   "tensor": "model.layers.3.mlp.shared_experts.up_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.06643344159597045,
+   "cos_main_mtp": 0.1278520004922867
+  },
+  {
+   "tensor": "model.layers.3.post_attention_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.0693279785132795,
+   "cos_main_mtp": 0.05867963047518394
+  },
+  {
+   "tensor": "model.layers.3.self_attn.kv_a_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.08084248875187236,
+   "cos_main_mtp": 0.12147629218167376
+  },
+  {
+   "tensor": "model.layers.3.self_attn.kv_a_proj_with_mqa.weight",
+   "group": "attn",
+   "mtp_frac": 0.07651843689173392,
+   "cos_main_mtp": 0.05196622127238316
+  },
+  {
+   "tensor": "model.layers.3.self_attn.kv_b_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.07399919588544758,
+   "cos_main_mtp": 0.07132268206797211
+  },
+  {
+   "tensor": "model.layers.3.self_attn.learnable_sink_param",
+   "group": "attn",
+   "mtp_frac": 0.04589227559308292,
+   "cos_main_mtp": 0.0064031494735547565
+  },
+  {
+   "tensor": "model.layers.3.self_attn.linear_gate.weight",
+   "group": "attn",
+   "mtp_frac": 0.07160585763813652,
+   "cos_main_mtp": 0.08755433934389127
+  },
+  {
+   "tensor": "model.layers.3.self_attn.o_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.0759781971629078,
+   "cos_main_mtp": 0.08459753683943946
+  },
+  {
+   "tensor": "model.layers.3.self_attn.q_a_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.06927947293795798,
+   "cos_main_mtp": 0.06399571056461403
+  },
+  {
+   "tensor": "model.layers.3.self_attn.q_a_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.06916434574241458,
+   "cos_main_mtp": 0.02266291176339261
+  },
+  {
+   "tensor": "model.layers.3.self_attn.q_b_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.07181528302538727,
+   "cos_main_mtp": -0.022194021034661494
+  },
+  {
+   "tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_base",
+   "group": "ihc",
+   "mtp_frac": 0.15968015260385393,
+   "cos_main_mtp": -0.9999927519745915
+  },
+  {
+   "tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_fn",
+   "group": "ihc",
+   "mtp_frac": 0.11504057275523034,
+   "cos_main_mtp": -0.7977769311719116
+  },
+  {
+   "tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_scale",
+   "group": "ihc",
+   "mtp_frac": 3.663003855982943,
+   "cos_main_mtp": -0.9854830059993137
+  },
+  {
+   "tensor": "model.layers.4.hc_mlp_layer.hc_pre.hc_base",
+   "group": "ihc",
+   "mtp_frac": 0.03183964186773333,
+   "cos_main_mtp": 0.9999990823040347
+  },
+  {
+   "tensor": "model.layers.4.hc_mlp_layer.hc_pre.hc_fn",
+   "group": "ihc",
+   "mtp_frac": 0.03774161302793136,
+   "cos_main_mtp": 0.8249081353875468
+  },
+  {
+   "tensor": "model.layers.4.hc_mlp_layer.hc_pre.hc_scale",
+   "group": "ihc",
+   "mtp_frac": 0.02936129810741421,
+   "cos_main_mtp": 0.999999257139757
+  },
+  {
+   "tensor": "model.layers.4.input_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.07785933445578964,
+   "cos_main_mtp": 0.08273777825904534
+  },
+  {
+   "tensor": "model.layers.4.mlp.experts.down_proj",
+   "group": "mlp",
+   "mtp_frac": 0.07487681308368824,
+   "cos_main_mtp": 0.07515381562104513
+  },
+  {
+   "tensor": "model.layers.4.mlp.experts.gate_up_proj",
+   "group": "mlp",
+   "mtp_frac": 0.07503641525636806,
+   "cos_main_mtp": 0.03668132369742979
+  },
+  {
+   "tensor": "model.layers.4.mlp.gate.weight",
+   "group": "mlp",
+   "mtp_frac": 0.060015608426220765,
+   "cos_main_mtp": 0.16745023104987655
+  },
+  {
+   "tensor": "model.layers.4.mlp.shared_experts.down_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.0755649315702765,
+   "cos_main_mtp": 0.07747750673040422
+  },
+  {
+   "tensor": "model.layers.4.mlp.shared_experts.gate_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.08303195721206881,
+   "cos_main_mtp": 0.04749344701802711
+  },
+  {
+   "tensor": "model.layers.4.mlp.shared_experts.up_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.07285486973176242,
+   "cos_main_mtp": 0.14202416806814314
+  },
+  {
+   "tensor": "model.layers.4.post_attention_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.07700786896436058,
+   "cos_main_mtp": 0.11723902861703475
+  },
+  {
+   "tensor": "model.layers.4.self_attn.kv_a_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.08284950194751936,
+   "cos_main_mtp": 0.08605760957594627
+  },
+  {
+   "tensor": "model.layers.4.self_attn.kv_a_proj_with_mqa.weight",
+   "group": "attn",
+   "mtp_frac": 0.08013928063535215,
+   "cos_main_mtp": 0.12366344906106139
+  },
+  {
+   "tensor": "model.layers.4.self_attn.kv_b_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.07662860670441651,
+   "cos_main_mtp": 0.07659757970122573
+  },
+  {
+   "tensor": "model.layers.4.self_attn.learnable_sink_param",
+   "group": "attn",
+   "mtp_frac": 0.05693424197551075,
+   "cos_main_mtp": -0.0017360113409081279
+  },
+  {
+   "tensor": "model.layers.4.self_attn.linear_gate.weight",
+   "group": "attn",
+   "mtp_frac": 0.08160563856724172,
+   "cos_main_mtp": 0.08335896008767354
+  },
+  {
+   "tensor": "model.layers.4.self_attn.o_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.07490096774509082,
+   "cos_main_mtp": 0.07581433215834119
+  },
+  {
+   "tensor": "model.layers.4.self_attn.q_a_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.06280623152804811,
+   "cos_main_mtp": 0.05849561261639686
+  },
+  {
+   "tensor": "model.layers.4.self_attn.q_a_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.07118432916634777,
+   "cos_main_mtp": -0.03503613161832432
+  },
+  {
+   "tensor": "model.layers.4.self_attn.q_b_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.07012907482062775,
+   "cos_main_mtp": -0.0332294299784461
+  },
+  {
+   "tensor": "model.layers.5.hc_attn_layer.hc_pre.hc_base",
+   "group": "ihc",
+   "mtp_frac": 0.03692129944815052,
+   "cos_main_mtp": 0.9999951524836849
+  },
+  {
+   "tensor": "model.layers.5.hc_attn_layer.hc_pre.hc_fn",
+   "group": "ihc",
+   "mtp_frac": 0.03547384036973362,
+   "cos_main_mtp": 0.599714013345584
+  },
+  {
+   "tensor": "model.layers.5.hc_attn_layer.hc_pre.hc_scale",
+   "group": "ihc",
+   "mtp_frac": 0.006554783643026728,
+   "cos_main_mtp": -0.9999011089060013
+  },
+  {
+   "tensor": "model.layers.5.hc_mlp_layer.hc_pre.hc_base",
+   "group": "ihc",
+   "mtp_frac": 0.13710707058020916,
+   "cos_main_mtp": 0.999893794667324
+  },
+  {
+   "tensor": "model.layers.5.hc_mlp_layer.hc_pre.hc_fn",
+   "group": "ihc",
+   "mtp_frac": 0.11534033329900202,
+   "cos_main_mtp": 0.7072964964347523
+  },
+  {
+   "tensor": "model.layers.5.hc_mlp_layer.hc_pre.hc_scale",
+   "group": "ihc",
+   "mtp_frac": 0.015231979140714651,
+   "cos_main_mtp": 0.9947213054779285
+  },
+  {
+   "tensor": "model.layers.5.input_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.07371593240512854,
+   "cos_main_mtp": 0.10267913094308805
+  },
+  {
+   "tensor": "model.layers.5.mlp.experts.down_proj",
+   "group": "mlp",
+   "mtp_frac": 0.0731628612019884,
+   "cos_main_mtp": 0.029789263370942114
+  },
+  {
+   "tensor": "model.layers.5.mlp.experts.gate_up_proj",
+   "group": "mlp",
+   "mtp_frac": 0.06843064626599124,
+   "cos_main_mtp": 0.03993189806950479
+  },
+  {
+   "tensor": "model.layers.5.mlp.gate.weight",
+   "group": "mlp",
+   "mtp_frac": 0.09358000582735755,
+   "cos_main_mtp": 0.4958330833593334
+  },
+  {
+   "tensor": "model.layers.5.mlp.shared_experts.down_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.073178593207021,
+   "cos_main_mtp": 0.031275205310876276
+  },
+  {
+   "tensor": "model.layers.5.mlp.shared_experts.gate_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.07079643747275556,
+   "cos_main_mtp": 0.1270225849211466
+  },
+  {
+   "tensor": "model.layers.5.mlp.shared_experts.up_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.07069141690988107,
+   "cos_main_mtp": 0.28259263140193414
+  },
+  {
+   "tensor": "model.layers.5.post_attention_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.06680900806357917,
+   "cos_main_mtp": 0.19547377425516188
+  },
+  {
+   "tensor": "model.layers.5.self_attn.kv_a_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.07556743691717596,
+   "cos_main_mtp": 0.187357091564437
+  },
+  {
+   "tensor": "model.layers.5.self_attn.kv_a_proj_with_mqa.weight",
+   "group": "attn",
+   "mtp_frac": 0.06954479304285036,
+   "cos_main_mtp": 0.058026677744359725
+  },
+  {
+   "tensor": "model.layers.5.self_attn.kv_b_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.07199389473907414,
+   "cos_main_mtp": 0.03800351963004387
+  },
+  {
+   "tensor": "model.layers.5.self_attn.learnable_sink_param",
+   "group": "attn",
+   "mtp_frac": 0.07857453497135171,
+   "cos_main_mtp": 0.4133011908664852
+  },
+  {
+   "tensor": "model.layers.5.self_attn.linear_gate.weight",
+   "group": "attn",
+   "mtp_frac": 0.07329369207327815,
+   "cos_main_mtp": -0.022591740758980943
+  },
+  {
+   "tensor": "model.layers.5.self_attn.o_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.07353743223813525,
+   "cos_main_mtp": 0.031207372678020536
+  },
+  {
+   "tensor": "model.layers.5.self_attn.q_a_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.09787278121773468,
+   "cos_main_mtp": 0.08392744558870394
+  },
+  {
+   "tensor": "model.layers.5.self_attn.q_a_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.09846887275692821,
+   "cos_main_mtp": 0.14496671319060406
+  },
+  {
+   "tensor": "model.layers.5.self_attn.q_b_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.0973322486202485,
+   "cos_main_mtp": 0.13418833944376032
+  },
+  {
+   "tensor": "model.layers.6.hc_attn_layer.hc_pre.hc_base",
+   "group": "ihc",
+   "mtp_frac": 0.034987002601077406,
+   "cos_main_mtp": 0.999964126248471
+  },
+  {
+   "tensor": "model.layers.6.hc_attn_layer.hc_pre.hc_fn",
+   "group": "ihc",
+   "mtp_frac": 0.06705990150642445,
+   "cos_main_mtp": 0.5261901940282667
+  },
+  {
+   "tensor": "model.layers.6.hc_attn_layer.hc_pre.hc_scale",
+   "group": "ihc",
+   "mtp_frac": 0.10404072992734875,
+   "cos_main_mtp": 0.9999996910228615
+  },
+  {
+   "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_base",
+   "group": "ihc",
+   "mtp_frac": 0.07468139601091073,
+   "cos_main_mtp": 0.9999818362496182
+  },
+  {
+   "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_fn",
+   "group": "ihc",
+   "mtp_frac": 0.06428278649583631,
+   "cos_main_mtp": 0.7604336484411361
+  },
+  {
+   "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_scale",
+   "group": "ihc",
+   "mtp_frac": 0.04314352091013974,
+   "cos_main_mtp": 0.9998225052654243
+  },
+  {
+   "tensor": "model.layers.6.input_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.07508809588490338,
+   "cos_main_mtp": 0.1293318347064781
+  },
+  {
+   "tensor": "model.layers.6.mlp.experts.down_proj",
+   "group": "mlp",
+   "mtp_frac": 0.0757452783622241,
+   "cos_main_mtp": 0.03052293571791253
+  },
+  {
+   "tensor": "model.layers.6.mlp.experts.gate_up_proj",
+   "group": "mlp",
+   "mtp_frac": 0.07885207348073112,
+   "cos_main_mtp": 0.016733693692230205
+  },
+  {
+   "tensor": "model.layers.6.mlp.gate.weight",
+   "group": "mlp",
+   "mtp_frac": 0.05488341856850822,
+   "cos_main_mtp": -0.07830531046024394
+  },
+  {
+   "tensor": "model.layers.6.mlp.shared_experts.down_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.07549563186022608,
+   "cos_main_mtp": 0.031876681750867074
+  },
+  {
+   "tensor": "model.layers.6.mlp.shared_experts.gate_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.07931723583110191,
+   "cos_main_mtp": 0.1636219694567132
+  },
+  {
+   "tensor": "model.layers.6.mlp.shared_experts.up_proj.weight",
+   "group": "mlp",
+   "mtp_frac": 0.0861609378713061,
+   "cos_main_mtp": -0.06892968242108843
+  },
+  {
+   "tensor": "model.layers.6.post_attention_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.07746246084342125,
+   "cos_main_mtp": 0.06843072684103846
+  },
+  {
+   "tensor": "model.layers.6.self_attn.kv_a_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.06847971091936929,
+   "cos_main_mtp": 0.12263420087808573
+  },
+  {
+   "tensor": "model.layers.6.self_attn.kv_a_proj_with_mqa.weight",
+   "group": "attn",
+   "mtp_frac": 0.07228659423341748,
+   "cos_main_mtp": 0.1415606994188721
+  },
+  {
+   "tensor": "model.layers.6.self_attn.kv_b_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.0772390923808033,
+   "cos_main_mtp": 0.011438390384972241
+  },
+  {
+   "tensor": "model.layers.6.self_attn.learnable_sink_param",
+   "group": "attn",
+   "mtp_frac": 0.06564667648896756,
+   "cos_main_mtp": -0.4472480095329588
+  },
+  {
+   "tensor": "model.layers.6.self_attn.linear_gate.weight",
+   "group": "attn",
+   "mtp_frac": 0.07855403039685831,
+   "cos_main_mtp": 0.011222649000495468
+  },
+  {
+   "tensor": "model.layers.6.self_attn.o_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.075664783283905,
+   "cos_main_mtp": 0.031002621465433103
+  },
+  {
+   "tensor": "model.layers.6.self_attn.q_a_layernorm.weight",
+   "group": "norm",
+   "mtp_frac": 0.08280621539963728,
+   "cos_main_mtp": -0.04352075675798501
+  },
+  {
+   "tensor": "model.layers.6.self_attn.q_a_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.08875136427109032,
+   "cos_main_mtp": -0.0389885505795875
+  },
+  {
+   "tensor": "model.layers.6.self_attn.q_b_proj.weight",
+   "group": "attn",
+   "mtp_frac": 0.08986083430093057,
+   "cos_main_mtp": -0.07596625886283921
+  },
+  {
+   "tensor": "model.norm.weight",
+   "group": "hc_head+norm",
+   "mtp_frac": 0.07634661568938739,
+   "cos_main_mtp": 0.03964670064515389,
+   "bf16_gpu_form": {
+    "alpha": -0.0002515205171661671,
+    "beta": -0.001016794800767332,
+    "rel_err": 0.006046350534616387
+   },
+   "bf16_final32": {
+    "alpha": 4.017047097804687e-05,
+    "beta": 0.00020279776217058584,
+    "rel_err": 0.005869015774464868
+   }
+  }
+ ]
+}
