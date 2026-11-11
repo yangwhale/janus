@@ -93,7 +93,7 @@
 | 随机 cotangent 的 VJP 对 FP64 解析梯度（RMSNorm、路由分数函数、整条路由） | `op_replay` | `L1.vjp.*` | 已跑 | FP32 rel_L2 ≤ 1.9e-7，BF16 ≤ 1.8e-3 |
 | kernel 回放真实输入：专家分组 GEMM（前向、dgrad、wgrad，对逐专家循环）、核心注意力（前向、真实 dO 的反向），先对训练逐位再对 FP64 | `op_replay` | `L1.kernel.*`（`phase1-kernels`） | 已跑 | 前向与反向全部与训练逐位；分组与逐专家循环逐位（见注 2） |
 | 合成 poison：分组 GEMM 尾块 / 组边界、注意力 THD padding 填 NaN / Inf；因果性：只改未来 token（注意力 kernel、整网真实模块） | `op_replay` | `L1.poison.*`、`L1.causal.*`（`phase1-kernels`）、`L2.causal.model.*`（`phase1-causal-model`） | 已跑 | poison 全部逐位隔离；未来填 NaN 会漏进过去（见注 3） |
-| TF32 开 / 关：关法实测、训练里哪些 GEMM 输入是 FP32、关掉后第 1 步全部张量与 30 步 loss | `op_replay` / `bitwise_equal` / `tensor_tolerance` / `loss_series` | `TF32.*`（`phase1-kernels`、`phase1-tf32`） | 已跑 | 只有 `NVIDIA_TF32_OVERRIDE=0` 关得掉 TE 的 FP32 GEMM；受影响的只有路由反向两个 GEMM；前向逐位、参数梯度到噪声 4.95 倍、loss 在噪声内 |
+| TF32 开 / 关：关法实测、训练里哪些 GEMM 输入是 FP32、关掉后第 1 步全部张量与 30 步 loss | `op_replay` / `bitwise_equal` / `tensor_tolerance` / `loss_series` | `TF32.*`（`phase1-kernels`、`phase1-tf32`） | 已跑 | 只有 `NVIDIA_TF32_OVERRIDE=0` 关得掉 TE 的 FP32 GEMM；受影响的只有路由反向两个 GEMM；前向逐位、参数梯度 cosine 偏离（1 − cos）6.4e-7，是 3 对参照噪声上限的 4.95 倍，rel_L2 是 1.71 倍（28 对参照下 3.2 倍、1.70 倍，仍 fail）；loss 在噪声内 |
 | TPU 编译开关归因（highest、excess precision、CPU 白盒复现） | — | — | 待 TPU | 第二阶段：已测 excess precision 与 highest；没有 CPU 逐位复现（见注 4） |
 
 1. **单算子回放**：
@@ -125,7 +125,7 @@
 | 逐层注入：每层输入换成参照的层输入，先证注入生效，再看误差是否被隔离到单层 | `bitwise_equal` | `phase1-inject` | 演练 | 第 2 层埋错时只有第 2 层输出不同；专家分发缓冲区（`mlp.experts.out`）行数随其他 rank 变，不能跨运行逐位比 |
 | DP 副本一致性（每个参数在所有持有它的 rank 上 sha256 相同） | `replica_consistency` | `L2.dp.replica` | 已跑 | |
 | 并行等价（只换并行方式） | `bitwise_equal` / `ulp_distribution` / `tensor_tolerance` / `loss_series` | `phase1-parallel`、`phase1-parallel-ext`、`phase1-tp-cp`、`phase1-ga` | 已跑 | EP8↔EP4 前向逐位、反向超噪声（embedding 梯度）；TP2 / CP2 整网标量在门槛内；GA 1↔2 embedding 梯度差 2.1% |
-| MoE 层内分阶段（router → scores → top-k → permute → GEMM1 → 激活 → GEMM2 → unpermute → 加共享专家）对 FP64 | `op_replay` | `L2.moe.*`（`phase1-moe-stages`） | 已跑 | 观测点 `--observe moe`；两个台阶：GEMM1（BF16 出，1.66e-3）、激活（本阶段 2.8e-3–3.0e-3，链式升到 3.7e-3）；搬运逐位、top-k 与 FP64 全同 |
+| MoE 层内分阶段（router → scores → top-k → permute → GEMM1 → 激活 → GEMM2 → unpermute → 加共享专家）对 FP64 | `op_replay` | `L2.moe.*`（`phase1-moe-stages`） | 已跑 | 观测点 `--observe moe`；两个台阶：GEMM1（BF16 出，1.66e-3）、激活（本阶段 2.8e-3–3.0e-3，路由专家这条路上最大；共享专家分支整块 3.0e-3–3.2e-3 另算；链式升到 3.7e-3–3.8e-3）；搬运逐位、top-k 与 FP64 全同 |
 | 截断模型对拍：截 N 层与全深度的前缀逐位 | `bitwise_equal` | `phase1-truncate` | 已跑 | 2 层对 4 层，前 2 层前向全部逐位 |
 | 优化器连续多步重放 | `optimizer_step`（steps） | `phase1-opt8` | 已跑 | 第 1–8 步连续 FP64 重放，误差在 FP32 存储舍入量级 |
 
@@ -176,10 +176,10 @@
    - 逐位相同的参照对自动剔除并列出；
    - 留一法互判（每条用其余参照的上限判）只报不判。
 2. **TPU 扰动臂**（第二阶段）：
-   - 只改 splash 注意力块大小、片上内存上限，造了 v5p 5 份、v7x 4 份扰动运行；
+   - 只改 splash 注意力块大小、片上内存上限，和被测本身合成系综：v5p 被测 + 4 份扰动、v7x 被测 + 3 份扰动；
    - 对最终 golden 的基线 [`rcc-a`](../../../../docs/glossary.md#rcc-a)：
-     - v5p 5 份四个 L4 量 r 全部 ≤ 0.85；
-     - v7x 4 份里 3 份 ≤ 0.85、1 份 grad_norm 待定（MARE 1.02 倍、最大单步 1.15 倍）。
+     - v5p 5 份四个 L4 量 r 全部 ≤ 0.85（最大 0.846）；
+     - v7x 4 份里 3 份 ≤ 0.86（最大是被测 `t-v7x-on-1000` 的 grad_norm MARE，0.851）、1 份（splash 块 1024）grad_norm 待定（MARE 1.02 倍、最大单步 1.15 倍）。
    - 出处：[对齐报告](../../ALIGNMENT-REPORT.md)第 3 节，[`case01-rcc-ensemble.json`](../01-v5p-acceptance/results/case01-rcc-ensemble.json)。
 
 ## 确定性与复现
@@ -190,7 +190,7 @@
 | 观测不改数值：开 / 不开抓数逐位相同 | `determinism` | 已跑 | `phase1-hooks`、`phase1-obs` 都逐位（见注 1） |
 | 激活重算：重算的前向与首次前向逐位 | `bitwise_equal`（ref_rename） | 已跑 | `phase1-remat`：**不逐位**；开路由回放后逐位（见注 2） |
 | 存档恢复 vs 连续训练：续训后数据位置、重叠步全部标量、续训首步全部抓数逐位 | `overlap_replay` / `data_fingerprint` / `bitwise_equal` | 已跑 | `phase1-resume`：第 10 步存档续训 10 步，全部逐位相同 |
-| 特殊值存 / 恢复：存档前埋 −0.0、FP32 / BF16 次正规数，恢复后逐位 | `op_replay`（bitref） | 已跑 | `phase1-ckpt-special`：BF16 参数、FP32 主权重、两个动量、FP32 buffer 共 72 个张量逐位保真（不开分布式优化器） |
+| 特殊值存 / 恢复：存档前埋 −0.0、FP32 / BF16 次正规数，恢复后逐位 | `op_replay`（bitref） | 已跑 | `phase1-ckpt-special`：BF16 参数、FP32 主权重、两个动量、FP32 buffer 共 72 个张量逐位保真（不开分布式优化器）；二阶动量只埋了非负值，它的 −0.0 没测；BF16 参数埋的是舍到 BF16 后的位模式（见 README 第 19 条） |
 
 1. **观测不改数值**：
    - `phase1-hooks`：抓数 v2 全量钩子对轻量抓数（第 1 步只抓前向张量，不挂梯度钩子、不包优化器），30 步全部字段逐位（两边优化器配置要一致）；
@@ -207,7 +207,7 @@
 
 | 检查 | 类型 | 状态 | 说明 |
 |---|---|---|---|
-| 注入已知错误必须红（每条数值门槛配一次） | `poison_selftest` | 已跑 | 另有 8 个真训练故障注入，见 `faults/phase1-faults.md` |
+| 注入已知错误必须红（每条数值门槛配一次） | `poison_selftest` | 已跑 | 另有 9 个真训练故障注入，见 `faults/phase1-faults.md` |
 | 选空、缺张量、缺字段一律 error，不静默通过 | 全部类型 | 已跑 | 单测覆盖；`index.json` 张量重名、输入指纹缺期望字段也报 error |
 | ULP 按原始 dtype；指标在 FP64 里算；非有限值位置不一致直接 fail | 指标层 | 已跑 | 单测覆盖 |
 

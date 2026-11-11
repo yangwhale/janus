@@ -1,4 +1,4 @@
-# 混元 4 · T1 300 步窗口，现行比较（2026-11-11 起）：TPU tz-off-rep（1000 步运行的前 300 步；现行对齐配置，base2 关），GPU g2-a 为基线，噪声 g2-* 两两 28 对（g2 只有 8 份）。
+# 混元 4 · T1 300 步窗口，C 口径之前的现行比较（2026-11-11 关 base2 起，到同日改 C 口径止）：TPU tz-off-rep（1000 步运行的前 300 步；当时的对齐配置，base2 关），GPU g2-a 为基线，噪声 g2-* 两两 28 对（g2 只有 8 份）。
 # 口径同 t1t-l4.yaml（param_norm 两边比精确值）。
 schema_version: 1
 model: hunyuan4-mini

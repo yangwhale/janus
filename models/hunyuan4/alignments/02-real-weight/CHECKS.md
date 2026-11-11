@@ -6,7 +6,7 @@
 
 - 判定同 T1（[mini 的检查清单](../01-mini/CHECKS.md)「怎么读」）：L4 每条序列算带符号均值、MARE、最大单步，各自对 GPU 8 份两两 28 对的噪声上限 N 判，≤ N 过、> 2N 不过；格子写最差那个判定量的 TPU 实测与倍数。r 只量两边差多大，不定责（[总览细节「读法」](../../dashboard/detail.md#读法)）。
 - 各列是 TPU 一侧五代运行：300 步三代（第一代到第三代，对 GPU `gb2-*` / `gd2-*`），1000 步两代（`td5-a` / `tb5-b`，与加了 M42b 的 `td5b-b` / `tb5b-a`，对 GPU `gb3-*` / `gd3-*`）。设置见 [`config-alignment.md`](config-alignment.md)。
-- 全部 TPU 运行 `sa_use_base2_exp` 开、早于 M50；2026-11-11 起的现行对齐配置（关 base2、含 M50）在 B、D1 上尚无运行。
+- 全部 TPU 运行 `sa_use_base2_exp` 开、早于 M50；2026-11-11 起的现行对齐配置（关 base2、含 M50，并开 C 口径的 M52、M58）在 B、D1 上尚无运行。
 
 ## 规模
 

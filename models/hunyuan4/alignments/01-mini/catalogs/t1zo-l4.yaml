@@ -1,4 +1,4 @@
-# 混元 4 · T1 1000 步，现行比较（2026-11-11 起）：TPU tz-off-rep = 现行对齐配置（含 M50，sa_use_base2_exp: false），MaxText b87a55aa；
+# 混元 4 · T1 1000 步，C 口径之前的现行比较（2026-11-11 关 base2 起，到同日改 C 口径止）：TPU tz-off-rep = 当时的对齐配置（含 M50，sa_use_base2_exp: false），MaxText b87a55aa；
 # 主 loss、MTP、grad_norm 1000 步逐位等于 t1zz-a。GPU g3-a 为基线，噪声 g3-a … g3-p 两两 120 对（PROTOCOL 变更记录 2026-11-11）。
 schema_version: 1
 model: hunyuan4-mini

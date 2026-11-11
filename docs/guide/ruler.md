@@ -14,7 +14,7 @@
 |---|---|---|
 | 比什么 | 训练每一步记下的一个标量（loss、范数……），比几百到一千步 | 第 1 步每个参数的梯度张量，一个张量出一个数 |
 | 回答什么 | 有没有差、差多大、随时间怎么累积 | 差在谁身上、是丢了精度还是只换了求和顺序 |
-| 尺子从哪来 | GPU 同设置重跑 8 或 16 份，两两比 | GPU 第 1 步重跑 3 份两两比；查谁更准（定责）用 CPU 上 FP64 算的精确梯度 |
+| 尺子从哪来 | GPU 同设置重跑 8 或 16 份，两两比 | GPU 第 1 步重跑多份两两比（TPU 自比 3 份；混元 4 mini GPU ↔ TPU 梯度现行 6 份）；查谁更准（定责）用 CPU 上 FP64 算的精确梯度 |
 | 实现 | [`janus/metrics.py`](../../janus/metrics.py) 的 `series_stats`、[`janus/checks/series.py`](../../janus/checks/series.py) 的 `window_stats` | [`tpu_self_compare.py`](../../models/hunyuan4/analysis/tpu_self_compare.py) 的 `step1_grads` |
 
 记号：被测记 a，参照记 b。全文的计算都在 FP64 里做。
@@ -251,7 +251,7 @@ rel_L2(a, b) = ‖a − b‖₂ ÷ ‖b‖₂
 
 ### 2.3 两种用法
 
-**用法一：被测对参照，量有多大。** d = rel_L2(被测, 参照)。尺子是 GPU 第 1 步重跑三份（`g2s-a/b/c`）两两的最大 rel_L2，每个张量各自一个尺子：
+**用法一：被测对参照，量有多大。** d = rel_L2(被测, 参照)。TPU 自比的尺子是 GPU 第 1 步重跑三份（`g2s-a/b/c`，`tpu_self_compare.py` 只收这三份）两两的最大 rel_L2，每个张量各自一个尺子（GPU ↔ TPU 对齐的尺子见本节末的表）。2026-11-11 起 GPU 第 1 步有 6 份，用 6 份把 TPU 自比全部第 1 步结果重判过（[`step1-n6-rejudge.json`](../../models/hunyuan4/alignments/04-tpu-self/results/step1-n6-rejudge.json)）：未定责个数变的有三次（C1 2 → 1、E5 157 → 158、E6 1 → 0）。影响结论的只有 E6（RMSNorm 多舍一次）：第 0 层 `input_layernorm` R 1.2025 → 1.1955，按 6 份它没有未定责，解读会从「分得开」变成「分不开」，档也可能从超变略超（推断：它的曲线 r 只有 1.06；这份重判只数未定责，判档、曲线没重算）。判档仍按 3 份，用 3 份还是 6 份待拍板（[TPU 自比实验矩阵「前瞻验证」](../../models/hunyuan4/alignments/04-tpu-self/MATRIX.md#前瞻验证protocol-2026-11-09-登记的解读规则)）：
 
 尺子 = max(rel_L2(GPU_i, GPU_j))，倍数 = d ÷ max(尺子, 2^-20)
 
@@ -264,6 +264,8 @@ GPU 第 1 步重跑之间只差原子加的顺序，这把尺子很窄。TPU 改
 
 R = rel_L2(被测, FP64) ÷ max(rel_L2(参照, FP64), 中位数_i rel_L2(GPU_i, FP64))
 
+这是 TPU 自比的写法；GPU ↔ TPU 对齐的分母只取 GPU 各份的中位数，见本节末的表。
+
 | R | 记作 | 意思 |
 |---|---|---|
 | ≤ 1.2 | 换了顺序（已定责） | 被测不比参照、也不比 GPU 离精确值远，只是换了一种求和顺序，不是 bug |
@@ -273,17 +275,23 @@ R = rel_L2(被测, FP64) ÷ max(rel_L2(参照, FP64), 中位数_i rel_L2(GPU_i, 
 
 - 门槛 1.2 的来历：只差舍入顺序时 R ≈ 1；多一次同量级的独立舍入，误差方差约翻倍，R ≈ √2 ≈ 1.41。1.2 取在两者之间（[`metrics.md`](../reference/metrics.md#fp64-r-比单算子逐层前向与反向整网输出)）。
 - 分母取「参照离 FP64」和「GPU 三份离 FP64 的中位数」中较大的，即被测只要不比这两者中较差的那个更差就算定责。
-- iHC 的几个小参数病态，超出噪声上限又定不了责时单列，不挡判档（base2 开那一代 GPU ↔ TPU 第 1 步已接受的是同一批；现行比较 `tz-off-rep` 对 GPU 第 1 步参照 3 份时有 5 个 iHC 张量未定责，其中 3 个是新出现的；参照补到 6 份 15 对后只剩 1 个（第 3 层注意力前 `hc_scale`，1.05 N），接受是否沿用、豁免是否收窄都待定，见混元 4 [`PROTOCOL.md`](../../models/hunyuan4/PROTOCOL.md) 变更记录 2026-11-11）。「病态」在 mini 第 1 步一条序列上量过：iHC 42 个张量的条件数 κ 从 3 到 2000 不等，和 R 只弱相关，现行比较里新出现的几个未定责张量 κ 反而很小（混元 4 [`ROOT-CAUSES.md`](../../models/hunyuan4/ROOT-CAUSES.md#u-mini-step1)「mini 第 1 步 iHC 小参数」行）。所以单列只是没证据定责时的处理，不等于逐个证明了病态。
+- iHC 的几个小参数病态，超出噪声上限又定不了责时怎么处理，两种比较不一样：
+  - **TPU 自比**：用 [MATRIX「iHC 豁免」](../../models/hunyuan4/alignments/04-tpu-self/MATRIX.md#ihc-豁免定义与受影响的运行)，iHC 张量一律不算未定责，单列在结果文件的 `ihc_accepted` 里，不挡判档，没有倍数上限。
+  - **GPU ↔ TPU**：用混元 4 [D11 豁免规则](../../models/hunyuan4/alignments/01-mini/DETAILS.md#d11-rule)，不限 iHC。超出 N 且 R > 1.2 的张量一律单列；登记过接受、且接受理由能拿被判那一代的数复核成立的不计入未定责，其余计入，L3 至少待定。单列、不计入的张量挡不挡签字：待拍板。例：C 口径之前的 `tz-off-rep` 对 GPU 第 1 步参照 3 份时有 5 个 iHC 张量未定责（其中 3 个是关 base2 后新出现的），参照补到 6 份 15 对后只剩第 3 层注意力前 `hc_scale`（1.05 N，R 5.36），它的接受理由复核不了，计入未定责。现行 C 口径（第 1 步全量抓数 `s1f-c`，GPU 参照 6 份 15 对）重判后：163 个超出 N，超出 N 且 R > 1.2 的是第 3 层 FFN 前 `hc_fn`（1.14 N，R 1.43）与 MTP `enorm`（1.41 N，R 1.20）；`hc_fn` 计入未定责，`enorm` 按 D13 不计入；`tz-off-rep` 那个 `hc_scale` 在 C 口径下 0.66 N（[`t1zc-step1-train-grad-vs-fp64-n6.json`](../../models/hunyuan4/alignments/01-mini/results/t1zc-step1-train-grad-vs-fp64-n6.json)）。
+  - 「病态」在 mini 第 1 步一条序列上量过：iHC 42 个张量的条件数 κ 从 3 到 2000 不等，和 R 只弱相关，`tz-off-rep` 里关 base2 后新出现的几个未定责张量（GPU 参照 3 份时；6 份时都在噪声内）κ 反而很小（混元 4 [`ROOT-CAUSES.md`](../../models/hunyuan4/ROOT-CAUSES.md#u-mini-step1)「mini 第 1 步 iHC 小参数」行）。所以单列只是没证据定责时的处理，不等于逐个证明了病态。
 - 整次比较：没有「丢了精度」的张量，第 1 步这一项才算在噪声内。
 
 **FP64 精确梯度从哪来。** [`step1_ref.py`](../../models/hunyuan4/frameworks/megatron/step1_ref.py) 在 CPU 上用 GPU golden 的同一套模型代码和 loss 语义，把第 1 步整网全部改成 FP64 重算（参数、激活、梯度都是 FP64，代码里写死的低精度在算子层改写成 FP64，另有审计确认没有漏网的低精度算子），TPU 一侧的代码一行不用。原则是**裁判不能来自被测一侧**：被测是 TPU 时，TPU 产出的数不能当参照，否则 TPU 自己的系统偏差会被当成真值（PROTOCOL 第 5 节；差异清单 [G1](../reference/tpu-vs-gpu-differences.md#g1-真值是-cpu-上的-fp64-整网重算与被测不同源)）。
 
-GPU ↔ TPU 对齐的第 1 步用同一套办法，有两处不同（[`step1_vs_fp64.py`](../../models/hunyuan4/analysis/step1_vs_fp64.py)、PROTOCOL 第 5 节）：
+GPU ↔ TPU 对齐的第 1 步用同一套办法，有四处不同（[`step1_vs_fp64.py`](../../models/hunyuan4/analysis/step1_vs_fp64.py)、混元 4 [`PROTOCOL.md`](../../models/hunyuan4/PROTOCOL.md) 第 5 节）：
 
 | | TPU 自比 | GPU ↔ TPU 对齐 |
 |---|---|---|
-| R 的分母 | max(参照离 FP64，GPU 三份离 FP64 的中位数) | GPU 三份离 FP64 的中位数 |
-| 分辨不出的下限 | 尺子不低于 2^-20 | GPU 噪声为 0、且两边离 FP64 都小于一次 BF16 舍入 u = 2^-8 ≈ 3.9e-3 的张量，按下限判过，不用 R |
+| 超出噪声的倍数的分子 | d = rel_L2(被测, 参照)，分母 ‖参照‖ | TPU 到离它最近的那份 GPU 的 rel_L2，分母取那份 GPU 的范数（`tpu_vs_gpu_min`）。分子取最小、N 取两两最大，所以份数增加时倍数只会变小或不变，份数不同的倍数不能直接比（C 口径之前的 `tz-off-rep`：mini 3 → 6 份后 iHC 未定责从 5 个变 1 个（第 3 层注意力前 `hc_scale`），MTP `enorm` 另列、按 D13 不计入；主要是新补的几份把 N 撑宽。现行 C 口径 6 份下也是 1 个，但换成了第 3 层 FFN 前 `hc_fn`，不是同一个张量） |
+| 噪声上限 | GPU 第 1 步三份两两的最大值 | GPU 第 1 步参照各份两两的最大值（混元 4 mini 梯度 2026-11-11 起 6 份 15 对 `g2s-a … f`；mini 优化器一步与真实权重仍 3 份，其余尺寸看各自报告） |
+| R 的分母 | max(参照离 FP64，GPU 三份离 FP64 的中位数) | GPU 第 1 步参照各份离 FP64 的中位数（份数同上） |
+| 分辨不出的下限 | 尺子不低于 2^-20 | GPU 噪声为 0、且两边离 FP64 都小于一次 BF16 舍入 u = 2^-8 ≈ 3.9e-3 的张量，按下限判过，不用 R；GPU 噪声为 0 但不低于下限的，只看 R，R > 1.2 直接判不过（不经过 1–2 倍的待定档） |
+| iHC 小参数定不了责时 | iHC 豁免：不算未定责、不挡判档 | D11 豁免规则：复核不了接受理由的计入未定责（见上文用法二） |
 
 ### 2.4 算例：词嵌入梯度
 
@@ -298,7 +306,7 @@ GPU ↔ TPU 对齐的第 1 步用同一套办法，有两处不同（[`step1_vs_
 
 - 纯数据并行时词嵌入梯度离精确值是 GPU 的 3.6 倍；其余 204 个张量离 FP64 和参照一样近，比值 rel_L2(被测, FP64) ÷ rel_L2(参照, FP64) 的中位数 0.99。问题只在这一个张量上。
 - 修复后词嵌入梯度仍超出噪声上限 1.36 倍，但离精确值比参照和 GPU 都近，R 0.91，记「换了顺序」。这正是用法一和用法二要一起看的原因。
-- 机制（[B1 梯度的跨卡归约](../../models/hunyuan4/alignments/04-tpu-self/b1-grad-reduction.md)）：FSDP 下每张卡只算自己那一部分列的词嵌入梯度，先按 token 号排序再 scatter，没有跨卡求和；纯数据并行下每张卡对自己的 token 做不排序的 BF16 scatter，再以 BF16 加法跨卡 all-reduce。排不排序由后端按门槛定（libtpu 0.0.46 上是一次 scatter 的下标数超过词表行数的 1/8），门槛随 libtpu 版本、列宽和芯片代际变：0.0.52 上 v5p 不变，v7x 上纯数据并行不做梯度累积时开始排序、不再丢精度（[`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md)）。这只在 mini 的形状上成立：生产形状（词表 120832、隐藏维 6144）单算子离线编译，0.0.52 上 v5p、v7x 每卡 4096 / 8192 / 16384 个下标都不排序，纯数据并行照样要修（[差异清单 A12](../reference/tpu-vs-gpu-differences.md#a12-纯数据并行时词嵌入梯度在-bf16-里-scatter不排序)、[混元 4 案例 14](../../models/hunyuan4/cases/14-ddp-fsdp-embedding.md)）。多出来的误差集中在高频 token，随每张卡累加的 token 数涨、与跨卡路数无关，主因是本卡那次 BF16 累加。
+- 机制（[B1 梯度的跨卡归约](../../models/hunyuan4/alignments/04-tpu-self/b1-grad-reduction.md)）：FSDP 下每张卡只算自己那一部分列的词嵌入梯度，先按 token 号排序再 scatter，没有跨卡求和；纯数据并行下每张卡对自己的 token 做不排序的 BF16 scatter，再以 BF16 加法跨卡 all-reduce。排不排序由后端按门槛定（libtpu 0.0.46 上是一次 scatter 的下标数超过词表行数的 1/8），门槛随 libtpu 版本、列宽和芯片代际变：0.0.52 上 v5p 不变，v7x 上纯数据并行不做梯度累积时开始排序、不再丢精度（[`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md)）。这只在 mini 的形状上成立：生产形状（词表 120832、隐藏维 6144）单算子离线编译，0.0.52 上 v5p、v7x 每卡 4096 / 8192 / 16384 个下标都不排序；0.0.46 上门槛 15105，每卡 4096、8192 个下标实测不排序，12288 按门槛推断不排序，16384 起排序。序列 4096、每卡微批 1–3（4096–12288 个下标）时两个版本都不排序，纯数据并行照样要修（[差异清单 A12](../reference/tpu-vs-gpu-differences.md#a12-纯数据并行时词嵌入梯度在-bf16-里-scatter不排序)、[混元 4 案例 14](../../models/hunyuan4/cases/14-ddp-fsdp-embedding.md)）。多出来的误差集中在高频 token，随每张卡累加的 token 数涨、与跨卡路数无关，主因是本卡那次 BF16 累加。
 
 ### 2.5 两类尺子怎么配合
 
@@ -333,8 +341,8 @@ GPU ↔ TPU 对齐的第 1 步用同一套办法，有两处不同（[`step1_vs_
 | 最大单步 | max(\|dₜ\|) 及步号 | 同上 | 同上 | 同上 | 同上 | 尖峰 | 极值最吃样本数 |
 | 噪声上限 N | GPU K 份两两（28 / 120 对），同窗口，取最大 | 同被测 | GPU 重跑互为参照 | — | — | 只差求和顺序时差多少 | 份数少会偏紧；量不出 GPU 自己的系统偏差 |
 | 一次比较的最差 r | 各检查三个 r 的最大值，再取所有检查的最大值 | — | — | 留一法最大值（300 步 2.47、1000 步 1.82） | 不超过留一法最大值即「和 GPU 重跑分不开」 | 一句话结论 | 多重比较：纯噪声也常 1–2 |
-| 第 1 步 rel_L2 | ‖a − b‖₂ ÷ ‖b‖₂，FP64 累加 | 只第 1 步 | 同上 | GPU 第 1 步三份两两最大，不低于 2^-20 | 倍数 ≤ 1 在噪声内；超出交给 R | 差了多少 | 尺子窄，大多数张量都会超 |
-| 第 1 步 R（定责） | rel_L2(被测, FP64) ÷ max(rel_L2(参照, FP64), GPU 三份离 FP64 的中位数) | 只第 1 步 | CPU FP64 整网重算（GPU 代码，与被测不同源） | — | ≤ 1.2 换了顺序；> 1.2 丢了精度 | 谁离精确值更远 | 误差小于一次 BF16 舍入时 R 只是两种舍入实现之比；权重侧开关第 1 步测不到 |
+| 第 1 步 rel_L2 | ‖a − b‖₂ ÷ ‖b‖₂，FP64 累加；GPU ↔ TPU 的倍数分子取 TPU 到最近一份 GPU（见 2.3） | 只第 1 步 | 同上 | GPU 第 1 步各份两两最大（TPU 自比 3 份，不低于 2^-20；mini GPU ↔ TPU 梯度现行 6 份） | 倍数 ≤ 1 在噪声内；超出交给 R | 差了多少 | 尺子窄，大多数张量都会超 |
+| 第 1 步 R（定责） | TPU 自比：rel_L2(被测, FP64) ÷ max(rel_L2(参照, FP64), GPU 三份离 FP64 的中位数)；GPU ↔ TPU：rel_L2(TPU, FP64) ÷ GPU 第 1 步参照各份离 FP64 的中位数（mini 梯度现行 6 份），不取 max（见 2.3） | 只第 1 步 | CPU FP64 整网重算（GPU 代码，与被测不同源） | — | ≤ 1.2 换了顺序；> 1.2 丢了精度 | 谁离精确值更远 | 误差小于一次 BF16 舍入时 R 只是两种舍入实现之比；权重侧开关第 1 步测不到 |
 
 ---
 

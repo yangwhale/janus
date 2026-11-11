@@ -46,7 +46,7 @@ L0 要求两边拿到的数据和权重**逐位相同**。这份文档讲两件�
 | 混合配比 / 打乱索引表逐位 | 两边重建的 doc / sample / shuffle 索引与混合表的 sha256 | 部分，见注 6 |
 | 字段级 dtype / shape / sha256 | 每个样本的全部字段 | 已落地，见注 7 |
 | mask 与 EOD 边界用例 | 合成边界用例（文档边界、packing、EOD 后 position 是否重置）两边输出一致 | 已落地，见注 8 |
-| 续训后的数据位置 | 第 k 步存档恢复后，每个 rank 的样本与连续训练逐位相同 | 已落地（GPU 侧）；TPU 侧未做，见注 9 |
+| 续训后的数据位置 | 第 k 步存档恢复后，每个 rank 的样本与连续训练逐位相同 | 已落地（GPU 侧）；TPU 侧回放数据已核（[`phase2-resume`](../../../models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-resume.report.md) 的 `L0.resume.data`），原生加载器（Grain 迭代器）续训未做，见注 9 |
 | 多机、多读取进程 | 不同 host 数、不同读取进程数下样本顺序不变 | 部分，见注 10 |
 | 分词器与预处理钉版本 | 分词器文件 sha256、是否在线重新分词，写进运行元信息并对照 | 部分，见注 11 |
 
@@ -95,7 +95,7 @@ L0 要求两边拿到的数据和权重**逐位相同**。这份文档讲两件�
        - 数据里出现 pad id 时 Megatron 把它换成 0 并屏蔽 loss，MaxText 不处理（混元 3 这份数据里 pad id 出现 0 次）。
 9. **续训后的数据位置**
    - 为什么：存档没存对数据位置，续训会吃到错的样本。
-   - 状态：GPU 侧已落地（`phase1-resume`）；TPU 侧未做（MaxText 存 Grain 迭代器状态，要跑训练存档）。
+   - 状态：GPU 侧已落地（`phase1-resume`）；TPU 侧用 janus 回放数据的存档续训已核（`phase2-resume` 的 `L0.resume.data`：token 与首步 loss 逐位）；MaxText 原生加载器存 Grain 迭代器状态的续训未做。
 10. **多机、多读取进程**
     - 为什么：读取并行度变了顺序就变，是常见的隐性差异。
     - 状态：
@@ -178,11 +178,11 @@ Megatron torch_dist 检查点（参数 + FP32 主权重 + 优化器状态）  �
 | 全量逐张量逐位 | 每个张量按原始字节比（NaN 的位模式、−0.0 都算），**不抽样** | 抽样比，没抽到的坏了查不出 | 已落地（HF 往返） |
 | 数清张量数 | 源、目标、往返后的张量清单一致，零缺失、零多余 | 漏转一个张量，比对工具可能静默跳过 | 已落地（HF 往返） |
 | 往返逐位 | A → B → A 逐位相同 | 证明两个方向互逆，但证明不了映射表本身对（见注 1） | 已落地（HF 往返）；直接互转未做 |
-| FP32 小张量三方核对 | 同一个张量在 GPU 检查点、中间格式、TPU 检查点三处逐位相同，重点是 expert_bias | 这类张量常被顺手降成 BF16；1 个比特就能改变路由选中的专家 | 部分：GPU 侧加载后已比；TPU 侧未做 |
-| dtype 清单 | 导出、转换后每个张量的 dtype 符合规则（expert_bias 必须 FP32） | 转换工具可能一次性把一批张量降精度 | 已落地（GPU 侧 `L0.dtype.manifest`、HF 往返）；TPU 侧未做 |
+| FP32 小张量三方核对 | 同一个张量在 GPU 检查点、中间格式、TPU 检查点三处逐位相同，重点是 expert_bias | 这类张量常被顺手降成 BF16；1 个比特就能改变路由选中的专家 | 已落地：TPU 加载后的 buffer（expert_bias）对 GPU 逐位（[`phase2-l0-state`](../../../models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-l0-state.report.md) 的 `L0.buffers.loaded`），HF 中间格式对 MaxText 检查点逐位、expert_bias 为 FP32（[`phase2-ckpt-convert`](../../../models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-ckpt-convert.report.md)） |
+| dtype 清单 | 导出、转换后每个张量的 dtype 符合规则（expert_bias 必须 FP32） | 转换工具可能一次性把一批张量降精度 | 已落地（GPU 侧 `L0.dtype.manifest`、HF 往返；TPU 侧 [`phase2-l0-state`](../../../models/hunyuan3/alignments/01-v5p-acceptance/results/phase2-l0-state.report.md) 的 `L0.dtype.manifest`、`L0.dtype.state`） |
 | 新参数 / 改名参数确实被加载 | 加载后的参数对源检查点逐张量比；加载日志里没有 missing / unexpected key | 名字没对上的参数会被随机初始化，第 1 步 loss 离谱时先查这条 | 部分（见注 2） |
 | 优化器状态命中计数 | 动量、主权重等每类路径实际匹配到的张量数，与参数数一致 | 路径写错时会「零命中」却不报错（见注 3） | 未落地（随直接互转一起做） |
-| 恢复后特殊值保留 | 存档前埋 −0.0、次正规数，存 / 恢复后逐位不变 | 恢复路径里若有浮点合并，会把它们抹掉 | 未落地 |
+| 恢复后特殊值保留 | 存档前埋 −0.0、次正规数，存 / 恢复后逐位不变 | 恢复路径里若有浮点合并，会把它们抹掉 | 已落地（GPU 侧，[`phase1-ckpt-special`](../../../models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-ckpt-special.report.md) 3 条全过，详见 [0004](0004-l1-gpu-kernels.md) 第五节）；TPU 侧未做 |
 | 恢复训练对得上 | 转换后续训，与原框架连续训练的 loss / 统计量在门槛内 | 前几档只证明「写出来的字节对」，这一档证明「能接着训」 | 部分：GPU 自身存档续训已逐位（`phase1-resume`）；跨框架未做 |
 
 - 注 1：**证明不了映射表本身对**——两边错得互逆时往返照样对上。映射表靠 L2 逐层比。

@@ -1,8 +1,8 @@
-# 混元 4 · T2 B，TPU 现行设置（t1z 的全部开关，qk_clip_max_logit_exclude_sink 暂关）被测 tb3-b，GPU gb2-a 为基线，噪声 gb2-* 两两 28 对。
+# 混元 4 · T2 B，TPU 当时的设置（t1z 的全部开关，qk_clip_max_logit_exclude_sink 暂关）被测 tb3-b，GPU gb2-a 为基线，噪声 gb2-* 两两 28 对。
 schema_version: 1
 model: hunyuan4-trunc
 stage: t2bz-l4
-description: T2 阶段 B L4，300 步（TPU tb3-b（现行设置）被测，GPU gb2-a 为基线，GPU 噪声 28 对）
+description: T2 阶段 B L4，300 步（TPU tb3-b（当时的设置）被测，GPU gb2-a 为基线，GPU 噪声 28 对）
 runs:
   test: tb3-b
   golden: [gb2-a]

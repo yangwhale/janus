@@ -115,3 +115,17 @@ test:
     role: 并行方式对照：生产配置只改成 EP=8（ici_fsdp_parallelism=1、ici_expert_parallelism=8，对应 GPU DP8 + EP8）
     location: gs://<POC 桶>/janus/hunyuan3-4l/tpu/t-v7x-ep8-1000/
     results: phase2-v7x-acceptance-rcc-ep8
+  # ---- 第 1 步状态读（签字项 2b）补登记：位置、janus 提交、命令行覆盖运行时都没记，写「未登记」；目录文件头只写当前对齐配置 yml a238883b、maxtext 0622774、--no-hooks 跑 2 步
+  - name: t-v7x-st1n-base
+    steps: 2
+    role: v7x 第 1 步状态读的被测（结果里叫 t-v7x-st1n-base-gm，梯度由动量反推）；01 t-st1n-base 的 v7x 对应。执行扰动六份 t-v7x-st1n-sa256 / sa1k / combo / vmem40 / vmem56 / sa256v48 同理，只作噪声
+    code: {framework: "maxtext@0622774（目录文件头）", janus: 未登记}
+    config: {file: frameworks/maxtext/hy3-4layers.yml, sha256: "a238883b…（目录文件头）", overrides: 未登记}
+    meta_sha256: {t-v7x-st1n-base-gm: 1dfb740b1c1967db420b84852817a1268c5fa4331f8e5922acc7d38461a4dba8}
+    location: 未登记
+    results: [phase2-v7x-st1-on-state-gpuonly, phase2-v7x-st1-on-state-xnoise]
+  - name: t-v7x-g32-all
+    steps: 2
+    role: v7x 上台账 #20 三个梯度 FP32 开关的诊断臂（case01-grad-fp32-arms.json 的 v7x_all）
+    code: {framework: 未登记, janus: 未登记}
+    location: 未登记

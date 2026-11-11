@@ -3,14 +3,15 @@
 schema: 1
 alignment: 04-tpu-self
 golden:   # TPU golden
-  - {name: ts-g-a, stage: T1, steps: 1000, role: "TPU 自比的 golden：base2 开的上一代对齐 yml、MaxText b87a55aa、v5p 2x2x2、FSDP 8、微批 1 × 累积 2，回放 GPU g3-a；第 1 步全量抓数、训练步优化后 HLO", results: [ts-g-a.golden, ts-g-a-vs-gpu, ts-g-a-vs-gpu16], location: "gs://<POC 桶>/janus/hunyuan4/tpu/ts-g-a/"}
+  - {name: ts-g-a, stage: T1, steps: 1000, role: "TPU 自比的 golden：base2 开的上一代对齐 yml（C 口径之前，M52、M58 不开）、MaxText b87a55aa、v5p 2x2x2、FSDP 8、微批 1 × 累积 2，回放 GPU g3-a；第 1 步全量抓数、训练步优化后 HLO", results: [ts-g-a.golden, ts-g-a-vs-gpu, ts-g-a-vs-gpu16], location: "gs://<POC 桶>/janus/hunyuan4/tpu/ts-g-a/"}
   - {name: ts-g52-a, stage: T1, steps: 1000, role: "libtpu 0.0.52 上的 golden（arms.yaml F5）：同 ts-g-a 的命令，Pod 里只把 libtpu 换成 0.0.52（运行目录 meta.json：v5p 2x2x2、libtpu==0.0.52、MaxText b87a55aa）；V 类各臂对它比", results: [ts-g52-a-vs-golden, ts-g52-a-vs-ts-g-a-1000], location: "gs://<POC 桶>/janus/hunyuan4/tpu/ts-g52-a/"}
   - {name: "<运行名>-1000（如 ts-g-a-1000、ts-g52-a-1000、ts-c-scar-1k-1000）", role: "不是另外的运行：<运行名>-1000 就是该运行的 1000 步窗口（ts-c-scar-1k-1000 是 ts-c-scar-1k 的 1000 步窗口；ts-c-scar-1k 是 C6 另跑的 1000 步运行，即 L11。F2b 的 1000 步对它比，目录 catalogs/vs-ts-c-scar-1k-1000.yaml）。arms.yaml 里 long_vs 写成这个名字，表示对它的 1000 步曲线比、尺子换成 GPU g3 16 份 120 对（catalogs/vs-golden-1000.yaml、vs-ts-g52-a-1000.yaml）；不写 long_vs 时默认 ts-g-a-1000"}
 reference:   # 尺子与对照（不是被测）
   - {name: g2-a..g2-h, stage: T1, steps: 300, role: "曲线的尺子：GPU 同设置 8 份两两 28 对（catalogs/vs-golden.yaml）", location: "gs://<POC 桶>/janus/hunyuan4/gpu/g2-*/"}
   - {name: g3-a..g3-h, stage: T1, steps: 1000, role: "golden 对 GPU 的 1000 步比较（g3-a 是基线，28 对是噪声；catalogs/golden-vs-gpu.yaml）", results: [ts-g-a-vs-gpu], location: "gs://<POC 桶>/janus/hunyuan4/gpu/g3-*/"}
   - {name: g3-a..g3-p, stage: T1, steps: 1000, role: "v7x 1000 步（ts-h-v7-1k3）直接对 GPU 比的尺子：g3-a 基线，16 份两两 120 对（catalogs/v7x-1k-vs-gpu16.yaml；golden ts-g-a 用 --test 同尺子判一次作对照）", results: [ts-h-v7-1k3-vs-gpu16, ts-g-a-vs-gpu16], location: "gs://<POC 桶>/janus/hunyuan4/gpu/g3-*/"}
-  - {name: g2s-a..g2s-c, stage: T1, steps: 1, role: "第 1 步梯度的尺子：GPU 三份两两"}
+  - {name: g2s-a..g2s-c, stage: T1, steps: 1, role: "第 1 步梯度的尺子：GPU 三份两两（判档用）"}
+  - {name: g2s-d..g2s-f, stage: T1, steps: 1, role: "第 1 步梯度 6 份重判多加的三份（与 g2s-a..c 共 6 份 15 对，01-mini 补的）：重判全部第 1 步结果，不改判档（setup「比较」）", results: [step1-n6-rejudge]}
   - {name: mini-fp64, role: "第 1 步梯度的 CPU FP64 参照（frameworks/megatron/step1_ref.py，同 01-mini）"}
 test:     # TPU：对 golden 比
   - {name: ts-g-b, stage: T1, steps: 1000, role: "负对照：golden 在另一个切片上重跑，同一命令", golden: ts-g-a, results: [ts-g-b-vs-golden], location: "gs://<POC 桶>/janus/hunyuan4/tpu/ts-g-b/"}

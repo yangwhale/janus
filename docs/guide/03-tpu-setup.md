@@ -78,14 +78,15 @@ flowchart LR
 
 ## 3.0 准备：代码、镜像、要搬的东西
 
-- **代码**：`maxtext` 的 `hunyuan` 分支，要 `0622774` 或更新。
-  - 对齐配置打开的四个精度开关要这个版本，见 3.2。
+- **代码**：`maxtext` 的 `hunyuan` 分支。
+  - 对齐配置打开的四个精度开关从 `0622774` 起有，见 3.2。
+  - 混元 3 的验收（正式被测、日常回归的 LKG）都钉在 `0622774a`，结论只对这个提交成立。复现验收时给 [`stage.sh`](../../models/hunyuan3/frameworks/maxtext/stage.sh) 的第二个参数显式传 `0622774a`（不传默认拉 `origin/hunyuan` 最新）；用更新的提交，先跑日常回归 T0、T1，对 LKG 逐位相同再用（[混元 3 日常回归](../../models/hunyuan3/regression/README.md)）。跑之前先按[第 7 章 7.4 第 2 步](07-daily-regression.md#第一次跑之前换成你自己的)处理 `hy3-4layers.yml` 的 sha256：仓库现行文件不是 LKG 绑定的 a238883b，不处理的话 R02 必 fail，会被误读成新提交改了数值。
   - 训练循环、数据回放、抓数都在 janus 里，**不改 MaxText 源码**。
 - **镜像**：MaxText 官方 `tpu_pre_training` 0.2.5，按 digest 钉死在 `run.sh` 里。
   - 实际的 jax / jaxlib / libtpu 版本在运行时读出来写进 `meta.json`；在 Pod 里另装 libtpu 时以 `meta.versions.libtpu_pip` 为准。
   - 这个镜像带 jax 0.11.1、libtpu 0.0.46，两个模型的对齐都在它上面测；混元 3 的运行只记了构建号 `cl/963683785`，按构建号认作 0.0.46，构建号到 pip 版本的对应已由同构建号的探针运行核过（[环境「两个模型实测用的版本」](../reference/environment.md#两个模型实测用的版本)）。
   - **libtpu 版本会改数值，不只改求和顺序**：混元 4 上 0.0.46 → 0.0.52，「RMSNorm 多舍一次」的影响从 r 1.06 变成 5.50，词嵌入 scatter 插排序的门槛也变了。换版本前先看 [`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md)：先建新 golden、重测已知敏感项，再做别的。0.0.50 / 0.0.50.1 不用（[环境](../reference/environment.md#tpu-侧)）。
-  - **v5p 上 0.0.46、0.0.48、0.0.51、0.0.52 都有一个 jit 静默算错的编译器 bug**（多输出 fusion 含 DUS，[混元 4 案例 16](../../models/hunyuan4/cases/16-jit-miscompile-sub8-row-block.md)）。存档的 292 份训练步程序扫出 0 处，覆盖混元 3 截 4 层与混元 4 mini 存了 HLO 的运行；mini 现行比较 `tz-off-rep` 与推荐组合 `x5-prod` 没存 HLO，在 CPU 上按 `meta.json` 重编后扫也是 0 处（离线程序与上卡程序是同一份是推断）；混元 3 正式被测不在内；新形状、新切分上线前先用 `models/hunyuan4/analysis/hlo_mof_dus_scan.py` 扫一遍训练步的优化后程序（[差异清单 F8](../reference/tpu-vs-gpu-differences.md#f8-jit-静默算错dus-和读同一缓冲的算子被合进一颗多输出-fusion)）。
+  - **v5p 上 0.0.46、0.0.48、0.0.51、0.0.52 都有一个 jit 静默算错的编译器 bug**（多输出 fusion 含 DUS，[混元 4 案例 16](../../models/hunyuan4/cases/16-jit-miscompile-sub8-row-block.md)）。存档的 292 份训练步程序扫出 0 处，覆盖混元 3 截 4 层与混元 4 mini 存了 HLO 的运行；mini 现行比较 `tc-a`（C 口径，MaxText `8d3d7561`）与C 口径另 4 份 `tc-b … tc-e`（只改执行方式的 3 份加 full 重算的 `tc-e`；后补的 `tc-f` 没扫）、C 口径之前的现行比较 `tz-off-rep`、推荐组合 `x5-prod` 没存 HLO，在 CPU 上按 `meta.json` 重编后扫也都是 0 处（离线程序与上卡程序是同一份是推断，依据：存了 HLO 的 `ts-g-a` 按同一办法在 CPU 重编，规范化后与 TPU 上存下的逐行相同，见 `models/hunyuan4/results/jit-miscompile-offline-scan.json` 的 `calib`；`tc-*` 的 `8d3d7561` 没有存了 HLO 的运行可校准，依据弱一层）；没扫的：混元 4 mid、真实宽度截层（06）、生产尺寸，混元 3 正式被测（`t-rmap-on-1000`、`t-v7x-on-1000`）；新形状、新切分上线前先用 `models/hunyuan4/analysis/hlo_mof_dus_scan.py` 扫一遍训练步的优化后程序（[差异清单 F8](../reference/tpu-vs-gpu-differences.md#f8-jit-静默算错dus-和读同一缓冲的算子被合进一颗多输出-fusion)）。
 - **对齐阶段不加性能类 libtpu 参数**（`LIBTPU_INIT_ARGS` 默认空）。
   - 要加，先用「同程序、只改这一个开关」证明它不改数学（[方法详解：环境](../reference/environment.md#tpu-侧)「TPU 侧」）。
 - **把 GPU 侧的产物搬到桶里**：
@@ -179,7 +180,7 @@ TPU 一侧的配置文件 [`hy3-4layers.yml`](../../models/hunyuan3/frameworks/m
 | 开关 | 作用 | 去掉哪一处差（量级） | 对齐必需？ | 对照行 |
 |---|---|---|---|---|
 | `dense_fp32_accumulation` | 切开的收缩维部分和改用 FP32 相加（见表下） | 不开时 qkv、稠密层 fc1 的前向 R-ratio 超线（v5p 1.24 / 1.29，v7x 1.57 / 1.58） | 必需 | [「收缩维被 FSDP 切开的投影的累加精度」](../../models/hunyuan3/config-alignment.md#数值精度) |
-| `rmsnorm_single_rounding` | RMSNorm 在 FP32 里算完只舍一次 | 见表下 | 混元 3 推荐（显式保证，对齐、生产都开；libtpu 0.0.46 上不开前向也逐位不变）；换 libtpu 时必需（混元 4 在 0.0.52 上不开时主 loss 系统性偏高，见表下） | [「RMSNorm 舍入次数」](../../models/hunyuan3/config-alignment.md#数值精度) |
+| `rmsnorm_single_rounding` | RMSNorm 在 FP32 里算完只舍一次 | 见表下 | 混元 3 推荐（显式保证，对齐、生产都开；libtpu 0.0.46、v5p 上不开前向也逐位不变，v7x 没对照过）；换 libtpu 时必需（混元 4 在 0.0.52 上不开时主 loss 系统性偏高，见表下） | [「RMSNorm 舍入次数」](../../models/hunyuan3/config-alignment.md#数值精度) |
 | `mlp_activation_round_per_op` | 门控激活 silu(gate)·up 按 GPU 的两个算子分别舍入 | 默认写法与 GPU 只有 73.7% 元素逐位，打开后 100% | 推荐 | [「门控激活舍入」](../../models/hunyuan3/config-alignment.md#数值精度) |
 | `routed_gate_bf16_rounding` | 路由权重按 GPU 的写法先舍成 BF16 | 路由默认精度下开和不开编出同一个程序（混元 3）；路由设 `highest` 后开关有差别（[精度边界第 8 类](../reference/precision-boundaries.md)） | 可选（显式保证） | [「路由核 BF16 舍入」](../../models/hunyuan3/config-alignment.md#数值精度) |
 
@@ -187,7 +188,7 @@ TPU 一侧的配置文件 [`hy3-4layers.yml`](../../models/hunyuan3/frameworks/m
   - FSDP 把矩阵乘的收缩维切成几段，默认每段的部分和用 BF16 相加、多舍入一次；
   - 打开后改成 FP32 相加、最后只舍一次。
 - `rmsnorm_single_rounding` 去掉哪一处差：
-  - 混元 3（libtpu 0.0.46，v5p）：前向已被 XLA 编成只舍一次，打开后前向逐位不变；反向 `in.grad` 对 golden 略降（2.09e-3 → 2.06e-3）。
+  - 混元 3（libtpu 0.0.46，v5p）：前向已被 XLA 编成只舍一次，打开后前向逐位不变；反向 `in.grad` 对 golden 略降（2.09e-3 → 2.06e-3）；scale 梯度仍舍成 BF16（台账 #20，要 FP32 落地另开 `rmsnorm_scale_grad_fp32`）。v7x 上不开时是否也只舍一次没有对照（对齐配置两平台都开，不影响现有结论）。
   - 混元 4 TPU 自比：libtpu 0.0.46 上不开它曲线 r 1.06，能忍；0.0.52 上不开它主 loss 系统性偏高，r 5.50（1000 步 3.68），不能忍。所以对齐、生产都要开，不依赖「编译器碰巧省掉中间那次舍入」。机理见 [impacts/04](../../models/hunyuan4/alignments/04-tpu-self/impacts/04-rmsnorm-double-rounding.md)。
 - 数字出自[对齐报告](../../models/hunyuan3/ALIGNMENT-REPORT.md)第 6 节开关表。
 - 每一行 GPU 怎么写、TPU 怎么写、证据在哪，点最后一栏进 [`../../models/hunyuan3/config-alignment.md`](../../models/hunyuan3/config-alignment.md#数值精度)。
@@ -261,13 +262,14 @@ TPU 一侧的配置文件 [`hy3-4layers.yml`](../../models/hunyuan3/frameworks/m
 
 ```bash
 export BUCKET=gs://<POC 桶>
-source <(bash models/hunyuan3/frameworks/maxtext/stage.sh <maxtext 克隆> [maxtext 提交，默认 origin/hunyuan])   # 先 git fetch
+source <(bash models/hunyuan3/frameworks/maxtext/stage.sh <maxtext 克隆> [maxtext 提交，默认 origin/hunyuan])   # 先 git fetch；复现验收填 0622774a（3.0）
 ```
 
 ### 提交
 
 - 默认提交到你自己的节点池。
 - `run.sh` 提交一个 JobSet，每台主机跑同一条命令，进程 0 写运行目录。
+- 要跨几个切片（走 DCN）跑：混元 3 没测过多切片。多切片（几个切片之间走 DCN）只测过一次：混元 4 TPU 自比 B15，两个 v5p 8 片切片走 DCN 做数据并行 2、切片内 FSDP 8，300 步一份。曲线对单切片在噪声内，但第 1 步 `hc_head` 三个梯度离 FP64 0.51–0.57（单切片 0.02–0.07），对自比 golden 的 R 最大 21.1，靠 iHC 豁免才不算未定责，机制没核（是不是差异清单 A16 待核）。上多切片前先查第 1 步 `hc_head` 梯度；更多切片、DCN 上做 FSDP、1000 步都没测（[环境「TPU 侧」](../reference/environment.md#tpu-侧)）。
 - 提交机等训练结束（Pod 打出 `JANUS_READY`）后：
   - 把运行目录取回本地 `~/janus-runs/`；
   - 再传到 `gs://<POC 桶>/janus/hunyuan3-4l/tpu/<运行名>/`。

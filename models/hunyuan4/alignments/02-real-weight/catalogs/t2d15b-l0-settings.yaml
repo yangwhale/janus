@@ -1,5 +1,5 @@
 # 混元 4 · T2 D1 1000 步设置核对（TPU td5b-b，GPU gd3-a）：两边每一步学习率等于 1e-5。
-# 同 t2d15-l0-settings.yaml，只把测试运行换成现行代 td5b-b（与 t2d15b-l4.yaml 同一对运行；写于 td5b-b 跑完之后补核）。
+# 同 t2d15-l0-settings.yaml，只把测试运行换成当时的最新代 td5b-b（与 t2d15b-l4.yaml 同一对运行；写于 td5b-b 跑完之后补核）。
 schema_version: 1
 model: hunyuan4-trunc
 stage: t2d15b-l0-settings

@@ -1,5 +1,5 @@
 # 混元 4 · hy4-mid 设置核对（TPU tm-b，GPU gm-a）：两边每一步学习率等于登记的常数 1e-5（PROTOCOL.md 第 1.2 节），归 L0，不进 L4。
-# 同 tm-l0-settings.yaml，只把测试运行换成现行代 tm-b（与 tmb-l4.yaml 同一对运行；写于 tm-b 跑完之后补核）。
+# 同 tm-l0-settings.yaml，只把测试运行换成当时的最新代 tm-b（与 tmb-l4.yaml 同一对运行；写于 tm-b 跑完之后补核）。
 schema_version: 1
 model: hunyuan4-mid
 stage: tmb-l0-settings

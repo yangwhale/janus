@@ -1,7 +1,7 @@
 # 混元 4 · T1（hy4-mini）设置核对：两边每一步记下的学习率都等于登记的常数（PROTOCOL.md 第 1.2 节：常数 1e-5）。
 # 学习率是我们设的，不是观测量：这里只核对「设置真的生效了」，属于 L0 地基（配置），不进 L4 的比较，
 # 也不计入 L4 的过 / 不过 / 待定（2026-11-07 报告口径变更，见 PROTOCOL 变更记录）。
-# 被测 tz-off-rep（TPU，现行比较 2026-11-11 起：现行对齐配置，含 M50，sa_use_base2_exp: false），参照 g3-a（GPU 基线，1000 步）。
+# 被测 tz-off-rep（TPU，C 口径之前的现行比较，2026-11-11 关 base2 起到同日改 C 口径止：当时的对齐配置，含 M50，sa_use_base2_exp: false），参照 g3-a（GPU 基线，1000 步）。
 schema_version: 1
 model: hunyuan4-mini
 stage: tzoff-l0-settings

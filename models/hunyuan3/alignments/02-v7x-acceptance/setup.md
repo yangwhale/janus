@@ -42,12 +42,12 @@
 | TPU | jax / jaxlib | 0.11.1 / 0.11.1 | `meta.json` 的 `versions` |
 | TPU | libtpu | 0.0.46（TPU7x 版，构建 `cl/963683785`；按构建号认） | `meta.json` 只记构建号。同一构建号的 v7x 运行实测记的是 `libtpu==0.0.46`（device_kind TPU7x，混元 4 [`jit-miscompile-probe-v7x.json`](../../../hunyuan4/results/jit-miscompile-probe-v7x.json)） |
 | TPU | tokamax | 0.0.14（镜像自带的包） | `meta.json` 不记；同 01（同一镜像 digest，01 读镜像层核过） |
-| TPU | 配置 | `hy3-4layers.yml` sha256 `a238883b…`，命令行另加 `mtp_num_layers=0` 与 remat 覆盖（同 01 `t-rmap-on-1000`） | `meta.json` 的 `config`；登记见 [`runs.yaml`](runs.yaml) |
+| TPU | 配置 | `hy3-4layers.yml` sha256 `a238883b…`（仓库里现在这份是 `305fa4b5…`，只改了注释，数值相同，见 01 setup「配置文件版本」），命令行另加 `mtp_num_layers=0` 与 remat 覆盖（同 01 `t-rmap-on-1000`） | `meta.json` 的 `config`；登记见 [`runs.yaml`](runs.yaml) |
 | GPU | 全部 | 同 01（golden 是同一批 `rcc-*`） | — |
 
 结果文件 [`phase2-v7x-acceptance-rcc.results.json`](results/phase2-v7x-acceptance-rcc.results.json) 记着 `t-v7x-on-1000` 的 `meta_sha256`。**结论在这些版本上测得**；换 libtpu 或 jax 要按混元 4 [`libtpu-052.md`](../../../hunyuan4/alignments/04-tpu-self/libtpu-052.md) 的做法重测。
 
-v5p 上实测 libtpu 0.0.46、0.0.48、0.0.51、0.0.52 有 jit 静默算错的已知问题（0.0.47、0.0.49 没测）（[环境「已定的」](../../../../docs/reference/environment.md#已定的)）。存档优化后 HLO 的扫描（混元 4 [`jit-miscompile-hlo-scan.json`](../../../hunyuan4/results/jit-miscompile-hlo-scan.json)）里混元 3 有 72 份运行，全是 v5p 上的回归与标定程序，没有一份带它的特征；正式被测 `t-rmap-on-1000`、`t-v7x-on-1000` 和 EP = 8 的运行不在扫描范围内，没有扫。
+v5p 上实测 libtpu 0.0.46、0.0.48、0.0.51、0.0.52 有 jit 静默算错的已知问题（0.0.47、0.0.49 没测）（[环境「已定的」](../../../../docs/reference/environment.md#已定的)）。存档优化后 HLO 的扫描（混元 4 [`jit-miscompile-hlo-scan.json`](../../../hunyuan4/results/jit-miscompile-hlo-scan.json)）里混元 3 有 72 份运行，全是 v5p 上的回归与标定程序，没有一份带它的特征；但其中 71 份有含 DUS 的多输出 fusion，这个 bug 的前提条件普遍存在。正式被测 `t-rmap-on-1000`、`t-v7x-on-1000`、EP = 8 的运行和 L2、L3 的第 1 步被测都不在扫描范围内，没有扫（[检查清单「已知的覆盖缺口」](../../CHECKS.md#已知的覆盖缺口)）。
 
 ## 在哪跑
 
@@ -91,7 +91,7 @@ v5p 上实测 libtpu 0.0.46、0.0.48、0.0.51、0.0.52 有 jit 静默算错的�
 
 - 对齐配置 yml 从 `2a76c7590866…` 换成 `a238883b7f91…`：再打开 `dense_fp32_accumulation`。
   - 作用：注意力与稠密 MLP 投影 FP32 累加、只舍一次；
-  - maxtext 要 hunyuan@0622774 或更新；
+  - maxtext 钉 hunyuan@0622774a（开关从这个提交起有；验收（正式被测、日常回归的 LKG）钉在 `0622774a`，结论只对这个提交成立；用更新的提交先跑日常回归 T0、T1，对 LKG 逐位相同再用）；
   - 原因与 v5p 上的回放验证见 `../../config-alignment.md`「收缩维被 FSDP 切开的投影的累加精度」。
 - 下面这节的运行都是换代之前的配置。
 - v7x 上开 / 关的步时与显存对比是 `t-v7x-st-off-100` / `t-v7x-st-on-100`（v7x 生产 rmap 配置，关 / 开这个开关各 100 步；读数见 01 README 结论）。
@@ -99,9 +99,10 @@ v5p 上实测 libtpu 0.0.46、0.0.48、0.0.51、0.0.52 有 jit 静默算错的�
 ## 生产配置 1000 步：`t-v7x-rmap-1000-a` / `-b`（2026-11-05）
 
 - 01 的 `t-rmap-1000`（v5p 生产配置 1000 步）的 v7x 对应：
-  - 同一份代码包（maxtext `237a3270`、janus `9793b367`）；
+  - 代码包 maxtext `237a3270`、janus `9793b367`；
   - yml sha256 `2a76c7590866…`（GA 2 + 三个精度开关）；
-  - 命令行同样把除层输入与 `moe_routing_maps` 外的中间量全部 remat、`moe_routing_maps=device`（重算设置对齐 GPU 的 rc，即 GPU 生产 golden）。
+  - v5p 的 `t-rmap-1000` 这三项都没登记，推断与 v7x 这份相同，未核（见 01 `runs.yaml`）；
+  - 命令行把除层输入与 `moe_routing_maps` 外的中间量全部 remat、`moe_routing_maps=device`（重算设置对齐 GPU 的 rc，即 GPU 生产 golden）。
 - 每步中位数 0.96 s（v5p-8 的 t-rmap-1000 是 1.60 s）。
 - `-b` 的第一次提交跑到第 70 步前后时节点被平台回收（基础设施中断），删掉 JobSet 原名重提。
 
@@ -116,13 +117,13 @@ v5p 上实测 libtpu 0.0.46、0.0.48、0.0.51、0.0.52 有 jit 静默算错的�
 ### 正式验收：v7x 与 v5p 对照
 
 - **第一层**：对最终 golden 的基线 [`rcc-a`](../../../../docs/glossary.md#rcc-a)，读数见 [README](README.md) 第 3 条与 [`../../ALIGNMENT-REPORT.md`](../../ALIGNMENT-REPORT.md)。
-- **第二层**：对生产 golden `rc`，见 README 第 2 条（`phase2-v7x-acceptance-rc`）。
+- **第二层**：对生产 golden `rc`，见 README 第 2 条（`phase2-v7x-acceptance-rc`；被测是换代前配置 `t-v7x-rmap-1000-a`）。
   - 和 v5p 的 `phase2-acceptance-rc` 同号、同量级，param_norm 到第三位都一样。
   - GPU 输出层 dgrad 的长求和是 GPU 侧的事，换哪代 TPU 都会看到（01 案例 01）。
 - **v7x 与 v5p 之间**：
   - 301–1000 步 loss 平均差 −1.6e-4（v7x 低），最大单步 2.5e-3；
   - param_norm 第 1000 步差 −2.4e-4。
-  - 这组数没有记出处与口径（绝对差还是相对差没写），推断出自换代前配置的运行；v7x 那份逐步序列不在仓库，无法复算，不作判定依据。当前配置 v7x 对 v5p 的比较见[对齐报告](../../ALIGNMENT-REPORT.md)第 3 节（grad_norm、param_norm 都在 `rcc` 45 对的噪声内）。
+  - 这组数没有记出处与口径（绝对差还是相对差没写），推断出自换代前配置的运行；v7x 那份逐步序列不在仓库，无法复算，不作判定依据。当前配置下按 [`v7x-tpu-vs-rc.json`](results/v7x-tpu-vs-rc.json) 能间接看出：当前配置 301–1000 步 loss 对 `rc` 均值的带符号相对均值 v7x −1.07e-4、v5p −1.37e-4，v7x 比 v5p 高约 3e-5（两个均值相减，推断）；第 1000 步 param_norm 对 `rc` 均值的差两边记的是同一个数（0.0209）。这份 json 是当时从 `t-v7x-on-1000` 的逐步序列现算的（记了 `meta_sha256`），序列没入库，现在复算不了；它和上面这组旧数方向相反（[对齐报告](../../ALIGNMENT-REPORT.md)第 3 节）。
 
 ## L0（`phase2-v7x-t-loss30`、`phase2-v7x-l0-state`）
 
@@ -151,7 +152,7 @@ v5p 上实测 libtpu 0.0.46、0.0.48、0.0.51、0.0.52 有 jit 静默算错的�
 | `r-v7x-ff-prod` | 整网前向回放 `--full-forward` | `phase2-v7x-ff-chain`（`fwd_rratio.py --mode chain`） |
 | `t-v7x-nan8` | 第 5 步梯度埋 NaN，8 步 | `phase2-v7x-t-nan8`（演练） |
 | `obs-v7x-t1` / `reg-v7x-t1` | 观测构建 1000 步 / 同配置生产构建（T1 档参数） | `phase2-v7x-obs-gate`、`phase2-v7x-coverage`（用 `obs-v7x-t1` 第 1 步的清单） |
-| `r-v7x-wcoff` | 同 `r-v7x-l2`（不带 `--grad`）加关窗口化的 libtpu 参数（见表下） | 诊断，不进总览（结果文件已删除，读数见 README 第 5 条） |
+| `r-v7x-wcoff` | 同 `r-v7x-l2`（不带 `--grad`）加关窗口化的 libtpu 参数（见表下） | 诊断，不进总览；当时的 janus 输出原样收在 [`results/v7x-wcoff-recovered.json`](results/v7x-wcoff-recovered.json)（旧脚本，没重算），读数见 README 第 5a 条 |
 | `r-v7x-cont20` / `r-v7x-res20` | 连续 20 步（第 10 步存档）/ 从存档续训 11–20 步；janus `c8143c65`（01 的 `r-cont20` 那一版） | `phase2-v7x-resume`（5 项全过） |
 
 - **`r-v7x-l2` 的结果文件**：
@@ -178,7 +179,7 @@ v5p 上实测 libtpu 0.0.46、0.0.48、0.0.51、0.0.52 有 jit 静默算错的�
 
 其他记录：
 
-- `t-v7x-st1-prod` 的梯度（动量反推）对 GPU：第 0 层 rel_l2 2.9e-3（v5p 2.2e-3），第 3 层 0.106（v5p 0.102）。
+- `t-v7x-st1-prod` 的梯度（动量反推）对 GPU：第 0 层 rel_l2 2.9e-3（v5p 2.15e-3），第 3 层 0.106（v5p 0.102）。
 - `r-v7x-ff-prod` 第一次提交时节点被平台回收，原名重提。
 
 ## 已知要先定的

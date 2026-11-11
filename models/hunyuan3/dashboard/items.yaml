@@ -45,7 +45,8 @@ groups:
       - {name: 各层反向（激活梯度）, gpu: "phase1-full-noise28:L2.layer*.bwd", drill: "faults:L2.layer*.bwd", v5p: "phase2-l2-replay-bwd-fp64-on:L2.layer*.bwd", v7x: "phase2-v7x-l2-replay-bwd-fp64-on:L2.layer*.bwd"}
       - {name: 各层参数梯度, gpu: "phase1-full-noise28:L2.layer*.grads", drill: "faults:L2.layer*.grads", v5p: "phase2-st1-on-state-gpuonly:L2.layer*.grads", v7x: "phase2-v7x-st1-on-state-gpuonly:L2.layer*.grads"}
       - {name: 各层路由选中集合, gpu: "phase1-full-noise28:L2.layer*.router", drill: "faults:L2.layer*.router", v5p: "phase2-l2-replay-rratio-on:L2.layer*.router", v7x: "phase2-v7x-l2-replay-rratio-on:L2.layer*.router"}
-      - {name: 逐层注入（误差隔离到单层）, gpu: na, drill: "phase1-inject:L2.inject.layer2", drill_expect: fail, v5p: "phase2-l2-replay-rratio-on:L2.layer*.fwd", v7x: "phase2-v7x-l2-replay-rratio-on:L2.layer*.fwd"}
+      # TPU 侧没有逐层注入（frameworks/maxtext/README.md）；第 0–3 层前向隔离回放已在上面单列，这里不重复计数
+      - {name: 逐层注入（误差隔离到单层；TPU 侧没有，用上面第 0–3 层前向隔离回放代替）, gpu: na, drill: "phase1-inject:L2.inject.layer2", drill_expect: fail, v5p: na, v7x: na}
       - {name: DP 副本一致, gpu: "phase1-full-noise28:L2.dp.replica"}
       - {name: 截断模型前缀逐位, gpu: "phase1-truncate:*"}
       - {name: 并行等价 EP8 ↔ EP4（前向）, gpu: "phase1-parallel:L2.parallel.fwd.bitwise"}

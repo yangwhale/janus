@@ -168,14 +168,14 @@ CUDA_VISIBLE_DEVICES=0 python models/hunyuan3/frameworks/megatron/l1_ops.py --ru
     - 训练进程里的值没记进 meta。
     - 路由与各投影都是 BF16 入的 GEMM，不受这个开关影响。
     - FP32 入的 matmul 会受影响（第 3 条：开 TF32 误差大 10 倍）。
-    - 后续（`l1-kernels.md`「一」）：
+    - 后续（[`0004-l1-gpu-kernels.md`](0004-l1-gpu-kernels.md)「一、TF32 开 / 关」）：
       - torch 开关管不到 TE 的 FP32 GEMM，只有 `NVIDIA_TF32_OVERRIDE=0` 关得干净；
       - 训练里 FP32 输入的 GEMM 只有路由反向的两个，它们一直是 TF32。
 
 ## 范围与局限
 
 - 只回放第 1 步、rank 0 第一个 microbatch。
-  - 以下见 `l1-kernels.md`（靠新加的可选观测点抓专家与注意力的输入）：专家分组 GEMM、核心注意力的 kernel 回放，MoE 层内分阶段，合成 poison 与因果性，特殊值存 / 恢复。
+  - 以下见 [`0004-l1-gpu-kernels.md`](0004-l1-gpu-kernels.md)（靠新加的可选观测点抓专家与注意力的输入）：专家分组 GEMM、核心注意力的 kernel 回放，MoE 层内分阶段，合成 poison 与因果性，特殊值存 / 恢复。
 - 张量核累加模型只在 B200、cuBLAS 13.8、BF16 入的 GEMM 上验证过。
   - 换卡、换 cuBLAS、换 FP8 都要重新试参数。
   - 它是「对这些形状逐位命中」的经验模型，不是 NVIDIA 公开的规格。

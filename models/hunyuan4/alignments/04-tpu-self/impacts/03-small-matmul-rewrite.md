@@ -19,7 +19,7 @@ libtpu 0.0.46 上，曲线最差 r 0.94（梯度范数的 MARE），曲线在噪
 | MTP 层 `enorm` 权重 | 2.60e-3 | 1.85e-3 | 1.57e-3 |
 | 最后收拢超连接的 `hc_head` 三个参数 | 1.25–1.29 | 2.7e-2–7.1e-2 | 1.3e-2–6.6e-2 |
 
-`hc_head` 那三个张量梯度很小（1e-5 量级），关掉后整体偏了一个常数：`hc_head_base` 第 1 步 FP64 是 [6.9, 8.1, 9.0, 11.2]e-6，默认 [6.0, 7.8, 9.6, 11.2]e-6，关掉后 [−5.1, −3.3, −1.5, 0.2]e-6，前三个符号反了。判档时它们归在 iHC 小参数里单列（01-mini D11），所以只有 `enorm` 被记成「离精确值更远」；`hc_head` 实际偏得更多。
+`hc_head` 那三个张量梯度很小（1e-5 量级），关掉后整体偏了一个常数：`hc_head_base` 第 1 步 FP64 是 [6.9, 8.1, 9.0, 11.2]e-6，默认 [6.0, 7.8, 9.6, 11.2]e-6，关掉后 [−5.1, −3.3, −1.5, 0.2]e-6，前三个符号反了。判档时它们按 TPU 自比的 iHC 豁免单列（与 mini 的 D11 条文不同，见 [setup「比较」](../setup.md#比较)），所以只有 `enorm` 被记成「离精确值更远」；`hc_head` 实际偏得更多。
 
 ## 为什么
 
@@ -63,6 +63,11 @@ RMSNorm 乘 scale 的那一步，MaxText 写成 `einsum("...k,k->...k", normed, 
   0.0.52 没修好这类偏差，只是 v7x FSDP 8、V6 这些程序没被切成「S 在卷积 kernel 里」。会不会切成这样，随版本和切分变，0.0.46 的纯数据并行不累积（H4d）就没有。
 
   判据：优化后 HLO 里主头卷积 kernel 有 S、且 excess precision 开着。15 次存了 HLO 的运行里，满足的 5 次都偏（0.56–1.27），其余 10 次都在 FP64 附近。离线可查：`analysis/hc_head_dgrad_fusion.py`。V17 的幅度为什么是一半、要不要上卡加 barrier 验证，没做。详见[实验矩阵「hc_head：被 iHC 豁免盖住的三个张量」](../MATRIX.md#hc_head被-ihc-豁免盖住的三个张量)。
+- C 口径（mini 现行比较 `tc-a`，开 M52、M58，MaxText `8d3d7561`，v5p 0.0.46）：M52 名字相近，但不是这处的修法（它舍的是末层 RMSNorm 的输入和它的余切，这处在末层 RMSNorm 输出的余切上；M58 在 hc_head 输入的流上拆梯度，也不在这里；见 [MATRIX「hc_head」](../MATRIX.md#hc_head被-ihc-豁免盖住的三个张量)「和 C 口径的关系」）。按 `meta.json` 在 CPU 上重编（没存 TPU 上的 HLO），主头卷积 kernel 里没有 S，与 golden 同型，按上面的判据不会偏（[`hc-head-dgrad-fusion.json`](../results/hc-head-dgrad-fusion.json) 的 `cpu_aot_llo`「tc-a」）。上卡读数来自同为 C 口径的第 1 步全量抓数 `s1f-c`：`hc_head` 三个张量对 GPU 6 份都在噪声内（R 0.45 / 0.81 / 1.62），`hc_head_base` 离 FP64 0.022，与离线结论一致（[`t1zc-step1-train-grad-vs-fp64-n6.json`](../../01-mini/results/t1zc-step1-train-grad-vs-fp64-n6.json)）；`s1f-c` 不是 `tc-a` 本身，抓数改不改程序这一代没核。
+- MTP 头：切分上同样有，梯度上没看到。
+  - MTP 头 dgrad 卷积 kernel 里并进了 MTP 末层 RMSNorm 反向的行和 S，15 次存了 HLO 的程序全部如此，包括 golden；
+  - LLO 里那次舍入同样被省：H2 `vpack.i.bf16` 0 条、关 excess precision 后 1024 条，V17 `vpack.i.f32.bf16` 0 条、关后 384 条，其余指令几乎不变；V16 0 条（没编对照）；v5p `tc-a` 0 条、关后 128 条，但其余指令也大变；
+  - 第 1 步 MTP 三个 norm 权重离 FP64，关 excess precision 前后之比 0.96–1.04（C1、H4b、0.0.52 三对），没有 `hc_head` 那种放大。MTP loss 系数设 0 时 `hc_head` 偏差照旧，MTP 这一路也不是 `hc_head` 偏差的来源。为什么 MTP 头不放大，推断是 MTP 末层 norm 之后没有 `hc_head` 这种以 ε 项为主的小梯度，没有直接测（[`hc-head-dgrad-fusion.json`](../results/hc-head-dgrad-fusion.json) 的 `mtp_head`，差异清单 [A16](../../../../../docs/reference/tpu-vs-gpu-differences.md#a16-hc_head输出头反向-kernel-合并末层-rmsnorm-反向行和时省掉一次-bf16-舍入)）。
 - 工具对 iHC 小参数单列、不挡判档（`ihc_accepted`，定义见 [MATRIX「iHC 豁免」](../MATRIX.md#ihc-豁免定义与受影响的运行)），原意是放过 1.5–2 倍的小偏差；这里偏到 18–46 倍、符号反了也被单列。收窄豁免的提议已登记在 PROTOCOL 变更记录（2026-11-11），豁免是否收窄待定；看判档时要看 `ihc_accepted` 里的倍数。
 
 ## 一句话

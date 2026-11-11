@@ -18,7 +18,7 @@
 
 - L4：当前对齐配置 `t-v7x-on-1000`（v7x 当前对齐配置 1000 步）全过。loss 全程 0.82、第 301–1000 步 0.83、grad_norm 0.85、param_norm 0.53；学习率逐位，路由偏置曲线 0.81，健康信号过；EP = 8 臂也全过。这是对事先定下的基线 `rcc-a`；十份 golden 轮流当基线时，当前配置有三份落进待定（`rcc-j` grad_norm 1.11、`rcc-e` grad_norm 1.01、`rcc-d` loss 后段 1.08），没有不过（[`case01-rebaseline-rcc.json`](../01-v5p-acceptance/results/case01-rebaseline-rcc.json)、对齐报告第 3 节）。
 - L0：全过。
-- L1、L2 前向：按当前配置全过（四层 R 1.06 / 1.01 / 1.01 / 1.02），只有 MoE 块回放第 2 层有 1 个 token 路由翻转（R 1.27）。
+- L1、L2 前向：L2 前向按当前配置全过（四层 R 1.06 / 1.01 / 1.01 / 1.02）；L1 单算子除 MoE 块外全过，MoE 块回放第 2 层有 1 个 token 路由翻转（R 1.27，判不过；去掉这个 token 后 0.95）。
 - 第 1 步梯度与优化器状态：严格档不过，机理查到路由近似平局翻转（对齐报告台账 #5）与第 0 层等 FP32 参数的梯度以 BF16 落地（#20）；一部分张量未达 R ≤ 1.2 的定责线：梯度逐张量最差 R 2.70，优化器状态 7.86（最差在二阶动量），更新后主权重 51.3，后两者的最差都在 128 维的 q norm 上；按能量合计梯度、动量 1.21，主权重 0.94（对齐报告第 4 节注 3）；一个专家的偏置更新方向见 #17。
 
 全部数字见 [`../../ALIGNMENT-REPORT.md`](../../ALIGNMENT-REPORT.md)。
@@ -29,9 +29,9 @@
 
 ### 配置换代与被测
 
-2026-11-05 配置换代：对齐配置打开 `dense_fp32_accumulation`（FSDP 切开收缩维的投影改用 FP32 累加），yml `a238883b7f91…`，maxtext ≥ `0622774`。原因见 [`../../config-alignment.md`](../../config-alignment.md)「收缩维被 FSDP 切开的投影的累加精度」。v7x 上生产 rmap 配置开 / 关各跑 100 步（`t-v7x-st-off-100` / `t-v7x-st-on-100`）：步时中位数 0.9615 s → 0.9798 s（+1.9%），显存峰值 23.09 GiB 不变。
+2026-11-05 配置换代：对齐配置打开 `dense_fp32_accumulation`（FSDP 切开收缩维的投影改用 FP32 累加），yml `a238883b7f91…`，maxtext：开关从 `0622774` 起有；验收钉 `0622774a`，结论只对这个提交成立；换提交先跑日常回归 T0、T1，对 LKG 逐位相同再用。原因见 [`../../config-alignment.md`](../../config-alignment.md)「收缩维被 FSDP 切开的投影的累加精度」。v7x 上生产 rmap 配置开 / 关各跑 100 步（`t-v7x-st-off-100` / `t-v7x-st-on-100`）：步时中位数 0.9615 s → 0.9798 s（+1.9%），显存峰值 23.09 GiB 不变。
 
-换代前的被测是生产配置 1000 步 `t-v7x-rmap-1000-a`；现行正式被测是 `t-v7x-on-1000`（四个精度开关，含 `dense_fp32_accumulation`，见 [`setup.md`](setup.md)「软件版本」与 [`runs.yaml`](runs.yaml)）。`t-v7x-rmap-1000-a` 与 01 的 `t-rmap-1000`（v5p 生产配置 1000 步）用同一份代码包、同一份 yml 与命令行覆盖，即 GA 2 加三个精度开关，整层重算，只存路由。
+换代前的被测是生产配置 1000 步 `t-v7x-rmap-1000-a`；现行正式被测是 `t-v7x-on-1000`（四个精度开关，含 `dense_fp32_accumulation`，见 [`setup.md`](setup.md)「软件版本」与 [`runs.yaml`](runs.yaml)）。`t-v7x-rmap-1000-a` 是 01 的 `t-rmap-1000`（v5p 生产配置 1000 步）的 v7x 对应：GA 2 加三个精度开关，整层重算，只存路由。v7x 这份的代码包与 yml 已登记（maxtext `237a3270`、janus `9793b367`、yml `2a76c759`，见 [`runs.yaml`](runs.yaml)）；v5p 的 `t-rmap-1000` 代码包、yml 与命令行覆盖都没登记，推断是同一份，未核（见 01 `runs.yaml`）。
 
 ### 五条记录
 
@@ -39,9 +39,9 @@
 
    `-a`、`-b` 各占一个切片，`metrics.jsonl` 1000 步 × 60 个字段（`step_time` 除外）全部相同，输入指纹 65,000 项相同。所以换代前配置在 v7x 上「同程序」的噪声是 0。现行验收程序 `t-v7x-on-1000` 和 v5p 的 `t-rmap-on-1000` 都没有逐步逐位的双跑结果文件（v5p 验收程序没双跑；v7x 当前配置的双跑只有汇总统计相同，见[签字清单](../../../../docs/guide/05-reading-results.md#56-签字清单现在离签字还差什么) 1b），这一条对它们是推断。
 2. 对生产 golden `rc` 偏差和 v5p 同号、同量级（`phase2-v7x-acceptance-rc`）
-   - 第二层，只对 GPU 生产 golden [`rc`](../../../../docs/glossary.md#rc) 的第一份 `rc-a`。
-   - loss 带符号相对均值 1.20e-4（v5p 9.13e-5，待定）。
-   - 301–1000 步 1.60e-4（v5p 1.28e-4；v7x 不过、v5p 待定）。
+   - 第二层，只对 GPU 生产 golden [`rc`](../../../../docs/glossary.md#rc) 的第一份 `rc-a`。被测是换代前配置 `t-v7x-rmap-1000-a`（没开 `dense_fp32_accumulation`；v5p 对应 `t-rmap-1000`）；当前配置对 `rc` 没有 janus 判定结果。
+   - loss 带符号相对均值 1.20e-4（v5p 9.13e-5，待定）。这是 janus 对各份 golden 的带符号均值取绝对值后的最大值，不带方向；方向是 TPU 偏低（当前配置对 `rc` 均值 301–1000 步 −1.07e-4，[`v7x-tpu-vs-rc.json`](results/v7x-tpu-vs-rc.json)；这份 json 从没入库的 `t-v7x-on-1000` 逐步序列算出，现在复算不了）。
+   - 301–1000 步 1.60e-4，同样是绝对值（v5p 1.28e-4；v7x 不过、v5p 待定）。
    - 噪声上限 6.8e-5 / 6.6e-5。
    - param_norm 2.93e-6，与 v5p 到第三位都相同（噪声上限 1.2e-7）。
 3. 第一层：2026-11-06 起对最终 golden `rcc-a`
@@ -50,7 +50,7 @@
    - 当前配置 `t-v7x-on-1000`（v7x 当前对齐配置 1000 步）的 r 值（≤ 1 过）：loss 0.82、loss 尾段 0.83、grad_norm 0.85、param_norm 0.53。
    - 学习率逐位，路由偏置曲线 0.81、健康信号过（`phase2-v7x-acc-health-rcc`）。
    - EP = 8 臂也全过（`phase2-v7x-acceptance-rcc-ep8`）。
-   - 只有 `rcc-a..e` 5 份重跑（两两 10 对）时，grad_norm 与 param_norm 落在 1.02 / 1.24 倍。v7x 对 v5p 的差（grad_norm 带符号均值 1.3e-3、param_norm −1.1e-7）都在 `rcc` 10 份两两 45 对的噪声内，不是 v7x 特有的数值差（[`../../ALIGNMENT-REPORT.md`](../../ALIGNMENT-REPORT.md) 第 3 节）。
+   - 只有 `rcc-a..e` 5 份重跑（两两 10 对）时，grad_norm 与 param_norm 落在 1.02 / 1.24 倍。是不是 v7x 特有的数值差，没有可复算的证据：曾记过 v7x 对 v5p 的 grad_norm 带符号均值 1.3e-3、param_norm −1.1e-7，但出处未入库（没有结果文件、运行名与口径），不作依据。按 [`v7x-tpu-vs-rc.json`](results/v7x-tpu-vs-rc.json) 能间接看出：当前配置 301–1000 步 loss 对 `rc` 均值的带符号相对均值 v7x −1.07e-4、v5p −1.37e-4，v7x 比 v5p 高约 3e-5（两个均值相减，推断）；第 1000 步 param_norm 对 `rc` 均值的差两边记的是同一个数（0.0209）。这份 json 是当时从 `t-v7x-on-1000` 的逐步序列现算的（记了 `meta_sha256`），序列没入库，现在复算不了（[`../../ALIGNMENT-REPORT.md`](../../ALIGNMENT-REPORT.md) 第 3 节）。
    - 此前对精确轨迹 `rce-a`（BF16 权重、全程 FP32 计算，输出头 dgrad 仍有偏）的读数只作参考，其中 param_norm 3.53 倍不过。原因见案例 01「TPU 对精确轨迹那一成的账」。
 4. L0 全过
    - 配置对照、30 步输入指纹逐位（`phase2-v7x-t-loss30`）。
@@ -60,7 +60,7 @@
      - expert_bias 3 个。
    - dtype 清单 2960 项、模型结构 15 条规则全符合，与 v5p 的计数相同。
    - 权重转换与 01 共用同一份检查点（`phase2-ckpt-convert`）。
-   - 没比的一项是 01 的训练状态 FP32 清单（`L0.dtype.state`）。它要带 `--state-sha` 的运行，v7x 没有这样的运行。v7x 与 v5p 用同一份 yml 与代码包，dtype 清单 2960 项已相同，由此推断训练状态的 dtype 也相同。补一份带 `--state-sha` 的 v7x 运行即可关闭。
+   - 没比的一项是 01 的训练状态 FP32 清单（`L0.dtype.state`）。它要带 `--state-sha` 的运行。v7x 有这样的运行（日常回归同类的 `reg-v7x-t1`、观测构建 `obs-v7x-t1`，见 `runs.yaml`；v5p 这一项用的正是日常回归同类运行 `reg-t1-lkg2-a`），只是没比。v7x 与 v5p 用同一份 yml 与代码包，dtype 清单 2960 项已相同，由此推断训练状态的 dtype 也相同。用 `reg-v7x-t1` 的 `state_sha` 照 01 `phase2-l0-state` 跑一遍即可关闭，在 CPU 上就能做。注意 `reg-v7x-t1`（maxtext `237a3270`、GA 1）与 v5p 的 `reg-t1-lkg2-a`（maxtext `237a3270`，旧配置的 LKG）都是换代前的程序，不是现行验收程序（`0622774a` + yml `a238883b`）；这样关闭只证明换代前配置的训练状态 dtype 两边一致。
 5. L1–L4 其余各项按 01（v5p）的同一套工具与门槛补齐（2026-11-05，见 setup.md「L1–L4 补齐」）
    - 和 v5p 的判定逐项相同，只有两处不同，见下面 5a、5b；其余见 5c。
 
@@ -76,13 +76,13 @@
   - v7x 这一臂当时的 janus 输出（单算子回放与四层逐层隔离前向回放）原样收在 [`v7x-wcoff-recovered.json`](results/v7x-wcoff-recovered.json)，读数与上面一致；当时用的是旧版 `fwd_rratio.py`，回放运行目录已不在本机，没有用现行脚本重算，所以不进总览。
 - 到 logits 与逐 token loss 就看不出来了（整网前向 R 1.00 / 1.02，过）。
 - 2026-11-06 打开 `dense_fp32_accumulation` 后按当前配置重做（`r-v7x-l2-on`，v7x 逐层隔离回放）：
-  - 四层前向 R 1.06 / 1.01 / 1.01 / 1.02，单算子全部 ≤ 1.16（`phase2-v7x-l2-replay-rratio-on`、`phase2-v7x-l1-ops-own-on`），都过；v5p 当前配置四层是 1.06 / 1.01 / 1.01 / 1.09（第 3 层不同，`phase2-l2-replay-rratio-on`）。
+  - 四层前向 R 1.06 / 1.01 / 1.01 / 1.02，都过；单算子除 MoE 块（R 1.27，1 个 token 路由翻转）外都 ≤ 1.16（`phase2-v7x-l2-replay-rratio-on`、`phase2-v7x-l1-ops-own-on`）；v5p 当前配置四层是 1.06 / 1.01 / 1.01 / 1.09（第 3 层不同，`phase2-l2-replay-rratio-on`）。
   - 只有 MoE 块（`L1.ops.kernel.moe`）第 2 层 R 1.27：4096 个 token 里有 1 个在近似平局处和 FP64 选了不同的专家，去掉它 R 0.95（`results/v7x-l1-moe-routeflip.json`）。
   - 逐层反向现行按 FP64 R 比判，4 层全过（`phase2-v7x-l2-replay-bwd-fp64-on`）。按 GPU 噪声判的旧结果 `phase2-v7x-l2-replay-bwd-on` 与 v5p 一样：第 0 层过，1–3 层超；原因是路由翻转，而 GPU 第 1 步反向噪声极小、量不到。
 
 #### 5b. 更新后的 expert_bias 不再逐位
 
-这一项来自 `phase2-v7x-st1-prod-state` 的 `L3.step1.bias_after`。第 1 层 192 个专家里有 1 个（65 号）的更新方向反了（TPU +1e-3、GPU −1e-3），其余 575 个与 GPU 相同。这个专家第 1 步的负载正好落在均值附近，一个 token 的路由不同就翻号。v5p 上三层全部逐位。
+这一项来自 `phase2-v7x-st1-prod-state` 的 `L3.step1.bias_after`。第 1 层 192 个专家里有 1 个（65 号）的更新方向反了（TPU +1e-3、GPU −1e-3），其余 575 个与 GPU 相同。这个专家第 1 步的负载正好落在均值附近，一个 token 的路由不同就翻号。v5p 上三层全部逐位。当前配置的 `phase2-v7x-st1-on-state-gpuonly` 同一项同样不过，读数与换代前逐位相同（第 1 层 rel_L2 0.0127、超线元素 1/192、最大差 2e-3），也是第 1 层 1 个专家翻号；结果文件没记专家号，是不是同一个 65 号没核。
 
 2026-11-06 补：FP64 整步参照里这个专家选中 2730 个 token，比平均 2730.67 少 0.67，偏置应当加。v7x 的方向和精确算术一致，是 GPU 差一个 token 落到了均值另一边（`phase2-v7x-st1-fp64-on` 的 `L3.step1.bias_after`）。
 
@@ -96,8 +96,8 @@
 - 覆盖率全比到。
 - 路由偏置曲线对最终 golden `rcc-a` 过（r 0.81）、健康信号过。
 - NaN 演练：梯度第 5 步报警、loss 第 6 步才报（演练通过）。
-- 观测构建过第三关、但「开 / 不开抓数」不逐位（v5p 相同）。
-- TPU 原生数据加载器（`phase2-native-loader`）是主机侧的数据管线，8 个设备的切分与 v5p-8 相同，结果两边共用。
+- 观测构建：第三关的逐步 loss / grad_norm / param_norm 过；第 1 步梯度那一条与第二关在 v7x 上没做（v5p 上这两项都不过），所以观测构建的张量不当正式证据；「开 / 不开抓数」不逐位（v5p 相同）。
+- TPU 原生数据加载器（`phase2-native-loader`）是主机侧的数据管线，结果两边共用，但理由不是「切分相同」：主机数会改全局批的行序（v7x-4 是 1 个主机进程，v5p-8 是 2 个）。主检查走单主机，正好对应 v7x；2 主机（v5p）只在单进程里模拟过（`L0.native.hosts`：用单主机换序只对上 36000/64000，按主机数换序后 64000/64000），真的多进程没跑。对齐运行回放 GPU 的 batch、不走原生加载器，不影响判定。
 - 存档续训（`phase2-v7x-resume`）：第 10 步存档、续训 11–20 步，与连续训练逐位相同，5 项全过（同 v5p）。
 
 <!-- janus:table:begin（以下由脚本生成，不要手改） -->
@@ -139,9 +139,9 @@
 
 ### 逐行结果
 
-- 共 125 行。
-- 严格档：✅ 98　🟡 3　❌ 14　— 10
-- 参考档（有对应门槛的 26 行）：✅ 18　❔ 8
+- 共 121 行。
+- 严格档：✅ 94　🟡 3　❌ 14　— 10
+- 参考档（有对应门槛的 25 行）：✅ 17　❔ 8
 
 | 级 | 检查项 | 严格档 | 参考档 | 说明 | 证据 |
 |---|---|---|---|---|---|
@@ -200,10 +200,6 @@
 | L2 | 各层路由选中集合<br>`L2.layer1.router` | ✅ | — | 实测 0.9543（集合相同比例）｜严格档 ≥ 0.942 → 过｜参考档 无对应门槛 | [phase2-v7x-l2-replay-rratio-on](results/phase2-v7x-l2-replay-rratio-on.report.md)<br>[图·gpuonly](figures/L2-step1-layers.phase2-v7x-st1-on-state-gpuonly.png) |
 | L2 | 各层路由选中集合<br>`L2.layer2.router` | ✅ | — | 实测 0.9688（集合相同比例）｜严格档 ≥ 0.959 → 过｜参考档 无对应门槛 | [phase2-v7x-l2-replay-rratio-on](results/phase2-v7x-l2-replay-rratio-on.report.md)<br>[图·gpuonly](figures/L2-step1-layers.phase2-v7x-st1-on-state-gpuonly.png) |
 | L2 | 各层路由选中集合<br>`L2.layer3.router` | ✅ | — | 实测 0.9692（集合相同比例）｜严格档 ≥ 0.965 → 过｜参考档 无对应门槛 | [phase2-v7x-l2-replay-rratio-on](results/phase2-v7x-l2-replay-rratio-on.report.md)<br>[图·gpuonly](figures/L2-step1-layers.phase2-v7x-st1-on-state-gpuonly.png) |
-| L2 | 逐层注入（误差隔离到单层）<br>`L2.layer0.fwd` | ✅ | ✅ | 实测 1.059（R 比）｜严格档 ≤ 1.2 → 0.883×，过｜参考档 rel_L2 < 0.01：0.00399（0.399×）；超差元素比例 < 1%：2.65e-04（0.0265×）；均值差 < 0.01：0.00391（0.391×）；cos ≥ 0.99995：0.999992，只报，过（rel_L2 最大的是 `layers.0.mlp.fc2.out`） | [phase2-v7x-l2-replay-rratio-on](results/phase2-v7x-l2-replay-rratio-on.report.md)<br>[图·gpuonly](figures/L2-step1-layers.phase2-v7x-st1-on-state-gpuonly.png) |
-| L2 | 逐层注入（误差隔离到单层）<br>`L2.layer1.fwd` | ✅ | — | 实测 1.01（R 比）｜严格档 ≤ 1.2 → 0.841×，过｜参考档 参考档不适用：这一层是 MoE 层，路由之后的观测点受近似平局翻转影响，按严格档 R 比判 | [phase2-v7x-l2-replay-rratio-on](results/phase2-v7x-l2-replay-rratio-on.report.md)<br>[图·gpuonly](figures/L2-step1-layers.phase2-v7x-st1-on-state-gpuonly.png) |
-| L2 | 逐层注入（误差隔离到单层）<br>`L2.layer2.fwd` | ✅ | — | 实测 1.012（R 比）｜严格档 ≤ 1.2 → 0.843×，过｜参考档 参考档不适用：这一层是 MoE 层，路由之后的观测点受近似平局翻转影响，按严格档 R 比判 | [phase2-v7x-l2-replay-rratio-on](results/phase2-v7x-l2-replay-rratio-on.report.md)<br>[图·gpuonly](figures/L2-step1-layers.phase2-v7x-st1-on-state-gpuonly.png) |
-| L2 | 逐层注入（误差隔离到单层）<br>`L2.layer3.fwd` | ✅ | — | 实测 1.015（R 比）｜严格档 ≤ 1.2 → 0.846×，过｜参考档 参考档不适用：这一层是 MoE 层，路由之后的观测点受近似平局翻转影响，按严格档 R 比判 | [phase2-v7x-l2-replay-rratio-on](results/phase2-v7x-l2-replay-rratio-on.report.md)<br>[图·gpuonly](figures/L2-step1-layers.phase2-v7x-st1-on-state-gpuonly.png) |
 | L3 | 全部激活逐位<br>`L3.step1.act.bitwise` | ❌ | — | 实测 41 / 41 个张量不同｜严格档 逐位 / 逐项相同，不过｜参考档 无对应门槛 | [phase2-v7x-l2-replay-bitwise](results/phase2-v7x-l2-replay-bitwise.report.md) |
 | L3 | 逐 token loss<br>`L3.step1.loss.per_token` | ✅ | — | 实测 1.025（R 比）｜严格档 ≤ 1.2 → 0.854×，过｜参考档 无对应门槛 | [phase2-v7x-ff-chain](results/phase2-v7x-ff-chain.report.md) |
 | L3 | logits（含 KL）<br>`L3.step1.logits` | ✅ | — | 实测 0.9995（R 比）｜严格档 ≤ 1.2 → 0.833×，过｜参考档 无对应门槛 | [phase2-v7x-ff-chain](results/phase2-v7x-ff-chain.report.md) |

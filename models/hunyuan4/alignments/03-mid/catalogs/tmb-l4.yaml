@@ -1,9 +1,9 @@
-# 混元 4 · hy4-mid 300 步 L4：TPU tm-b（frameworks/maxtext/hy4-mid-t1.yml 现行开关，含 M39–M41 与 M42b；MaxText 2c28a4f4，janus 9c0f19a）被测，GPU gm-a 为基线，
+# 混元 4 · hy4-mid 300 步 L4：TPU tm-b（frameworks/maxtext/hy4-mid-t1.yml 当时的开关，含 M39–M41 与 M42b；MaxText 2c28a4f4，janus 9c0f19a）被测，GPU gm-a 为基线，
 # 噪声只用 GPU gm-a..h 两两 28 对，口径与 tm-l4 相同（tm-l4 改测试运行名而来）。写于 tm-b 跑完之后，不是事先登记；tm-a 与 tm-b 差不止一个开关，不能当 A/B。
 schema_version: 1
 model: hunyuan4-mid
 stage: tmb-l4
-description: hy4-mid L4，300 步（TPU tm-b 被测，现行开关含 M42b；GPU gm-a 为基线，GPU 噪声 28 对）
+description: hy4-mid L4，300 步（TPU tm-b 被测，当时的开关含 M42b；GPU gm-a 为基线，GPU 噪声 28 对）
 runs:
   test: tm-b
   golden: [gm-a]

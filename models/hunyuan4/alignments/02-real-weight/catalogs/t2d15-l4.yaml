@@ -1,4 +1,4 @@
-# 混元 4 · T2 D1 1000 步（02-real-weight README「1000 步 GPU golden 的作业规格」登记）：TPU td5-a（MaxText 3741e818，T2 yml 现在的全部开关，含 M39、M40、M41）
+# 混元 4 · T2 D1 1000 步（02-real-weight README「1000 步 GPU golden 的作业规格」登记）：TPU td5-a（MaxText 3741e818，T2 yml 当时的全部开关，含 M39、M40、M41）
 # 被测，回放 gd3-a；GPU gd3-a 为基线，噪声 gd3-a..h 两两 28 对。窗口第 1–1000 步与第 101–1000 步；口径同 t2d1-l4.yaml。
 schema_version: 1
 model: hunyuan4-trunc

@@ -1,4 +1,4 @@
-# 混元 4 · T2 B 设置核对（TPU 最新设置 tb4-a，GPU gb2-a）：两边每一步学习率等于 1e-5。
+# 混元 4 · T2 B 设置核对（TPU 当时的最新设置 tb4-a，GPU gb2-a）：两边每一步学习率等于 1e-5。
 schema_version: 1
 model: hunyuan4-trunc
 stage: t2b4-l0-settings

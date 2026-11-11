@@ -15,13 +15,13 @@ GPU 的 `sparse_sink_attention` 是 janus 的 eager 实现。在 `hy4_attn_score
 ## 证据
 
 - 单测 `test_attn_scores_fp32.py`：开关打开时离 FP64 参照更近，说明开关确实改变结果（提交 `37ccee8`）。同一组输入在 CPU 上重算，对 FP64 的相对 L2 误差：舍 BF16 8.18e-3，留 FP32 1.62e-3；种子 0–9 十组都是留 FP32 更近，比值 0.20–0.40（[`attn-scores-fp32-unit.json`](../alignments/01-mini/results/attn-scores-fp32-unit.json)）。
-- 第 1 步只改这一处（`g2-a` 对 `g1-a`，提交 `2d5dcf6`）：lm_loss 变 +8.1e-7，grad_norm 变 −3.0e-5，indexer_loss 变 −1.2e-6。同窗口的 GPU 自己的散布（同设置 8 份第 1 步的相对极差，[`gpu-load-check-and-step1-spread.json`](../alignments/01-mini/gpu-noise/results/gpu-load-check-and-step1-spread.json)）：`g2-*` 的 lm_loss 1.7e-6、grad_norm 9.3e-5；`g1-*` 的 lm_loss 2.1e-6、grad_norm 7.3e-5。所以单看第 1 步，这一处的变化小于 GPU 第 1 步的散布（lm_loss 0.47 倍、grad_norm 0.32 倍，对 `g2-*` 比），散布本身也几乎没变。300 步上它单独的效果仓库里没有记录。
+- 第 1 步只改这一处（`g2-a` 对 `g1-a`，提交 `2d5dcf6`）：lm_loss 变 +8.1e-7，grad_norm 变 −3.0e-5，indexer_loss 变 −1.2e-6。同窗口的 GPU 自己的散布（同设置 8 份第 1 步的相对极差，[`gpu-load-check-and-step1-spread.json`](../alignments/01-mini/gpu-noise/results/gpu-load-check-and-step1-spread.json)）：`g2-*` 的 lm_loss 1.7e-6、grad_norm 9.3e-5；`g1-*` 的 lm_loss 2.1e-6、grad_norm 7.3e-5。单对 `g2-a` − `g1-a` 只是一个样本；两组各 8 份直接比均值（相对值，同一结果文件的 16 个数）：lm_loss 均值差 +1.5e-6 ± 3.5e-7（标准误），约 4.3 个标准误，是 `g2-*` 极差的 0.88 倍；grad_norm 均值差 +1.6e-5 ± 1.4e-5，约 1.2 个标准误，和单对的符号相反。所以第 1 步 lm_loss 上能分辨出这一处的系统移动，量级和 8 份的散布相当；grad_norm 上分辨不出。散布本身几乎没变。300 步上它单独的效果仓库里没有记录。
 - 300 步 L4，修前 `t1s-l4`（GPU `g1-a` 对 TPU `t1s-a`，尺子 `g1`；GPU 当时是被测，写「差」）、修后 `t1t-l4`（TPU `t1t-c` 对 GPU `g2-a`，尺子 `g2`）：
 
 | 检查 | 修前：N、差、r | 修后：N、TPU、r |
 |---|---|---|
 | 主 loss | 不过：最大单步 3.74e-5、2.62e-4、7.00 | 待定：MARE 6.72e-6、6.88e-6、1.02（最大单步 4.53e-5、3.10e-5、0.69） |
-| grad_norm | 不过：带符号均值 8.30e-5、−2.29e-4、2.75 | 待定：MARE 3.85e-4、5.16e-4、1.34（带符号均值 9.94e-5、+5.77e-5、0.58） |
+| grad_norm | 不过：带符号均值 8.29e-5、−2.28e-4、2.75 | 待定：MARE 3.85e-4、5.16e-4、1.34（带符号均值 9.92e-5、+5.79e-5、0.58） |
 
 出处：[`t1s-l4.results.json`](../alignments/01-mini/results/t1s-l4.results.json)、[`t1t-l4.results.json`](../alignments/01-mini/results/t1t-l4.results.json)；报告 [`t1s-l4.report.md`](../alignments/01-mini/results/t1s-l4.report.md)、[`t1t-l4.report.md`](../alignments/01-mini/results/t1t-l4.report.md)。
 

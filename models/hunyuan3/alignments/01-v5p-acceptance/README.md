@@ -27,7 +27,7 @@
   - `phase2-acceptance-rcc-on.yaml`：当前配置 `t-rmap-on-1000`（v5p 当前对齐配置 1000 步），总览取这份；
   - `phase2-acc-health-rcc.yaml`：路由偏置曲线与健康信号；
   - `phase2-acceptance-rcc-ep8.yaml`：并行方式改成 EP = 8。
-- 第二层：`phase2-acceptance-rc.yaml`，对 GPU 生产 golden [`rc`](../../../../docs/glossary.md#rc) 的 `rc-a..rc-e`，差写成已解释差异。
+- 第二层：`phase2-acceptance-rc.yaml`，对 GPU 生产 golden [`rc`](../../../../docs/glossary.md#rc) 的 `rc-a..rc-e`，差写成已解释差异。被测是换代前配置 `t-rmap-1000`（没开 `dense_fp32_accumulation`）；当前配置对 `rc` 没有 janus 判定结果，只有 [`case01-tpu-vs-rc.json`](results/case01-tpu-vs-rc.json) 的读数。
 - 其余：
   - `phase2-tpu.yaml`：L0–L4 草稿，对 `g1k-*`（第一阶段 GPU golden，不开重算，1000 步，3 份），归因用；
   - `phase2-ckpt-convert.yaml`：L0 权重转换逐张量；
@@ -49,7 +49,7 @@ TPU 侧怎么跑见 [`../../frameworks/maxtext/README.md`](../../frameworks/maxt
 
 - 基线：TPU 只和事先指定的一份 [`rcc-a`](../../../../docs/glossary.md#rcc-a) 比。
 - 噪声带：取 `rcc-a..j` 10 份同设置重跑、两两配对得到的 45 对比较。噪声带和基线用同一种设置，这是一般规矩（[`../../../../docs/reference/judging.md`](../../../../docs/reference/judging.md#golden-本身有系统偏差时修掉偏差再按一般规矩比)）。
-- 结果：目录 [`catalogs/phase2-acceptance-rcc-on.yaml`](catalogs/phase2-acceptance-rcc-on.yaml) 里，当前配置 `t-rmap-on-1000`（v5p 当前对齐配置 1000 步）全部过，r 最差 0.85。过的项是 loss、loss 尾段、grad_norm、param_norm、学习率；路由偏置曲线与健康信号对 `rcc-a` 也过（`phase2-acc-health-rcc`）。
+- 结果：目录 [`catalogs/phase2-acceptance-rcc-on.yaml`](catalogs/phase2-acceptance-rcc-on.yaml) 里，当前配置 `t-rmap-on-1000`（v5p 当前对齐配置 1000 步）全部过，r 最差 0.85。过的项是 loss、loss 尾段、grad_norm、param_norm；逐步学习率归 L0 设置核对，逐位相同（结果文件里仍记作 `L4.lr`）；路由偏置曲线与健康信号对 `rcc-a` 也过（`phase2-acc-health-rcc`）。
 
 依据与全部数字见 [`../../ALIGNMENT-REPORT.md`](../../ALIGNMENT-REPORT.md)。
 
@@ -72,7 +72,7 @@ TPU 侧怎么跑见 [`../../frameworks/maxtext/README.md`](../../frameworks/maxt
 - TPU 当前配置只把专家并行度改成和 GPU 相同的 EP = 8（词嵌入表沿 expert 轴切 8 份（读 HLO 核过），其余非专家参数按逻辑轴规则推断同样切，≈ FSDP 8，和 GPU 的 DP 8 不同，见[对齐报告注 11](../../ALIGNMENT-REPORT.md)），按第一层同一把尺子判（`phase2-acceptance-rcc-ep8`）：五项全过（r 最差 0.78）。
 - v7x 同样的对照见 02 的 `phase2-v7x-acceptance-rcc-ep8`。
 - FSDP 8 与 EP 8 两种切分对 `rcc-a`（最终 golden 的第 1 份，验收的比较基线）都在噪声内。
-- EP = 8 在 v5p-8 上步时更短（1.607 → 0.999 s）。
+- EP = 8 在 v5p-8 上步时更短（1.607 → 0.999 s，1000 步运行第 50–1000 步的中位数，[`goldens.md`](../../goldens.md) 注 50；下文「打开 `dense_fp32_accumulation`」表里的 1.6110 s 是 100 步运行第 11–100 步的中位数，取法不同）。
 
 ## 运行根目录
 
@@ -82,7 +82,7 @@ TPU 侧怎么跑见 [`../../frameworks/maxtext/README.md`](../../frameworks/maxt
 
 ```bash
 R=/data/janus-runs; B=gs://<桶>/janus/hunyuan3-4l
-for n in golden/rcc-{a,b,c,d,e,f,g,h,i,j} golden/rc-{a,b,c,d,e} tpu/t-rmap-on-1000; do       # 换成目录里 runs 列的运行
+for n in golden/rcc-{a,b,c,d,e,f,g,h,i,j} golden/rc-{a,b,c,d,e} tpu/t-rmap-on-1000 tpu/t-rmap-1000; do       # 换成目录里 runs 列的运行；第二层的被测是 t-rmap-1000
   mkdir -p $R/$(basename $n); for f in meta.json metrics.jsonl DONE; do gcloud storage cp $B/$n/$f $R/$(basename $n)/; done
 done
 python -m janus run models/hunyuan3/alignments/01-v5p-acceptance/catalogs/phase2-acceptance-rcc-on.yaml --root $R --out /tmp/acc-rcc-on   # 第一层
@@ -130,9 +130,9 @@ L0–L3 类检查要张量，得把整个运行目录拉下来（`gcloud storage
 
 ### 逐行结果
 
-- 共 127 行。
-- 严格档：✅ 103　🟡 1　❌ 13　— 10
-- 参考档（有对应门槛的 26 行）：✅ 18　❔ 8
+- 共 123 行。
+- 严格档：✅ 99　🟡 1　❌ 13　— 10
+- 参考档（有对应门槛的 25 行）：✅ 17　❔ 8
 
 | 级 | 检查项 | 严格档 | 参考档 | 说明 | 证据 |
 |---|---|---|---|---|---|
@@ -192,10 +192,6 @@ L0–L3 类检查要张量，得把整个运行目录拉下来（`gcloud storage
 | L2 | 各层路由选中集合<br>`L2.layer1.router` | ✅ | — | 实测 0.9553（集合相同比例）｜严格档 ≥ 0.942 → 过｜参考档 无对应门槛 | [phase2-l2-replay-rratio-on](results/phase2-l2-replay-rratio-on.report.md)<br>[图·gpuonly](figures/L2-step1-layers.phase2-st1-on-state-gpuonly.png) |
 | L2 | 各层路由选中集合<br>`L2.layer2.router` | ✅ | — | 实测 0.9692（集合相同比例）｜严格档 ≥ 0.959 → 过｜参考档 无对应门槛 | [phase2-l2-replay-rratio-on](results/phase2-l2-replay-rratio-on.report.md)<br>[图·gpuonly](figures/L2-step1-layers.phase2-st1-on-state-gpuonly.png) |
 | L2 | 各层路由选中集合<br>`L2.layer3.router` | ✅ | — | 实测 0.9675（集合相同比例）｜严格档 ≥ 0.965 → 过｜参考档 无对应门槛 | [phase2-l2-replay-rratio-on](results/phase2-l2-replay-rratio-on.report.md)<br>[图·gpuonly](figures/L2-step1-layers.phase2-st1-on-state-gpuonly.png) |
-| L2 | 逐层注入（误差隔离到单层）<br>`L2.layer0.fwd` | ✅ | ✅ | 实测 1.059（R 比）｜严格档 ≤ 1.2 → 0.883×，过｜参考档 rel_L2 < 0.01：0.00399（0.399×）；超差元素比例 < 1%：2.61e-04（0.0261×）；均值差 < 0.01：0.0039（0.39×）；cos ≥ 0.99995：0.999992，只报，过（rel_L2 最大的是 `layers.0.mlp.fc2.out`） | [phase2-l2-replay-rratio-on](results/phase2-l2-replay-rratio-on.report.md)<br>[图·gpuonly](figures/L2-step1-layers.phase2-st1-on-state-gpuonly.png) |
-| L2 | 逐层注入（误差隔离到单层）<br>`L2.layer1.fwd` | ✅ | — | 实测 1.01（R 比）｜严格档 ≤ 1.2 → 0.841×，过｜参考档 参考档不适用：这一层是 MoE 层，路由之后的观测点受近似平局翻转影响，按严格档 R 比判 | [phase2-l2-replay-rratio-on](results/phase2-l2-replay-rratio-on.report.md)<br>[图·gpuonly](figures/L2-step1-layers.phase2-st1-on-state-gpuonly.png) |
-| L2 | 逐层注入（误差隔离到单层）<br>`L2.layer2.fwd` | ✅ | — | 实测 1.011（R 比）｜严格档 ≤ 1.2 → 0.843×，过｜参考档 参考档不适用：这一层是 MoE 层，路由之后的观测点受近似平局翻转影响，按严格档 R 比判 | [phase2-l2-replay-rratio-on](results/phase2-l2-replay-rratio-on.report.md)<br>[图·gpuonly](figures/L2-step1-layers.phase2-st1-on-state-gpuonly.png) |
-| L2 | 逐层注入（误差隔离到单层）<br>`L2.layer3.fwd` | ✅ | — | 实测 1.095（R 比）｜严格档 ≤ 1.2 → 0.9122×，过｜参考档 参考档不适用：这一层是 MoE 层，路由之后的观测点受近似平局翻转影响，按严格档 R 比判 | [phase2-l2-replay-rratio-on](results/phase2-l2-replay-rratio-on.report.md)<br>[图·gpuonly](figures/L2-step1-layers.phase2-st1-on-state-gpuonly.png) |
 | L3 | 全部激活逐位<br>`L3.step1.act.bitwise` | ❌ | — | 实测 41 / 41 个张量不同｜严格档 逐位 / 逐项相同，不过｜参考档 无对应门槛 | [phase2-l2-replay-bitwise](results/phase2-l2-replay-bitwise.report.md) |
 | L3 | 逐 token loss<br>`L3.step1.loss.per_token` | ✅ | — | 实测 0.9811（R 比）｜严格档 ≤ 1.2 → 0.818×，过｜参考档 无对应门槛 | [phase2-ff-chain](results/phase2-ff-chain.report.md) |
 | L3 | logits（含 KL）<br>`L3.step1.logits` | ✅ | — | 实测 0.957（R 比）｜严格档 ≤ 1.2 → 0.798×，过｜参考档 无对应门槛 | [phase2-ff-chain](results/phase2-ff-chain.report.md) |
@@ -272,7 +268,7 @@ L0–L3 类检查要张量，得把整个运行目录拉下来（`gcloud storage
 
 当前配置 `t-rmap-on-1000`（v5p 当前对齐配置 1000 步）的正式迁移验收第一层全过（[`results/phase2-acceptance-rcc-on.report.md`](results/phase2-acceptance-rcc-on.report.md)）。比较对象是最终 golden 的基线 [`rcc-a`](../../../../docs/glossary.md#rcc-a)，噪声取 `rcc-a..j` 10 份重跑两两配对得到的 45 对比较。
 
-- 每格是三个判定量里对 N 最差的比值：loss 全程 0.80、第 301–1000 步 0.80、梯度范数 0.85、参数范数 0.50、学习率逐位。
+- 每格是三个判定量里对 N 最差的比值：loss 全程 0.80、第 301–1000 步 0.80、梯度范数 0.85、参数范数 0.50；学习率归 L0 设置核对，逐位相同。
 - 路由偏置曲线 0.81，健康信号无报警（[`results/phase2-acc-health-rcc.report.md`](results/phase2-acc-health-rcc.report.md)）。
 - 并行方式改成 EP = 8 同样全过（`phase2-acceptance-rcc-ep8`）。
 
@@ -280,21 +276,21 @@ L0–L3 类检查要张量，得把整个运行目录拉下来（`gcloud storage
 
 ### 对生产 golden `rc`：已解释差异
 
-对生产 golden `rc` 的差是已解释差异（`phase2-acceptance-rc`，[`results/phase2-acceptance-rc.report.md`](results/phase2-acceptance-rc.report.md)）。原因是 GPU 生产路径的输出层 dgrad 在张量核里系统地朝 0 截断（[`../../config-alignment.md`](../../config-alignment.md)「输出头 dgrad」）。
+对生产 golden `rc` 的差是已解释差异（`phase2-acceptance-rc`，[`results/phase2-acceptance-rc.report.md`](results/phase2-acceptance-rc.report.md)；被测是换代前配置 `t-rmap-1000`，没开 `dense_fp32_accumulation`；要不要用当前配置补跑这一层另定）。原因是 GPU 生产路径的输出层 dgrad 在张量核里系统地朝 0 截断（[`../../config-alignment.md`](../../config-alignment.md)「输出头 dgrad」）。
 
 - 改成单 golden 协议（基线 `rc-a`，GPU 生产 golden 的第 1 份）后重判：
   - `L4.loss`、`L4.loss.tail`、`L4.grad_norm` 待定；
   - `L4.param_norm` 不过；
   - `L4.lr` 过。
 - 原来的读数：
-  - 301–1000 步 loss 带符号均值对 `rc` 均值 −1.34e-4（`rc` 各份对自己均值的标准差 2.6e-5）；
+  - 301–1000 步 loss 带符号均值对 `rc` 均值 −1.34e-4（换代前 `t-rmap-1000`；当前配置 `t-rmap-on-1000` 是 −1.37e-4，见上「第二层」；`rc` 各份对自己均值的标准差 2.6e-5）；
   - 第 1000 步 param_norm 多 +2.1e-2。
 
 ### 根因：在 GPU 参照一侧
 
 根因已定到 GPU 参照一侧（[案例 01](cases/01-loss-offset-param-norm.md)，已结案）。loss 偏低、param_norm 漂移、logits 整体下移、第 0 层注意力输出投影长歪，这四个现象是同一股把 logits 整体往下压的力造成的。这股力来自 GPU 输出头 dgrad 沿词表的长求和在 B200 上有偏：BF16 张量核偏得最多，cuBLAS FP32 一次累加也偏。
 
-GPU 生产只把这一处修成分段精确累加（`rcc`），TPU 生产就落在它的散布里。TPU 生产与真精确之间的 −0.63e-2，来自两边生产程序共有的 dlogits 舍 BF16（[案例 01「一页看完」](cases/01-loss-offset-param-norm.md)）。
+GPU 生产只把这一处修成分段精确累加（`rcc`），TPU 生产就落在它的散布里。TPU 生产与真精确（`rcec-a`）之间的 −6.5e-3，来自两边生产程序共有的 dlogits 舍 BF16（[案例 01「一页看完」](cases/01-loss-offset-param-norm.md)）。
 
 早先「把 GPU 输出层 dgrad 换成精确的训练不动」的结论已改判：那一臂实际跑的是 TF32（案例 01 第 0 节「输出头反向」行）。
 
@@ -320,7 +316,7 @@ TPU 上加钩子抓的激活与梯度只是诊断值。L0–L3 改用三种不�
   - 路由翻转率对 FP64 与 GPU 同量级。
 - L2 逐层反向现行按 FP64 R 比判，4 层全过（`phase2-l2-replay-bwd-fp64-on`）。
   - 按 GPU 噪声判的旧结果（`phase2-l2-replay-bwd-on`）：第 0 层过，1–3 层超。隔离回放里 GPU 重跑不翻路由，越往后的层反向噪声越小，这把尺子量不到，所以改用 FP64（定责见下表 B 行）。
-- 第 1 步状态读：总览与检查清单的 L2、L3 现行取 `phase2-st1-on-state-gpuonly`（被测 `t-st1n-base`，当前对齐配置，噪声只用 GPU 3 对）。
+- 第 1 步状态读：总览与检查清单的 L2、L3 现行取 `phase2-st1-on-state-gpuonly`（被测 `t-st1n-base-gm`，即 `t-st1n-base` 由动量反推的梯度，当前对齐配置，噪声只用 GPU 3 对）。
   - AdamW FP64 重放过。
   - 更新后 expert_bias 与 GPU 逐位相同（过，路由计数一致）。
   - 梯度、两个动量超 GPU 噪声 2 倍以上：
@@ -344,7 +340,7 @@ TPU 上加钩子抓的激活与梯度只是诊断值。L0–L3 改用三种不�
 
 ### 对齐配置打开 `dense_fp32_accumulation`
 
-2026-11-05 决定对齐优先，打开这个开关，让 FSDP 切开收缩维的投影改用 FP32 累加（yml `a238883b7f91…`，maxtext ≥ `0622774`）。生产 rmap 配置开 / 关各跑 100 步对比代价。步时取第 11–100 步的中位数，显存取各设备峰值的最大值：
+2026-11-05 决定对齐优先，打开这个开关，让 FSDP 切开收缩维的投影改用 FP32 累加（yml `a238883b7f91…`，maxtext：开关从 `0622774` 起有；验收钉 `0622774a`，结论只对这个提交成立；换提交先跑日常回归 T0、T1，对 LKG 逐位相同再用）。生产 rmap 配置开 / 关各跑 100 步对比代价。步时取第 11–100 步的中位数，显存取各设备峰值的最大值：
 
 | 平台 | 关（`t-st-off-100` / `t-v7x-st-off-100`） | 开（`t-st-on-100` / `t-v7x-st-on-100`） | 步时 | 显存峰值 |
 |---|---|---|---|---|
@@ -360,11 +356,13 @@ TPU 上加钩子抓的激活与梯度只是诊断值。L0–L3 改用三种不�
 
 | 类 | 行（结果文件） | 尺子 | 读法 |
 |---|---|---|---|
-| A 已解决：对齐配置打开 `dense_fp32_accumulation` 后转 ✅ | 第 0–3 层前向、逐层注入、单算子回放 | FP64 R 比，门槛 1.2（见注 A） | 根因是窗口化 collective matmul 在 BF16 里累加分片部分积；打开开关后全过（见注 A） |
+| A 已解决：对齐配置打开 `dense_fp32_accumulation` 后转 ✅ | 第 0–3 层前向、单算子回放 | FP64 R 比，门槛 1.2（见注 A） | 根因是窗口化 collective matmul 在 BF16 里累加分片部分积；打开开关后全过（见注 A） |
 | A′ 真实系统偏差 | 对 GPU 生产 `rc` 的 param_norm（第二层 `phase2-acceptance-rc`） | GPU `rc-a..e` 5 份重跑两两 10 对 | 方向一致、不随步数消失；已查清来自 GPU 输出头 dgrad 的长求和，对最终 golden `rcc` 在噪声内（案例 01） |
-| B GPU 尺子量不到路由翻转 | 各层参数梯度、全部参数梯度、梯度分布、优化器状态、更新后主权重（现行 `phase2-st1-on-state-gpuonly`；并集结果 `phase2-st1-on-state-xnoise`、换代前的 `phase2-st1-prod-state` 留作历史；逐层反向现行按 FP64 R 判，见注 A 末） | 现行：只用 GPU `g1k-a/b/c` 3 对（2026-11-08 起）；超出部分对 FP64 定责。曾并上 TPU 只改执行参数的 7 份两两 21 对，已撤回 | 已定责：大头是第 1 步路由近似平局翻转（台账 #5）；第 0 层是稠密层，它的超出来自梯度以 BF16 落地（台账 #20）。都不累积（见注 B） |
+| B GPU 尺子量不到路由翻转 | 各层参数梯度、全部参数梯度、梯度分布、优化器状态、更新后主权重（现行 `phase2-st1-on-state-gpuonly`；并集结果 `phase2-st1-on-state-xnoise`、换代前的 `phase2-st1-prod-state` 留作历史；逐层反向现行按 FP64 R 判，见注 A 末） | 现行：只用 GPU `g1k-a/b/c` 3 对（2026-11-08 起）；超出部分对 FP64 定责。曾并上 TPU 只改执行参数的 7 份两两 21 对，已撤回 | 已定责：大头是第 1 步路由近似平局翻转（台账 #5）；第 0 层是稠密层，它的超出一部分来自梯度以 BF16 落地（台账 #20）：打开三个开关后第 0 层对 FP64 R 比 2.18 → 0.96 过线，对 GPU 3 对仍 5.41 倍噪声上限；剩下这部分推断来自上层路由翻转经反向传入，没验证（[对齐报告](../../ALIGNMENT-REPORT.md)第 4 节注 3）。都不累积（见注 B） |
 | D 程序本身改了数值 | 观测不改数值（`phase2-obs-gate` 的 `DET.hooks.noop`） | 逐位 | 加钩子改变 XLA 融合，见上一小节 |
 | C 按定义不逐位 | 全部激活逐位（`phase2-l2-replay-bitwise`，hard: false） | 逐位 | 跨平台不要求逐位，只记事实 |
+| 数据管线约定（只报） | TPU 原生数据加载器两行（`L0.native.device_map.native`、`L0.native.pad_id`） | 逐样本逐位 | 样本本身逐位相同，差在两处约定（微批分配顺序、pad id）；对齐运行回放 GPU 的 batch、不走原生加载器，不影响判定（[检查清单](../../CHECKS.md)、[对齐报告](../../ALIGNMENT-REPORT.md)台账 #16） |
+| FP64 R 比（定责用） | 第 1 步全部参数梯度对 FP64 两行（2.2；三个梯度 FP32 开关打开后 1.785） | FP64 R 比，按逐张量最大值，门槛 1.2 | 超线的是一维 norm 权重、输出层与 embedding 的梯度（台账 #20），另有经过路由的专家梯度随近似平局翻转变（台账 #5，最高 1.32，开关前后不变）；开关打开后仍是 1.785，最差是第 2 层 MLP 前 RMSNorm（[对齐报告](../../ALIGNMENT-REPORT.md)注 20） |
 
 注 A（A 类）。`dense_fp32_accumulation` 让 FSDP 切开收缩维的投影改用 FP32 累加。门槛 1.2 是推断值，取在干净实现 R = 1.00 与多舍一次 R = 1.41 之间，见术语表「R-ratio」。打开开关之前只差在「归一化 + 投影」两处：qkv R 1.21–1.24、第 0 层 fc1 R 1.29（[`../../config-alignment.md`](../../config-alignment.md)）。yml `a238883b7f91…` 打开开关后重跑（`r-l2-on`，当前对齐配置下的 TPU 逐层隔离回放）：
 
@@ -374,13 +372,13 @@ TPU 上加钩子抓的激活与梯度只是诊断值。L0–L3 改用三种不�
 
 逐层反向不受这个开关影响：按 GPU 噪声判仍是第 0 层过、1–3 层超（`phase2-l2-replay-bwd-on`）；现行按 FP64 R 比判，4 层全过（`phase2-l2-replay-bwd-fp64-on`）。
 
-注 B（B 类）。更新后 expert_bias 在生产配置下已逐位相同，不在这一类。GPU 第 1 步只有反向的原子加不确定，噪声极小（梯度 3.8e-6–5.3e-4）；而同一个 TPU 程序加不加钩子，第 0 层梯度就差 2.17e-3。
+注 B（B 类）。更新后 expert_bias 在生产配置下已逐位相同，不在这一类。GPU 第 1 步只有反向的原子加不确定，噪声极小（梯度 3.8e-6–5.3e-4）；而同一个 TPU 程序加不加钩子，第 0 层梯度就差 2.17e-3（这个数出处未入库，不作依据）。
 
-定责：第 1 步每层 0.44% – 0.56% 的路由槽位在近似平局处两边各落一边，分到 token 少的专家梯度相对差到 0.10。GPU 重跑第 1 步路由从不翻转，这把尺子对路由翻转的宽度是 0。按梯度能量加权，整网只差 1.3e-3，不累积（对齐报告第 4 节、台账 #5）。生产配置下这几行仍超，第 0 层梯度最差 2.15e-3，路由权重梯度到 0.10。
+定责：第 1 步每层 0.44% – 0.56% 的路由槽位在近似平局处两边各落一边，分到 token 少的专家梯度相对差到 0.10。GPU 重跑第 1 步路由从不翻转，这把尺子对路由翻转的宽度是 0。按梯度能量加权，整网只差 1.3e-3，不累积（对齐报告第 4 节、台账 #5）。现行当前配置（`phase2-st1-on-state-gpuonly`）下这几行仍超，第 0 层梯度最差 2.16e-3，第 3 层梯度最差 0.105；换代前生产配置（`phase2-st1-prod-state`，只留作历史）是 2.15e-3 / 0.102。
 
 2026-11-06 补了第 1 步的 TPU 执行噪声：当前配置 7 份只改执行参数，两两配对 21 对，判法见 [`docs/reference/judging.md`](../../../../docs/reference/judging.md#第-1-步张量两侧执行噪声的并集)。
 
-- 整步检查曾改按 GPU 3 对与 TPU 21 对的并集判（`phase2-st1-on-state-xnoise`，历史）。2026-11-08 起撤回并集、只用 GPU 3 对（`phase2-st1-on-state-gpuonly`）：全部超 2 倍，判「不过 · 已解释」（FP64 定责见对齐报告台账 #5 / #20）。
+- 整步检查曾改按 GPU 3 对与 TPU 21 对的并集判（`phase2-st1-on-state-xnoise`，历史）。2026-11-08 起撤回并集、只用 GPU 3 对（`phase2-st1-on-state-gpuonly`）：除更新后主权重待定（1.28 倍，1 − cos 1.63 倍）外，其余超 2 倍，判「不过 · 已解释」（FP64 定责见对齐报告台账 #5 / #20）。
 - 逐层反向改按 FP64 R 判，全过（`phase2-l2-replay-bwd-fp64-on`）。
 - 整步对 FP64 的定责见案例 01「第 1 步张量换尺子」。一维 norm 权重、输出层与 embedding 的梯度先以 BF16 落地，机制与开关见对齐报告台账 #20。
 

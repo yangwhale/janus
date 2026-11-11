@@ -13,6 +13,10 @@
   - 「数学不变」复测逐位通过、故意改开关被拦（[`results/`](results/README.md)）。
 - **现行配置是 `hy3-4layers.yml` a238883b**。
   - 内容：`dense_fp32_accumulation`（FSDP 切开收缩维的投影改用 FP32 累加）与三个舍入开关，maxtext hunyuan@0622774a。
+- **⚠ 仓库里现在这份 `hy3-4layers.yml` 的 sha256 是 305fa4b5，不是 a238883b**（只改了注释，数值相同）。
+  - 训练脚本记的是文件字节的 sha256（`train_hy3.py` 的 `sha_file`），所以照仓库现行文件跑日常回归：R02（`config.sha256 == a238883b`）必然判 fail，噪声标定按 `config_yml_sha256` 判作废，执行级判定降为 inconclusive。
+  - 两种办法：用 a238883b 那一版 yml（`git show 4db01d7a:models/hunyuan3/frameworks/maxtext/hy3-4layers.yml`，的提交）跑；或改用 305fa4b5，重建 LKG、重标噪声、改 R02 的钉值。选哪种待拍板。
+  - 用旧版 yml 时不能只在工作树里换文件：`stage.sh` 只打已提交的 HEAD、要求工作树干净。要提交到单独的分支再 stage，完整步骤见[指南第 7 章 7.4 第 2 步](../../../docs/guide/07-daily-regression.md#第一次跑之前换成你自己的)。
 - **现行配置下的 LKG**：T0、T1 已重建（`reg-t0-fa-a`、`reg-t1-fa-a`）。
   - 同一提交双跑逐位，各另有 3 次同程序重跑也逐位。
   - **2026-11-05 换代**（数学级换代）。
@@ -48,7 +52,7 @@ T0–T2、T4 都用回放数据，所以**生产的数据管线不在这几档�
 | | v5p-8 | v7x-4 |
 |---|---|---|
 | 拓扑 / 主机 | `2x2x2`，2 台主机 | `2x2x1`，1 台主机（4 芯片，8 个 device） |
-| 主切分（T0–T2 默认变体） | FSDP 8，`per_device_batch_size: 2`、`gradient_accumulation_steps: 1` | 同 v5p（注 1）；v7x 上的回归档位还没跑过 |
+| 主切分（T0–T2 默认变体） | FSDP 8，`per_device_batch_size: 2`、`gradient_accumulation_steps: 1` | 同 v5p（注 1）；v7x 上的回归档位还没跑过（`run_regression.sh` 没在 v7x 上跑过，没有 LKG）。有一份 T1 档参数的 1000 步运行 `reg-v7x-t1`，是观测构建的基线，换代前配置（02 `runs.yaml`）；它的步时仓库里没有读出 |
 | 对应的对齐实践 | [`01-v5p-acceptance`](../alignments/01-v5p-acceptance/README.md) | [`02-v7x-acceptance`](../alignments/02-v7x-acceptance/README.md) |
 | T0 步数 / 时长 | 20 步 / 一次约 10 分钟（注 2） | 20 步 / 待实测 |
 | T1 步数 / 时长 | 1000 步（= golden 长度）/ 一次约 25 分钟（注 3） | 同左 / 待实测 |
@@ -58,8 +62,8 @@ T0–T2、T4 都用回放数据，所以**生产的数据管线不在这几档�
 
 - 注 1：v7x-4 也是 8 个 device，FSDP 8 沿用 v5p-8 的写法，每个 device 拿到的行就和 GPU rank 对应。
   - 见 02 [`setup.md`](../alignments/02-v7x-acceptance/setup.md)，v7x 迁移验收按这个跑。
-- 注 2：提交到取回。训练循环 182 s，第 1 步含编译 17.9 s，之后每步 0.90 s（`reg-t0-lkg1-a`）。
-- 注 3：提交到取回。训练循环 1075 s，之后每步 0.898 s（`reg-t1-lkg2-a`）。
+- 注 2：提交到取回。训练循环 182 s，第 1 步含编译 17.9 s，之后每步 0.90 s（`reg-t0-lkg1-a`，旧配置的 LKG；现行配置 `reg-t0-fa-a…e` 每步中位数 0.909 s，[`calibration-v5p-fa32.json`](results/calibration-v5p-fa32.json)）。
+- 注 3：提交到取回。训练循环 1075 s，之后每步 0.898 s（`reg-t1-lkg2-a`，旧配置的 LKG；现行配置 `reg-t1-fa-a…e` 每步中位数 0.906 s，同上）。
 - 注 4：`full` 档在 v5p 上实测不逐位（[`../frameworks/maxtext/README.md`](../frameworks/maxtext/README.md)「自检与生产轨迹」）。
 - 注 5：TPU 执行噪声的细节。
   - 8 份运行：基线 + vmem64、vmem48、vmem40、vmem56、sabwd1k、sabwd256、combo（第五节）。
@@ -213,7 +217,7 @@ T0–T2、T4 都用回放数据，所以**生产的数据管线不在这几档�
   - 臂自己重跑逐位。
   - R02–R07、R14、R18、R20 对基线不变。
   - 1000 步 loss 对基线不大于 GPU 自噪声的上限；第 1 步参数梯度离 FP64 整步参照不比基线远（按能量合起来 R ≤ 1.2）。
-    - 第 1 步参数梯度原来比 00 `phase1-full` 的 `L3.step1.grads.all` 上限（GPU 第 1 步噪声）。2026-11-06 改成比 FP64：只改执行方式的臂会翻近似平局的路由，GPU 重跑不翻，那把尺子量不到（标准第五节第三关）。当前配置 6 个臂（参照里的 5 个加 sa256v48）R：v5p 1.001 – 1.008，v7x 1.003 – 1.039（[`results/arms-step1-vs-fp64.json`](results/arms-step1-vs-fp64.json)）。
+    - 第 1 步参数梯度原来比 00 `phase1-full` 的 `L3.step1.grads.all` 上限（GPU 第 1 步噪声）。2026-11-06 改成比 FP64：只改执行方式的臂会翻近似平局的路由，GPU 重跑不翻，那把尺子量不到（标准第五节第三关）。当前配置 6 个臂（参照里的 5 个加 sa256v48）R：v5p 1.001 – 1.008，v7x 1.003 – 1.039（[`results/arms-step1-vs-fp64.json`](results/arms-step1-vs-fp64.json)）。这是判据用的按能量合计值；同一文件另记逐张量的最大值：v5p 1.01 – 2.91（vmem40 最大，sa256 最小），除 sa256 外最差都是 `decoder.layers.1.pre_mlp_layernorm.weight`；v7x 1.01 – 1.61。norm scale 这类小张量只改执行方式就能挪 1.7 – 2.9 倍，和[对齐报告](../ALIGNMENT-REPORT.md)第 5 节台账注 20「量级」里 norm 张量逐张量读数不稳是同一类，单个张量超线不能单独当证据。
     - loss 的上限取**至少 10 次**默认设置 GPU 1000 步运行两两组合的最大值。
     - 现在是 `g1k-a/b/c`（第一阶段 GPU golden，不开重算，1000 步，3 份）加 `g-ctl`、`g-ctl-b`、`g-ctl-c`、`g-gn-a`、`g-gn-b`、`g-rs-a`、`g-rs-b` 共 10 份运行，两两配对得到 45 对比较。
     - 后 7 份与 golden 只差日志选项。
@@ -227,7 +231,7 @@ T0–T2、T4 都用回放数据，所以**生产的数据管线不在这几档�
 - 7 个在旧配置下进了参照的臂在新配置下重跑，三关全过：
   - T0 双跑都逐位；
   - 第二关 R20 计数与新基线相同（新配置下 all-reduce 8、`reduce-precision` 63）；
-  - 第三关见下表（loss 一半）；第 1 步梯度一半（FP64 版，2026-11-06 补）：sabwd256、sabwd1k、combo、vmem40、vmem56 对基线 R 1.001 – 1.008，全过；vmem64、vmem48 没有单独补。
+  - 第三关见下表（loss 一半）；第 1 步梯度一半（FP64 版，2026-11-06 补）：sabwd256、sabwd1k、combo、vmem40、vmem56 对基线 R 1.001 – 1.008（按能量合计；逐张量最大见上面注 1），全过；vmem64、vmem48 没有单独补。这一半借的是验收那批第 1 步扰动运行 `t-st1n-<臂>-gm`（当前对齐配置，2 步，命令行覆盖未登记，见 01 `runs.yaml`），不是回归参照里的 `fa-*` 臂，也不是 T1 档程序（GA 1、不重算）；臂名对应（sa256 ↔ sabwd256 等）是按开关对的。回归 T1 程序上没补。
 - 基线 + 7 个臂，8 份运行两两配对得到 28 对比较，`status: 正式`。
 - 留一法最大的一对 T1 1.05 倍、T0 1.03 倍。
 - 注意 vmem64 的第三关 MARE 是 GPU 上限的 0.999 倍，压线进参照。
@@ -282,6 +286,8 @@ T0–T2、T4 都用回放数据，所以**生产的数据管线不在这几档�
 
 ### 怎么重标
 
+下面的命令是旧配置（yml `7704115b`）那次标定的写法，照抄会拿旧配置的运行当基线，`regress.py` 按 `config_yml_sha256` 会判这份参照作废。现行配置（`a238883b`）那次的基线是 `reg-t1-fa-a` / `reg-t0-fa-a`，臂是 `fa-*`，步时用 `reg-t0-fa-a … e` 与 `reg-t1-fa-a … e`，输出 `results/calibration-v5p-fa32.json`（参数以那份文件里记的运行名为准）。
+
 ```bash
 python models/hunyuan3/regression/calibrate.py --root <运行根> --out models/hunyuan3/regression/results/calibration-v5p.json \
     --t1-base reg-t1-lkg2-a --t1-base-pair reg-t1-lkg2-b --t0-base reg-t0-r2 \
@@ -317,7 +323,7 @@ python models/hunyuan3/regression/calibrate.py --root <运行根> --out models/h
 
 - v7x 照同样的步骤另标一遍，不用 v5p 的数。
 - 切分已定（第二节）。
-- 还没做，等 v7x 的回归档位开跑。
+- 还没做，等 v7x 的回归档位开跑（`reg-v7x-t1` 是换代前配置的观测基线，不走 `run_regression.sh`，不算回归档位）。
 
 ## 六、LKG 登记
 

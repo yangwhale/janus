@@ -1,4 +1,4 @@
-# 混元 4 · hy4-mid（5,189,678,849 参数，随机初始化）300 步 L4：TPU tm-a（frameworks/maxtext/hy4-mid-t1.yml，T1 现行开关原样）被测，GPU gm-a 为基线，
+# 混元 4 · hy4-mid（5,189,678,849 参数，随机初始化）300 步 L4：TPU tm-a（frameworks/maxtext/hy4-mid-t1.yml，T1 当时的开关原样）被测，GPU gm-a 为基线，
 # 噪声只用 GPU gm-a..h 两两 28 对（同 t1zr）。口径同 t1t-l4：grad_norm 以参照作分母（2026-11-10 起，原为两边均值），param_norm 比精确值。事先登记：写于任何 hy4-mid 运行之前。
 schema_version: 1
 model: hunyuan4-mid

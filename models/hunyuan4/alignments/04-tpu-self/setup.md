@@ -11,10 +11,10 @@
 | 并行 | FSDP 8；每设备微批 1 × 梯度累积 2，全局批 16 × 4096 |
 | 程序 | MaxText，`maxtext` 混元 4 集成分支 `b87a55aa` |
 | 配置 | [`frameworks/maxtext/hy4-mini-t1.yml`](../../frameworks/maxtext/hy4-mini-t1.yml) 在 golden 跑的时候的版本：janus 提交 `57be82b8` 里的那一份（sha256 `b244939e…`，与 [`arms.yaml`](arms.yaml) 的 `screen_base` 一致；`git show 57be82b8:models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml` 取出），命令行不加改开关的覆盖参数。那时 `sa_use_base2_exp: true` |
-| base2 | **自比的 golden 仍是开 base2 的一代（`ts-g-a`），对齐配置 2026-11-11 起已改成关，两者不冲突**：自比比的是同一个起点上只改一样东西前后的差，golden 和各臂都是开 base2，比较内部一致。结论不依赖 base2 是推断，没有实测：没在关 base2 的起点上重测过任何一臂。base2 只作用于 splash 注意力（[改动台账](../../CHANGES-LEDGER.md) M43：q 乘 log2 e 后舍回 BF16，而且常数被舍成 BF16 的 1.4453125，logits（不含 sink）整体乘 1.0018，是系统性的缩放）。受影响最大的是对 golden 比、注意力从 splash 换成普通实现的臂（D12、V9、G3a、G4a、V11）；第 6 件内部的比较（G2 对 D12、G3 对 G3a、G4 对 G4a 及其 0.0.52 重测）两边都是普通注意力，不经过 base2。关 base2 的同一起点已有几份（`tz-off-nolhs`、`tz-off-vm32`、`tz-off-vm64`），要用关 base2 作底比时另写目录（PROTOCOL 变更记录 2026-11-11） |
+| base2 与 C 口径 | **自比的 golden 仍是开 base2 的一代（`ts-g-a`）；现行对齐配置 2026-11-11 起关 base2，并开 C 口径的 M52 `hc_head_force_bf16_rounding`、M58 `ihc_stream_grad_gpu_order`，和 golden 差这三处。两者不冲突**：自比比的是同一个起点上只改一样东西前后的差，golden 和各臂都是开 base2，比较内部一致。结论不依赖 base2 是推断，没有实测：没在关 base2 的起点上重测过任何一臂。C 口径的两处改的是 hc_head 与 iHC 一带的舍入，六件结论在 C 口径上变没变没测，不作推断。MaxText 提交也不同：golden `b87a55aa`，C 口径的 `tc-a` `8d3d7561`（带进 M52、M58 的代码和 9 个默认关的诊断键）；新提交关着这两个开关时与 `b87a55aa` 是否逐位相同，没有直接核：M58 的代码在中间提交 `751fdc6d` 上关着时，离线编出的程序与基底相同（mini 的 `ti-o-a`），`8d3d7561` 再带进的 M52 代码没核。base2 只作用于 splash 注意力（[改动台账](../../CHANGES-LEDGER.md) M43：q 乘 log2 e 后舍回 BF16，而且常数被舍成 BF16 的 1.4453125，logits（不含 sink）整体乘 1.0018，是系统性的缩放）。受影响最大的是对 golden 比、注意力从 splash 换成普通实现的臂（D12、V9、G3a、G4a、V11）；第 6 件内部的比较（G2 对 D12、G3 对 G3a、G4 对 G4a 及其 0.0.52 重测）两边都是普通注意力，不经过 base2。关 base2 的同一起点已有几份（`tz-off-nolhs`、`tz-off-vm32`、`tz-off-vm64`，都是 C 口径之前、M52 与 M58 不开）；C 口径的同一起点是 mini 的 `tc-a`（另有同配置的 `tc-b … tc-f`：`tc-b`、`tc-c`、`tc-d`、`tc-f` 只改执行方式，`tc-e` 改了重算策略 `remat_policy=full`）。要用它们作底比时另写目录（PROTOCOL 变更记录 2026-11-11） |
 | 初始权重、数据 | 同 mini：同一份 HF 目录转换的检查点；原样回放 GPU `g3-a` 写下的 1000 步 batch 与 loss_mask |
 | 镜像 | MaxText `tpu_pre_training`（digest 见 `frameworks/maxtext/run.sh`） |
-| libtpu | 镜像自带的 0.0.46（构建 `cl/963683785`）。golden 的运行记录只有构建号、没记 pip 版本号，按构建号认：同一构建号的运行（如 `tz-off-rep`）在 `meta.versions.libtpu_pip` 记的是 `libtpu==0.0.46`，jax 0.11.1 的 `tpu` 依赖也钉 0.0.46.*。0.0.52 上另有一份 golden `ts-g52-a`（同一命令，Pod 里只换 libtpu），0.0.52 上的臂（V 类）对它比，见 [`libtpu-052.md`](libtpu-052.md) |
+| libtpu | 镜像自带的 0.0.46（构建 `cl/963683785`）。golden 的运行记录只有构建号、没记 pip 版本号，按构建号认：同一构建号的运行（如 `tz-off-rep`）在 `meta.versions.libtpu_pip` 记的是 `libtpu==0.0.46`，jax 0.11.1 的 `tpu` 依赖也钉 0.0.46.*。0.0.52 上另有一份 golden `ts-g52-a`（同一命令，Pod 里只换 libtpu），0.0.52 上的臂（V 类）对它比，见 [`libtpu-052.md`](libtpu-052.md)。v5p 上 0.0.46 与 0.0.52 都有 一次实际排查 的 jit 静默算错（[案例 16](../../cases/16-jit-miscompile-sub8-row-block.md)）；自比存下的 223 份训练步程序（含专家并行 V22–V24、多切片 B15）都扫过，带它特征的 0 份（[`jit-miscompile-hlo-scan.json`](../../results/jit-miscompile-hlo-scan.json)），不等于证明没问题，新程序先扫 |
 | tokamax | 0.0.14（镜像自带的包；splash 从这个包导入）。运行记录不记；同一镜像 digest 的 T1 读镜像层核过，见 [T1「软件版本」](../01-mini/setup.md#软件版本) |
 | 学习率 | 恒定 1e-5，所以 1000 步运行的前 300 步与 300 步运行的学习率相同。全部自比最长 1000 步；warmup、衰减与更长的训练没测 |
 
@@ -37,7 +37,7 @@ XLA_DUMP=1 YML=hy4-mini-t1.yml STAGE=mini GOLDEN=<GPU g3-a 运行目录> bash ru
 | XLA / libtpu 开关 | `XLA_FLAGS`、`LIBTPU_INIT_ARGS` |
 | libtpu / jax 版本 | `PIP_EXTRA="libtpu==<版本>"`（Pod 里先 `pip install --no-deps`，运行记录 `meta.versions.libtpu_pip` 记下版本号） |
 | 代码写法 | MaxText 上从同一提交拉一个只改一处的提交，用它打包 |
-| 硬件 | `PLATFORM=v5p-16`（2x2x4，16 片；离线编译的 `compile_topology` 按 TensorCore 数记作 `v5p-32`）、`v7x`（2x2x1，8 个 TensorCore）、`v7x-16`（2x2x2） |
+| 硬件 | `PLATFORM=v5p-16`（2x2x4，16 片；离线编译的 `compile_topology` 按 TensorCore 数记作 `v5p-32`）、`v7x`（2x2x1，8 个 TensorCore）、`v7x-16`（2x2x2）；多切片：`SLICES=2 NODEPOOL=<池 1>,<池 2>`，每个切片独占一个节点池，命令行再给 `dcn_*` 并行度（B15）。只支持默认的节点池配置 |
 
 ## 跑前离线筛
 
@@ -109,7 +109,12 @@ CPU 上编用的是 MaxText 的拓扑描述（`compile_topology`，`v5p` 对应 
 | 超出噪声上限 | 其余；曲线最差 r ≤ 2 且第 1 步没有定不了责的张量记「略超」，否则记「超」 |
 
 - 第 1 步训练梯度从全量抓数的动量反推（Adam m / (1 − β1)、Muon buf / (1 − β)，再乘回裁剪系数）。尺子 = 该张量上 GPU 三份第 1 步两两的最大相对差，不低于分辨率下限 2^-20（反推带进的 FP32 舍入）。
-- 定责：被测离 FP64 的距离 ÷ max(golden 离 FP64, GPU 三份离 FP64 的中位数) ≤ 1.2 记「换了顺序」；超过的记「丢了精度」。iHC 小参数单列（01-mini D11 已接受），不挡。这个单列没有倍数上限：`hc_head` 三个张量偏 18–46 倍、符号反了也被单列（D3、关小矩阵乘改写、v7x 默认）；V17 偏 8.8–25.7 倍，也被单列（没有逐元素数，符号反没反没核），判档时要看结果文件 `ihc_accepted` 里的倍数；定义与受影响的运行见 [MATRIX「iHC 豁免」](MATRIX.md#ihc-豁免定义与受影响的运行)，豁免是否收窄待定（见 PROTOCOL 变更记录 2026-11-11）。
+- GPU 第 1 步参照：自比的判档用 3 份（`g2s-a … c`，结果文件里存的就是这 3 份的判定）。01-mini 2026-11-11 起补到 6 份（再加 `g2s-d … f`）。用 6 份重判自比全部第 1 步结果（[`step1-n6-rejudge.json`](results/step1-n6-rejudge.json)，脚本 `analysis/tpu_self_step1_rejudge_n6.py`）：尺子换成 6 份 15 对的最大差、分母换成 6 份的中位数，其余不变，不上卡。3 份复算与结果文件逐张量相同。
+  - 未定责个数变了的只有 3 次：E6（RMSNorm 多舍一次，0.0.46）第 0 层 `input_layernorm` R 1.2025 → 1.1955，变成已定责，第 1 步不再有未定责张量；E6 的曲线最差 r 1.06，按 6 份判档会从「超」变成「略超」、解读变成「和 GPU 重跑分不开」。C1（关省舍入）第 4 层路由 `gate` 1.2033 → 1.1997 变成已定责，词嵌入梯度（R 26.1）仍未定责，档不变。E5（ε 改小）多一个未定责，档不变。
+  - 其余压线张量不翻档：G2 / G3 第 6 层 sink R 1.27 → 1.29、C15 MTP `enorm` 1.40 → 1.40，仍未定责；纯数据并行（B1）词嵌入梯度 R 3.62 → 3.61。这几个张量判定没变，结果文件只存判定变了的张量，6 份的 R 没有入库。
+  - 215 个结果文件里 139 个有张量换了判定，多数是尺子变宽后落回噪声内（已定责 → 在噪声内 995 处，iHC 单列 → 在噪声内 250 处）。被单列的 iHC 张量 103 个文件变少、1 个变多（例如 V17 11 → 7、H2 12 → 11）。
+  - 判档仍按 3 份，表里的档和 R 都是 3 份的数；改用 6 份要在 PROTOCOL 登记后整体重生成。
+- 定责：被测离 FP64 的距离 ÷ max(golden 离 FP64, GPU 三份离 FP64 的中位数) ≤ 1.2 记「换了顺序」；超过的记「丢了精度」。iHC 小参数按 TPU 自比的 iHC 豁免单列，不挡。这是另一条规则：iHC 张量一律不算未定责，没有倍数上限；与 mini 的 D11 条文不同；是否收窄待拍板。这个单列没有倍数上限：`hc_head` 三个张量偏 18–46 倍、符号反了也被单列（D3、关小矩阵乘改写、v7x 默认）；V17 偏 8.8–25.7 倍，也被单列（逐元素对 FP64 差 −4.26、−5.51、−5.06、−5.13 e-6，和 FP64 同号、没变号，[`hc-head-dgrad-fusion.json`](results/hc-head-dgrad-fusion.json)），判档时要看结果文件 `ihc_accepted` 里的倍数；定义与受影响的运行见 [MATRIX「iHC 豁免」](MATRIX.md#ihc-豁免定义与受影响的运行)，豁免是否收窄待定（见 PROTOCOL 变更记录 2026-11-11）。
 - 解读列「和 GPU 重跑比」（不改判档）：曲线最差 r ≤ GPU 留一法最大值（300 步 8 份 2.47、1000 步 16 份 1.82）且第 1 步没有定不了责的张量 → 和 GPU 重跑分不开；贴着最大值（5% 以内）记临界（PROTOCOL 变更记录 2026-11-09 登记，前瞻验证中）。
 - 另报：HLO 指纹（文件 sha256、去掉元数据的指纹、再去掉源码位置表的程序指纹）、各类指令个数之差；第 1 步梯度按层汇总；步时、显存峰值。
 - 曲线目录：`catalogs/vs-golden.yaml`（300 步）、`vs-golden-1000.yaml`（1000 步，尺子 GPU g3）、`vs-<底>.yaml`（对某个只改了连带项的底比）。
@@ -130,10 +135,10 @@ python models/hunyuan4/alignments/04-tpu-self/build_tables.py   # 重画 README 
 |---|---|---|
 | 逐位相同 | 每一步记下的数、第 1 步的全部状态，每一位都相同 | 改动没碰数值 |
 | 在噪声内 | 不逐位，但差别不超过 GPU 自己重跑的波动（r ≤ 1）；第 1 步变了的梯度离精确值不比原来远 | 只是换了加法顺序，不是 bug |
-| 略超 | 曲线最差 r 在 1–2 之间 | 多是梯度范数或路由偏置标准差某一项略过 1。golden 拿去和 GPU 比（1000 步、GPU 8 份 28 对的尺子），本身就是这两项略超；同配置的 mini 比较 `t1zg-a` 这两项是 r 1.23、1.14，尺子换成 16 份后降到 0.995、0.91。所以这一档一般也是换了顺序。这是旧尺子、旧 mini 比较的数；mini 现行比较已换成 `tz-off-rep`（关 base2），不直接对比 |
+| 略超 | 曲线最差 r 在 1–2 之间 | 多是梯度范数或路由偏置标准差某一项略过 1。golden 拿去和 GPU 比（1000 步、GPU 8 份 28 对的尺子），本身就是这两项略超；同配置的 mini 比较 `t1zg-a` 这两项是 r 1.23、1.14，尺子换成 16 份后降到 0.995、0.91。所以这一档一般也是换了顺序。这是旧尺子、旧 mini 比较的数；mini 现行比较已换成 C 口径的 `tc-a`（关 base2），不直接对比 |
 | 超 | r > 2，或第 1 步有梯度离精确值远了 1.2 倍以上 | 改到了精度，按 bug 查 |
 
-第 1 步的判法：对每个变了的梯度张量，看被测离精确值有多远，和 golden、GPU 里离得较远的那个比。不比它远，记「换了顺序」：只是加法先后不同，不是 bug。远出 1.2 倍以上，记「丢了精度」：某处多舍入了一次，或者在低精度里做了累加。查清差别从哪来、属于哪一种，叫**定责**。精确值是 CPU 上用 64 位浮点算的第 1 步梯度。
+第 1 步的判法：对每个变了的梯度张量，看被测离精确值有多远，和 max(golden 离精确值, GPU 三份离精确值的中位数) 比。不比它远，记「换了顺序」：只是加法先后不同，不是 bug。远出 1.2 倍以上，记「丢了精度」：某处多舍入了一次，或者在低精度里做了累加。查清差别从哪来、属于哪一种，叫**定责**。精确值是 CPU 上用 64 位浮点算的第 1 步梯度。
 
 **GPU 自己重跑也常常「略超」。** 拿 GPU 同设置的几份互相比，用同一套判法试这把尺子：轮流挑一份当被测、一份当 golden，尺子用其余几份重算，这种做法叫**留一法**。300 步 8 份共 56 种组合，最差 r 超过 1 的占 5.9e-1，超过 2 的占 1.1e-1，最大 2.47（[`gpu-rerun-loo-r-300.json`](results/gpu-rerun-loo-r-300.json)）；1000 步 16 份共 240 种组合，超过 1 的占 2.2e-1，没有超过 2 的，最大 1.82（[`gpu-rerun-loo-r-1000.json`](results/gpu-rerun-loo-r-1000.json)）。
 
@@ -145,7 +150,7 @@ python models/hunyuan4/alignments/04-tpu-self/build_tables.py   # 重画 README 
 
 | 项 | 值 |
 |---|---|
-| 配置 | mini 对齐配置 2026-11-11 前那一版（[`hy4-mini-t1.yml`](../../frameworks/maxtext/hy4-mini-t1.yml) 当时的取值，base2 开；与上一代 mini 比较 `t1zg-a` 同配置，见上文「base2」），v5p 8 个设备，FSDP 8，每设备微批 1 × 累积 2 |
+| 配置 | mini 对齐配置 2026-11-11 前那一版（现行对齐配置另关 base2、开 C 口径的 M52、M58；[`hy4-mini-t1.yml`](../../frameworks/maxtext/hy4-mini-t1.yml) 当时的取值，base2 开；与上一代 mini 比较 `t1zg-a` 同配置，见上文「base2」），v5p 8 个设备，FSDP 8，每设备微批 1 × 累积 2 |
 | 复现 | 换一组机器重跑，逐步量、第 1 步全部状态、最终参数、编译产物都逐位相同；只跑 300 步也和前 300 步逐位相同 |
-| 对 GPU | 1000 步 9 项过 7、略超 2（尺子 GPU 8 份，[`ts-g-a-vs-gpu`](results/ts-g-a-vs-gpu.report.md)），与同配置的上一代 mini 比较 `t1zg-a` 相同；主 loss 的 MARE：TPU 8.05e-6，GPU 波动上限 8.24e-6，r 0.98。尺子换成 16 份后，`t1zg-a` 9 项全过（[知识库](../../knowledge.md#gpu-1000-步尺子扩到-16-份要点与出处)）；golden 自己按 16 份重判：9 项全过，最大 0.99（梯度范数，[`ts-g-a-vs-gpu16`](results/ts-g-a-vs-gpu16.report.md)）。以现行比较 tz-off-rep 为准：base2 关的现行 mini 比较在 16 份尺子下过 7、待定 2 |
+| 对 GPU | 1000 步 9 项过 7、略超 2（尺子 GPU 8 份，[`ts-g-a-vs-gpu`](results/ts-g-a-vs-gpu.report.md)），与同配置的上一代 mini 比较 `t1zg-a` 相同；主 loss 的 MARE：TPU 8.05e-6，GPU 波动上限 8.24e-6，r 0.98。尺子换成 16 份后，`t1zg-a` 9 项全过（[知识库](../../knowledge.md#gpu-1000-步尺子扩到-16-份要点与出处)）；golden 自己按 16 份重判：9 项全过，最大 0.99（梯度范数，[`ts-g-a-vs-gpu16`](results/ts-g-a-vs-gpu16.report.md)）。以现行比较 `tc-a` 为准（C 口径，`t1zc-l4`）：16 份尺子下过 8、待定 1（路由偏置均值 r 1.31）；C 口径之前的上一代 `tz-off-rep`（`t1zo-l4`）是过 7、待定 2 |
 | 步时 | 0.494 s |

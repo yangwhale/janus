@@ -18,7 +18,7 @@ L0 共 3 项检查，检查条数 40。冒烟一行里一条检查是冒烟脚�
 
 | 检查 | 比什么 | 对象 | 判法（严格｜参考） | 证据来源 | hy4-tiny · CPU 冒烟 |
 |---|---|---|---|---|---|
-| CPU 冒烟各步<br>`T0.smoke.make_tiny_hf`<br>`T0.smoke.make_fake_golden`<br>`T0.smoke.names_shapes`<br>`T0.smoke.A.convert`<br>… | hy4-tiny 维度、8 个假 CPU 设备，四个阶段（A–D）各走一遍：生成 HF 目录、转换、往返逐位、RoPE 去交错与负对照、训练、初始权重等于 HF、索引器冻结、数据指纹（8 个 rank 的 data/rank*.jsonl 与假 golden 逐字节相同；结果文件里 detail 为空，比法见 cpu_smoke.py）、学习率常数 | 冒烟脚本的每一步<br>比较单元：38 条规则<br>聚合：逐条规则核，数不满足的条数 | 逐位｜参考：无 | TPU 一侧 CPU 冒烟（`frameworks/maxtext/cpu_smoke.py`） | [38 / 38 条 ok ✅](results/hy4-cpu-smoke.json) |
+| CPU 冒烟各步<br>`T0.smoke.make_tiny_hf`<br>`T0.smoke.make_fake_golden`<br>`T0.smoke.names_shapes`<br>`T0.smoke.A.convert`<br>… | hy4-tiny 维度、8 个假 CPU 设备；HF 目录截 4 层 + MTP（`make_tiny_hf.py` 默认 `--layers 4`），阶段 A–D 再分别截 1、2、3 层与 2 层 + MTP（`hy4_map.STAGES`），各走一遍：生成 HF 目录、转换、往返逐位、RoPE 去交错（负对照只在阶段 A）、训练、初始权重等于 HF、索引器冻结、数据指纹（8 个 rank 的 data/rank*.jsonl 与假 golden 逐字节相同；结果文件里 detail 为空，比法见 cpu_smoke.py）、学习率常数 | 冒烟脚本的每一步<br>比较单元：38 条规则<br>聚合：逐条规则核，数不满足的条数 | 逐位｜参考：无 | TPU 一侧 CPU 冒烟（`frameworks/maxtext/cpu_smoke.py`） | [38 / 38 条 ok ✅](results/hy4-cpu-smoke.json) |
 | QK-Clip 在扫描层下按层缩放（修后，M1）<br>`T0.qkclip.scan_per_layer` | hy4-tiny 的 11 层变体 hy4-tiny11（1 稠密 + 10 MoE，扫描长度 2，另有 2 层余数块），τ 1e-3 下每层每头实测的 √scale 与按该层最大 logit 算的期望逐位比（`qk_clip_scan_check.py`，台账 J1；覆盖根源一览第 8 行） | 7 个 wq_b 叶子、11 层 × 4 头<br>比较单元：44 个对象<br>聚合：逐条规则核，数不满足的条数 | 逐位｜参考：无 | TPU 一侧 CPU（`frameworks/maxtext/qk_clip_scan_check.py`） | [0 / 44 不同 ✅](../../results/hy4-tiny11-qk-clip-scan-postfix.json) |
 | QK-Clip 在扫描层下按层缩放（修前）（只报）<br>`T0.qkclip.scan_per_layer` | 同一脚本、同一参数在修复 M1 之前的读数：扫描块里两层共用一个缩放（等于两层期望的逐头最小值） | 7 个 wq_b 叶子、11 层 × 4 头<br>比较单元：44 个对象<br>聚合：逐条规则核，数不满足的条数 | 逐位｜参考：无 | TPU 一侧 CPU（`frameworks/maxtext/qk_clip_scan_check.py`） | [16 / 44 不同 ❌](../../results/hy4-tiny11-qk-clip-scan.json) |
 
@@ -39,4 +39,4 @@ hy4-tiny 上没有做 GPU 对 TPU 的比较。
 
 | 结果 | 是什么、为什么不在清单里 | 判定 |
 |---|---|---|
-| [`hy4-cpu-smoke`](results/hy4-cpu-smoke.json) | 同一份冒烟结果里「不去交错的检查点必须判不一致」那一条负对照，列在 hy4-mini 检查清单 L0 的负对照一行的「真实权重」一列；那一格用的是 hy4-tiny 的合成权重（阶段 A 的结构），不是真实权重 |  |
+| [`hy4-cpu-smoke`](results/hy4-cpu-smoke.json) | 结果文件 `hy4-cpu-smoke.json` 本页已列（上面「CPU 冒烟各步」一行，检查名 `T0.smoke.*`）；这里的 `hy4-cpu-smoke` 是同一文件里阶段 A 负对照那一条（「不去交错的检查点必须判不一致」）的另一个检查名，挂在 hy4-mini 检查清单 L0 负对照一行的「真实权重」一列；那一格用的是 hy4-tiny 的合成权重（阶段 A 的结构），不是真实权重 |  |

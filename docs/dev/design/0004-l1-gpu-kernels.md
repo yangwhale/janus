@@ -16,7 +16,7 @@
    - 用真实模块看该不变的是否逐位不变。
 5. 特殊值存 / 恢复：−0.0、次正规数走一次 Megatron 存档 / 恢复，逐位核对。
 
-前面的单算子回放（路由 GEMM、投影、归一化、初等函数等）见 `l1-ops.md`；本文件的脚本沿用它的写法和结果格式。
+前面的单算子回放（路由 GEMM、投影、归一化、初等函数等）见 [`0003-l1-op-replay.md`](0003-l1-op-replay.md)；本文件的脚本沿用它的写法和结果格式。
 
 ## 输入与脚本
 
@@ -168,7 +168,7 @@ python models/hunyuan3/frameworks/megatron/ckpt_special.py --save-run /data/janu
   - 路由的 dx 正是在 `mlp_norm.out.grad` 汇入。
   - 参数梯度里输出层、最后的 norm、第 3 层专家与共享专家逐位相同；第 3 层路由权重的梯度起就不同。
 - **量级**：
-  - 参数梯度最大 rel_L2 是 embedding 的 1.14e-3，超默认设置噪声上限（`TF32.step1.grads.tol` fail，r1 = 4.95）；
+  - 参数梯度最大 rel_L2 是 embedding 的 1.14e-3，是默认设置噪声上限的 1.71 倍；判 fail 靠的是 cosine 偏离（1 − cos 6.4e-7，上限的 4.95 倍，`TF32.step1.grads.tol` 的 r1 = 4.95）；
   - 激活梯度最大 5.66e-3（r1 = 1.58，inconclusive）；
   - 更新后参数 4.2e-5（r1 = 1.08，inconclusive）；
   - 30 步 loss 首步差 0、带符号均值 −1.8e-6、最大单步 1.88e-5，在噪声内（r1 = 0.61）。
@@ -182,7 +182,7 @@ python models/hunyuan3/frameworks/megatron/ckpt_special.py --save-run /data/janu
   - torch 的开关只管 torch 自己的 matmul，TE 的 GEMM 不看它。
   - 开了 `NVIDIA_TF32_OVERRIDE=0` 之后 torch 的开关读回来仍是 True——**开关读回值不能当证据，要实测**。
 - 本模型里受 TF32 影响的只有路由反向的两个 GEMM。
-  - 它改变第 1 步的梯度（最大到 GPU 自身噪声的 5 倍），但 30 步 loss 仍在噪声内。
+  - 它改变第 1 步的梯度（cosine 偏离到 GPU 自身噪声上限的 4.95 倍、rel_L2 1.71 倍，上限取 3 对；换成 28 对的上限是 3.2 倍、1.70 倍，仍超 2 倍），但 30 步 loss 仍在噪声内。
 
 ### 意味着
 
@@ -193,7 +193,7 @@ python models/hunyuan3/frameworks/megatron/ckpt_special.py --save-run /data/janu
 
 - 对齐运行用 `run_check.sh` 的 `TF32=off`（三样一起设）。
 - 以 `meta.json` 里 `tf32.probe_rel_l2_*` 的实测值为准（≤ 1e-5 才算关了）。
-- TPU 侧对路由反向的 GEMM 精度单独写进 `config_diff`。
+- TPU 侧对路由反向的 GEMM 精度单独写进 `config_diff`。现状：混元 3 验收的 `config_diff`（01 `phase2-tpu.yaml` 的 `L0.config.diff`）没有这一项；配置对照表把它记成不可避免差异，TPU 一侧「FP32 操作数单遍 BF16」是推断（[混元 3 配置对照](../../../models/hunyuan3/config-alignment.md)「TF32」一行）。
 
 ## 二、专家分组 GEMM 与核心注意力回放
 
@@ -241,7 +241,7 @@ python models/hunyuan3/frameworks/megatron/ckpt_special.py --save-run /data/janu
 
 - TPU 侧这两个算子可以直接拿同一份输入（`g61-obs` 第 1 步）回放比较，GPU 这边的地板就是上面的 FP64 数。
 - 分组 GEMM 的 wgrad 用 FP32 累加、对 FP64 是 1e-6 量级。
-  - TPU 侧若用 BF16 出 wgrad 会差三个数量级，要在 `config_diff` 里对齐。
+  - TPU 侧若用 BF16 出 wgrad 会差三个数量级，要在 `config_diff` 里对齐。现状：混元 3 验收的 `config_diff` 没有纳入分组 wgrad 的输出 dtype，配置对照表里也没找到对应的一行。
 
 ## 三、MoE 层内分阶段
 
@@ -339,7 +339,7 @@ python models/hunyuan3/frameworks/megatron/ckpt_special.py --save-run /data/janu
 - **注意力因果性**：p = 2048、3001，改未来 token 后过去位置的输出与 dq / dk / dv 100% 逐位不变。
 - **未来位置填 NaN（诊断）**：
   - p = 2048 时过去位置的输出、dq 干净，**dk、dv 全部被污染**（2048 行全非有限）；
-  - p = 3001 时输出、dq 从第 2816 行起 185 行被污染（2816 = 22 × 128，正是 p 所在的 128 行块），dk、dv 全部被污染。
+  - p = 3001 时输出、dq 从第 2816 行起到 p 前共 185 行被污染，dk、dv 全部被污染。p 在 2944–3071 这个 128 行块里，185 行装不进一个 128 行块；2816 = 11 × 256 是 p 所在 256 行块的起点，所以污染范围是 p 所在的 256 行块里 p 之前的行（分块大小没核，256 是从这组数推的；p = 2048 正好在块边界上，过去行不受污染，与此相符）。
 
 整网（`phase1-causal-model`）：
 
@@ -366,7 +366,7 @@ kernel 层面：
 
 - 分组 GEMM 的尾块和组边界、注意力的 THD padding 都做到了真正的隔离——毒值不进有效结果。
 - 因果掩码则不同：同一序列里未来位置一旦是 NaN，
-  - 前向会污染 p 所在那个 128 行块里的过去行；
+  - 前向会污染 p 所在那个块里的过去行（按 p = 3001 的读数推断块是 256 行，见上）；
   - 反向会污染全部 dk / dv。
 - 未来位置是有限值时则完全不影响过去（逐位）。
 - 机制（推断）：

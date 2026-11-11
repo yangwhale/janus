@@ -95,7 +95,7 @@
 - 目录同步改动：
   - R02 钉 a238883b；
   - R06 断言这 4 个开关为 true；
-  - R25 改为只对基线 `g1k-a`（第一阶段 GPU golden 的第 1 份）算（`params.baseline`，`docs/03-metrics.md`「golden 怎么用」）。
+  - R25 改为只对基线 `g1k-a`（第一阶段 GPU golden 的第 1 份）算（`params.baseline`，[`docs/reference/judging.md`](../../../../docs/reference/judging.md#golden-怎么用几份只造噪声带比较只对一份)「golden 怎么用」）。
 
 ### 新 LKG 与换代留档
 
@@ -277,6 +277,6 @@ T1 的带符号均值、最大单步上限略高于 GPU 噪声上限（5.39e-5�
 
 ## 还没做
 
-- 第三关的「第 1 步参数梯度」一条：要抓张量，`calibrate.py` 这一版没实现，现在第三关只判 1000 步 loss。
+- 第三关的「第 1 步参数梯度」一条：要抓张量，`calibrate.py` 这一版仍没实现，它只判 1000 步 loss。现行配置下另用 FP64 版手工补了 5 个臂（vmem64、vmem48 没补）；用的是验收那批第 1 步扰动运行 `t-st1n-<臂>-gm`（2 步，命令行覆盖未登记），不是这里的 `fa-*` 臂，也不是 T1 档程序，见 [`../README.md`](../README.md)第五节注 1 与「现行配置的标定」。
 - v7x 的标定：切分已定（FSDP 8，同 v5p 写法，`../README.md` 第二节），等 v7x 的回归档位开跑后照第五节做。
 - 对照臂（R24）随排程上线。

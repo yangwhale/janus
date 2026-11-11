@@ -1,0 +1,30 @@
+{
+ "what": "mini 1000 步运行的步时中位数：metrics.jsonl 的 step_time，第 11–1000 步（前 10 步含编译与预热，不计）。单次运行，不是专门的 A/B；libtpu 与 MaxText 提交抄自各运行 meta.json。tc-a 是 C 口径（M36、M52、M58 都开），ti-o-a 是只开 M36 的对照（合并 M53、M58 代码后开关都关），tz-off-rep 是 C 口径之前的对齐配置，x5-prod 是推荐组合",
+ "window": "11:1001",
+ "runs": {
+  "tc-a": {
+   "n_steps": 990,
+   "median_s": 0.4962642192840576,
+   "maxtext_commit": "8d3d7561c4378cb2dd4f202fbd8de05294be87e9",
+   "libtpu_pip": "libtpu==0.0.46"
+  },
+  "ti-o-a": {
+   "n_steps": 990,
+   "median_s": 0.49595510959625244,
+   "maxtext_commit": "751fdc6deab9305d398ea6f45a42ba77210b98fa",
+   "libtpu_pip": "libtpu==0.0.46"
+  },
+  "tz-off-rep": {
+   "n_steps": 990,
+   "median_s": 0.4950355291366577,
+   "maxtext_commit": "b87a55aad08b9f223cb4e248f2877fde9c51ac33",
+   "libtpu_pip": "libtpu==0.0.46"
+  },
+  "x5-prod": {
+   "n_steps": 990,
+   "median_s": 0.4722883701324463,
+   "maxtext_commit": "b87a55aad08b9f223cb4e248f2877fde9c51ac33",
+   "libtpu_pip": "libtpu==0.0.46"
+  }
+ }
+}

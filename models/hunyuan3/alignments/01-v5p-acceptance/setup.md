@@ -43,6 +43,7 @@
 | TPU | 镜像 | MaxText 官方 `tpu_pre_training`，digest `b152355a…` | `t-rmap-on-1000` 的 `meta.json` 的 `image`；[`frameworks/maxtext/run.sh`](../../frameworks/maxtext/run.sh) 的 `IMAGE` |
 | TPU | MaxText | `maxtext` `hunyuan` 分支 `0622774a` | `meta.json` 的 `code` |
 | TPU | janus（打进 Pod 的程序） | `958d173e` | `meta.json` 的 `code` |
+| TPU | 配置 | `hy3-4layers.yml` sha256 `a238883b…`，命令行另加 `mtp_num_layers=0` 与 rmap 重算覆盖（注意力与 MLP 各投影 `=remat`、`moe_routing_maps=device`，全表见 [`runs.yaml`](runs.yaml) 的 `t-rmap-on-1000`）。照抄 yml 跑出来的不是验收的程序 | `meta.json` 的 `config.overrides`（`meta.json` 的 sha256 与 `phase2-acceptance-rcc-on` 的 `runs.t-rmap-on-1000.meta_sha256` 相同） |
 | TPU | jax / jaxlib | 0.11.1 / 0.11.1 | `meta.json` 的 `versions` |
 | TPU | libtpu | 0.0.46（构建 `cl/963683785`，2026-08-12；按构建号认，映射已核） | `meta.json` 只记了构建号，没记 pip 版本号。构建号到 pip 版本的对应已核：同一构建号的探针运行在 v5p 上读到 `libtpu_pip` 0.0.46（混元 4 [`jit-miscompile-probe-v5p.json`](../../../hunyuan4/results/jit-miscompile-probe-v5p.json) 的 `runs[0]`），混元 4 同一构建号的训练运行也记了 `libtpu==0.0.46`（[mini 设置「软件版本」](../../../hunyuan4/alignments/01-mini/setup.md#软件版本)），jax 0.11.1 的 `tpu` 依赖也钉 0.0.46.*（PyPI 上 jax 0.11.1 包元数据：`Requires-Dist: libtpu==0.0.46.*; extra == "tpu"`，2026-11-11 核） |
 | TPU | flax / optax / orbax-checkpoint | 0.12.9 / 0.2.8 / 0.12.4 | `meta.json` 的 `versions` |
@@ -51,12 +52,12 @@
 | GPU | torch / CUDA / NCCL | 2.14.0a0+b2c75dd062.nv26.09 / 13.4 / 2.31.2 | `meta.json` 的 `versions` |
 | GPU | Megatron-Core / Megatron-Bridge | 0.20.0 / 0.7.0（容器自带，提交未登记） | `meta.json` 的 `versions` 与 `code` |
 | GPU | Transformer Engine | 2.20.2+44f31bbe | `meta.json` 的 `versions` |
-| GPU | cuBLAS | 13.8.0.4 | `rcc` 的 `meta.json` 不记；第一阶段在同一镜像里读到（[`phase1-l1.results.json`](../00-gpu-noise-and-drills/results/phase1-l1.results.json) 的 `environment.cublas`；第一阶段的 digest 见 [`pod.yaml`](../../frameworks/megatron/pod.yaml) 的注释） |
+| GPU | cuBLAS | 13.8.1（库文件 `libcublas.so.13.8.1.7`；同一 digest 的镜像在混元 4 的 Pod 里实测，`rcc` 运行自己没读过加载的库）；容器环境变量 `CUBLAS_VERSION` 的值是 13.8.0.4 | `rcc` 的 `meta.json` 不记 cuBLAS，但记了镜像 digest `fc75bf51…`；同一 digest 的镜像在训练 Pod 里实测，进程实际映射的库与 `cublasGetProperty` 都是 13.8.1（2026-11-11，混元 4 [`gpu-image-versions.json`](../../../hunyuan4/alignments/01-mini/results/gpu-image-versions.json)，[环境](../../../../docs/reference/environment.md)）。第一阶段记的 13.8.0.4（[`phase1-l1.results.json`](../00-gpu-noise-and-drills/results/phase1-l1.results.json) 的 `environment.cublas`）取自这个环境变量，不是实际加载的库 |
 
 - 运行目录的 `meta.json` 在 POC 桶里，不入库；结果文件 [`phase2-acceptance-rcc-on.results.json`](results/phase2-acceptance-rcc-on.results.json) 的 `runs.*.meta_sha256` 记着每份的 sha256。
 - 本页上面「两边」表是早期运行 `t-loss30` 的，版本与这里相同，MaxText 提交不同。
 - **结论在这些版本上测得。** 换 libtpu 或 jax 不能假定只换了求和顺序，要按混元 4 [`libtpu-052.md`](../../../hunyuan4/alignments/04-tpu-self/libtpu-052.md) 的做法重建 golden、重测。
-- v5p 上实测 libtpu 0.0.46、0.0.48、0.0.51、0.0.52 有 jit 静默算错的已知问题（0.0.47、0.0.49 没测）（[环境「已定的」](../../../../docs/reference/environment.md#已定的)）。存档优化后 HLO 的扫描（混元 4 [`jit-miscompile-hlo-scan.json`](../../../hunyuan4/results/jit-miscompile-hlo-scan.json)）里混元 3 有 72 份运行，全是 v5p 上的回归与标定程序，没有一份带它的特征；正式被测 `t-rmap-on-1000`、`t-v7x-on-1000` 和 EP = 8 的运行不在扫描范围内，没有扫。
+- v5p 上实测 libtpu 0.0.46、0.0.48、0.0.51、0.0.52 有 jit 静默算错的已知问题（0.0.47、0.0.49 没测）（[环境「已定的」](../../../../docs/reference/environment.md#已定的)）。存档优化后 HLO 的扫描（混元 4 [`jit-miscompile-hlo-scan.json`](../../../hunyuan4/results/jit-miscompile-hlo-scan.json)）里混元 3 有 72 份运行，全是 v5p 上的回归与标定程序，没有一份带它的特征；但其中 71 份有含 DUS 的多输出 fusion，这个 bug 的前提条件普遍存在。正式被测 `t-rmap-on-1000`、`t-v7x-on-1000`、EP = 8 的运行和 L2、L3 的第 1 步被测都不在扫描范围内，没有扫（[检查清单「已知的覆盖缺口」](../../CHECKS.md#已知的覆盖缺口)）。v7x 上同一构建的探针算对（混元 4 [案例 16](../../../hunyuan4/cases/16-jit-miscompile-sub8-row-block.md)：同一颗多输出 fusion 照样生成，0.0.46 / 0.0.52 / nightly 都对；「v7x 对」的机理是从 v5p 错、v7x 对推的），所以 v7x 正式被测的扫描优先级低于 v5p；特征只是必要条件，扫描仍要做。
 
 ## 配置文件版本
 
@@ -75,7 +76,8 @@
 | `66a03bf31d35…` | 改名后到 `6549396` | `per_device_batch_size: 2`、GA 1；不开精度开关 | `t-loss30`、`t-a`、`t-nohooks`、`t-hlo`、`t-hlo2`；`t-ga2-30`（命令行改成 1 + 2） |
 | `7704115ba7a7…` | `67208dd` | 改成 `per_device_batch_size: 1`、GA 2 | `r-l2-*`（逐层回放）、`t-fix-*-30`（精度开关走命令行）、`r-l2-noexcess`、`t-ga2-noexcess-30`；`t-vmem24-1000`（命令行改回 2 + 1，与 `t-a` 相同） |
 | `2a76c7590866…` | `3a5f03f` | 打开三个精度开关（见表下）；要 maxtext hunyuan@4d4ffac 或更新 | `t-rmap-1000`、`r-l2-*` 之后到 2026-11-05 的运行 |
-| `a238883b7f91…` | `4db01d7` | 再打开 `dense_fp32_accumulation`（见表下）；要 maxtext hunyuan@0622774 或更新 | `t-st-on-100`、`r-l2-on`、`t-rmap-on-1000` 及之后 |
+| `a238883b7f91…` | `4db01d7` | 再打开 `dense_fp32_accumulation`（见表下）；maxtext hunyuan 分支开关从 `0622774` 起有；验收钉 `0622774a`，结论只对这个提交成立；换提交先跑日常回归 T0、T1，对 LKG 逐位相同再用 | `t-st-on-100`、`r-l2-on`、`t-rmap-on-1000` 及之后 |
+| `305fa4b55099…` | `b447a72` | 只改文件头注释里的一个路径，数值配置与 `a238883b` 相同（`git diff 4db01d7a b447a72a` 只差第 2 行） | 仓库里现在这份；验收与 LKG 的运行都是 `a238883b` |
 
 - **`2a76c7590866…`**：
   - 打开 `routed_gate_bf16_rounding`（路由核先舍 BF16 再乘）、`rmsnorm_single_rounding`（RMSNorm 在 FP32 里算完只舍一次）、`mlp_activation_round_per_op`（门控激活按 GPU 的两个算子分别舍入）；

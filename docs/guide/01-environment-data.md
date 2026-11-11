@@ -147,6 +147,7 @@ bash /data/janus-src/models/hunyuan3/frameworks/megatron/prep_data.sh
   - 换了 revision，后面所有 sha256 锚点都对不上。
 - **数据脚本按 `main` 分支下载 parquet，没有钉版本**。
   - 所以先核 `fw.parquet` 的 sha256 再往下做。
+  - sha256 只能发现上游变了，不能恢复：HF 数据集当时的 revision 没记，原件的备份位置也没登记（待补：把 `prep_data.sh` 的 `resolve/main` 换成提交号，或存一份原件并写明位置）。
 - **参数数差 576 是正常的**：
   - HF 侧 1781 个张量共 12,386,080,320 个元素；
   - 多出的 576 是 3 个 MoE 层 × 192 个专家的 `expert_bias`；

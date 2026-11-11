@@ -58,4 +58,4 @@
 
 ## 软件版本
 
-本实践只有 GPU，版本同 [00 的「软件版本」](../00-gpu-noise-and-drills/setup.md#软件版本)。`rc-*` 的 `meta.json` 直接记了镜像 digest `fc75bf51…` 与 torch、CUDA 13.4、Megatron-Core 0.20.0、Megatron-Bridge 0.7.0、Transformer Engine 2.20.2+44f31bbe、NCCL 2.31.2（结果文件 [`remat-noise.results.json`](results/remat-noise.results.json) 记着它们的 `meta_sha256`）；cuBLAS 不记，按同一镜像推断实际加载的是 13.8.1（容器环境变量写 13.8.0.4，见 00 的「软件版本」）。
+本实践只有 GPU，版本同 [00 的「软件版本」](../00-gpu-noise-and-drills/setup.md#软件版本)。`rc-*` 的 `meta.json` 直接记了镜像 digest `fc75bf51…` 与 torch、CUDA 13.4、Megatron-Core 0.20.0、Megatron-Bridge 0.7.0、Transformer Engine 2.20.2+44f31bbe、NCCL 2.31.2（结果文件 [`remat-noise.results.json`](results/remat-noise.results.json) 记着它们的 `meta_sha256`）；cuBLAS 不记；同一 digest 的镜像在混元 4 的 Pod 里实测加载的是 13.8.1（`rc` 运行自己没读过加载的库；容器环境变量写 13.8.0.4，见 01 setup「软件版本」的 cuBLAS 行与 00 的「软件版本」）。

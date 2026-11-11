@@ -14,7 +14,8 @@ checks:
 
   # ---------------------------------------------------------------- R02 固定输入
   # 钉死的值：权重清单（HF 目录 tensor_sha256.json）与数据清单（golden g1k-a 的 data/batches 逐 rank 拼接）的 sha256
-  # 出自 v5p 运行 t-a 的 meta.json，与 ../README.md 第一节一致；训练配置 hy3-4layers.yml 的 sha256 是本仓库当前文件的。
+  # 出自 v5p 运行 t-a 的 meta.json，与 ../README.md 第一节一致；训练配置 hy3-4layers.yml 的 sha256 是 那一版（a238883b）的；
+  # 仓库现在这份是 305fa4b5（只改注释），照它跑这一条会 fail，见 ../README.md「状态」。
   # 改了这几样就是改档位定义：在同一个 PR 里改这里的值并写明原因（标准 R02），旧 LKG 作废、重建。
   # 档位配置（步数、命令行覆盖）对 LKG 比；档位配置文件的 sha256、本目录文件的内容指纹由 regress.py 对 lkg.yaml 核。
   - id: R02.inputs

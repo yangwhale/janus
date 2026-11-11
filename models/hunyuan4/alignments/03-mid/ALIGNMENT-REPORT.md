@@ -26,7 +26,7 @@
 ## 2. 与 mini 不同的地方
 
 - **sink 梯度**：mini 上只在单层探针里量过，mid 第 1 步整网上 4 个 sink 张量未定责；M42b（照 GPU 写法）的第 1 步还没在 mid 上跑。
-- **主 loss、param_norm 略超**：mid 只有 300 步（GPU 8 份 28 对尺子，`tm-b` base2 开），两项都略超（r 1.38、1.79）。同窗口、同一种尺子对照 mini：以现行比较 tz-off-rep 为准，它的前 300 步（`t1zo300-l4`）主 loss 全程 1.10 待定、后段 0.78 过，param_norm 0.57 过（mini 现行与 mid 这一代差三处：base2（mini 关、mid 开）、M50（只改 KD 记录值，mini 有、mid 没有）、MaxText 提交（`b87a55aa` 对 `2c28a4f4`））；真实权重截层上两项也略超。
+- **主 loss、param_norm 略超**：mid 只有 300 步（GPU 8 份 28 对尺子，`tm-b` base2 开），两项都略超（r 1.38、1.79）。同窗口、同一种尺子对照 mini：以现行比较 `tc-a`（C 口径）为准，它的前 300 步（`t1zc300-l4`）主 loss 全程 0.87、后段 0.81、param_norm 0.18 都过，只有 grad_norm 1.01 待定。C 口径之前的 `tz-off-rep`（`t1zo300-l4`）是主 loss 全程 1.10 待定、后段 0.78 过、param_norm 0.57 过。所以「mini 同窗口主 loss 也略超」只在 C 口径之前成立，现行配置上 mini 前 300 步主 loss 已过。`tc-a` 与 mid 这一代差五处：base2（mini 关、mid 开）、M50（只改 KD 记录值，mini 有、mid 没有）、C 口径的 M52 与 M58（mini 开；mid 用的 MaxText 里还没有这两个开关）、MaxText 提交（`8d3d7561` 对 `2c28a4f4`）、打进 Pod 的 janus 程序（`3ca7af66` 对 `9c0f19af`，见两边 setup）。真实权重截层上两项也略超（base2 开、C 口径之前的运行）。
 - **对齐开关的代价**：mid 上全开比全关贵 +46.8%（全开 2.8125 s/步、全关 1.9158 s/步），其中 M13 一项 +24.4%（只关 M13 2.2610 s/步），约占总代价的 60%，与 mini 的 +23.7% 一致。这三份只量步时（40 步，第 11–40 步中位数，不含 M39–M41），不做判定；运行没有登记，结果文件没有入库，数字未核。
 
 ## 3. 偏差台账
@@ -35,7 +35,7 @@
 
 | # | 差别 | 机制 | 处理 |
 |---|---|---|---|
-| <a id="d27"></a>D27 | 300 步 L4 四项略超：主 loss 全程（带符号均值：N 4.66e-6，TPU 6.41e-6，r 1.38）与后段（r 1.01）、索引器 KD（MARE：N 3.57e-4，TPU 3.99e-4，r 1.12）、param_norm（带符号均值：N 8.94e-8，TPU −1.60e-7，r 1.79） | 未查；以现行比较 tz-off-rep 为准，mini 同窗口（前 300 步，`t1zo300-l4`，同样是 8 份 28 对尺子；mini base2 关）索引器 KD 0.94、param_norm 0.57 都过，主 loss 全程 1.10 待定、后段 0.78 过；mini 现行与 mid 这一代还差 base2、M50 和 MaxText 提交三处，其中 M50 本身就改 KD 记录值，所以 KD 这一项两边口径不同，不能拿来比；mid 的 param_norm 超线推断与宽度有关；这一代运行 base2 开、早于 M50（KD 记录写法的病态见 mini [D1](../01-mini/DETAILS.md#d1)）。主 loss 对 8 份 GPU 各比一次（[`mid-l4-vs-8gpu.json`](results/mid-l4-vs-8gpu.json)）：带符号均值的 r 中位数 1.30，8 份里 7 份 > 1，是一致的 TPU 偏高，不是只对 `gm-a` 偶然超线 | 待查（[根源一览「还没查明」](../../ROOT-CAUSES.md#u-mid-l4)） |
+| <a id="d27"></a>D27 | 300 步 L4 四项略超：主 loss 全程（带符号均值：N 4.66e-6，TPU 6.41e-6，r 1.38）与后段（r 1.01）、索引器 KD（MARE：N 3.57e-4，TPU 3.99e-4，r 1.12）、param_norm（带符号均值：N 8.94e-8，TPU −1.60e-7，r 1.79） | 未查；以现行比较 `tc-a` 为准，mini 同窗口（前 300 步，`t1zc300-l4`，同样是 8 份 28 对尺子；C 口径、base2 关）主 loss 全程 0.87、后段 0.81、索引器 KD 0.94、param_norm 0.18 都过，只有 grad_norm 1.01 待定（C 口径之前的 `tz-off-rep` 同窗口主 loss 全程 1.10 待定）；mini 现行与 mid 这一代还差 base2、M50、C 口径的 M52 与 M58、MaxText 提交几处，其中 M50 本身就改 KD 记录值，所以 KD 这一项两边口径不同，不能拿来比；mid 的 param_norm 超线推断与宽度有关；这一代运行 base2 开、早于 M50（KD 记录写法的病态见 mini [D1](../01-mini/DETAILS.md#d1)）。主 loss 对 8 份 GPU 各比一次（[`mid-l4-vs-8gpu.json`](results/mid-l4-vs-8gpu.json)）：带符号均值的 r 中位数 1.30，8 份里 7 份 > 1，是一致的 TPU 偏高，不是只对 `gm-a` 偶然超线 | 待查（[根源一览「还没查明」](../../ROOT-CAUSES.md#u-mid-l4)） |
 | <a id="d28"></a>D28 | 第 1 步逐张量梯度 7 个未定责（sink 4 个 R 1.23–1.47，iHC 3 个，最大第 3 层 FFN 前 `hc_base`：GPU 2.79e-3，TPU 4.27e-2，R 15.3）；第 1 步主 loss 对 FP64 的相对差 GPU +1.42e-5，TPU `tm-b` +4.0e-6（R 0.28） | sink 同[根源一览第 21 行](../../ROOT-CAUSES.md#r21)；iHC 3 个未定责：mini 的 [D11](../01-mini/DETAILS.md#d11) 是 6 个 iHC 张量 R 1.57–5.22、已接受，接受理由没在 mid 上核，mid 最大 R 15.3，不能直接套用；主 loss 的差在 GPU 一侧（推断：宽度 6144 时 GPU 一侧 BF16 的系统偏差） | 待查（[根源一览「还没查明」](../../ROOT-CAUSES.md#u-mid-step1)） |
 
 ## 4. 覆盖缺口

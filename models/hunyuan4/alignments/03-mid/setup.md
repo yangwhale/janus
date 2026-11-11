@@ -11,11 +11,11 @@
 | 配置 | [`hy4-mid-t1.yml`](../../frameworks/maxtext/hy4-mid-t1.yml)：`hy4-mini-t1.yml` 的全部开关，只换 `model_name`；`STAGE=mid`。`tm-b` 的 `meta.json` 记 jax 0.11.1，libtpu 构建号 `cl/963683785`，即镜像自带的 0.0.46（见下面「软件版本」） | 参数同 g2 / g3，只换 HF 目录 |
 | 数据 | 回放 `gm-a` 的 batch 与 loss_mask | `tokens.npy`（与 T1 同一份） |
 
-路径都在 `gs://<POC 桶>/janus/hunyuan4/` 下。TPU 命令：`YML=hy4-mid-t1.yml STAGE=mid GOLDEN=<gm-a 运行目录> HF_DIR=<…/hf/hy4-mid-seed0> bash run.sh tm-a 300 --dump-steps none`。这条命令用现行 yml，复现不了已判的运行：复现 `tm-a` 要用 janus `fd796f6` 的 yml 与 MaxText `469dbb85`；复现 `tm-b` 要用 janus `9c0f19a` 的 yml 与 MaxText `2c28a4f4`（base2 开、没有 M50，`meta.json` 已核），运行名换成 `tm-b`。之后加的开关都会改变数值，以各运行的 `meta.json` 为准。现行 yml（关 base2、含 M50）在 mid 上还没跑过。
+路径都在 `gs://<POC 桶>/janus/hunyuan4/` 下。TPU 命令：`YML=hy4-mid-t1.yml STAGE=mid GOLDEN=<gm-a 运行目录> HF_DIR=<…/hf/hy4-mid-seed0> bash run.sh tm-a 300 --dump-steps none`。这条命令用现行 yml，复现不了已判的运行：复现 `tm-a` 要用 janus `fd796f6` 的 yml 与 MaxText `469dbb85`；复现 `tm-b` 要用 janus `9c0f19a` 的 yml 与 MaxText `2c28a4f4`（base2 开、没有 M50，`meta.json` 已核），运行名换成 `tm-b`。之后加的开关都会改变数值，以各运行的 `meta.json` 为准。现行 yml（关 base2、含 M50、C 口径的 M52 与 M58）在 mid 上还没跑过；照上面的命令用现行 yml 跑出来的就是 C 口径。
 
 ## 软件版本
 
-以现行比较为准：TPU `tm-b` 对 GPU `gm-a`，噪声是同设置 8 份。其余各行同 [T1 的「软件版本」](../01-mini/setup.md#软件版本)。
+以最近一代判定运行为准（`tm-b`，base2 开、早于 M50；现行对齐配置在 mid 上没有运行）：TPU `tm-b` 对 GPU `gm-a`，噪声是同设置 8 份。其余各行同 [T1 的「软件版本」](../01-mini/setup.md#软件版本)。
 
 | 侧 | 组件 | 版本 | 证据出处 |
 |---|---|---|---|

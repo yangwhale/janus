@@ -12,7 +12,7 @@
 
 | 文件 | 作用 |
 |---|---|
-| [`hy4_mcore.py`](hy4_mcore.py) | 模型：config 映射、门控 MLA、DSA（逐层 full / shared、索引器 RoPE 放后段、带 sink 的稀疏注意力）、iHC、hc_head、FP32 输出头（可选 dgrad 分段）、MTP spec |
+| [`hy4_mcore.py`](hy4_mcore.py) | 模型：config 映射、门控 MLA、DSA（逐层 full / shared、索引器 RoPE 放后段、带 sink 的稀疏注意力）、iHC、hc_head、FP32 输出头（可选 dgrad 分段）、MTP spec。另有只作诊断的环境变量 `HY4_INDEXER_ROPE_FP32`（台账 G34）、`HY4_TPU_LIKE_STREAM` / `HEAD` / `BRANCH`（G37）和 `enable_ihc: false` 的结构消融（G36）：默认都不设、不开，golden 也不设；设了会改 GPU 的数值，跑 golden 前确认环境里没有它们 |
 | [`hy4_weights.py`](hy4_weights.py) | checkpoint 名 → Megatron 参数名的对照表；直接载入（TP = 1，EP 按 Megatron 切法） |
 | [`hy4_bridge.py`](hy4_bridge.py) | Megatron-Bridge v0.7.0 的桥：`Hy4ModelProvider` + `HYV4Bridge`（`model_type: hy_v4`），同一张对照表 |
 | [`equiv_hf.py`](equiv_hf.py) | 对 HF 参考实现的等价性检查：FP32、截层、真实权重，比逐层输出、DSA 选中位置、logits、MTP、loss 与逐参数梯度 |

@@ -43,6 +43,8 @@ runs:
   root: gs://<POC 桶>/janus                 # 运行目录的根
 ```
 
+- 被测不要出现在 `runs.noise` 里：被测对基线的判定量会恰好等于噪声里同一对的值，r 恒 ≤ 1，等于自己给自己当尺子（[尺子 1.6](../guide/ruler.md#16-r-与判法)：被测不进自己的尺子）。janus 现在不校验这一条，写目录时自己查。
+
 ## 检查项字段
 
 | 字段 | 类型 | 必填 | 说明 |
@@ -86,11 +88,11 @@ runs:
 | 键 | 说明 |
 |---|---|
 | `kind` | `tensor` / `metrics` / `tokens` / `checkpoint` / `config` / `artifact` |
-| `step` / `steps` | 单步或范围 `"0:10"`（左闭右开，本侧步号；跨侧按 `meta.json` 的换算对齐） |
+| `step` / `steps` | 单步或范围 `"1:11"`（左闭右开，本侧步号）。只有序列类检查按 `meta.steps.convention` 换算到 golden 步号；张量类与 `data_fingerprint` 两边用同一个步号，不换算（`data_fingerprint` 只有首步 loss 换算）。janus 现在没有给参照一侧单写步号的字段，两侧约定不是恒等的运行（例如一侧从 0 起，或 GPU 带 `skip_steps`）不能直接做张量类 / 数据指纹检查，先用同一约定重跑；要不要加参照侧步号字段待定 |
 | `name` | 规范名或通配，如 `"grad.*"`、`"layers.*.mlp.router.topk_idx"` |
 | `field` | metrics 的字段名，如 `lm_loss` |
 | `test_field` | 序列检查里被测改读的字段（golden 与噪声对仍读 `field`），见注 1 |
-| `window` | 序列检查的窗口 `"1:1000"` |
+| `window` | 序列检查的窗口，左闭右开：`"1:1001"` 是第 1–1000 步 |
 | `exclude` | 张量名通配（一个，或张量类 select 里给通配列表），从 `name` 选中的里面再剔掉一批（如专家分发缓冲区 `"*.experts.out"`） |
 | `ref_rename` | `{from, to}`：参照张量名 = 被测张量名把 `from` 换成 `to`，见注 2 |
 
@@ -119,7 +121,7 @@ runs:
 | `overlap_replay` | `{kind: metrics[, fields]}` | 被测 = 续训运行，golden = 连续运行 |
 | `optimizer_step` | `{kind: tensor, step, name}`（参数名通配） | `replay_from: test / golden`、`weight_decay`（没记 `wd` 的旧运行用） |
 | `config_diff` | `{kind: config}` | `mapping: [{test, ref, must_equal[, ignore]}]` 或 `[{test, equals}]`，见注 2 |
-| `data_fingerprint` | `{kind: tokens, steps}` | `first_loss`（默认比首步 loss） |
+| `data_fingerprint` | `{kind: tokens, steps}` | `first_loss`（默认比首步 loss，逐位；跨平台比较设 `false`） |
 | `checkpoint_equal` | `{kind: checkpoint, which: init / final[, source, test_run, ref_run]}` | 默认比参数清单，见注 3 |
 | `replica_consistency` | `{kind: checkpoint, which, name, exclude}` | 被测运行里每个参数在各 rank 上的 sha256；按专家并行切开的参数要 exclude（同名不同专家，不是副本） |
 | `artifact_check` | `{kind: artifact, file}` | `rules: [{name, regex, min, max, match_ref}]`、`fingerprint`；`compare: lkg` 时读 LKG 的同名文件当参照 |
@@ -199,9 +201,9 @@ runs:
 ```yaml
 schema_version: 1
 model: hunyuan3-4l
-stage: phase1-gpu-self
+stage: phase2-tpu
 runs:
-  test: g1k-b
+  test: t-a
   golden: [g1k-a]
   noise:
     - [g1k-a, g1k-b]
@@ -212,18 +214,19 @@ checks:
   - id: L0.tokens
     type: data_fingerprint
     level: L0
-    select: {kind: tokens, steps: "0:10"}
+    select: {kind: tokens, steps: "1:11"}   # 混元 3 的步号从 1 起
+    params: {first_loss: false}             # 首步 loss 跨平台不逐位，交给 L3 / L4 比
     threshold: exact
   - id: L3.grad.per_tensor
     type: tensor_tolerance
     level: L3
-    select: {kind: tensor, step: 0, name: "grad.*"}
+    select: {kind: tensor, step: 1, name: "grad.*"}
     metrics: [rel_l2, cosine, max_abs]
     threshold: calibrated
   - id: L4.loss
     type: multi_golden
     level: L4
-    select: {kind: metrics, field: lm_loss, window: "1:1000"}
+    select: {kind: metrics, field: lm_loss, window: "1:1001"}   # 左闭右开：第 1–1000 步
     threshold: calibrated
     params: {denominator: golden}
 ```

@@ -39,7 +39,7 @@ GPU ↔ TPU 对齐的现行运行（混元 3 的正式验收，混元 4 各尺�
 |---|---|---|---|
 | TPU | 镜像 | MaxText 官方 `tpu_pre_training` 0.2.5，digest `b152355a…` | 钉在两个模型的 `frameworks/maxtext/run.sh` |
 | TPU | jax / jaxlib | 0.11.1 / 0.11.1 | `meta.json` 的 `versions` |
-| TPU | libtpu | 0.0.46，构建 `cl/963683785`（2026-08-12） | 记录：混元 4 mini 现行 `tz-off-rep`、06 rw3 的 `meta.json` 在 `versions.libtpu_pip` 记了 0.0.46；混元 3 01 / 02、混元 4 02 real-weight、03 mid 与更早的运行只记了构建号，按构建号认作 0.0.46。构建号到 pip 版本的对应已核：同一构建号的探针运行在 v5p、v7x 上都读到 `libtpu_pip` 0.0.46（[`jit-miscompile-probe-v5p.json`](../../models/hunyuan4/results/jit-miscompile-probe-v5p.json)、[`jit-miscompile-probe-v7x.json`](../../models/hunyuan4/results/jit-miscompile-probe-v7x.json)） |
+| TPU | libtpu | 0.0.46，构建 `cl/963683785`（2026-08-12） | 记录：混元 4 mini 现行比较 `tc-a`、C 口径之前的 `tz-off-rep`、06 rw3 的 `meta.json` 在 `versions.libtpu_pip` 记了 0.0.46；混元 3 01 / 02、混元 4 02 real-weight、03 mid 与更早的运行只记了构建号，按构建号认作 0.0.46。构建号到 pip 版本的对应已核：同一构建号的探针运行在 v5p、v7x 上都读到 `libtpu_pip` 0.0.46（[`jit-miscompile-probe-v5p.json`](../../models/hunyuan4/results/jit-miscompile-probe-v5p.json)、[`jit-miscompile-probe-v7x.json`](../../models/hunyuan4/results/jit-miscompile-probe-v7x.json)） |
 | TPU | flax / optax / orbax-checkpoint | 0.12.9 / 0.2.8 / 0.12.4 | `meta.json` 的 `versions` |
 | TPU | tokamax | 0.0.14（镜像自带的包） | `meta.json` 不记；读镜像层里的 `tokamax-0.0.14.dist-info` 核过（2026-11-11） |
 | TPU | MaxText | 混元 3：`hunyuan` 分支 `0622774a`；混元 4：集成分支，各尺寸的提交不同 | 各实践 `setup.md` |
@@ -51,7 +51,7 @@ GPU ↔ TPU 对齐的现行运行（混元 3 的正式验收，混元 4 各尺�
 | GPU | cuDNN | 9.26.0 | 实测：同上（`torch.backends.cudnn.version()` 92600，`libcudnn.so.9.26.0`）；CUDA 运行时 13.4（`libcudart.so.13.4.49`），NCCL 2.31.2（`libnccl.so.2.31.2`，与 `meta.json` 相同） |
 
 - **libtpu 以构建号和 `libtpu_pip` 为准，不以镜像 digest 为准。** 混元 4 TPU 自比的 0.0.45、0.0.47、0.0.48、0.0.52 臂都是在同一个 digest 上 `pip install --no-deps` 换装的（[自比设置「变种」](../../models/hunyuan4/alignments/04-tpu-self/setup.md#变种)），只看 digest 会把它们判成同一版本。
-- **结论只对这一套版本成立。** 换 libtpu 或 jax，按 [`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md) 的做法先离线编译看哪些程序变了，再重建 golden、重测。混元 4 的 TPU 自比另在 0.0.45、0.0.47、0.0.48、0.0.52 上测过，GPU ↔ TPU 对齐没有。
+- **结论只对这一套版本成立。** 换 libtpu 或 jax，按 [`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md) 的做法先离线编译看哪些程序变了，再重建 golden、重测。混元 4 的 TPU 自比另在 0.0.45、0.0.47、0.0.48、0.0.52 上测过；GPU ↔ TPU 正式比较只在 0.0.46，0.0.52 上只有 D30 诊断用的单份运行（`l52-ctl` / `l52-ihc` 对 GPU 16 份，[`mini-ihc-ablation.json`](../../models/hunyuan4/alignments/01-mini/results/mini-ihc-ablation.json)；TPU 自比 golden `ts-g52-a` 对 GPU 16 份，[`mini-loss-isolation.json`](../../models/hunyuan4/alignments/01-mini/results/mini-loss-isolation.json)），不算正式对齐。
 
 ## GPU 侧
 
@@ -130,7 +130,7 @@ GPU ↔ TPU 对齐的现行运行（混元 3 的正式验收，混元 4 各尺�
      - 训练里输入是 FP32 的 GEMM 只有路由反向的两个，其余都是 BF16 输入。
      - 出处：第 1 步 GEMM 清单，`TF32.gemm_inventory`；清单覆盖 TE 与 torch 的 GEMM，不含 cuDNN 注意力等自带 kernel。
      - 关掉 TF32 后：第 1 步前向逐位不变，反向从路由的 dx 起不同；
-     - 参数梯度最大差到默认设置噪声上限的 4.95 倍，30 步 loss 在噪声内（`models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-tf32.results.json`）。
+     - 参数梯度 cosine 偏离（1 − cos）6.4e-7，是默认设置噪声上限的 4.95 倍；rel_L2 是上限的 1.71 倍，30 步 loss 在噪声内（`models/hunyuan3/alignments/00-gpu-noise-and-drills/results/phase1-tf32.results.json`）。
    - 要求：对齐运行用 `models/hunyuan3/frameworks/megatron/run_check.sh` 的 `TF32=off`。
      - 它做的事：去掉 `TORCH_ALLOW_TF32_CUBLAS_OVERRIDE`、设 `NVIDIA_TF32_OVERRIDE=0`、训练脚本 `--no-tf32` 再关 torch 开关。
      - 给了 `--janus-run` 时，训练脚本把开关读回值和一次实测（FP32 GEMM 对 FP64 的 rel_L2，torch 与 TE 各一个）写进 `meta.json` 的 `tf32`。
@@ -155,9 +155,10 @@ GPU ↔ TPU 对齐的现行运行（混元 3 的正式验收，混元 4 各尺�
 - 配置逐项对 GPU：`models/hunyuan3/frameworks/maxtext/hy3-4layers.yml`（每行注明 GPU 一侧的值与出处）。
 - 对齐阶段不加性能类 libtpu 参数（`LIBTPU_INIT_ARGS` 默认空）。
 - libtpu 0.0.50 / 0.0.50.1 有已知的 scatter 正确性问题（会丢有效更新），0.0.51 已修；对齐实验不要用这两个版本。
-- v5p 上实测 libtpu 0.0.46、0.0.48、0.0.51、0.0.52 都有一个 jit 静默算错的编译器 bug（0.0.47、0.0.49 没测）：含 DUS 的 kernel 和读同一缓冲的 kernel 被合进一颗多输出 fusion 时，后者的输出可能算丢。nightly 0.0.53.dev20261106 起已修，正式版截至 2026-11-11 没有。存档的 292 份训练步程序扫出 0 处，覆盖混元 3 截 4 层与混元 4 mini 存了 HLO 的运行；mini 现行比较 `tz-off-rep` 与推荐组合 `x5-prod` 没存 HLO，在 CPU 上按 `meta.json` 重编后扫，也是 0 处（离线程序与上卡程序是同一份是推断）。混元 3 正式被测不在内，生产尺寸没扫（[案例 16](../../models/hunyuan4/cases/16-jit-miscompile-sub8-row-block.md)）。换版本、改切分后用 `models/hunyuan4/analysis/hlo_mof_dus_scan.py` 扫一遍训练步程序；修法见[差异清单 F8](tpu-vs-gpu-differences.md#f8-jit-静默算错dus-和读同一缓冲的算子被合进一颗多输出-fusion)。
+- v5p 上实测 libtpu 0.0.46、0.0.48、0.0.51、0.0.52 都有一个 jit 静默算错的编译器 bug（0.0.47、0.0.49 没测）：含 DUS 的 kernel 和读同一缓冲的 kernel 被合进一颗多输出 fusion 时，后者的输出可能算丢。nightly 0.0.53.dev20261106 起已修，正式版截至 2026-11-11 没有。存档的 292 份训练步程序扫出 0 处，覆盖混元 3 截 4 层与混元 4 mini 存了 HLO 的运行；mini 现行比较 `tc-a`（C 口径，MaxText `8d3d7561`，多了 M52、M58 的代码路径，程序和 `tz-off-rep` 不同）与C 口径另 4 份 `tc-b … tc-e`（只改执行方式的 3 份加 full 重算的 `tc-e`；后补的 `tc-f` 没扫）、C 口径之前的现行比较 `tz-off-rep`、推荐组合 `x5-prod` 都没存 HLO，在 CPU 上按 `meta.json` 重编后扫，也都是 0 处（离线程序与上卡程序是同一份是推断，依据：存了 HLO 的 `ts-g-a` 按同一办法在 CPU 重编，规范化后与 TPU 上存下的逐行相同，见 [`jit-miscompile-offline-scan.json`](../../models/hunyuan4/results/jit-miscompile-offline-scan.json) 的 `calib`；`tc-*` 的 `8d3d7561` 没有存了 HLO 的运行可校准，依据弱一层）。没扫的：混元 4 mid、真实宽度截层（06）、生产尺寸，混元 3 正式被测（`t-rmap-on-1000`、`t-v7x-on-1000`），见[案例 16](../../models/hunyuan4/cases/16-jit-miscompile-sub8-row-block.md)。换版本、改切分后用 `models/hunyuan4/analysis/hlo_mof_dus_scan.py` 扫一遍训练步程序；修法见[差异清单 F8](tpu-vs-gpu-differences.md#f8-jit-静默算错dus-和读同一缓冲的算子被合进一颗多输出-fusion)。
 - 换 libtpu 版本不一定只换求和顺序：新版本可能改默认行为（混元 4 上 0.0.46 → 0.0.52 就改了 scatter 插排序的门槛，并让「RMSNorm 多舍一次」的影响变大）。换版本先重建 golden、把已知敏感的改动重测一遍，结论只对实测过的版本对成立（`models/hunyuan4/alignments/04-tpu-self/libtpu-052.md`）。libtpu 0.0.52 没有配套的官方 jax；在 jax 0.11.1 的镜像里只换 libtpu 能正常训练（v5p、v7x 实测）。
 - 多主机（v5p 2x2x2 两台主机）的 Pod 必须 `hostNetwork: true` + `dnsPolicy: ClusterFirstWithHostNet`，否则 `jax.distributed` 初始化卡住。
+- 多切片（几个切片之间走 DCN）只测过一次：混元 4 TPU 自比 B15，两个 v5p 8 片切片走 DCN 做数据并行 2、切片内 FSDP 8，300 步一份。曲线对单切片在噪声内，但第 1 步 `hc_head` 三个梯度离 FP64 0.51–0.57（单切片 0.02–0.07），对自比 golden 的 R 最大 21.1，靠 iHC 豁免才不算未定责，机制没核（是不是差异清单 A16 待核）。上多切片前先查第 1 步 `hc_head` 梯度；更多切片、DCN 上做 FSDP、1000 步都没测（[TPU 自比](../../models/hunyuan4/alignments/04-tpu-self/README.md)、[差异清单 A16、U29](tpu-vs-gpu-differences.md#9-还没解释清的)）。
 
 下面的原则与待定项仍然有效。已实测的开关和取值写进对齐实践的 `setup.md`，这里只留跨模型通用的。
 

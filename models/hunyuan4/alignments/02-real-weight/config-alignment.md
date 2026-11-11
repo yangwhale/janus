@@ -14,7 +14,7 @@
 | GPU 层数（`RUNS` 的第二栏）与 MTP | 7 层，带 `--mtp` | 2 层，不带 `--mtp` | 1 层，带 `--mtp`、`--qk-clip-mtp=on` |
 | GPU 第 1 步全量抓数的专家范围 | 带 `--dump-all-experts`（见 [`setup.md`](setup.md)「GPU golden 的作业规格」） | 不带（256 个专家全抓每份要上百 GB；按 janus 默认每层只留两个专家的全量张量） | 同左 |
 
-各代 TPU 运行实际打开了哪些开关（与 mini 现行比较的差别）：
+各代 TPU 运行实际打开了哪些开关（与现行对齐配置的差别：下表每一代都 base2 开，也都没有 C 口径的 M52、M58）：
 
 | 代 | 运行 | 开关 |
 |---|---|---|
@@ -24,4 +24,4 @@
 | 1000 步 | `td5-a`、`tb5-b` | 当时 T2 yml 的全部开关，含 M39–M41；MaxText `3741e818`、janus `2679a837`；base2 开，没有 M42b、M50（`meta.json` 已核） |
 | 1000 步加 M42b | `td5b-b`、`tb5b-a` | 再加 M42b（`splash_dsinks_gpu_order` 开，M42 关）；MaxText `2c28a4f4`、janus `9c0f19a`；base2 开，没有 M50（`meta.json` 已核） |
 
-2026-11-11 起的现行对齐配置（关 base2、含 M50）在 B、D1 上尚无运行。
+2026-11-11 起的现行对齐配置（关 base2、含 M50、C 口径的 M52 与 M58）在 B、D1 上尚无运行。

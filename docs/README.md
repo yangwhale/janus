@@ -39,4 +39,4 @@
 | [`dump-format.md`](reference/dump-format.md) | 抓数格式：运行目录、`meta.json`、逐步标量、张量文件 |
 | [`cli.md`](reference/cli.md) | `janus` 的子命令、参数、退出码 |
 
-混元 3 的材料（对齐报告、检查清单、golden 出处、配置对照、各实践结果）不在这里，在 [`models/hunyuan3/`](../models/hunyuan3/README.md)。
+混元 3 的材料（对齐报告、检查清单、golden 出处、配置对照、各实践结果）不在这里，在 [`models/hunyuan3/`](../models/hunyuan3/README.md)。混元 4（主线 hy4-mini 的现状、现行比较、判定口径、根源一览）在 [`models/hunyuan4/`](../models/hunyuan4/README.md)。

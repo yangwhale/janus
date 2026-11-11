@@ -24,14 +24,14 @@ batches:
     setting: 默认设置；g1 的设置只改 --attn-scores-fp32
     location: "gs://<POC 桶>/janus/hunyuan4/…（各运行的 meta.json）"
     results: [g2-meta-vs-g3a]
-    note: 以现行比较 tz-off-rep 为准：两两 28 对是 01 里前 300 步窗口的噪声尺子（现行 t1zo300-l4；上一代 t1zga300-l4、t1mz300-l4-qkclip；更早各代 t1zw300-l4、t1zu300-l4、t1zv300-l4、t1zr300-l4、t1zs300-l4、t1zt300-l4、t1zub300-l4、t1zuc300-l4、t1zud300-l4、t1z-l4、t1v-l4、t1t-l4）；GPU 自比（catalogs/t1-gpu-noise.yaml）还没跑
+    note: 以现行比较 tc-a 为准：两两 28 对是 01 里前 300 步窗口的噪声尺子（现行 t1zc300-l4；C 口径之前 t1zo300-l4；再上一代 t1zga300-l4、t1mz300-l4-qkclip；更早各代 t1zw300-l4、t1zu300-l4、t1zv300-l4、t1zr300-l4、t1zs300-l4、t1zt300-l4、t1zub300-l4、t1zuc300-l4、t1zud300-l4、t1z-l4、t1v-l4、t1t-l4）；GPU 自比（catalogs/t1-gpu-noise.yaml）还没跑
   - name: T1 GPU 同设置重跑（噪声参照），g3 一代（g2 的设置跑 1000 步）
     runs: [g3-a, g3-b, g3-c, g3-d, g3-e, g3-f, g3-g, g3-h]
     steps: 1000
     setting: 默认设置；g2 的设置
     location: "gs://<POC 桶>/janus/hunyuan4/…（各运行的 meta.json）"
     results: []
-    note: 以现行比较 tz-off-rep 为准：与 g3-i … g3-p 一起 16 份两两 120 对是现行 t1zo-l4 的噪声尺子；这 8 份两两 28 对是 2026-11-11 前 01 里 1000 步各次比较（上一代 t1zga-l4；更早各代 t1zw-l4、t1zu-l4、t1zv-l4、t1zr-l4、t1zs-l4、t1zt-l4、t1zub-l4、t1zuc-l4、t1zud-l4、t1zk-l4、t1w-l4、t1u-l4）的噪声尺子
+    note: 以现行比较 tc-a 为准：与 g3-i … g3-p 一起 16 份两两 120 对是现行 t1zc-l4（C 口径之前 t1zo-l4）的噪声尺子；这 8 份两两 28 对是 2026-11-11 前 01 里 1000 步各次比较（上一代 t1zga-l4；更早各代 t1zw-l4、t1zu-l4、t1zv-l4、t1zr-l4、t1zs-l4、t1zt-l4、t1zub-l4、t1zuc-l4、t1zud-l4、t1zk-l4、t1w-l4、t1u-l4）的噪声尺子
   - name: 16 份尺子重判（知识库旁注，不改原判档）
     runs: [t1zg-a, t1zw-a, t1zz-a, tz-off-nolhs, ts-c-nolhs-1k]
     steps: 1000

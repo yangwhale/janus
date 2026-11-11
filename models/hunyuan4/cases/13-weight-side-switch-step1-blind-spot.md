@@ -29,7 +29,7 @@
 | M27 weights_proj（层 0、1、5、MTP） | 9.6e-4–1.25e-3 / 8e-8 | 8e-8 / 9.6e-4–1.24e-3 | BF16 权重 × FP32 输入 |
 | M8 路由 logits（层 1–6、MTP） | 1.41e-3–2.46e-3 / 8e-8–1.2e-7 | 8e-8–1.2e-7 / 约 1e-3 | BF16 权重 |
 
-- **度量要看位**：`x != f32(bf16(x))` 在 TPU 上判不出离网（按 FP32 存的 iHC 也只判出 6.1e-5）；看低 16 位是否全 0，iHC 第 0 步就是 1；CPU 上两种判法结果相同。v5p 优化后 HLO 里那对 convert 仍在，推断往返是在 TPU 融合的代码生成里被 excess precision 省掉的。
+- **度量要看位**：`x != f32(bf16(x))` 在 TPU 上判不出离网（按 FP32 存的 iHC 也只判出 6.1e-5）；看低 16 位是否全 0，iHC 第 0 步就是 1；CPU 上两种判法结果相同。v5p 优化后 HLO 里那对 convert 仍在，推断往返是在 TPU 融合的代码生成里被 excess precision 省掉的。本案这对 convert 没在 LLO 上核；同一类省法在别处有 LLO 实证：04 自比 [MATRIX「hc_head」](../alignments/04-tpu-self/MATRIX.md#hc_head被-ihc-豁免盖住的三个张量)里，HLO 写着 convert(bf16)→convert(f32)，LLO 里这次舍入的 `vpack.i.bf16` 开着 excess precision 时 0 条、关掉后 256 条；另见[案例 15](15-libtpu-upgrade-final-norm-double-rounding.md) 机理第 1 条。
 - **模拟舍入用 reduce_precision**：FP32 → BF16 → FP32 的 astype 往返会被省掉：M42b 用它舍 dp 时 CPU 单测 dsink 对 FP64 只差 2.6e-7（按 GPU 写法应是 9.8e-4），用 `jax.lax.reduce_precision` 后 9.80e-4。省在 HLO 优化还是代码生成没有查。
 
 ## 结论

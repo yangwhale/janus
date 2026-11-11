@@ -11,7 +11,7 @@
 
 - 平台：先在 **v5p 8 片（2x2x2，2 台主机，8 个 JAX 设备）** 上调通，之后 **v7x 4 片（2x2x1，1 台主机，8 个 JAX 设备）**。
   - 两者都是 8 个设备，对上 GPU 8 卡。
-- 代码：`maxtext` 的 `hunyuan` 分支，**要 `0622774` 或更新**。
+- 代码：`maxtext` 的 `hunyuan` 分支。**验收（正式被测、日常回归的 LKG）钉在 `0622774a`，结论只对这个提交成立；用更新的提交先跑日常回归 T0、T1，对 LKG 逐位相同再用**（[日常回归](../../regression/README.md)）。复现验收时给 [`stage.sh`](stage.sh) 第二个参数显式传 `0622774a`，不传默认拉 `origin/hunyuan` 最新。
   - [`hy3-4layers.yml`](hy3-4layers.yml) 打开四个精度开关：
     - `routed_gate_bf16_rounding`（路由核先舍 BF16 再乘）、`rmsnorm_single_rounding`（RMSNorm 只舍一次）、`mlp_activation_round_per_op`（门控激活按算子各舍一次）从 `4d4ffac` 起有；
     - `dense_fp32_accumulation`（FSDP 切开收缩维的投影改用 FP32 累加）从 `0622774`起有。
@@ -120,6 +120,9 @@ PLATFORM=v5p bash run.sh t-a 1000 --dump-steps 1,1000 --full
 PLATFORM=v5p bash run.sh t-nohooks 1000 --no-hooks --dump-steps 1,1000
 # v7x
 PLATFORM=v7x NODEPOOL=<v7x 节点池> bash run.sh t-v7x-a 1000 --dump-steps 1,1000 --full
+# 复现正式被测 t-rmap-on-1000 的程序：stage.sh 第二个参数传 0622774a，yml 用 a238883b 那一版（见 ../../regression/README.md「状态」），
+# 命令行加这组重算覆盖（照 01 runs.yaml 的 overrides；抓数参数按要比的检查选）。只用 yml 默认跑出来的不是验收的那个程序
+PLATFORM=v5p bash run.sh <运行名> 1000 context=remat query_proj=remat key_proj=remat value_proj=remat out_proj=remat mlpwi_0=remat mlpwi_1=remat mlpwo=remat moe_mlpwi_0=remat moe_mlpwi_1=remat moe_mlpwo=remat moe_routing_maps=device
 ```
 
 #### 提交、取回、清理
@@ -476,7 +479,7 @@ python -m janus run models/hunyuan3/alignments/01-v5p-acceptance/catalogs/phase2
 | dropout / 随机路由 | 0 / 无 | `enable_dropout: False`、`dropout_rate=0`、`use_random_routing=false` |
 | MTP | 关（`mtp_num_layers=None`） | `mtp_num_layers=0`（必须命令行覆盖模型 yml，[`train_hy3.py`](train_hy3.py) 自动加） |
 | 批与序列 | gbs 16、mbs 1、8 卡 → 每卡 2 个 microbatch，seq 4096 | `per_device_batch_size=1`、`gradient_accumulation_steps=2`、8 个设备、`max_target_length=4096` |
-| 重算 | 见注 4 | `remat_policy=custom`，路由结果与各投影存 HBM（见注 5） |
+| 重算 | 见注 4 | 正式验收与生产：`remat_policy=custom`，命令行另加 11 项重算覆盖（`context`、`query_proj`、`key_proj`、`value_proj`、`out_proj`、`mlpwi_0`、`mlpwi_1`、`mlpwo`、`moe_mlpwi_0`、`moe_mlpwi_1`、`moe_mlpwo` 都 `=remat`）与 `moe_routing_maps=device`，除层输入与路由结果外都重算。yml 默认（各投影存 HBM、不重算）只给日常回归 T0 / T1（见注 5） |
 | 并行 | DP8 + EP8 | FSDP 8（归约顺序本来就不同，列为已知差异） |
 | 种子 | 1234 | 1234（权重载入、数据回放，种子不影响数值） |
 

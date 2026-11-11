@@ -1,5 +1,5 @@
 # 混元 4 · T1 1000 步，现行比较（2026-11-11 起，C 口径）：TPU tc-a = 对齐配置全部开关，再开 hc_head_force_bf16_rounding（M52）与
-# ihc_stream_grad_gpu_order（M58）；含 M50，sa_use_base2_exp: false；MaxText 8d3d7561。C 口径同配置 5 份（tc-a … tc-e），按事先定的规则取第一份。
+# ihc_stream_grad_gpu_order（M58）；含 M50，sa_use_base2_exp: false；MaxText 8d3d7561。C 口径同配置 6 份（tc-a … tc-f），按事先定的规则取第一份。
 # GPU g3-a 为基线，噪声 g3-a … g3-p 两两 120 对（PROTOCOL 变更记录 2026-11-11 C 口径）。上一代现行 t1zo-l4（被测 tz-off-rep，M52、M58 不开）。
 schema_version: 1
 model: hunyuan4-mini

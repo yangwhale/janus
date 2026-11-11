@@ -1,6 +1,6 @@
 {
  "tool": "models/hunyuan4/analysis/hlo_mof_dus_scan.py",
- "n_files": 292,
+ "n_files": 300,
  "n_with_71_signature": 0,
  "summary": [
   {
@@ -25,7 +25,7 @@
    "accelerator": "TPU v5",
    "has_mof_with_dus": false,
    "with_71_signature": 0,
-   "n_runs": 33
+   "n_runs": 36
   },
   {
    "model": "hunyuan4-mini",
@@ -49,7 +49,7 @@
    "accelerator": "TPU v5",
    "has_mof_with_dus": false,
    "with_71_signature": 0,
-   "n_runs": 162
+   "n_runs": 167
   },
   {
    "model": "hunyuan4-mini",
@@ -3554,6 +3554,107 @@
    "mof_with_dus": 0,
    "with_71_signature": 0,
    "mof_dus_targets": []
+  },
+  {
+   "run": "ts-g-a",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-g-b",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-pc-logits",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-pc-zm",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": null,
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts-ms2-dp2-r2",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "963683785",
+   "libtpu_pip": "libtpu==0.0.46",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-ep-base",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-ep4",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
+  },
+  {
+   "run": "ts52-ep8-r2",
+   "model": "hunyuan4-mini",
+   "libtpu_cl": "1014260217",
+   "libtpu_pip": "libtpu==0.0.52",
+   "accelerator": "TPU v5",
+   "topology": "2x2x2",
+   "mof_with_dus": 0,
+   "with_71_signature": 0,
+   "mof_dus_targets": []
   }
- ]
+ ],
+ "supplement": {
+  "runs": [
+   "ts-g-a",
+   "ts-g-b",
+   "ts-pc-logits",
+   "ts-pc-zm",
+   "ts-ms2-dp2-r2",
+   "ts52-ep-base",
+   "ts52-ep4",
+   "ts52-ep8-r2"
+  ],
+  "note": "2026-11-11 补扫：首次扫描之后入库的 V22–V24（0.0.52 专家并行）、B15（多切片 DCN），以及首次扫描漏掉的 ts-g-a、ts-g-b、ts-pc-logits、ts-pc-zm（hlo/ 下是 train_step.1.*）。读运行目录 hlo/ 下存下的 TPU 优化后 HLO，sha256 与 meta.json 的 hlo.files 一致"
+ }
 }

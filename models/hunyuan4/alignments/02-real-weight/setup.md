@@ -27,11 +27,11 @@
 | 重算 | `custom`：除层输入外全部重算，路由索引存下（同 T1） | 整层重算（`--recompute`，同 g2）；第 1 步参照不重算（同 g2s） |
 | 数据 | `replay.py` 原样回放 GPU 基线运行写下的 batch 与 loss_mask | `--save-batches`；token 文件与 T1 同一份（`tokens.npy`），样本排法 `(step−1)·16 + micro·8 + rank` |
 
-TPU 命令：`YML=hy4-t2-b.yml STAGE=B GOLDEN=<gb2-a 运行目录> HF_DIR=<…/hf/hy4-4l> bash run.sh tb2-a 300 --dump-steps none`（D1：`YML=hy4-t2-d1.yml STAGE=D1`，回放 `gd2-a`）。这条命令用的是现行 yml 与现行 MaxText，复现不了已判的运行：复现 `td2-a` 要用 janus `83e705cd` 的 yml 与 MaxText `5eaa12f3`（t1v 等价设置）；复现 `td3-a` 要用 janus `eef558af` 的 yml、MaxText `64652880`（M25 关）；复现 `td4-a` 要用 janus `fd796f6` 的 yml 与 MaxText `469dbb85`；B 的 `tb3-b`、`tb4-a` 分别同 `td3-a`、`td4-a` 的提交。1000 步：`td5-a`、`tb5-b` 用 janus `2679a837` 的 yml 与 MaxText `3741e818`；`td5b-b`、`tb5b-a` 用 janus `9c0f19a` 的 yml 与 MaxText `2c28a4f4`（四份都 base2 开、没有 M50，`meta.json` 已核）；步数写 1000，回放 `gb3-a` / `gd3-a`。之后加的开关都会改变数值，以各运行的 `meta.json` 为准。2026-11-11 起的现行 yml（关 base2、含 M50）在 B、D1 上还没跑过。
+TPU 命令：`YML=hy4-t2-b.yml STAGE=B GOLDEN=<gb2-a 运行目录> HF_DIR=<…/hf/hy4-4l> bash run.sh tb2-a 300 --dump-steps none`（D1：`YML=hy4-t2-d1.yml STAGE=D1`，回放 `gd2-a`）。这条命令用的是现行 yml 与现行 MaxText，复现不了已判的运行：复现 `td2-a` 要用 janus `83e705cd` 的 yml 与 MaxText `5eaa12f3`（t1v 等价设置）；复现 `td3-a` 要用 janus `eef558af` 的 yml、MaxText `64652880`（M25 关）；复现 `td4-a` 要用 janus `fd796f6` 的 yml 与 MaxText `469dbb85`；B 的 `tb3-b`、`tb4-a` 分别同 `td3-a`、`td4-a` 的提交。1000 步：`td5-a`、`tb5-b` 用 janus `2679a837` 的 yml 与 MaxText `3741e818`；`td5b-b`、`tb5b-a` 用 janus `9c0f19a` 的 yml 与 MaxText `2c28a4f4`（四份都 base2 开、没有 M50，`meta.json` 已核）；步数写 1000，回放 `gb3-a` / `gd3-a`。之后加的开关都会改变数值，以各运行的 `meta.json` 为准。2026-11-11 起的现行 yml（关 base2、含 M50、C 口径的 M52 与 M58）在 B、D1 上还没跑过；照上面的命令用现行 yml 跑出来的就是 C 口径，和已判运行差的不只 base2 与 M50。
 
 ## 软件版本
 
-以现行 1000 步比较为准：TPU `tb5b-a` / `td5b-b` 对 GPU `gb3-a` / `gd3-a`，噪声各是同设置 8 份。和 T1 不同的只有 TPU 一侧的提交与 libtpu 的证据；其余各行同 [T1 的「软件版本」](../01-mini/setup.md#软件版本)。
+以最近一代判定运行为准（base2 开、早于 M50；现行对齐配置在 B、D1 上没有运行）：TPU `tb5b-a` / `td5b-b` 对 GPU `gb3-a` / `gd3-a`，噪声各是同设置 8 份。和 T1 不同的只有 TPU 一侧的提交与 libtpu 的证据；其余各行同 [T1 的「软件版本」](../01-mini/setup.md#软件版本)。
 
 | 侧 | 组件 | 版本 | 证据出处 |
 |---|---|---|---|
@@ -65,7 +65,7 @@ TPU 命令：`YML=hy4-t2-b.yml STAGE=B GOLDEN=<gb2-a 运行目录> HF_DIR=<…/h
 
 ## GPU golden 的作业规格
 
-程序 [`frameworks/megatron/pod_run.sh`](../../frameworks/megatron/pod_run.sh) + [`train_hy4mg.py`](../../frameworks/megatron/train_hy4mg.py)，与 g2 / g3 同一套参数，只改层数与 MTP。代码包取本分支当前的提交；`hy4_mcore.py` 的 sha256 要等于 g2 / g3 的 `4dab75aa22e3aff58428fd85d31b11eb708232058a01d67dff53dae474c12800`（不同就先记一行台账再跑）。
+程序 [`frameworks/megatron/pod_run.sh`](../../frameworks/megatron/pod_run.sh) + [`train_hy4mg.py`](../../frameworks/megatron/train_hy4mg.py)，与 g2 / g3 同一套参数，只改层数与 MTP。复现这里的 GPU golden：代码包检出 janus `37ccee82`，这个提交里 `hy4_mcore.py` 的 sha256 就是 g2 / g3 的 `4dab75aa22e3aff58428fd85d31b11eb708232058a01d67dff53dae474c12800`（[改动台账](../../CHANGES-LEDGER.md) G37 也写 g3 那份代码是 `37ccee8`）。当前 main 的 `hy4_mcore.py` 已不是这一份：之后加了多机（`c19c5ea8`）、诊断开关 G34、结构消融 G36、诊断开关 G37。不设这几个环境变量时和 `4dab75aa` 等不等价，只有两条局部证据：G37 在 CPU 上核过 191 个梯度张量与它的前一版逐位相同；多机代码包对单机只核到在噪声内（[05](../05-gpu-scale/README.md) 的 `sn-a`）。整体没有核过，所以用当前代码跑出来的不算这一代 golden 的复现；要用当前代码就先记一行台账。
 
 Pod 环境变量（`BKT` / `PFX` 由站点配置给，同 T1）：
 

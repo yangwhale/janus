@@ -1,4 +1,4 @@
-# 混元 4 · 06 真实宽度三层 base2 开 / 关短回放（250 步）：TPU b2r-off（只改 sa_use_base2_exp=false）与 b2r-on（现行）各对 GPU rw1k-a。
+# 混元 4 · 06 真实宽度三层 base2 开 / 关短回放（250 步）：TPU b2r-off（只改 sa_use_base2_exp=false）与 b2r-on（base2 开，2026-11-11 前的对齐配置）各对 GPU rw1k-a。
 # 噪声 rw1k-a … rw1k-h 两两 28 对，同一窗口（全程第 1–250 步、后段第 101–250 步）。检查项与 rw3-l4.yaml 相同，只是窗口截到第 250 步。
 # 被测用 `janus run … --test <运行名>` 换（b2r-off / b2r-on）。
 schema_version: 1

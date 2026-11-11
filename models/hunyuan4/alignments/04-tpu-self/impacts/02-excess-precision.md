@@ -65,11 +65,12 @@ v7x 有两件事，和 v5p 不同：
 ## 坑
 
 - v7x 上第 1 步每个张量都没变远，只有范数整体小了 4e-4：逐张量定责看不出这种同向的小偏差，要另看梯度范数与按类别的平方和。
+- 全部在 golden 这一代（base2 开，M52、M58 不开）上测。现行 C 口径开的 M58 让分支输出 layer_out 走一次 `reduce_precision`、它的余切先舍 BF16（[改动台账](../../../CHANGES-LEDGER.md) M58），作用在上面定位的同一份余切 d layer_out 上；C 口径下关 excess precision 时这一段还会不会缩小，没测。
 - 只在 FSDP 8（v5p、v7x）上量过关 excess precision。纯数据并行 + 关 excess precision 没有单独测；[案例 14](../../../cases/14-ddp-fsdp-embedding.md) 里拿来对照的纯数据并行（词嵌入梯度离 FP64 1.51e-2）是默认开着的。
 
 ## 一句话
 
-关掉省舍入：v5p 上词嵌入梯度每加一次就舍一次，R 26.1（离 FP64 是 GPU 的 26 倍、golden 的 27 倍）；v7x 上词嵌入走 SparseCore 不受影响，但主干梯度整体小 4e-4，梯度范数曲线超出。主干缩小的机理在 v5p 上定位到：iHC 残差更新反向里 d layer_out 的乘积被后端逐个舍成 BF16；v7x 上现象相同，同一机制是推断。别关。
+关掉省舍入：v5p 上词嵌入梯度每加一次就舍一次，R 26.1（离 FP64 是 GPU 的 26 倍、golden 的 27 倍）；v7x 上词嵌入走 SparseCore 不受影响，但主干梯度整体小 4e-4，梯度范数曲线超出。主干缩小的机理在 v5p 上定位到：iHC 残差更新反向里 d layer_out 的乘积被后端逐个舍成 BF16；v7x 上现象相同，同一机制是推断。别关。以上全在 golden 这一代（C 口径之前）上测；C 口径开的 M58 正好给分支输出 layer_out 加了一次 `reduce_precision`（余切舍 BF16），作用在这里定位的同一份余切 d layer_out 上，这件在 C 口径上没重测。
 
 ## 出处
 

@@ -5,7 +5,7 @@ schema: 1
 alignment: 03-gpu-remat-golden
 code:
   framework: "nemo:26.10 容器自带 Megatron-Bridge 0.7.0 / Megatron-Core 0.20.0（未改源码）"
-  janus: "24649e4b（本实践 PR 的分支提交；train_hy3.py sha256 09b213f9eb14500d9989ea04c7930027fd3916aa99390b2f8176f0985cc89223）"
+  janus: "24649e4b（的分支提交，压缩合并后仓库里没有这个号；train_hy3.py sha256 09b213f9eb14500d9989ea04c7930027fd3916aa99390b2f8176f0985cc89223，仓库全部历史里 train_hy3.py 没有一版是这个 sha256；#60 的压缩合并 57a95f27 里的版本是 76bbb46903a0…，和 rc 用的那份差在哪未核）"
   image: nvcr.io/nvidia/nemo@sha256:fc75bf516de6845fd85fe627c7c18e69e7568428fe56438e31ff3b1917044b6c
 golden:
   - name: rc-a

@@ -10,10 +10,15 @@
 
 ### Added
 
-- 混元 4 mini 两项 TPU 实验：存档续跑逐位（`x4-*`，1000 步 47 个逐步量与 677 个状态张量都逐位，`t1-resume-bitwise.json`）；推荐生产组合整体跑 1000 步（`x5-prod` 3 份，`t1zp-l4`、`t1zp300-l4`、`t1zp-repeats.json`：1000 步没有不过项，但索引器 KD 三份都待定，r 1.23–1.26，现行对齐配置 `tz-off-rep` 0.77；前 300 步三份的索引器 KD 都不过，r 4.78–5.23）
+- 混元 4 mini 普查 TPU 实验二：libtpu 0.0.52 上专家并行 4、8（04 自比 V22–V24，对底 V22 都在噪声内，只换求和顺序）；推荐组合开回「索引器权重投影乘 16 位模型权重」（M27）跑 300 步一份（`x5-prod-m27`，`t1zp300m27-l4`：索引器 KD 带符号均值 −6.76e-4 → −1.98e-4，从不过变待定，`t1zp-m27-step1.json` 第 1 步逐位相同）；两个 v5p 切片走 DCN 的多切片一次（04 自比 B15，`ts-ms2-dp2-r2`：曲线在噪声内，但第 1 步 `hc_head` 三个张量离 FP64 0.51–0.57，靠 iHC 豁免单列，机制没核）。判定不变
+- 混元 4 mini C 口径补数：第 1 步全量抓数 `s1f-c` 在 C 口径上重判 L3（`t1zc-step1-train-grad-vs-fp64-n6.json`、`t1zc-step1-train-grad-file-check.json`：163 个超 N，计入未定责的张量从 C 口径之前的第 3 层注意力前 `hc_scale` 换成第 3 层 FFN 前 `hc_fn`（1.14 N，R 1.43），判档仍待定）；补第 6 份 `tc-f`（scoped VMEM 48 MiB，`t1zc-repeats-6.json`：1000 步 grad_norm r 1.04 待定）；主 loss 后段残余两组实验（`mini-factorial-tpu-6.json`、`mini-factorial-c-vs-m58-6.json`、`mini-factorial-c-vs-m58-exec-only-6.json`、`mini-loss-isolation-c.json`、`mini-gpu-tpulike-branch.json`、`mini-gpu-tpulike-branch-vs-stream.json`、`mini-step1-grad-classes-c.json`：C 口径 5 份 +6.6e-6 改为 6 份 +6.9e-6）。L3 现行读数换了张量，判档不变
+- 混元 4 案例 16 补核 C 口径：mini 现行比较 `tc-a` 与同配置 `tc-b … tc-e`（MaxText `8d3d7561`）按 `meta.json` 在 CPU 上重编训练步后扫 #71 的特征，5 份都是 0 处（并进 `jit-miscompile-offline-scan.json`；`8d3d7561` 没有存了 HLO 的运行可校准）；A16 补查：`tc-a`（C 口径 v5p）主头 dgrad 卷积 kernel 里没有 S，MTP 头 dgrad kernel 在 15 次存了 HLO 的程序里全部并进了 MTP 末层 RMSNorm 行和、LLO 里同样省舍入（H2 0 → 1024、V17 0 → 384 条），第 1 步 MTP 三个 norm 权重关 excess precision 前后之比 0.96–1.04（`hc-head-dgrad-fusion.json` 的 `mtp_head`，差异清单 A16、`04-tpu-self/impacts/03`）
+- 混元 4 mini 补两份结果：`t1zc300-repeats.json`（C 口径 `tc-a … tc-e` 前 300 步，同一目录 `t1zc300-l4.yaml` 只换被测；`tc-b … tc-e` 9 项全过，grad_norm 0.81–0.92）、`mini-step-time.json`（C 口径与对照的步时中位数）；各处现状换成 `tc-a`，C 口径上没重做的检查标「C 口径上没重判」。判定不变
+- 混元 4 案例 16 补核：mini 当时的现行比较 `tz-off-rep`（C 口径之前）与推荐组合 `x5-prod` 没存 TPU 上的 HLO，按各自 `meta.json` 在 CPU 上重编训练步后扫 #71 的特征，两者都是 0 处（`models/hunyuan4/analysis/jit_miscompile_offline_scan.py`，结果 `models/hunyuan4/results/jit-miscompile-offline-scan.json`；离线程序等于上卡程序是推断，依据是 `ts-g-a` 校准时 CPU 与 TPU 程序规范化后逐行相同）；同一 PR 补核 V17 的 hc_head 偏差
+- 混元 4 mini 两项 TPU 实验：存档续跑逐位（`x4-*`，1000 步 47 个逐步量与 677 个状态张量都逐位，`t1-resume-bitwise.json`）；推荐生产组合整体跑 1000 步（`x5-prod` 3 份，`t1zp-l4`、`t1zp300-l4`、`t1zp-repeats.json`：1000 步没有不过项，但索引器 KD 三份都待定，r 1.23–1.26，当时的对齐配置 `tz-off-rep`（C 口径之前）0.77；前 300 步三份的索引器 KD 都不过，r 4.78–5.23）
 - 混元 4 mini 生产配方臂 P1（YaRN factor 8、cosine 学习率、路由偏置零均值三项一起改；GPU 一侧新加 `--bias-zero-mean`、`--yarn-factor`，台账 G35；GPU `p1g-a`、`p1g-b`，TPU `p1t-a`，各 1000 步，`t1pr-*`）与 QK-Clip 真触发时 TPU 梯度累积 2 对 1 的实测（`t1zo-qkclip-accum-tau01`、`-tau005`）。诊断，不进签字
 - 混元 4 mini 生产配方臂补 6 份 GPU（`p1g-c … p1g-h`），用同配方 GPU 8 份两两 28 对当尺子重判 TPU：9 项全过（`t1pr-l4-gpu8`；补跑前 GPU 只有 2 份、量不出同配方尺子，借现行尺子是不过 3、待定 1）。诊断、不进签字：TPU 1 份，8 份尺子是看过借尺结果后才定的（混元 4 `PROTOCOL.md` 第 0 节「生产配方臂」）；两种尺子的对照在 `t1pr-ruler-compare.json`
-- 混元 4 mini D30 的结构消融：两边都去掉 iHC（GPU 台账 G36、`make_tiny_hf.py --no-ihc`），1000 步后段不飘；同时在旧 GPU 口径下把后段根因写成「iHC 流的 BF16 舍入点」（M58、M59），这一条随后由 #418 撤回、改成根因未定。结果 `mini-ihc-ablation.json`
+- 混元 4 mini D30 的结构消融：两边都去掉 iHC（GPU 台账 G36、`make_tiny_hf.py --no-ihc`），1000 步后段不飘；同时在旧 GPU 口径下把后段根因写成「iHC 流的 BF16 舍入点」（M58、M59），这一条随后由 #418 撤回、改成根因未定，#430 用两头各改一处的实验重新定为主因（见下面「Changed」里 #430 一条）。结果 `mini-ihc-ablation.json`
 - 混元 4 案例 16：libtpu 0.0.46–0.0.52 在 v5p 上的 jit 静默算错（多输出 fusion 合进 DUS），机理、4 种 workaround 与存档训练步程序的特征扫描（`hlo_mof_dus_scan.py`）；差异清单 F8
 - 混元 4 TPU 自比：RMSNorm 多舍一次在 libtpu 0.0.52 上变强的机理（`04-tpu-self/impacts/04`）
 - Megatron 抓数（`janus/dump/megatron.py`）新增三个默认不改行为的选项：`gather_experts`（全量抓数步把 rank 0 所在专家并行组里其他 rank 的路由专家收到 rank 0，按全局专家号命名）、`full_kinds`（全量抓数只写指定种类）、`forward_acts`（False 时抓数步不抓前向激活）。格式见 `docs/reference/dump.md`「GPU 侧的限制」；已有运行目录不受影响
@@ -95,6 +100,7 @@
 
 ### Changed
 
+- **[判定]** 混元 4 mini 对齐配置改 C 口径：四份对齐 yml 在已开的 `ihc_force_bf16_rounding`（M36）之外再开 `hc_head_force_bf16_rounding`（M52）与 `ihc_stream_grad_gpu_order`（M58），TPU 在 iHC 与 hc_head 一带照 GPU 的写法「FP32 算、BF16 存」，GPU 不改；MaxText `8d3d7561`。现行比较从 `tz-off-rep` 换成 C 口径第一份 `tc-a`（同配置 5 份 `tc-a … tc-e` 都判、都报）。现行判定：1000 步 9 项过 8、待定 1（路由偏置均值，带符号均值 r 1.31，`t1zc-l4`），主 loss 由待定（r 1.55、1.52）变过（MARE r 0.98、0.97）；前 300 步过 8、待定 1（grad_norm MARE r 1.01，`t1zc300-l4`）。`tz-off-rep` 降为上一代，结果保留、不重判。主 loss 后段的主因定到 iHC 流梯度的舍入写法（混元 4 `ROOT-CAUSES.md` 第 30 行），取代 #418 的「根因未定」；C 口径下后段还剩约 +6.6e-6，机制待查。L3 第 1 步梯度、优化器一步、路由一致率、L1、L2、QK-Clip、健康信号、同设置重跑、存档续跑、抓数不改数值、一次实际排查 的特征扫描没在 C 口径上重判，沿用上一代读数（各文档标「C 口径上没重判」；其中 L3 第 1 步随后由 #438 在 C 口径上重判，#71 扫描由 #440 补扫 `tc-a … tc-e`）。另加 GPU 一侧诊断开关 G37（`HY4_TPU_LIKE_*`，默认不改行为）、`models/hunyuan4/analysis/mini_factorial_cells.py`，结果 `t1zc-repeats.json`、`tc-l0-settings`、`tc-l0-config`、`mini-factorial-tpu.json`、`mini-factorial-c-vs-m58.json`、`mini-gpu-tpulike.json`。变更记录见混元 4 `PROTOCOL.md` 2026-11-11
 - 混元 4 mini D30 更正：主 loss 后段根因未定，范围缩到 iHC 到 hc_head 一段（#411 写的「已定位到 iHC 流的 BF16 舍入点」撤回）。判定不变
 - **[判定]** 混元 4 mini L3 第 1 步梯度的 GPU 参照从 3 份 3 对补到 6 份 15 对（`g2s-d … f`），现行判定换成 6 份（`t1zo-step1-train-grad-vs-fp64-n6`）：不过 → 待定；超 N 且 R > 1.2 计入未定责的由 5 个 iHC 张量变成第 3 层注意力前 `hc_scale` 1 个，MTP `enorm` 另列，两个都按 D11 豁免规则单列（豁免规则与沿用待复核）。3 份时的结果保留。GPU 镜像的 TE / cuBLAS / cuDNN 版本改成实测。变更记录见混元 4 `PROTOCOL.md` 2026-11-11
 - 混元 4 mini 优化器一步（L3）换成现行 `tz-off-rep` 第 1 步全量抓数重算（`t1zo-l3-optim-step1`），仍全过；判定不变
@@ -130,6 +136,8 @@
 
 ### Fixed
 
+- 混元 4 文档跟上 #438：L3 第 1 步各处换成 C 口径读数（未定责是第 3 层 FFN 前 `hc_fn`，`hc_scale` 改标 C 口径之前）；只开 M36 + M58 那一格写明 5 份里 2 份仍超尾部阈值，C 口径主 loss 过主要是前 100 步鼓包没了；`tc-f` grad_norm 1.04、`tc-b` 主 loss 1.14 待定上总览；总览加存档续跑逐位一行。判定不变
+- 混元 4 文档与结果文件对齐：主 loss 后段按 `mini-factorial-tpu-6.json` 写明 C 口径 6 份的尾部和只开 M36 的对照分不开（p 0.32，尾部消失只在只开 M36 + M58 那一格），总览头条改为从这个文件读数；L3 改 C 口径后检查清单、总览、对齐细节的说明同步；检查清单缺口表被 YAML 折行吞掉的一行恢复；前 300 步 C 口径另 4 份（不是 5 份）；C 口径之前的格子逐处标明。判定不变
 - 混元 4 TPU 自比 `tpu_self_compare.py` 的程序指纹改用跑前离线筛同一套规范化（`hlo_screen.py` 的 `canon_lines`）。已提交的 184 份结果用 `analysis/refresh_program_fingerprint.py` 从运行目录里存下的 HLO 重算 `hlo.program_fingerprint` 与 `hlo.program_equal`，其余字段不动；`program_equal` 变了的只有 C13、E11 两份（false → true）。不改判档。变更记录见混元 4 `PROTOCOL.md` 2026-11-11
 - 混元 4 TPU 自比 `tpu_self_compare.py` 数 HLO 指令时漏掉 6 元及以上的元组指令（形状里的 `/*index=5*/` 注释带等号），合并后的大 all-reduce 和多输出融合都没数进去；已修并加单测。只影响结果文件里只报的 `hlo.op_counts_diff`，不改判定；已提交的结果文件不改，文档里引用过的四处计数在 `models/hunyuan4/alignments/04-tpu-self/b1-grad-reduction.md`「六」重数更正
 - 文档逐条对账后的更正：台账 #1 / #5 与对齐报告第 2 节把「MXU 就近舍入」「12 万长求和上的截断模型」标为推断；#1 的 TPU 读数改为同步号的输出头回放（−2.4e-5 / −7.4e-5）；#5 与术语表的近似平局分差改为生产回放的 2.7e-5 – 6.3e-5；config-alignment 的路由翻转来源改为上游；扰动臂 FP64 R 分平台写（v5p 1.001 – 1.008、v7x 1.003 – 1.039）；术语表五级判法、principles 的 FP64 适用范围、judging 的基线位次。术语表新增截断、ŵ̄、Adam ε 区、两侧执行噪声的并集、`rcb` 与代号白话名表；台账加注 1（为什么是输出头）

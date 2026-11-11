@@ -59,7 +59,7 @@ janus run <目录文件> [--out <结果目录>] [--test <被测运行名>] [--lk
 | `--render-only` | 不跑检查，按 `--out` 里已有的 `results.json` 重画 `report.md`（加 `--html` 也重画 `report.html`） |
 | `--verbose` | 逐条打印检查结果与耗时 |
 
-旧写法 `python -m janus <目录文件> …`（不写 `run`）仍然认，当 `run` 处理。
+旧写法 `python -m janus <目录文件> …`（不写 `run`）仍然认，当 `run` 处理；只在第一个参数以 `.yaml` / `.yml` 结尾时才这样认。
 
 ### `janus validate`
 

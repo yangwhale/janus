@@ -54,8 +54,8 @@
 | `id`、`type`、`level`、`hard` | | 同目录文件 |
 | `status` | str | `pass` / `fail` / `inconclusive` / `error` |
 | `threshold` | obj | `{kind: exact\|numeric\|calibrated\|pending, values, source}`，见注 1 |
-| `metrics` | obj | 汇总指标：如 `{rel_l2_max: …, cosine_min: …}`；序列检查给 `{d0, signed_mean, mare, max_step, max_step_at, window, denominator}` |
-| `r1`、`r2` | float | 仅 `calibrated`：被测对噪声上限的比值 |
+| `metrics` | obj | 汇总指标：如 `{rel_l2_max: …, cosine_min: …}`；`loss_series` 给 `{d0, signed_mean, mare, max_step, max_step_at, window, denominator, …}`；`multi_golden` 的键带 `_max`（各份 golden 里取最差：`d0_max`、`signed_mean_max`、`mare_max`、`max_step_max`），另有 `goldens`、`in_band_frac`、`window`、`denominator` |
+| `r1`、`r2` | float | 仅 `calibrated`：被测对噪声上限的比值。序列类 `r1` 是 MARE 的、`r2` 是带符号均值的；张量类 `r1` 是各指标（取全部张量里最差的值）对上限之比的最大值，没有 `r2`；离散类 `r1` 是一致率的。`d0`、最大单步等其余指标不进 `r1` / `r2` 但参与判档，所以会出现两者都 ≤ 1 而状态 `fail`，要看 `threshold.noise.upper` 与 `metrics` |
 | `worst` | list | 最差的前若干项 `{name, metric, value, location}` |
 | `coverage` | obj | `{expected, compared, missing: [...]}`（适用时） |
 | `evidence` | list | 读过的文件 `{path, sha256}` |
@@ -63,7 +63,7 @@
 | `message` | str | 一句话结论；`error` 时写原因 |
 
 注 1（`threshold`）：
-- `calibrated` 时 `values` 是算出来的数，另给 `noise: {refs, upper}`；
+- `calibrated` 时只写 `{kind, noise: {refs, upper}}`（有地板时另带 `noise.floor`），不写 `values`；`upper` 是各指标的噪声上限；
 - `pending`（待标定）另给 `note`，结果最多 `inconclusive`。
 
 ### 状态的判法
@@ -97,18 +97,18 @@
 
 ```json
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "janus": {"version": "0.1.0", "commit": "…"},
-  "catalog": {"path": "models/hunyuan3/alignments/00-gpu-noise-and-drills/catalogs/phase1-gpu-self.yaml", "sha256": "…"},
-  "runs": {"hy3-4l-p1-golden-2-20261110-1": {"path": "gs://…", "meta_sha256": "…"}},
+  "catalog": {"path": "models/hunyuan3/alignments/00-gpu-noise-and-drills/catalogs/phase1-gpu-self.yaml", "hash_algo": "content-v1", "content_sha256": "…", "raw_sha256": "…"},
+  "runs": {"t-a": {"path": "gs://…", "meta_sha256": "…"}},
   "started_at": "2026-11-10T10:00:00+08:00",
   "finished_at": "2026-11-10T10:04:12+08:00",
   "summary": {"pass": 2, "fail": 0, "inconclusive": 1, "error": 0, "hard_fail": false},
   "checks": [
-    {"id": "L4.loss", "type": "multi_golden", "level": "L4", "hard": true, "status": "inconclusive",
-     "threshold": {"kind": "calibrated", "values": {"signed_mean": 4.1e-4}, "noise": {"refs": 3, "upper": {"signed_mean": 4.1e-4}}},
-     "metrics": {"d0": 0.0, "signed_mean": 6.0e-4, "mare": 1.8e-3, "max_step": 9.0e-3, "max_step_at": 812, "window": "1:1000", "denominator": "golden"},
-     "r1": 1.2, "r2": 1.46, "message": "带符号均值在噪声上限的 1–2 倍之间"}
+    {"id": "L4.loss", "type": "loss_series", "level": "L4", "hard": true, "status": "inconclusive",
+     "threshold": {"kind": "calibrated", "noise": {"refs": 3, "upper": {"signed_mean": 4.1e-4, "mare": 1.5e-3}}},
+     "metrics": {"d0": 0.0, "signed_mean": 6.0e-4, "mare": 1.8e-3, "max_step": 9.0e-3, "max_step_at": 812, "window": "1:1001", "denominator": "golden"},
+     "r1": 1.2, "r2": 1.46, "message": "介于噪声参照一到两倍之间，或参照不足"}
   ]
 }
 ```

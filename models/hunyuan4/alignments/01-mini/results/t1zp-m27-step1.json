@@ -1,0 +1,134 @@
+{
+ "what": "推荐组合 x5-prod 上 M27（indexer_weights_proj_bf16_weight）关 / 开的第 1 步诊断：各一步，GOLDEN g2s-a，--diag-step1，debug_sow_indexer=true；其余参数同 x5-prod",
+ "runs": {
+  "x5d-m27off": {
+   "indexer_weights_proj_bf16_weight": false,
+   "code": [
+    {
+     "repo": "maxtext",
+     "commit": "b87a55aad08b9f223cb4e248f2877fde9c51ac33"
+    },
+    {
+     "repo": "janus",
+     "commit": "2a1d08e7081c2d82511e7ed978736ee38e9af1fc"
+    }
+   ],
+   "diag_grads_sha256": "936a7c48d2ed685a20d260c9f1c377113cbaef815091c0497174aa9478e3771f",
+   "diag_kd_inputs_sha256": "511f92ba615ffc4d7fc161e9723425d43bb19b49ee26f0749640f3e9590d95fd",
+   "grad_R_median_all": 0.8902708984068043,
+   "grad_n_R_gt_1_2": 15,
+   "indexer_module": {
+    "n": 20,
+    "gpu_vs_ref_median": 0.005136240066074218,
+    "tpu_vs_ref_median": 0.004483751875577242,
+    "gpu_vs_tpu_median": 0.0047964581194551385,
+    "cos_median": 0.594473466234523,
+    "R_median": 0.8940748243642065,
+    "R_max": 1.5864901722106084,
+    "n_R_gt_1.2": 1
+   },
+   "weights_proj_R": {
+    "model.layers.0.self_attn.indexer.weights_proj.weight": 0.875442566940575,
+    "model.layers.1.self_attn.indexer.weights_proj.weight": 0.8748677195613345,
+    "model.layers.5.self_attn.indexer.weights_proj.weight": 0.8246516625616617,
+    "model.mtp_layers.0.self_attn.indexer.weights_proj.weight": 0.8120793401289503
+   },
+   "judge_fp64_status": "fail",
+   "judge_fp64_unattributed": [
+    "model.layers.2.hc_attn_layer.hc_pre.hc_scale",
+    "model.layers.4.hc_mlp_layer.hc_pre.hc_base",
+    "model.layers.4.hc_mlp_layer.hc_pre.hc_fn",
+    "model.layers.3.hc_mlp_layer.hc_pre.hc_base",
+    "model.layers.3.hc_mlp_layer.hc_pre.hc_fn",
+    "model.layers.4.hc_attn_layer.hc_pre.hc_base"
+   ],
+   "kd_row0_vs_fp64": {
+    "decoder/dense_layers/self_attention": {
+     "kl_row_mean_tpu": 0.00010979742960337546,
+     "kl_row_mean_fp64": 0.00010978588427349456,
+     "rel_tpu_vs_fp64": 0.00010516224337298041
+    },
+    "decoder/moe_layers/layers_0/self_attention": {
+     "kl_row_mean_tpu": 0.00010783090810040363,
+     "kl_row_mean_fp64": 0.00010782118890750537,
+     "rel_tpu_vs_fp64": 9.014177080346464e-05
+    },
+    "decoder/moe_layers_remainder/layers_0/self_attention": {
+     "kl_row_mean_tpu": 3.864156533128771e-05,
+     "kl_row_mean_fp64": 3.8621182512691194e-05,
+     "rel_tpu_vs_fp64": 0.0005277626750506137
+    },
+    "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention": {
+     "kl_row_mean_tpu": 7.99615200937076e-05,
+     "kl_row_mean_fp64": 7.993932893127115e-05,
+     "rel_tpu_vs_fp64": 0.000277600059109151
+    }
+   }
+  },
+  "x5d-m27on": {
+   "indexer_weights_proj_bf16_weight": true,
+   "code": [
+    {
+     "repo": "maxtext",
+     "commit": "b87a55aad08b9f223cb4e248f2877fde9c51ac33"
+    },
+    {
+     "repo": "janus",
+     "commit": "2a1d08e7081c2d82511e7ed978736ee38e9af1fc"
+    }
+   ],
+   "diag_grads_sha256": "936a7c48d2ed685a20d260c9f1c377113cbaef815091c0497174aa9478e3771f",
+   "diag_kd_inputs_sha256": "511f92ba615ffc4d7fc161e9723425d43bb19b49ee26f0749640f3e9590d95fd",
+   "grad_R_median_all": 0.8902708984068043,
+   "grad_n_R_gt_1_2": 15,
+   "indexer_module": {
+    "n": 20,
+    "gpu_vs_ref_median": 0.005136240066074218,
+    "tpu_vs_ref_median": 0.004483751875577242,
+    "gpu_vs_tpu_median": 0.0047964581194551385,
+    "cos_median": 0.594473466234523,
+    "R_median": 0.8940748243642065,
+    "R_max": 1.5864901722106084,
+    "n_R_gt_1.2": 1
+   },
+   "weights_proj_R": {
+    "model.layers.0.self_attn.indexer.weights_proj.weight": 0.875442566940575,
+    "model.layers.1.self_attn.indexer.weights_proj.weight": 0.8748677195613345,
+    "model.layers.5.self_attn.indexer.weights_proj.weight": 0.8246516625616617,
+    "model.mtp_layers.0.self_attn.indexer.weights_proj.weight": 0.8120793401289503
+   },
+   "judge_fp64_status": "fail",
+   "judge_fp64_unattributed": [
+    "model.layers.2.hc_attn_layer.hc_pre.hc_scale",
+    "model.layers.4.hc_mlp_layer.hc_pre.hc_base",
+    "model.layers.4.hc_mlp_layer.hc_pre.hc_fn",
+    "model.layers.3.hc_mlp_layer.hc_pre.hc_base",
+    "model.layers.3.hc_mlp_layer.hc_pre.hc_fn",
+    "model.layers.4.hc_attn_layer.hc_pre.hc_base"
+   ],
+   "kd_row0_vs_fp64": {
+    "decoder/dense_layers/self_attention": {
+     "kl_row_mean_tpu": 0.00010979742960337546,
+     "kl_row_mean_fp64": 0.00010978588427349456,
+     "rel_tpu_vs_fp64": 0.00010516224337298041
+    },
+    "decoder/moe_layers/layers_0/self_attention": {
+     "kl_row_mean_tpu": 0.00010783090810040363,
+     "kl_row_mean_fp64": 0.00010782118890750537,
+     "rel_tpu_vs_fp64": 9.014177080346464e-05
+    },
+    "decoder/moe_layers_remainder/layers_0/self_attention": {
+     "kl_row_mean_tpu": 3.864156533128771e-05,
+     "kl_row_mean_fp64": 3.8621182512691194e-05,
+     "rel_tpu_vs_fp64": 0.0005277626750506137
+    },
+    "mtp_block/mtp_layer_1/mtp_1_transformer_layer/self_attention": {
+     "kl_row_mean_tpu": 7.99615200937076e-05,
+     "kl_row_mean_fp64": 7.993932893127115e-05,
+     "rel_tpu_vs_fp64": 0.000277600059109151
+    }
+   }
+  }
+ },
+ "note": "两份的梯度文件与 KD 输入文件逐字节相同：起训时主权重在 BF16 格点上，乘 BF16 权重与乘 FP32 主权重第 1 步没有区别（案例 13）。下面的对 FP64 读数因此是两份共同的值，量不到 M27 本身。step1_vs_fp64.py（参照 mini-fp64、GPU g2s-a/b/c）与 kd_sow_vs_fp64.py 的输出取摘要；原始输出不入库"
+}

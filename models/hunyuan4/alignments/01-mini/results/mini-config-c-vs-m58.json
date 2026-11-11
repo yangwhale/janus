@@ -1,0 +1,984 @@
+{
+ "what": "对齐配置两种候选并排：C 口径（M36+M52+M58，现行，tc-a…f）与 M36+M58（不开 M52，lgd-ihc-a…e，MaxText 751fdc6d）。每份用现行比较的检查项目录判（1000 步 catalogs/t1zo-l4.yaml，前 300 步 catalogs/t1zo300-l4.yaml，--test 换被测；GPU 尺子 g3 16 份 120 对 / g2 8 份 28 对）；r 为三个判定量里对 N 最差的比值。",
+ "c_1000": {
+  "tc-a": {
+   "summary": {
+    "pass": 8,
+    "fail": 0,
+    "inconclusive": 1
+   },
+   "checks": {
+    "L4.loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9769275367934551
+    },
+    "L4.loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9660713244605484
+    },
+    "L4.mtp_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8053304029550956
+    },
+    "L4.mtp_loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8016618561793373
+    },
+    "L4.indexer_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.7549074062628159
+    },
+    "L4.grad_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.7931897560500196
+    },
+    "L4.param_norm": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.14187091491903764
+    },
+    "L4.router.bias_mean": {
+     "status": "inconclusive",
+     "worst": "signed_mean",
+     "r": 1.3100108102948262
+    },
+    "L4.router.bias_std": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8453439313967964
+    }
+   }
+  },
+  "tc-b": {
+   "summary": {
+    "pass": 5,
+    "fail": 0,
+    "inconclusive": 4
+   },
+   "checks": {
+    "L4.loss": {
+     "status": "inconclusive",
+     "worst": "mare",
+     "r": 1.1423390576352759
+    },
+    "L4.loss.tail": {
+     "status": "inconclusive",
+     "worst": "mare",
+     "r": 1.1391858579023404
+    },
+    "L4.mtp_loss": {
+     "status": "inconclusive",
+     "worst": "mare",
+     "r": 1.0642760672640836
+    },
+    "L4.mtp_loss.tail": {
+     "status": "inconclusive",
+     "worst": "mare",
+     "r": 1.0663338567559344
+    },
+    "L4.indexer_loss": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.9835803411682905
+    },
+    "L4.grad_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.965278264293925
+    },
+    "L4.param_norm": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.5981492132625882
+    },
+    "L4.router.bias_mean": {
+     "status": "pass",
+     "worst": "signed_mean",
+     "r": 0.7964834220219978
+    },
+    "L4.router.bias_std": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9258875920171188
+    }
+   }
+  },
+  "tc-c": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "checks": {
+    "L4.loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8249415282693091
+    },
+    "L4.loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8176893037349394
+    },
+    "L4.mtp_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8681950035116265
+    },
+    "L4.mtp_loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8639468320638731
+    },
+    "L4.indexer_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8210237239211986
+    },
+    "L4.grad_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.7124603076329173
+    },
+    "L4.param_norm": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.2780561910201022
+    },
+    "L4.router.bias_mean": {
+     "status": "pass",
+     "worst": "signed_mean",
+     "r": 0.6716699575381837
+    },
+    "L4.router.bias_std": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8233187050599148
+    }
+   }
+  },
+  "tc-d": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "checks": {
+    "L4.loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9284066627268666
+    },
+    "L4.loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9249161338627243
+    },
+    "L4.mtp_loss": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.8213413283147345
+    },
+    "L4.mtp_loss.tail": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.8213413283147345
+    },
+    "L4.indexer_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8541136813296163
+    },
+    "L4.grad_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8460907483140951
+    },
+    "L4.param_norm": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.7000949241433385
+    },
+    "L4.router.bias_mean": {
+     "status": "pass",
+     "worst": "signed_mean",
+     "r": 0.38968151627326253
+    },
+    "L4.router.bias_std": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.792973170662994
+    }
+   }
+  },
+  "tc-e": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "checks": {
+    "L4.loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9648281883720998
+    },
+    "L4.loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9631255979177604
+    },
+    "L4.mtp_loss": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.8542959703596789
+    },
+    "L4.mtp_loss.tail": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.8542959703596789
+    },
+    "L4.indexer_loss": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.7234230862476771
+    },
+    "L4.grad_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.752998902808998
+    },
+    "L4.param_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.24316166071800088
+    },
+    "L4.router.bias_mean": {
+     "status": "pass",
+     "worst": "signed_mean",
+     "r": 0.36209960015820203
+    },
+    "L4.router.bias_std": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8338650537812449
+    }
+   }
+  },
+  "tc-f": {
+   "summary": {
+    "pass": 8,
+    "fail": 0,
+    "inconclusive": 1
+   },
+   "checks": {
+    "L4.loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9895978294964033
+    },
+    "L4.loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9826368452128709
+    },
+    "L4.mtp_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9084155355481274
+    },
+    "L4.mtp_loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9072936586294346
+    },
+    "L4.indexer_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8041768482470977
+    },
+    "L4.grad_norm": {
+     "status": "inconclusive",
+     "worst": "max_step",
+     "r": 1.0402697463246402
+    },
+    "L4.param_norm": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.2705268848728884
+    },
+    "L4.router.bias_mean": {
+     "status": "pass",
+     "worst": "signed_mean",
+     "r": 0.6874814845430162
+    },
+    "L4.router.bias_std": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8615925133125714
+    }
+   }
+  }
+ },
+ "c_300": {
+  "tc-a": {
+   "summary": {
+    "pass": 8,
+    "fail": 0,
+    "inconclusive": 1
+   },
+   "checks": {
+    "L4.loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8718174007811728
+    },
+    "L4.loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8145492430288017
+    },
+    "L4.mtp_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.6176893912345097
+    },
+    "L4.mtp_loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.613061967696212
+    },
+    "L4.indexer_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9407455292131068
+    },
+    "L4.grad_norm": {
+     "status": "inconclusive",
+     "worst": "mare",
+     "r": 1.0085113629260924
+    },
+    "L4.param_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.17718312198720532
+    },
+    "L4.router.bias_mean": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.8800281098740458
+    },
+    "L4.router.bias_std": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.8253096794200557
+    }
+   }
+  },
+  "tc-b": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "checks": {
+    "L4.loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8595778852799385
+    },
+    "L4.loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8254054733019732
+    },
+    "L4.mtp_loss": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.8656895009808716
+    },
+    "L4.mtp_loss.tail": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.8656895009808716
+    },
+    "L4.indexer_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8825938812746211
+    },
+    "L4.grad_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9229579443518614
+    },
+    "L4.param_norm": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.4792472165381077
+    },
+    "L4.router.bias_mean": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.9600307330519016
+    },
+    "L4.router.bias_std": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8225103133211678
+    }
+   }
+  },
+  "tc-c": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "checks": {
+    "L4.loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8590645514808749
+    },
+    "L4.loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8543114178715125
+    },
+    "L4.mtp_loss": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.6026401127873334
+    },
+    "L4.mtp_loss.tail": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.6026401127873334
+    },
+    "L4.indexer_loss": {
+     "status": "pass",
+     "worst": "signed_mean",
+     "r": 0.9470006206998555
+    },
+    "L4.grad_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8863650528079317
+    },
+    "L4.param_norm": {
+     "status": "pass",
+     "worst": "signed_mean",
+     "r": 0.44607042308695166
+    },
+    "L4.router.bias_mean": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.6400202403404784
+    },
+    "L4.router.bias_std": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.683142663231166
+    }
+   }
+  },
+  "tc-d": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "checks": {
+    "L4.loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8146208114916283
+    },
+    "L4.loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8144556264350625
+    },
+    "L4.mtp_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.530350180779744
+    },
+    "L4.mtp_loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.525713700015388
+    },
+    "L4.indexer_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9638371680205966
+    },
+    "L4.grad_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.814542889854755
+    },
+    "L4.param_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.5596327224271523
+    },
+    "L4.router.bias_mean": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.2707326006790431
+    },
+    "L4.router.bias_std": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.7191727344315912
+    }
+   }
+  },
+  "tc-e": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "checks": {
+    "L4.loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8276459037504871
+    },
+    "L4.loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8227080466282616
+    },
+    "L4.mtp_loss": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.5606044284539575
+    },
+    "L4.mtp_loss.tail": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.5606044284539575
+    },
+    "L4.indexer_loss": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.8789587525787929
+    },
+    "L4.grad_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9216870297855295
+    },
+    "L4.param_norm": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.9329746675489198
+    },
+    "L4.router.bias_mean": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.8800281098740458
+    },
+    "L4.router.bias_std": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.7313004775258314
+    }
+   }
+  },
+  "tc-f": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "checks": {
+    "L4.loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8430023793256229
+    },
+    "L4.loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8115616374157331
+    },
+    "L4.mtp_loss": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.6548189723086615
+    },
+    "L4.mtp_loss.tail": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.6548189723086615
+    },
+    "L4.indexer_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8348383843346787
+    },
+    "L4.grad_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8955331470615066
+    },
+    "L4.param_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.15774745932504444
+    },
+    "L4.router.bias_mean": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.9200294959712105
+    },
+    "L4.router.bias_std": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8900538771373313
+    }
+   }
+  }
+ },
+ "m58_1000": {
+  "lgd-ihc-a": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "checks": {
+    "L4.loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9313192561296603
+    },
+    "L4.loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9076301449490229
+    },
+    "L4.mtp_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8928879100470798
+    },
+    "L4.mtp_loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8927380142672997
+    },
+    "L4.indexer_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.7916275726708109
+    },
+    "L4.grad_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8893789439699124
+    },
+    "L4.param_norm": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.12602605995208827
+    },
+    "L4.router.bias_mean": {
+     "status": "pass",
+     "worst": "signed_mean",
+     "r": 0.940792382185295
+    },
+    "L4.router.bias_std": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.818378041669717
+    }
+   }
+  },
+  "lgd-ihc-b": {
+   "summary": {
+    "pass": 8,
+    "fail": 0,
+    "inconclusive": 1
+   },
+   "checks": {
+    "L4.loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8674632627065784
+    },
+    "L4.loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8405336042960967
+    },
+    "L4.mtp_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9646793044995184
+    },
+    "L4.mtp_loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9657805279957268
+    },
+    "L4.indexer_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8432915713385117
+    },
+    "L4.grad_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9449315476196734
+    },
+    "L4.param_norm": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.7404818215887691
+    },
+    "L4.router.bias_mean": {
+     "status": "inconclusive",
+     "worst": "signed_mean",
+     "r": 1.0715833117334124
+    },
+    "L4.router.bias_std": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8768343917823275
+    }
+   }
+  },
+  "lgd-ihc-c": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "checks": {
+    "L4.loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8216157615020481
+    },
+    "L4.loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.7987622054397321
+    },
+    "L4.mtp_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.828472695727006
+    },
+    "L4.mtp_loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8278230788155982
+    },
+    "L4.indexer_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9549655312419804
+    },
+    "L4.grad_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8355337009902337
+    },
+    "L4.param_norm": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.1692151826997867
+    },
+    "L4.router.bias_mean": {
+     "status": "pass",
+     "worst": "signed_mean",
+     "r": 0.6190395925311555
+    },
+    "L4.router.bias_std": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9060998761689575
+    }
+   }
+  },
+  "lgd-ihc-d": {
+   "summary": {
+    "pass": 7,
+    "fail": 0,
+    "inconclusive": 2
+   },
+   "checks": {
+    "L4.loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8426724103861428
+    },
+    "L4.loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8044949818873951
+    },
+    "L4.mtp_loss": {
+     "status": "inconclusive",
+     "worst": "mare",
+     "r": 1.0389062318459694
+    },
+    "L4.mtp_loss.tail": {
+     "status": "inconclusive",
+     "worst": "mare",
+     "r": 1.0392247147412947
+    },
+    "L4.indexer_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.7957136607728754
+    },
+    "L4.grad_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8382388825260109
+    },
+    "L4.param_norm": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.5571851576211971
+    },
+    "L4.router.bias_mean": {
+     "status": "pass",
+     "worst": "signed_mean",
+     "r": 0.5514282730008101
+    },
+    "L4.router.bias_std": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8272624461315817
+    }
+   }
+  },
+  "lgd-ihc-e": {
+   "summary": {
+    "pass": 7,
+    "fail": 0,
+    "inconclusive": 2
+   },
+   "checks": {
+    "L4.loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8761609783934375
+    },
+    "L4.loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8599178794118798
+    },
+    "L4.mtp_loss": {
+     "status": "inconclusive",
+     "worst": "max_step",
+     "r": 1.0264576334522502
+    },
+    "L4.mtp_loss.tail": {
+     "status": "inconclusive",
+     "worst": "max_step",
+     "r": 1.0264576334522502
+    },
+    "L4.indexer_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.8484858040959729
+    },
+    "L4.grad_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.7849031798527236
+    },
+    "L4.param_norm": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.6202556027013603
+    },
+    "L4.router.bias_mean": {
+     "status": "pass",
+     "worst": "signed_mean",
+     "r": 0.2322929140103199
+    },
+    "L4.router.bias_std": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.7524602429063775
+    }
+   }
+  }
+ },
+ "m58_300": {
+  "lgd-ihc-a": {
+   "summary": {
+    "pass": 7,
+    "fail": 0,
+    "inconclusive": 2
+   },
+   "checks": {
+    "L4.loss": {
+     "status": "inconclusive",
+     "worst": "signed_mean",
+     "r": 1.1832592156002448
+    },
+    "L4.loss.tail": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.7914005466186375
+    },
+    "L4.mtp_loss": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.6533925278369039
+    },
+    "L4.mtp_loss.tail": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.6533925278369039
+    },
+    "L4.indexer_loss": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.9079325385216223
+    },
+    "L4.grad_norm": {
+     "status": "inconclusive",
+     "worst": "mare",
+     "r": 1.2970281605058478
+    },
+    "L4.param_norm": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.7104128250321796
+    },
+    "L4.router.bias_mean": {
+     "status": "pass",
+     "worst": "max_step",
+     "r": 0.6400202403404784
+    },
+    "L4.router.bias_std": {
+     "status": "pass",
+     "worst": "mare",
+     "r": 0.6694062521551158
+    }
+   }
+  }
+ },
+ "factorial": "第 551–1000 步与第 51–100 步主 loss 的单因素读数见 mini-factorial-tpu-6.json"
+}

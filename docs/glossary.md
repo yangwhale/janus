@@ -94,7 +94,7 @@ TPU 同一程序重跑逐位相同，噪声为 0，当不了尺子，所以改�
 
 ### side
 
-运行在对比里的角色，写在 `meta.json`，取值为 `golden-<n>`、`tpu`、`tpu-perturb-<n>`、`gpu-perturb-<n>`。写成别的值，训练脚本启动即报错，`janus run` 读到时报 `error`。
+运行在对比里的角色，写在 `meta.json`，取值为 `golden-<n>`、`tpu`、`tpu-perturb-<n>`、`gpu-perturb-<n>`。写成别的值，训练脚本启动即报错，`janus run` 读到时报 `error`；只按前缀判，`tpu2`、`tpu-x` 这类以 `tpu` 开头的也能过。
 
 - 详见：[`reference/dump-format.md`](reference/dump-format.md)
 
@@ -181,7 +181,7 @@ R ≈ 1 的前提是两边走同一条精度路径（BF16 乘、FP32 累加、�
 
 混元 4 的路由一致率借用这个比值（每层 TPU 的翻转率 ÷ GPU 各份的最大值），多一档：≤ 1.2 过、1.2–2 待定、> 2 不过。
 
-分母有三种用法：单算子与混元 3 用参照（GPU）离 FP64 的值；混元 4 GPU ↔ TPU 第 1 步用 GPU 三份离 FP64 的中位数；混元 4 TPU 自比用 max(参照离 FP64, GPU 三份中位数)。混元 4 另有分辨率下限：GPU 噪声为 0、且两边离 FP64 都小于一次 BF16 舍入 u = 2^-8 的张量按下限判过，不用 R（[尺子 2.3](guide/ruler.md#23-两种用法)）。
+分母有三种用法：单算子与混元 3 用参照（GPU）离 FP64 的值；混元 4 GPU ↔ TPU 第 1 步用 GPU 第 1 步参照各份离 FP64 的中位数（mini 梯度 2026-11-11 起 6 份；mini 优化器一步与真实权重仍 3 份）；混元 4 TPU 自比用 max(参照离 FP64, GPU 三份中位数)。混元 4 另有分辨率下限：GPU 噪声为 0、且两边离 FP64 都小于一次 BF16 舍入 u = 2^-8 的张量按下限判过，不用 R（[尺子 2.3](guide/ruler.md#23-两种用法)）。
 
 - 详见：[`design/0003-l1-op-replay.md`](dev/design/0003-l1-op-replay.md)
 
@@ -243,7 +243,7 @@ R ≈ 1 的前提是两边走同一条精度路径（BF16 乘、FP32 累加、�
 | L3 第一步整网 | 整网第一步的 loss、logits、全部梯度、更新后参数一样吗 | logits、逐 token loss 对 FP64 定责；梯度与状态对 GPU 第 1 步重跑的噪声 calibrated（混元 3 当时用[两侧执行噪声的并集](#union-noise)），超出时对 FP64 定责；首步 loss 单独给门槛 |
 | L4 多步 | 多步训练的 loss、grad_norm、param_norm、路由偏置是不是同一条轨迹（学习率归 L0 设置核对，检查 id 仍是 `L4.lr`） | calibrated（三个判定量各对 N 判，取最差） |
 
-**准出**：每一级的过关标准。低一级不过，不进高一级。详见 [`levels.md`](reference/levels.md) 与 [`levels.md`](reference/levels.md)。
+**准出**：每一级的过关标准。低一级不过，不进高一级。详见 [`levels.md`](reference/levels.md) 与指南[第 4 章「逐级对齐」](guide/04-level-by-level.md)。
 
 ## golden、尺子与验收（混元 3 实际用到的）
 
@@ -321,7 +321,7 @@ GPU 生产训练程序原样跑 1000 步：B200 × 8 上的 Megatron-Bridge，BF
 <a id="g1k"></a>
 ### `g1k`（第一阶段 GPU golden）
 
-第一版 GPU golden：BF16，不重算，1000 步，全量抓数（第 1 步的逐层激活与梯度）。共 3 份 `g1k-a/b/c`。L0–L3 的第 1 步比较和日常回归 T1 的「不变差」都对它比。`g1k-det` 是确定性设置的一份，只用来归因。
+第一版 GPU golden：BF16，不重算，1000 步，全量抓数（第 1 步的逐层激活与梯度）。共 3 份 `g1k-a/b/c`。L0–L3 的第 1 步比较和日常回归 T1 的「不变差」都对它比（「不变差」现在只报不判，见[混元 3 回归注 R25](../models/hunyuan3/regression/README.md)）。`g1k-det` 是确定性设置的一份，只用来归因。
 
 - 详见：[第 2 章 2.3](guide/02-gpu-golden.md#23-要造哪几组-golden怎么跑)
 

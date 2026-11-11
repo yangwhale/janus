@@ -24,7 +24,7 @@ bash models/hunyuan3/regression/run_regression.sh T0 <名>   # 20 步冒烟
 bash models/hunyuan3/regression/run_regression.sh T1 <名>   # 1000 步主力
 ```
 
-混元 3 v5p 当前配置下，T0 / T1 的 LKG `reg-t0-fa-a`、`reg-t1-fa-a` 双跑逐位，并已批准。TPU 执行噪声由基线加 7 个扰动臂共 8 份运行组成，两两 28 对；T1 loss 带符号均值上限是 4.76e-5。
+混元 3 v5p 验收时的配置（`hy3-4layers.yml` a238883b）下，T0 / T1 的 LKG `reg-t0-fa-a`、`reg-t1-fa-a` 双跑逐位，并已批准（仓库里现在的 `hy3-4layers.yml` 已不是这一版，照现行文件直接跑 R02 必 fail、噪声标定作废，见 7.4 第 2 步）。TPU 执行噪声由基线加 7 个扰动臂共 8 份运行组成，两两 28 对；T1 loss 带符号均值上限是 4.76e-5。
 
 ## 本章做完手里有什么
 
@@ -122,7 +122,7 @@ flowchart LR
 | T3 生产形状 | 80 层、生产切分与数据管线，100 步 | 待定：生产配置与切片资源未定 |
 | T4 低精度配方 | — | 未启用：混元 3 目前没有 FP8 配方 |
 
-T0 / T1 的 LKG 都是当前配置的，已确认。T0 / T1 守的是回归程序（累积 1、不重算），不是正式验收的 `t-rmap-on-1000`（累积 2 + rmap 重算）：T0 / T1 绿了，只说明回归程序没变；给验收程序单独建变体与 LKG 待定（[回归守的不是正式验收的那个程序](../../models/hunyuan3/regression/README.md#回归守的不是正式验收的那个程序)）。
+T0 / T1 的 LKG 都是验收时的配置 a238883b 下建的，已确认；仓库现行 yml 已变，跑之前先按 7.4 第 2 步处理。T0 / T1 守的是回归程序（累积 1、不重算），不是正式验收的 `t-rmap-on-1000`（累积 2 + rmap 重算）：T0 / T1 绿了，只说明回归程序没变；给验收程序单独建变体与 LKG 待定（[回归守的不是正式验收的那个程序](../../models/hunyuan3/regression/README.md#回归守的不是正式验收的那个程序)）。
 
 T1 对 [`g1k`](../glossary.md#g1k) 比「不变差」，对的是 `g1k` 的 3 份 `g1k-a/b/c`：R25 只对基线 `g1k-a` 算，`g1k-b/c` 只组噪声带。它对的是不重算的 BF16 golden，不是[两层验收](../glossary.md#two-tier)的最终 golden [`rcc`](../glossary.md#rcc)。以 [`regression/README.md`](../../models/hunyuan3/regression/README.md) 的 R25 行为准。
 
@@ -143,7 +143,20 @@ v5p 上从提交到取回，T0 一次约 10 分钟，T1 约 25 分钟（[`regres
    - 重标的命令在 [`regression/README.md`](../../models/hunyuan3/regression/README.md#五tpu-自噪声标定)「五、TPU 自噪声标定」末尾。
 2. 核对 R02 钉死的值。
    - `catalogs/regression-common.yaml` 钉了权重清单、数据清单和训练配置 `hy3-4layers.yml` 的 sha256。
-   - 仓库里现有的登记钉的是当前配置 `hy3-4layers.yml` a238883b（[`lkg.yaml`](../../models/hunyuan3/regression/lkg.yaml) 开头有说明）。
+   - 仓库里现有的登记钉的是验收时的配置 `hy3-4layers.yml` a238883b（[`lkg.yaml`](../../models/hunyuan3/regression/lkg.yaml) 开头有说明）。
+   - 注意：仓库里现在这份 `hy3-4layers.yml` 是 305fa4b5（只改了注释，数值相同），已经和登记不同。R02 比的是文件字节的 sha256，照它跑 R02 必然 fail，噪声标定也会判作废。
+   - 办法二选一（选哪种待拍板）：用 a238883b 那一版 yml 跑；或用 305fa4b5 重建 LKG、重标噪声、改钉值（[`regression/README.md`](../../models/hunyuan3/regression/README.md)「状态」）。
+   - 用 a238883b 那一版跑时，不能只在工作树里把文件换掉：`stage.sh` 只打已提交的 HEAD（`git archive`），工作树不干净直接退出。要把旧版 yml 提交到一个单独的分支，再从那份检出里 stage：
+
+     ```bash
+     git worktree add -b reg-yml-a238883b ../janus-reg origin/main
+     cd ../janus-reg
+     git show 4db01d7a:models/hunyuan3/frameworks/maxtext/hy3-4layers.yml > models/hunyuan3/frameworks/maxtext/hy3-4layers.yml
+     sha256sum models/hunyuan3/frameworks/maxtext/hy3-4layers.yml   # 应为 a238883b…
+     git commit -am "回归：yml 换回 a238883b 那一版"
+     git push -u origin reg-yml-a238883b   # 运行的 meta 记的 janus 提交要能取回
+     # 之后的 stage.sh、run_regression.sh 都在 ../janus-reg 里跑
+     ```
    - 你的配置不同就要改这几个值。
 3. 建首个 LKG，并把打印出的条目追加进 `lkg.yaml`、提交到你的分支。
    - 之后不带 `--lkg` 时默认取这一档最新的一条。
@@ -152,7 +165,7 @@ v5p 上从提交到取回，T0 一次约 10 分钟，T1 约 25 分钟（[`regres
 
 ```bash
 export BUCKET=gs://<POC 桶> CONTEXT=<TPU 集群的 kubectl 上下文> NODEPOOL=<你的 TPU 节点池>
-source <(bash models/hunyuan3/frameworks/maxtext/stage.sh <maxtext 克隆> [提交，默认 origin/hunyuan])
+source <(bash models/hunyuan3/frameworks/maxtext/stage.sh <maxtext 克隆> [提交，默认 origin/hunyuan])   # 复现现有 LKG / 噪声标定填 0622774a
 # 建首个 LKG：同一提交跑两次，第二次对第一次判，全部逐位才是候选，打印 lkg.yaml 条目
 bash models/hunyuan3/regression/run_regression.sh T0 <名> --first-lkg
 # 日常：被测对 LKG（不给 --lkg 就取 lkg.yaml 里这一档最新的一条）
@@ -222,9 +235,9 @@ TPU 同一程序重跑逐位相同，噪声为 0，当不了「执行级」改�
 
 训练配置换成四个开关都开（a238883b）以后，按下一节的规则，旧标定作废。这 7 个臂在新配置下重跑，三关全过；加上基线共 8 份运行，两两配对得到 **28 对**，绑定 a238883b。正式启用线是 15 对，即 6 份运行。
 
-第三关的 loss 一半由 `calibrate.py` 判；第 1 步参数梯度一半是 FP64 版，2026-11-06 补做。补做的是当前配置下的 6 个臂：sabwd256、sabwd1k、combo、vmem40、vmem56，外加 vmem48 + sabwd256（sabwd256 / sabwd1k 是 splash 注意力反向块取 256 / 1024，vmemN 是编译器片上内存上限取 N MiB，combo 是 vmem48 与 sabwd1k 一起开）；7 个参照臂里的 vmem64、vmem48 没有单独补。对基线 R 按能量合起来：v5p 1.001 – 1.008，v7x 1.003 – 1.039，全过；逐张量最大 R 是 v5p 1.01 – 2.91、v7x 1.01 – 1.61，最差多在一维 norm 权重这类小张量上（[`arms-step1-vs-fp64.json`](../../models/hunyuan3/regression/results/arms-step1-vs-fp64.json)）。只改执行参数，逐张量 R 就能到 2.9，可见逐张量 R 对小张量不稳；这组数是第 5 章签字清单 3a 待拍板时的参考。这几个臂对基线的第 1 步梯度差到 0.080，出现在第 3 层专家 0，原因是改片上内存上限翻了近似平局的路由。这个差远超 GPU 第 1 步噪声上限，所以这一半不拿 GPU 噪声比。
+第三关的 loss 一半由 `calibrate.py` 判；第 1 步参数梯度一半是 FP64 版，2026-11-06 补做。补做用的是迁移验收第 1 步状态读那批 2 步扰动运行（yml a238883b；`t-st1n-<臂>-gm` / `t-v7x-st1n-<臂>-gm`，验收程序、命令行覆盖未登记），不是回归参照里的 `fa-*` 臂本身，回归 T1 程序上没补；按开关对应的 6 个臂：sabwd256、sabwd1k、combo、vmem40、vmem56，外加 vmem48 + sabwd256（sabwd256 / sabwd1k 是 splash 注意力反向块取 256 / 1024，vmemN 是编译器片上内存上限取 N MiB，combo 是 vmem48 与 sabwd1k 一起开）；7 个参照臂里的 vmem64、vmem48 没有单独补。对基线 R 按能量合起来：v5p 1.001 – 1.008，v7x 1.003 – 1.039，全过；逐张量最大 R 是 v5p 1.01 – 2.91、v7x 1.01 – 1.61，最差多在一维 norm 权重这类小张量上（[`arms-step1-vs-fp64.json`](../../models/hunyuan3/regression/results/arms-step1-vs-fp64.json)）。只改执行参数，逐张量 R 就能到 2.9，可见逐张量 R 对小张量不稳；这组数是第 5 章签字清单 3a 待拍板时的参考。这几个臂对基线的第 1 步梯度差到 0.080，出现在第 3 层专家 0，原因是改片上内存上限翻了近似平局的路由。这个差远超 GPU 第 1 步噪声上限，所以这一半不拿 GPU 噪声比。
 
-当前配置下 loss 三个量的上限：
+a238883b 配置下 loss 三个量的上限：
 
 | 档 | 步数 | 带符号均值 | MARE | 最大单步 |
 |---|---|---|---|---|

@@ -43,7 +43,7 @@
 | `model` | str | 是 | 如 `hunyuan3-4l` |
 | `code` | obj | 是 | `{repo, commit}`；有多个仓库时为数组 |
 | `image` | str | 是 | 镜像 `@sha256:` digest |
-| `versions` | obj | 是 | 关键版本：jax / jaxlib / libtpu，或 torch / transformer-engine / cudnn / nccl |
+| `versions` | obj | 是 | 关键版本：jax / jaxlib / libtpu，或 torch / transformer-engine / cudnn / nccl。现状没达标：混元 4 GPU 训练（`train_hy4mg.py`）只记 torch / cuda / megatron_core / nccl；混元 3 `l1_ops.py` 记的 `cublas` 读的是容器环境变量 `CUBLAS_VERSION`，不是实际加载的库。实际版本以[环境](environment.md)里的实测为准 |
 | `hardware` | obj | 是 | `{accelerator, count, topology}` |
 | `parallelism` | obj | 是 | `{dp, fsdp, tp, ep, cp, pp}`，没有的写 1 |
 | `config` | obj | 是 | `{path, sha256}`：训练配置文件 |
@@ -57,7 +57,7 @@
 | `fault` | obj | 否 | 故障注入运行才有：埋了什么错（只用于验证检查会报警） |
 | `created_at` | str | 是 | ISO 8601，带时区 |
 
-缺项怎么处理：janus 读写运行目录时只查必填的键在不在（`janus/store.py` 的 `META_REQUIRED`），缺键就报错、打不开；不查内容。`image` 只记了 tag 没有 digest、`versions` 少了某个库（如 libtpu 的 pip 版本号）都不报错。这种运行引用时把缺的那一项写成「推断」并给出依据（例：混元 3 的 libtpu 按构建号认作 0.0.46，见[环境「两个模型实测用的版本」](environment.md#两个模型实测用的版本)）。
+缺项怎么处理：janus 读写运行目录时只查必填的键在不在（`janus/store.py` 的 `META_REQUIRED`），缺键就报错、打不开；内容只另查两项：`schema_version` 要等于 1，`side` 要以合法前缀开头（只按前缀判）；别的内容不查。`image` 只记了 tag 没有 digest、`versions` 少了某个库（如 libtpu 的 pip 版本号）都不报错。这种运行引用时把缺的那一项写成「推断」并给出依据（例：混元 3 的 libtpu 按构建号认作 0.0.46，见[环境「两个模型实测用的版本」](environment.md#两个模型实测用的版本)）。
 
 注 1（`steps.convention`）：
 - 写明本侧步号与 golden 步号的换算（如 `golden_step = step + 1`）；
@@ -70,12 +70,13 @@
 一行一步，按步号递增：
 
 ```json
-{"step": 0, "lm_loss": 2.0231120586395264, "lr": 0.0, "raw_grad_norm": 1.53125, "grad_norm": 1.0, "param_norm": 412.5}
+{"step": 0, "lm_loss": 2.0231120586395264, "lr": 0.0, "grad_norm": 1.53125, "param_norm": 412.5}
 ```
 
 - 必有 `step`。
 - 其余字段用规范名：
   - 标量：`lm_loss`、`mtp_loss`、`z_loss`、`aux_loss`、`lr`、`wd`（实际生效的权重衰减）、`raw_grad_norm`、`grad_norm`、`param_norm`、`num_zeros`、`skipped_iter`；
+  - `grad_norm` 是**裁剪之前**的全局梯度范数（Megatron 回调写的 `context.grad_norm` 就是裁剪前的；混元 3 TPU 训练脚本写 `grad_norm = raw_grad_norm`，裁剪后的另记 `grad_norm_clipped`）。`raw_grad_norm` 有的话与它同值。优化器一步的检查拿 `grad_norm` 算裁剪系数（[`optimizer_step`](checks/optimizer_step.md)），写成裁剪后的值，系数会算成约 1、重放不裁剪，结果像优化器错；
   - 逐层：`router.bias_mean.<i>` / `router.bias_std.<i>` / `router.load_cv.<i>` / `router.load_max.<i>` / `router.load_min.<i>` 等。
   - 框架原生名不同时，在 `models/<模型>/metrics_map.yaml` 里映射；
   - 混元 3 的 GPU 抓数回调直接写规范名，不需要映射文件。

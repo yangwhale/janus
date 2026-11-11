@@ -24,6 +24,6 @@ MaxText 只在 `remat_policy: custom` 下给 `moe_routing_maps` 打标记；`ful
 
 ## 结论
 
-- **修法**：台账 M26，T1 改用 `remat_policy: custom`（除层输入外全部重算，`moe_routing_maps: device` 存下路由索引），不改代码（[`hy4-mini-t1.yml`](../frameworks/maxtext/hy4-mini-t1.yml) 第 79–81 行注释；[`CHANGES-LEDGER.md`](../CHANGES-LEDGER.md)）。
+- **修法**：台账 M26，T1 改用 `remat_policy: custom`（除层输入外全部重算，`moe_routing_maps: device` 存下路由索引），不改代码（[`hy4-mini-t1.yml`](../frameworks/maxtext/hy4-mini-t1.yml)「重算」那段注释；[`CHANGES-LEDGER.md`](../CHANGES-LEDGER.md)）。
 - **定责依据**：读代码，对照的语义标准是协议第 1.2 节「整层重算、路由索引存下不重选」：`full` 下 MaxText 不读 `moe_routing_maps`。没有对 FP64 的 R；GPU 一侧是否真的不重选是推断。
 - **生产建议**：见[根源一览第 5 行](../ROOT-CAUSES.md#r5)；对齐报告 [D8](../alignments/01-mini/DETAILS.md#d8)。

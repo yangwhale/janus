@@ -1,7 +1,7 @@
 {
  "tool": "models/hunyuan4/analysis/jit_miscompile_offline_scan.py",
  "scanner": "models/hunyuan4/analysis/hlo_mof_dus_scan.py",
- "note": "CPU 上按运行的 meta.json 重编训练步（hlo_screen.compile_spec），扫 #71 特征；calib 是存了 HLO 的运行，cpu_vs_tpu_program_equal = CPU 重编的程序与 TPU 上存下的规范化后逐行相同",
+ "note": "CPU 上按运行的 meta.json 重编训练步（hlo_screen.compile_spec），扫 #71 特征；calib 是存了 HLO 的运行，cpu_vs_tpu_program_equal = CPU 重编的程序与 TPU 上存下的规范化后逐行相同；2026-11-12 追加 C 口径 tc-a … tc-e（MaxText 8d3d7561，同镜像、同 libtpu 构建 cl/963683785）。8d3d7561 没有存了 TPU 上 HLO 的运行，校准只能用 ts-g-a（b87a55aa），所以这 5 份「离线程序 = 上卡程序」比 tz-off-rep / x5-prod 少一条依据（MaxText 提交不同）",
  "calib": [
   {
    "spec_hash": "c3f164da66498b62",
@@ -204,6 +204,443 @@
    },
    "has_tpu_hlo": false,
    "program_fp_cpu": "510bd925dca4c96a2e2df0c56e864cf68da3e2614f54c15f2b876d550492bc9e",
+   "scan": {
+    "mof_with_dus": 0,
+    "with_71_signature": 0,
+    "mof_dus_targets": [],
+    "hits": []
+   }
+  },
+  {
+   "spec_hash": "606b6130d58bd779",
+   "compile_seconds": 117.8,
+   "max_rss_gib": 14.56,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "device_kind": "TPU v5",
+   "devices": 8,
+   "mesh": {
+    "diloco": 1,
+    "data": 1,
+    "stage": 1,
+    "fsdp": 8,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "error": null,
+   "run": "tc-a",
+   "spec": {
+    "maxtext": "8d3d7561c4378cb2dd4f202fbd8de05294be87e9",
+    "yml": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+    "yml_rev": "3ca7af6688d6ac0d93f0d52727a220cc330f687e",
+    "yml_sha256": "86beb9e56c490cb9d8f4bbb472538971c17f3442ca2a82a76f73a8356b42a650",
+    "stage": "mini",
+    "platform": "v5p",
+    "steps": 1000,
+    "args": [
+     "ihc_stream_grad_gpu_order=true",
+     "hc_head_force_bf16_rounding=true"
+    ],
+    "xla_flags": [],
+    "libtpu_args": [
+     "--xla_tpu_use_enhanced_launch_barrier=true"
+    ],
+    "libtpu": "0.0.46 cl/963683785",
+    "image": "us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf"
+   },
+   "delta_vs_calib": {
+    "ts-g-a": {
+     "maxtext": "8d3d7561c4378cb2dd4f202fbd8de05294be87e9",
+     "yml": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+     "yml_rev": "3ca7af6688d6ac0d93f0d52727a220cc330f687e",
+     "yml_sha256": "86beb9e56c490cb9d8f4bbb472538971c17f3442ca2a82a76f73a8356b42a650",
+     "args": [
+      "ihc_stream_grad_gpu_order=true",
+      "hc_head_force_bf16_rounding=true"
+     ]
+    }
+   },
+   "has_tpu_hlo": false,
+   "program_fp_cpu": "fa5cfd6cd72370e0aeb45095518bebae00b2028140a1fa42f2843b0b8c4e2f15",
+   "scan": {
+    "mof_with_dus": 0,
+    "with_71_signature": 0,
+    "mof_dus_targets": [],
+    "hits": []
+   },
+   "batch": "2026-11-12：C 口径 tc-a … tc-e（MaxText 8d3d7561），校准仍是 ts-g-a（MaxText b87a55aa；8d3d7561 没有存了 HLO 的运行）"
+  },
+  {
+   "spec_hash": "b644590ee3d48d70",
+   "compile_seconds": 207.8,
+   "max_rss_gib": 16.74,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "device_kind": "TPU v5",
+   "devices": 8,
+   "mesh": {
+    "diloco": 1,
+    "data": 1,
+    "stage": 1,
+    "fsdp": 8,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "error": null,
+   "run": "tc-b",
+   "spec": {
+    "maxtext": "8d3d7561c4378cb2dd4f202fbd8de05294be87e9",
+    "yml": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+    "yml_rev": "3ca7af6688d6ac0d93f0d52727a220cc330f687e",
+    "yml_sha256": "86beb9e56c490cb9d8f4bbb472538971c17f3442ca2a82a76f73a8356b42a650",
+    "stage": "mini",
+    "platform": "v5p",
+    "steps": 1000,
+    "args": [
+     "ihc_stream_grad_gpu_order=true",
+     "hc_head_force_bf16_rounding=true"
+    ],
+    "xla_flags": [],
+    "libtpu_args": [
+     "--xla_tpu_scoped_vmem_limit_kib=65536",
+     "--xla_tpu_use_enhanced_launch_barrier=true"
+    ],
+    "libtpu": "0.0.46 cl/963683785",
+    "image": "us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf"
+   },
+   "delta_vs_calib": {
+    "ts-g-a": {
+     "maxtext": "8d3d7561c4378cb2dd4f202fbd8de05294be87e9",
+     "yml": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+     "yml_rev": "3ca7af6688d6ac0d93f0d52727a220cc330f687e",
+     "yml_sha256": "86beb9e56c490cb9d8f4bbb472538971c17f3442ca2a82a76f73a8356b42a650",
+     "args": [
+      "ihc_stream_grad_gpu_order=true",
+      "hc_head_force_bf16_rounding=true"
+     ],
+     "libtpu_args": [
+      "--xla_tpu_scoped_vmem_limit_kib=65536"
+     ]
+    }
+   },
+   "has_tpu_hlo": false,
+   "program_fp_cpu": "762c964b5b820abf0de3074c2be14f96bc3691643ad48e97ad603a6f24e6cae0",
+   "scan": {
+    "mof_with_dus": 0,
+    "with_71_signature": 0,
+    "mof_dus_targets": [],
+    "hits": []
+   },
+   "batch": "2026-11-12：C 口径 tc-a … tc-e（MaxText 8d3d7561），校准仍是 ts-g-a（MaxText b87a55aa；8d3d7561 没有存了 HLO 的运行）"
+  },
+  {
+   "spec_hash": "6b18869ebb05a72e",
+   "compile_seconds": 115.9,
+   "max_rss_gib": 15.58,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "device_kind": "TPU v5",
+   "devices": 8,
+   "mesh": {
+    "diloco": 1,
+    "data": 1,
+    "stage": 1,
+    "fsdp": 8,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "error": null,
+   "run": "tc-c",
+   "spec": {
+    "maxtext": "8d3d7561c4378cb2dd4f202fbd8de05294be87e9",
+    "yml": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+    "yml_rev": "3ca7af6688d6ac0d93f0d52727a220cc330f687e",
+    "yml_sha256": "86beb9e56c490cb9d8f4bbb472538971c17f3442ca2a82a76f73a8356b42a650",
+    "stage": "mini",
+    "platform": "v5p",
+    "steps": 1000,
+    "args": [
+     "ihc_stream_grad_gpu_order=true",
+     "hc_head_force_bf16_rounding=true"
+    ],
+    "xla_flags": [],
+    "libtpu_args": [
+     "--xla_tpu_enable_latency_hiding_scheduler=false",
+     "--xla_tpu_use_enhanced_launch_barrier=true"
+    ],
+    "libtpu": "0.0.46 cl/963683785",
+    "image": "us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf"
+   },
+   "delta_vs_calib": {
+    "ts-g-a": {
+     "maxtext": "8d3d7561c4378cb2dd4f202fbd8de05294be87e9",
+     "yml": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+     "yml_rev": "3ca7af6688d6ac0d93f0d52727a220cc330f687e",
+     "yml_sha256": "86beb9e56c490cb9d8f4bbb472538971c17f3442ca2a82a76f73a8356b42a650",
+     "args": [
+      "ihc_stream_grad_gpu_order=true",
+      "hc_head_force_bf16_rounding=true"
+     ],
+     "libtpu_args": [
+      "--xla_tpu_enable_latency_hiding_scheduler=false"
+     ]
+    }
+   },
+   "has_tpu_hlo": false,
+   "program_fp_cpu": "0f9d848d3d3fb14f238bb48c67f3a41847236c43344f592109ddfce7535bc523",
+   "scan": {
+    "mof_with_dus": 0,
+    "with_71_signature": 0,
+    "mof_dus_targets": [],
+    "hits": []
+   },
+   "batch": "2026-11-12：C 口径 tc-a … tc-e（MaxText 8d3d7561），校准仍是 ts-g-a（MaxText b87a55aa；8d3d7561 没有存了 HLO 的运行）"
+  },
+  {
+   "spec_hash": "15cbea5de59567ca",
+   "compile_seconds": 171.7,
+   "max_rss_gib": 17.44,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "device_kind": "TPU v5",
+   "devices": 8,
+   "mesh": {
+    "diloco": 1,
+    "data": 1,
+    "stage": 1,
+    "fsdp": 8,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "error": null,
+   "run": "tc-d",
+   "spec": {
+    "maxtext": "8d3d7561c4378cb2dd4f202fbd8de05294be87e9",
+    "yml": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+    "yml_rev": "3ca7af6688d6ac0d93f0d52727a220cc330f687e",
+    "yml_sha256": "86beb9e56c490cb9d8f4bbb472538971c17f3442ca2a82a76f73a8356b42a650",
+    "stage": "mini",
+    "platform": "v5p",
+    "steps": 1000,
+    "args": [
+     "ihc_stream_grad_gpu_order=true",
+     "hc_head_force_bf16_rounding=true"
+    ],
+    "xla_flags": [],
+    "libtpu_args": [
+     "--xla_tpu_scoped_vmem_limit_kib=32768",
+     "--xla_tpu_use_enhanced_launch_barrier=true"
+    ],
+    "libtpu": "0.0.46 cl/963683785",
+    "image": "us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf"
+   },
+   "delta_vs_calib": {
+    "ts-g-a": {
+     "maxtext": "8d3d7561c4378cb2dd4f202fbd8de05294be87e9",
+     "yml": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+     "yml_rev": "3ca7af6688d6ac0d93f0d52727a220cc330f687e",
+     "yml_sha256": "86beb9e56c490cb9d8f4bbb472538971c17f3442ca2a82a76f73a8356b42a650",
+     "args": [
+      "ihc_stream_grad_gpu_order=true",
+      "hc_head_force_bf16_rounding=true"
+     ],
+     "libtpu_args": [
+      "--xla_tpu_scoped_vmem_limit_kib=32768"
+     ]
+    }
+   },
+   "has_tpu_hlo": false,
+   "program_fp_cpu": "2d836fe21cfaf058f049af3f616ac07914d3b89a003655df89ce22915652e110",
+   "scan": {
+    "mof_with_dus": 0,
+    "with_71_signature": 0,
+    "mof_dus_targets": [],
+    "hits": []
+   },
+   "batch": "2026-11-12：C 口径 tc-a … tc-e（MaxText 8d3d7561），校准仍是 ts-g-a（MaxText b87a55aa；8d3d7561 没有存了 HLO 的运行）"
+  },
+  {
+   "spec_hash": "935cbe2e2805dde9",
+   "compile_seconds": 119.1,
+   "max_rss_gib": 14.92,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "device_kind": "TPU v5",
+   "devices": 8,
+   "mesh": {
+    "diloco": 1,
+    "data": 1,
+    "stage": 1,
+    "fsdp": 8,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "error": null,
+   "run": "tc-e",
+   "spec": {
+    "maxtext": "8d3d7561c4378cb2dd4f202fbd8de05294be87e9",
+    "yml": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+    "yml_rev": "3ca7af6688d6ac0d93f0d52727a220cc330f687e",
+    "yml_sha256": "86beb9e56c490cb9d8f4bbb472538971c17f3442ca2a82a76f73a8356b42a650",
+    "stage": "mini",
+    "platform": "v5p",
+    "steps": 1000,
+    "args": [
+     "ihc_stream_grad_gpu_order=true",
+     "hc_head_force_bf16_rounding=true",
+     "remat_policy=full"
+    ],
+    "xla_flags": [],
+    "libtpu_args": [
+     "--xla_tpu_use_enhanced_launch_barrier=true"
+    ],
+    "libtpu": "0.0.46 cl/963683785",
+    "image": "us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf"
+   },
+   "delta_vs_calib": {
+    "ts-g-a": {
+     "maxtext": "8d3d7561c4378cb2dd4f202fbd8de05294be87e9",
+     "yml": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+     "yml_rev": "3ca7af6688d6ac0d93f0d52727a220cc330f687e",
+     "yml_sha256": "86beb9e56c490cb9d8f4bbb472538971c17f3442ca2a82a76f73a8356b42a650",
+     "args": [
+      "ihc_stream_grad_gpu_order=true",
+      "hc_head_force_bf16_rounding=true",
+      "remat_policy=full"
+     ]
+    }
+   },
+   "has_tpu_hlo": false,
+   "program_fp_cpu": "7c8a9835a4b44cd217fc819fe1c41b61eae8c1c8593481c9594a4c2131334729",
+   "scan": {
+    "mof_with_dus": 0,
+    "with_71_signature": 0,
+    "mof_dus_targets": [],
+    "hits": []
+   },
+   "batch": "2026-11-12：C 口径 tc-a … tc-e（MaxText 8d3d7561），校准仍是 ts-g-a（MaxText b87a55aa；8d3d7561 没有存了 HLO 的运行）"
+  },
+  {
+   "spec_hash": "455b1243b8ff180d",
+   "compile_seconds": 182.9,
+   "max_rss_gib": 17.42,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "device_kind": "TPU v5",
+   "devices": 8,
+   "mesh": {
+    "diloco": 1,
+    "data": 1,
+    "stage": 1,
+    "fsdp": 8,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "error": null,
+   "run": "tc-f",
+   "spec": {
+    "maxtext": "8d3d7561c4378cb2dd4f202fbd8de05294be87e9",
+    "yml": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+    "yml_rev": "41ebd6335f3370d845c96294f129489a7f4c62e3",
+    "yml_sha256": "81dc5bbd7b314abe572765190791691c0862abbb5e1929a9a6deaef8199556ad",
+    "stage": "mini",
+    "platform": "v5p",
+    "steps": 1000,
+    "args": [
+     "ihc_stream_grad_gpu_order=true",
+     "hc_head_force_bf16_rounding=true"
+    ],
+    "xla_flags": [],
+    "libtpu_args": [
+     "--xla_tpu_scoped_vmem_limit_kib=49152",
+     "--xla_tpu_use_enhanced_launch_barrier=true"
+    ],
+    "libtpu": "0.0.46 cl/963683785",
+    "image": "us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf"
+   },
+   "delta_vs_calib": {
+    "ts-g-a": {
+     "maxtext": "8d3d7561c4378cb2dd4f202fbd8de05294be87e9",
+     "yml": "models/hunyuan4/frameworks/maxtext/hy4-mini-t1.yml",
+     "yml_rev": "41ebd6335f3370d845c96294f129489a7f4c62e3",
+     "yml_sha256": "81dc5bbd7b314abe572765190791691c0862abbb5e1929a9a6deaef8199556ad",
+     "args": [
+      "ihc_stream_grad_gpu_order=true",
+      "hc_head_force_bf16_rounding=true"
+     ],
+     "libtpu_args": [
+      "--xla_tpu_scoped_vmem_limit_kib=49152"
+     ]
+    }
+   },
+   "has_tpu_hlo": false,
+   "program_fp_cpu": "7b6bfbe3c903e9dd0b8ab9152d86df7320629864e032449a3be1ffa48180f273",
    "scan": {
     "mof_with_dus": 0,
     "with_71_signature": 0,

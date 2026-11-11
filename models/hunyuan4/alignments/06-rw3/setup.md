@@ -2,7 +2,7 @@
 
 # 混元 4 · 06 · 真实宽度三层（多机 GPU ↔ TPU）· 设置
 
-只写和 T2（[`../02-real-weight/setup.md`](../02-real-weight/setup.md)）不一样的地方：层数多一层 shared 索引器层、GPU 一侧是 2 台。训练设置、两边每个开关同 T1 / T2（[`../01-mini/config-alignment.md`](../01-mini/config-alignment.md)）。
+只写和 T2（[`../02-real-weight/setup.md`](../02-real-weight/setup.md)）不一样的地方：层数多一层 shared 索引器层、GPU 一侧是 2 台。训练设置、两边每个开关同 T1 / T2（[`../01-mini/config-alignment.md`](../01-mini/config-alignment.md)），但这里已跑的 TPU 运行都是 C 口径之前的配置：没开 M52、M58（见下「配置」一行）。
 
 ## 模型与初始权重
 
@@ -23,7 +23,7 @@
 |---|---|---|
 | 硬件 | v5p 2x2x4（16 个 JAX 设备，每设备分配器上限 1.028e11 字节 ≈ 95.7 GiB，`rfx-on` / `rfx-off` 的 `meta.json` 里 `memory.bytes_limit`），spot 节点池 | B200 × 16（2 台，机间 GPUDirect RDMA） |
 | 程序 | MaxText 混元 4 集成分支 `b87a55aa`（TPU 自比 golden 的同一提交）；1000 步两臂 `rfx-on`、`rfx-off` 的 `meta.json` 记 janus `f46f6981`、jax 0.11.1、libtpu 0.0.46 | [`frameworks/megatron/`](../../frameworks/megatron/README.md)，多机见 [05](../05-gpu-scale/README.md) |
-| 配置 | [`hy4-t2-d1.yml`](../../frameworks/maxtext/hy4-t2-d1.yml)（与 mini 现行配置除 `model_name` 外逐键相同；层数与 MTP 由 `STAGE=D3` 给），命令行另加 `gradient_accumulation_steps=1 ici_fsdp_parallelism=16`。`rfx-off` 除这两项外与现行 yml 逐键相同（含 M42b、M50，base2 关）；`rfx-on` 只多 `sa_use_base2_exp: true`（两份 `meta.json` 的 `maxtext_config_full` 已核）。更早的 `trw-*`、`b2r-*` 等运行的提交以各自 `meta.json` 为准 | 附加参数见下 |
+| 配置 | [`hy4-t2-d1.yml`](../../frameworks/maxtext/hy4-t2-d1.yml)（与 mini 现行配置除 `model_name` 外逐键相同；层数与 MTP 由 `STAGE=D3` 给），命令行另加 `gradient_accumulation_steps=1 ici_fsdp_parallelism=16`。`rfx-off` 是 C 口径之前的对齐配置：除这两项外与那时的 yml 逐键相同（含 M42b、M50，base2 关），没有 C 口径的 M52、M58（2026-11-11 加进 `hy4-t2-d1.yml`；M58 要 MaxText `06244684` 起才有，`b87a55aa` 里没有）；`rfx-on` 只多 `sa_use_base2_exp: true`（两份 `meta.json` 的 `maxtext_config_full` 已核）。D3 上还没有 C 口径（现行对齐配置）的运行。更早的 `trw-*`、`b2r-*` 等运行的提交以各自 `meta.json` 为准 | 附加参数见下 |
 | 切分 | FSDP 16，每设备微批 1、不累积 | DP 16 + EP 16，每卡微批 1、不累积 |
 | 重算 | `custom`（同 T1） | 整层重算 |
 | 数据 | `replay.py` 原样回放 `rw1k-a` 写下的 1000 步 batch 与 loss_mask：设备 d 拿 GPU rank d 的那一条 | `--save-batches`；`tokens.npy`，第 s 步第 (s−1)·16 + rank 条 |
@@ -34,7 +34,7 @@ GPU 附加参数（与 g3、T2 同一套训练设置；没写的参数取 `train
 --mtp,--optimizer=muon,--opt-kv=muon_scale_mode=shape_scaling,--qk-clip,--qk-clip-threshold=100,--wd=0,--lr=1e-5,--adam-eps=1e-10,--adam-beta2=0.95,--attn-scores-fp32=on,--qk-clip-mtp=on,--recompute,--ep=16
 ```
 
-TPU 命令（[MaxText 一侧](../../frameworks/maxtext/README.md)）：
+TPU 命令（[MaxText 一侧](../../frameworks/maxtext/README.md)；现行 yml 已开 M52、M58，照它跑出来的是 C 口径，不是 `rfx-off`。复现 `rfx-off` 要用 MaxText `b87a55aa` 和那时的 yml，以 `rfx-off` 的 `meta.json` 为准）：
 
 ```bash
 STAGE=D3 YML=hy4-t2-d1.yml PLATFORM=v5p-16 GOLDEN=gs://<POC 桶>/janus/hunyuan4/gpu-scale/rw1k-a \
@@ -43,7 +43,7 @@ STAGE=D3 YML=hy4-t2-d1.yml PLATFORM=v5p-16 GOLDEN=gs://<POC 桶>/janus/hunyuan4/
 
 ## 软件版本
 
-以现行比较为准：TPU `rfx-off`（关 base2，按现行配置读这一臂）对 GPU `rw1k-a`，噪声是同设置 8 份。下表 TPU 各行在 `rfx-off`、`rfx-on` 两份 `meta.json` 上都核过，两份逐项相同。其余各行同 [T1 的「软件版本」](../01-mini/setup.md#软件版本)。
+D3 上没有 C 口径的运行，下表以 C 口径之前、关 base2 的 `rfx-off` 为准：TPU `rfx-off` 对 GPU `rw1k-a`，噪声是同设置 8 份。下表 TPU 各行在 `rfx-off`、`rfx-on` 两份 `meta.json` 上都核过，两份逐项相同。其余各行同 [T1 的「软件版本」](../01-mini/setup.md#软件版本)。
 
 | 侧 | 组件 | 版本 | 证据出处 |
 |---|---|---|---|

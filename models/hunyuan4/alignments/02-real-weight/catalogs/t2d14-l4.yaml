@@ -1,9 +1,9 @@
-# 混元 4 · T2 D1，TPU 最新设置（T1 现行开关：M34 muon_adam_accurate、M36 ihc_force_bf16_rounding、M37，M25 qk_clip_max_logit_exclude_sink 重新打开）被测 td4-a，
+# 混元 4 · T2 D1，TPU 当时的最新设置（T1 当时的开关：M34 muon_adam_accurate、M36 ihc_force_bf16_rounding、M37，M25 qk_clip_max_logit_exclude_sink 重新打开）被测 td4-a，
 # GPU gd2-a 为基线，噪声 gd2-* 两两 28 对。窗口、口径同 t2d1-l4.yaml。
 schema_version: 1
 model: hunyuan4-trunc
 stage: t2d14-l4
-description: T2 D1 L4，300 步，TPU 最新设置（td4-a 被测，GPU gd2-a 为基线，GPU 噪声 28 对）
+description: T2 D1 L4，300 步，TPU 当时的最新设置（td4-a 被测，GPU gd2-a 为基线，GPU 噪声 28 对）
 runs:
   test: td4-a
   golden: [gd2-a]

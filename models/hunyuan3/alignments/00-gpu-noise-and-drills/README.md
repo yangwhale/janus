@@ -174,7 +174,7 @@
 | L2 | 各层反向（激活梯度） | ✅ | 抓到：f-data、f-drop、f-router、f-weight2 |
 | L2 | 各层参数梯度 | ✅ | 抓到：f-data、f-drop、f-gscale、f-router、f-weight2 |
 | L2 | 各层路由选中集合 | ✅ | 抓到：f-data、f-drop、f-router、f-weight2 |
-| L2 | 逐层注入（误差隔离到单层） | ✅ | 演练（期望报警）：按期望报警｜本条原判定 不过：6 / 10 个张量不同 |
+| L2 | 逐层注入（误差隔离到单层；TPU 侧没有，用上面第 0–3 层前向隔离回放代替） | ✅ | 演练（期望报警）：按期望报警｜本条原判定 不过：6 / 10 个张量不同 |
 | L3 | 逐 token loss | ✅ | 抓到：f-data、f-drop、f-router、f-weight2 |
 | L3 | logits（含 KL） | ✅ | 抓到：f-data、f-drop、f-router、f-weight2 |
 | L3 | 全部参数梯度 | ✅ | 抓到：f-data、f-drop、f-gscale、f-router、f-weight2 |
@@ -187,6 +187,8 @@
 | L4 | 梯度 NaN 先于 loss 报警 | ✅ | 演练（期望报警）：按期望报警｜本条原判定 不过：grad_norm@5=非有限 |
 
 <!-- janus:table:end -->
+
+读上表故障演练行的「抓到」时注意（表由脚本按结果文件生成，不区分报警原因）：「每 rank 每步输入指纹」一行里，`f-gscale` 是只跑 3 步、第 4–30 步缺记录被报成「token 不同」，不是检出；`f-weight2`、`f-router`、`f-drop` 是靠同一检查里的首步 loss 报的，不是 token 指纹（[故障矩阵「读表时注意」](faults/phase1-faults.md)）。
 
 ## 这一阶段做了什么
 
@@ -204,7 +206,7 @@
 - **两种设置**（确定性 / 默认）的含义，与第一阶段每次运行实际设了哪些环境变量，见 [`docs/reference/environment.md`](../../../../docs/reference/environment.md)。
 - **运行原件**不随仓库发布，每个结果的 `runs` 字段记有 `meta.json` 的 sha256。
 - **复现材料**：
-  - 每次运行的完整参数见 [`../../frameworks/megatron/README.md`](../../frameworks/megatron/README.md#第一阶段每次运行的参数)「第一阶段每次运行的参数」；
+  - 每次运行的完整参数见 [`../../frameworks/megatron/README.md`](../../frameworks/megatron/README.md#第一阶段每次运行的参数)「第一阶段每次运行的参数」（`g1k-*` 不在那张表里，见下表「第一阶段 GPU golden」一行）；
   - 从零复现代表性结果的步骤见[同页第 7 节](../../frameworks/megatron/README.md#7-复现第一阶段的代表性结果约-30-分钟)；
   - 复现记录见 [`results/repro-audit.md`](results/repro-audit.md)。
 
@@ -213,6 +215,7 @@
 | 批次 | 运行 | 步数 | 用途 |
 |---|---|---|---|
 | 噪声底 | `rd-golden-1`（确定性）、`rd-det-b`（确定性复跑）、`rd-golden-2..5`（默认） | 1000 | 量 loss 噪声；确定性自证 |
+| 第一阶段 GPU golden | `g1k-a/b/c`（默认，全量抓数 `--dump-steps 1,1000 --full`，关分布式优化器）、`g1k-det`（确定性，抓数参数未登记）；参数登记在 01 [`runs.yaml`](../01-v5p-acceptance/runs.yaml) 与 [`goldens.md`](../../goldens.md) | 1000 | L0–L3 第 1 步比较的参照；第 6 条的分组 |
 | 全覆盖 | `s-a`..`s-g`（默认）、`d-a` / `d-b`（确定性）、`f-*`（确定性 + 埋一个错）、`i-weight`（埋错 + 逐层注入）、`r-cont` / `r-resume`（存档续训） | 100 | `s-a` 当被测，`s-b..d` 当 golden；故障注入的基线是 `d-a` |
 | 补充 | `p-*`（只换并行方式）、`h-light2`（轻量抓数）、`m-opt8`（第 1–8 步抓数，供优化器连续重放）、`f-nan`（第 5 步埋梯度 NaN）、`f-spike`（第 15 步学习率 ×300）、`r-remat`（开整层激活重算）、`t-2l`（截 2 层的 GPU 运行，不是 TPU）等，均确定性 | 3–30 | 并行等价、抓数不改数值、健康信号、重算、截断 |
 | 剩余检查（见注 1） | `g61-obs`（另开可选观测点）、`g61-notf32`（关 TF32）、`g61-sv-save` / `g61-sv-load`（特殊值存档 / 续训），均确定性 | 2–30 | kernel 回放、MoE 分阶段、poison 与因果性的真实输入；TF32；特殊值存恢复 |
@@ -228,7 +231,7 @@
 | 目录 | 比什么 | 结果 | 结论 |
 |---|---|---|---|
 | [`phase1-determinism`](results/phase1-determinism.report.md) | 确定性设置同配置两次 1000 步 | 5 pass | loss、学习率逐步逐位；第 1、1000 步各 24 个张量逐位 |
-| [`phase1-noise`](results/phase1-noise.report.md) | 默认设置三份 1000 步 | 5 pass、1 inconclusive | loss 噪声底见下文；第 1 步激活三份逐位；第 1000 步已分叉 |
+| [`phase1-noise`](results/phase1-noise.report.md) | `rd-golden-1..3` 三份 1000 步（1 份确定性 + 2 份默认，混用） | 5 pass、1 inconclusive（被测 `rd-golden-3` 本身也在噪声参照的 3 对里，只用来量噪声底，判定不独立） | loss 噪声底见下文；第 1 步激活三份逐位；第 1000 步已分叉 |
 | [`phase1-full`](results/phase1-full.report.md) | L0–L4 全部 GPU 可测检查，`s-a` 对 `s-b..d`；噪声参照是 `s-b..d` 3 份运行两两得到的 3 对 | 38 pass、0 fail、8 inconclusive | 地基全过；前向逐位；反向起在噪声内或 1–2 倍 |
 | [`phase1-noise15`](results/phase1-noise15.report.md) | 同上那 8 条加 `L4.grad_norm`（共 9 条），噪声参照扩到 6 份运行两两得到的 15 对 | 6 pass、3 inconclusive | inconclusive 8 条 → 3 条，剩下 3 条超上限 6% – 13% |
 | [`phase1-full-noise28`](results/phase1-full-noise28.report.md) | 全部 46 条，噪声参照扩到 8 份默认设置运行两两得到的 28 对 | 45 pass、1 inconclusive、0 fail | 只剩 `L4.loss`：最大单步 2.41e-4 对上限 2.34e-4（1.03 倍） |
@@ -241,7 +244,7 @@
 | [`phase1-truncate`](results/phase1-truncate.report.md) | 截 2 层对 4 层（同一份权重），第 1 步 | 4 pass | embedding 与前 2 层前向、路由逐位 |
 | [`phase1-ckpt-roundtrip`](results/phase1-ckpt-roundtrip.report.md) | HF → Megatron → HF 往返 | 3 pass | 1781 / 1781 个张量逐位，dtype 不变 |
 | [`phase1-parallel`](results/phase1-parallel.report.md) | 专家并行 EP8 → EP4，第 1 步前向 | 6 pass | 43 个激活、路由、逐 token loss 逐位 |
-| [`phase1-parallel-ext`](results/phase1-parallel-ext.report.md) | EP8 → EP4，第 1 步梯度与更新后参数 | 1 pass、2 fail、1 inconclusive | 反向不再逐位，超默认设置噪声 |
+| [`phase1-parallel-ext`](results/phase1-parallel-ext.report.md) | EP8 → EP4，第 1 步梯度与更新后参数 | 1 pass、2 fail、1 inconclusive | 反向不再逐位，超默认设置噪声（3 对参照下 cosine 4.1 倍、rel_L2 1.6 倍；28 对参照下 2.66 倍、1.55 倍，仍不过） |
 | `phase1-tp-cp` | EP4 + TP2、EP4 + CP2 对 EP4，前 3 步标量 | 各 2 pass | 在推断出的宽松门槛（首步相对差 d₀ ≤ 1e-4）内 |
 | [`phase1-ga`](results/phase1-ga.report.md) | 每 rank 2 个 microbatch 对 1 个（全局 batch 相同） | 1 pass、1 fail、1 inconclusive | embedding 梯度差 2.1% |
 | [`phase1-remat`](results/phase1-remat.report.md) | 开整层激活重算 | 4 fail | 第一个 MoE 层：重算与基线逐位、首次前向与两者都不同；往后各层连带不同 |
@@ -250,7 +253,7 @@
 | `repro-audit.*` | 只照文档从零复现：确定性两次 30 步 + 两个故障注入（`repro-audit.md`） | 确定性 4 pass；`f-w2` 25 / 32、`f-lr` 7 / 32 报警 | 首步 loss 与第一阶段逐位相同，报警项逐项相同 |
 | [`phase2-native-loader`](../01-v5p-acceptance/results/phase2-native-loader.report.md) | 第二阶段准备（CPU）：MaxText Grain `mmap_npy` 读同一份数据，对 `g1k-a` 的整批输入 | 12 pass、2 fail（两条都不是硬检查） | 换序后 1000 步 64000 个单元逐元素相同；两处差异见注 2 |
 | [`phase1-obs`](results/phase1-obs.report.md) | 新加的可选观测点（注意力 q/k/v、MoE 各阶段、专家权重、GEMM 清单）对 `d-a` | 4 pass | 第 1 步 425 个张量、前 2 步标量、输入指纹逐位：新观测点不改数值 |
-| [`phase1-tf32`](results/phase1-tf32.report.md) | 关 TF32（`NVIDIA_TF32_OVERRIDE=0` 等）对 `d-a`，第 1 步全部张量与前 30 步 | 4 pass、3 fail、2 inconclusive | 前向逐位；反向从路由 dx 起不同，参数梯度到噪声 4.95 倍；loss 在噪声内 |
+| [`phase1-tf32`](results/phase1-tf32.report.md) | 关 TF32（`NVIDIA_TF32_OVERRIDE=0` 等）对 `d-a`，第 1 步全部张量与前 30 步 | 4 pass、3 fail、2 inconclusive | 前向逐位；反向从路由 dx 起不同，参数梯度 cosine 偏离（1 − cos）6.4e-7，是 3 对参照噪声上限的 4.95 倍，rel_L2 是 1.71 倍（28 对参照下 3.2 倍、1.70 倍，仍 fail）；loss 在噪声内 |
 | [`phase1-kernels`](results/phase1-kernels.report.md) | TF32 开关矩阵与运行内实测、GEMM 清单；专家分组 GEMM 与核心注意力回放；GEMM 逐行与批大小；poison 与注意力因果性 | 16 pass、0 fail | 见下文第 15、16、18 条 |
 | [`phase1-moe-stages`](results/phase1-moe-stages.report.md) | MoE 层内 10 个阶段对 FP64（链式 / 本阶段），搬运逐位 | 5 pass、0 fail | 见下文第 17 条 |
 | [`phase1-causal-model`](results/phase1-causal-model.report.md) | 整网（真实模块，单卡 EP1）只改未来 token | 3 pass、3 fail | 过去位置不逐位，起点在第一个 MoE 层（见下文第 18 条） |
@@ -312,7 +315,7 @@
 **4. 首步差不能当尺子。**
 
 - 证据：
-  - 默认设置三份运行第 1 步激活逐位相同，loss 首步差为 0（`phase1-noise` 的 `L3.step1.act`、`L4.loss` 的 `d0_max`）；
+  - `rd-golden-1..3` 三份运行（1 份确定性 + 2 份默认）第 1 步激活逐位相同，loss 首步差为 0（`phase1-noise` 的 `L3.step1.act`、`L4.loss` 的 `d0_max`）；
   - 差从第 2 步起，来自反向与更新里的非确定累加。
 - 该怎么做：首步差单独给门槛（`first_step_tol` + 出处），calibrated 不判它。
 
@@ -340,7 +343,7 @@
 
   - `g1k-*` 开了全量抓数，全量抓数要求关分布式优化器。
   - `rd-golden-*` 当时只抓前向，用的是默认的分布式优化器。
-    - 推断：这批老运行的 meta 没记优化器配置，按当时训练脚本的默认值。
+    - 推断：这批老运行的 meta 没记优化器配置，按当时训练脚本的默认值。旁证：确定性的 `rd-golden-1` 第 1 步 grad_norm 是 17.534860610961914，关分布式优化器的确定性运行是 17.534862518310547，末位不同（[megatron README](../../frameworks/megatron/README.md)「复现第一阶段的代表性结果」注 1）；`h-light` 开分布式优化器时第 1 步 grad_norm 也和关的不同（`catalogs/phase1-hooks.yaml` 文件头），现象一致。
   - 两批的抓数钩子版本也不同，钩子开关已证明不改数值，见 `phase1-hooks`。
 
   | 对比 | 对数 | 带符号均值 | \|均值 / 标准误\| 最大 |
@@ -403,7 +406,7 @@
 | 确定性与默认混用（`rd-golden-1..3` 3 份两两，3 对） | 4.99e-5 | 1.05e-4 | 5.48e-4 | `phase1-noise` 的 `L4.loss` |
 | 只用默认设置（`rd-golden-2..5` 4 份两两，6 对） | 1.54e-5 | 1.05e-4 | 7.54e-4 | [`figures/curves-summary.json`](figures/curves-summary.json)（窗口第 2–1000 步） |
 
-首步差 0。
+首步差 0。第一行混了两种设置，带符号均值上限被第 6 条的跨设置偏移抬高（1.54e-5 → 4.99e-5），不当尺子用；当尺子只用第二行。
 
 **8. 3 对参照不够：inconclusive 多是样本少，不是问题。**
 
@@ -427,7 +430,7 @@
     - 剩下那条是 loss 的最大单步，超上限 3%（2.41e-4 / 2.34e-4 = 1.03 倍）。
     - GPU 自己的一份对 8 份 28 对的尺子就超线，说明 28 对的最大值偏窄。混元 4 实测：1000 步 GPU 重跑从 8 份扩到 16 份，上限放大 1.0–2.1 倍（[混元 4 知识库](../../../hunyuan4/knowledge.md#gpu-1000-步尺子扩到-16-份要点与出处)）。混元 3 验收用的 10 份 45 对也可能偏窄；尺子偏窄只会让判定更严，不会把不该过的判过，所以不影响已有的「过」。
 - 该怎么做：
-  - 正式签字前每种设置至少 6 份运行（推断，依据本条实测）。
+  - 份数按指南的建议：1000 步窗口用 16 份 120 对（[`docs/guide/02-gpu-golden.md`](../../../../docs/guide/02-gpu-golden.md)）；「至少 6 份」是本条第一阶段 100 步窗口的经验（推断）。份数少只会让尺子偏窄、判得更严，不会误判过。
   - 迁移验收最终用了 10 份：最终 golden 重跑 `rcc-a..j`，两两配对得到 45 对比较（[`goldens.md`](../../goldens.md#比较协议几份-golden-只造噪声带正式比较只对一份)「比较协议」）。
   - 道理见 [`docs/reference/judging.md`](../../../../docs/reference/judging.md#参照要几对)「参照要几对」。
 
@@ -517,6 +520,7 @@
      - 最差 rel_L2 是 embedding 梯度 1.03e-3（默认设置噪声上限 6.6e-4 的 1.6 倍）；
      - 最差 cosine 偏离 5.3e-7（上限的 4.1 倍）→ fail；
      - 更新后参数 1.41 倍（inconclusive）。
+     - 这几个倍数用的是 3 对噪声参照（`s-b..d`）。按 28 对参照（`phase1-full-noise28` 的 `L3.step1.grads.all` 上限：cosine 偏离 2.00e-7、rel_L2 6.67e-4）离线换算：cosine 偏离 2.66 倍、rel_L2 1.55 倍，仍不过；fail 只靠 cosine 一项。
 2. **整层激活重算**：
    - 首次前向对重算 9 / 51 个张量不同：3 个 MoE 层各自的专家输出、MLP 输出、层输出。
    - 第一个 MoE 层（第 1 层）三方输入相同。
@@ -596,7 +600,7 @@
 - 证据 · 对 `d-a`（`phase1-tf32`）：
   - 第 1 步前向 46 个张量逐位；
   - 反向第一个不同的是第 3 层 `mlp_norm.out.grad`（路由 dx 汇入处），其上游的 `mlp.out.grad`、专家与共享专家输出梯度都逐位；
-  - 参数梯度最大 rel_L2 1.14e-3（embedding），是默认设置噪声上限的 4.95 倍（fail）；
+  - 参数梯度最大 rel_L2 1.14e-3（embedding），是默认设置噪声上限的 1.71 倍（单看它落在待定区）；最差 cosine 偏离（1 − cos）6.4e-7，是上限的 4.95 倍 → fail。这两个倍数用的是 3 对参照（`s-b..d`）；按 28 对参照（`phase1-full-noise28` 的 `L3.step1.grads.all` 上限：cosine 偏离 2.00e-7、rel_L2 6.67e-4）离线换算：cosine 3.2 倍、rel_L2 1.70 倍，仍 fail；
   - 30 步 loss 在噪声内（r1 = 0.61）。
 - 意味着：
   - torch 开关的读回值不能证明 TF32 关了；
@@ -630,13 +634,13 @@
 **17. MoE 层内误差有两个台阶：GEMM1 的 BF16 输出，和激活的三次 BF16 舍入。**
 
 - 证据（`phase1-moe-stages`，链式 = 从 MoE 层输入全程 FP64，本阶段 = 输入取训练实值）：
-  - 路由 logits / scores / probs 链式 3.8e-6 / ≤ 3.1e-6 / ≤ 1.8e-6，top-k 与 FP64 全同；
+  - 路由 logits / scores / probs 链式 3.8e-6 – 4.0e-6 / ≤ 3.1e-6 / ≤ 1.8e-6，top-k 与 FP64 全同；
   - GEMM1 跳到 1.66e-3；
-  - 激活本阶段 2.8e-3–3.0e-3（各阶段里最大），链式升到 3.7e-3；
-  - 之后 GEMM2、unpermute、加共享专家链式停在 3.3e-3–4.0e-3；
+  - 激活本阶段 2.8e-3–3.0e-3（路由专家这条路上各阶段里最大；共享专家分支整块 3.0e-3–3.2e-3，另算），链式升到 3.7e-3–3.8e-3；
+  - 之后 GEMM2、unpermute 链式 3.4e-3–4.0e-3，加上共享专家后的输出 3.3e-3–4.0e-3；
   - unpermute 与最后的相加对正确舍入 100%；
   - permute、all-to-all、combine 的搬运逐位。
-- 意味着：激活这一段的舍入写法两边可能不同，那是写法不同，不是错。TPU 的激活舍入位置后来核实了（见下「后续」）；整块看，v5p 当前配置 MoE 块对 FP64 的 R 0.94（最差的第 2 层：TPU rel_L2 3.68e-3，GPU 各层最大 4.03e-3；01 [`phase2-l1-ops-own-on`](../01-v5p-acceptance/results/phase2-l1-ops-own-on.report.md)），没有明显更小。
+- 意味着：激活这一段的舍入写法两边可能不同，那是写法不同，不是错。TPU 的激活舍入位置后来核实了（见下「后续」）；整块看，v5p 当前配置 MoE 块对 FP64 的 R 0.94（R 0.94 出自 01 [`phase2-l1-ops-own-on`](../01-v5p-acceptance/results/phase2-l1-ops-own-on.report.md)；分层读数出自 02 [`v7x-l1-moe-routeflip.json`](../02-v7x-acceptance/results/v7x-l1-moe-routeflip.json)，最差的第 2 层：TPU rel_L2 3.43e-3，GPU 3.64e-3），没有明显更小。
 - 该怎么做：逐阶段对齐时按 GPU 的舍入位置写激活，或在报告里注明。
 - 后续（已核实，[对齐报告](../../ALIGNMENT-REPORT.md)偏差台账 #8）：
   - MaxText 默认写法确实编成 FP32 算完舍一次，与 GPU 只有 73.7% 元素逐位；
@@ -650,7 +654,7 @@
 - 证据 · 注意力因果性（`phase1-kernels`）：
   - 只改未来 token（p = 2048、3001），过去位置逐位不变；
   - 但未来位置填 NaN 时 dk / dv 全部被污染；
-  - p = 3001 时输出还有 185 行（p 所在的 128 行块）被污染。
+  - p = 3001 时输出与 dq 从第 2816 行起到 p 前共 185 行被污染（2816 = 11 × 256，正好是 p 所在的 256 行块的起点；按 128 行分块装不下 185 行，kernel 的分块大小没核，256 是从这组数推的）。
 - 证据 · 整网（`phase1-causal-model`，真实 Megatron 模块，单卡 EP1）：
   - 同一输入两次 1287 个张量逐位；
   - 只改未来 token 后，embedding、第 0 层、第 1 层注意力与共享专家都逐位；
@@ -662,7 +666,7 @@
 - 意味着：
   - padding 被因果掩码挡着时必须是有限值；
   - MoE 的逐位因果性 / 批不变性在专家 token 数很少时 GPU 自己就做不到。
-    - 本次训练第 1 步 rank 0 的专家最少 183 个 token，不在这个区间。
+    - 本次训练第 1 步 rank 0 的专家最少 183 个 token，不在这个区间。只查了第 1 步、rank 0；其他 rank、后续步（路由偏置更新后负载会变）、生产全模型下会不会有专家 ≤ 32 个 token 没查。要做批不变性检查时，先按各 rank 各步的最小专家 token 数确认。
 - 该怎么做：
   - padding 要么用 THD 切出去，要么保证是有限值；
   - 逐位因果性 / 批不变性的检查要把专家 token 数很少的情况单列。
@@ -670,10 +674,10 @@
 **19. Megatron 存档 / 恢复对 −0.0 与次正规数逐位保真。**
 
 - 证据（`phase1-ckpt-special`）：
-  - 第 2 步存档前，往 BF16 参数、FP32 主权重、Adam 两个动量、FP32 expert_bias 埋 −0.0、±1e-40、±2⁻¹⁴⁹、最大次正规、最小正规；
+  - 第 2 步存档前埋特殊值：FP32 主权重、一阶动量、FP32 expert_bias 埋全部 8 种 FP32 位模式（−0.0、+0.0、±1e-40、±2⁻¹⁴⁹、最大次正规、最小正规）；二阶动量只埋非负值（−0.0 与负数变成正的）；BF16 参数埋的是这些值舍到 BF16 后的位模式（±2⁻¹⁴⁹ 舍成 ±0，1e-40 变成 0x0001），所以「二阶动量的 −0.0」和「BF16 里的 FP32 次正规位模式」没测（[`phase1-ckpt-special`](results/phase1-ckpt-special.report.md) 的 `CKPT.special.values`）；
   - 8 个 rank × 9 个张量恢复后 100% 逐位；
   - FP32 主权重里的 1e-40 原样回来，说明主权重按 FP32 存取、不经 BF16（torch_dist 格式，不开分布式优化器）。
 - 该怎么做：TPU 侧存档与两边权重转换过同一个用例。
 - 没测的：分布式优化器的存档路径。
-  - golden 与全部噪声参照都关分布式优化器（`no_shard`，[`goldens.md`](../../goldens.md)「分布式优化器」行），用不到这条路径；
+  - 最终 golden `rcc` 与它的噪声参照都关分布式优化器（第一阶段的 `rd-golden-*` 开着，是例外，见第 6 条；`no_shard`，[`goldens.md`](../../goldens.md)「分布式优化器」行），用不到这条路径；
   - 生产里若开分布式优化器，要另配一个同样的用例才算覆盖。

@@ -109,7 +109,7 @@
   - 前几份 golden 的脚本：
     - `g1k-*` 是 `4e41f0ae…`（运行时读的是一份本地拷贝），和提交 `b09982e` 里的 `models/hunyuan3/gpu/train_hy3.py`（当时的路径）逐字节相同；
       和 #143 版（`8ecc2e9`）比，后者多的是默认关的诊断参数（路由回放、观测点、关 TF32、各种诊断臂、参数导入导出等）和运行信息的记法（镜像、版本号），默认训练路径没见改动（读 diff 所得，没有上卡对比）；
-    - `rc-*` 是 `09b213f9…`（`03/runs.yaml`，janus `24649e4b`）；
+    - `rc-*` 是 `09b213f9…`（`03/runs.yaml`，janus `24649e4b`，的分支提交）。这一版不在仓库任何提交里：#60 的压缩合并 `57a95f27` 里的版本是 `76bbb469…`，和 rc 用的那份差在哪未核；
     - `rcx-*` 是 `ee626092…`，和 `b6c4c57` 一致。
 
 ### 模型结构
@@ -138,7 +138,7 @@
 | 精度 | 输出头 dgrad（dh = dlogits · W，收缩长度 = 词表 120832）：[`rr_arms.py`](frameworks/megatron/rr_arms.py) 的 `dgrad-chunk` 臂 | 生产路径：BF16 dlogits × BF16 参数，在 B200 张量核上一次乘完 | 升到 FP32，词表按 1024 一段分开乘，段间 FP32 累加，舍回 BF16（见注 5） | 采用（唯一的数值改动） | GPU 向精确值，也就是向 TPU | 见注 5 |
 | 精度 | 计算精度 | `bf16_mixed`（Bridge 默认 `mixed_precision`） | 同原始（[`rcc-a`](../../docs/glossary.md#rcc-a) meta `dtypes.compute: bf16`） | 同原始 | — | 精确轨迹 [`rce`](../../docs/glossary.md#rce) / [`rcec`](../../docs/glossary.md#rcec) 用 `--fp32 --bf16-weights` 把算术换成 FP32，作参考交叉核对，见下面「参考：精确轨迹多改的」 |
 | 精度 | 权重语义 | BF16 参数 + FP32 主权重 | 同原始 | 同原始 | — | — |
-| 精度 | TF32 | 开：容器设了 `TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=1`，FP32 GEMM 实测对 FP64 rel_L2 2.94e-4 | 同原始（rcc-a meta `tf32.probe_rel_l2_*` 2.94e-4）；`dgrad-chunk` 在它那一次乘法里临时设 `allow_tf32 = False` | 同原始 | — | 关 TF32 跑 400 步看不出影响（1000 步没跑）；`dgrad-chunk` 里为什么要关，见注 6 |
+| 精度 | TF32 | 开：容器设了 `TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=1`，FP32 GEMM 实测对 FP64 rel_L2 2.94e-4 | 同原始（rcc-a meta `tf32.probe_rel_l2_*` 2.94e-4）；`dgrad-chunk` 在它那一次乘法里临时设 `allow_tf32 = False` | 同原始 | — | 关 TF32 跑 400 步看不出影响（1000 步没跑），第 1 步参数梯度超 GPU 噪声（见注 29）；`dgrad-chunk` 里为什么要关，见注 6 |
 | 精度 | 注意力实现 | `AttnBackend.auto` | 同原始 | 同原始 | — | BF16 设置下换实现无影响（见下面「试过」） |
 | 精度 | 梯度规约精度：`ddp.grad_reduce_in_fp32` | True（Bridge 默认） | 同原始 | 同原始 | — | 反过来改成 BF16 规约（`--grad-reduce-bf16`，模仿 TPU 上部分梯度按 BF16 规约）试过，无影响，见下面「试过」 |
 | 精度 | 路由 GEMM：`moe_router_dtype` | `fp32`（provider；meta）。在这版 Megatron 里走 TE `general_gemm`，BF16 输入、FP32 输出 | 同原始 | 同原始 | — | 只在近似平局的 token 上翻转 top-k，1000 步统计在噪声内（见注 7） |
@@ -359,7 +359,7 @@
 | 精度 | 注意力实现：`--attention-backend unfused` / `flash`（BF16 设置下） | `auto` | 同原始（`auto`）；`rce` 为了 FP32 用 unfused，见「参考」 | 试过，无影响（BF16 设置下） | — | 落在 10 次参照的范围内；TPU 换注意力照样漂（见注 26） |
 | 精度 | 梯度 BF16 规约：`--grad-reduce-bf16` | FP32 规约 | 不用 | 试过，无影响 | GPU 向 TPU | 见注 27 |
 | 精度 | 门控激活融合：`--bias-act-fusion` | False（provider） | 同原始 | 试过，无影响 | GPU 向 TPU | 见注 28 |
-| 精度 | 关 TF32（BF16 设置下）：`--no-tf32` 加 `NVIDIA_TF32_OVERRIDE=0` | 开 | 同原始（开）；`dgrad-chunk` 在它那一次乘法里临时关 | 试过，无影响（BF16 设置下） | GPU 向 TPU | 见注 29 |
+| 精度 | 关 TF32（BF16 设置下）：`--no-tf32` 加 `NVIDIA_TF32_OVERRIDE=0` | 开 | 同原始（开）；`dgrad-chunk` 在它那一次乘法里临时关 | 试过，多步无影响（BF16 设置下；第 1 步参数梯度超 GPU 噪声） | GPU 向 TPU | 见注 29 |
 | 精度 | `rr_arms.py` 的 `ce-mt`（交叉熵按 MaxText 自定义 VJP 的写法） | Megatron 融合交叉熵 | 不用 | 试过，无影响 | GPU 向 TPU | 差在 7 次对照的散布内（见注 30）。下面七臂同一组实验、同一个结论 |
 | 精度 | `rr_arms.py` 的 `adam-optax`（Adam 按 optax `adamw` 逐式重写） | TE FusedAdam | 不用 | 试过，无影响 | GPU 向 TPU | 同上 |
 | 精度 | `rr_arms.py` 的 `clip-optax`（先除后乘，不加 1e-6） | `g · max_norm / (norm + 1e-6)` | 不用 | 试过，无影响 | GPU 向 TPU | 同上 |
@@ -406,6 +406,7 @@
   - `g-notf32` 400 步看不出影响（案例 01「反向复现」行）。
   - 在同一个状态上单步：`g-s3-ntf` −0.21% / −0.25%，只开 `dgrad-exact` 是 −0.22% / −0.28%（案例 01 第 0 节「GPU 精确 dgrad 之外再换一处」行）。
   - 第一阶段 30 步 loss 在噪声内（00 `phase1-tf32`）。
+  - 但同一份结果里第 1 步参数梯度超 GPU 噪声（`TF32.step1.grads.tol` fail：cosine 偏离是 3 对参照上限的 4.95 倍，28 对参照下约 3.2 倍；rel_L2 最差的是 embedding 与路由权重梯度）。所以「无影响」只指多步 loss 看不出。TPU 没有 TF32，第 1 步梯度对比里 GPU 一侧本来就带这份差。
 - 注 30（`ce-mt`）：
   - 300 步对 7 次同设置运行的均值：第 300 步输出层平方和差在 −0.24 ～ +0.09 之间。
   - 7 次对照之间约 ±0.3；TPU `t-gn-300`（TPU 记分组范数的 300 步运行）是 +23.3。
@@ -573,7 +574,7 @@
 - 注 43（`rmsnorm_single_rounding`）：
   - GPU：TE RMSNorm 在 FP32 里算完只舍一次，对 FP64 正确舍入 99.9988%–99.9993%。
   - TPU：在 v5p 上，默认写法的前向已经被 XLA 省掉了中间那次舍入。
-    - 打开开关后前向逐位不变，改的是反向（显式 FP32 路径，梯度不经过 BF16 转换）。
+    - 打开开关后前向逐位不变，改的是反向：层输入梯度 `in.grad` 走显式 FP32 路径，不经过 BF16 转换；scale 梯度仍被 `reduce_precision` 的线性反向舍成 BF16（台账 #20，见对齐报告注 20；要 FP32 落地另开 `rmsnorm_scale_grad_fp32`）。
     - 各层 `in.grad` 对 golden 略降（`config-alignment.md`「RMSNorm 舍入次数」行）。
 - 注 44（`mlp_activation_round_per_op`）：
   - GPU：路由专家用非融合 GLU，`silu` 在 BF16 里舍一次、乘积再舍一次（00 `L1.kernel.experts.fwd.replay` 逐位）。
@@ -607,7 +608,7 @@
   - 步时（各运行 `metrics.jsonl` 第 50–1000 步中位数）：v7x 0.980 → 0.710 s，v5p 1.607 → 0.999 s。
   - 切法：MaxText 的逻辑轴规则把 `embed` / `embed_vocab` 也映射到 expert 轴。读 HLO 核过的只有词嵌入表（每卡 [120832, 512]，[`ep8-embed-scatter-hlo.json`](alignments/01-v5p-acceptance/results/ep8-embed-scatter-hlo.json)），对它 EP = 8 等于 FSDP 8；其余非专家参数没读 HLO，按同一组规则推断同样沿 expert 轴切。
   - 词嵌入（2026-11-11 读优化后 HLO 核实，[`ep8-embed-scatter-hlo.json`](alignments/01-v5p-acceptance/results/ep8-embed-scatter-hlo.json)）：表每卡 [120832, 512]，反向 scatter-add 每卡 32768 个下标，超过 15104（表行数的 1/8）。v5p 上排了序；v7x 上交给 SparseCore，按什么精度累加没有实测（推断）；没有整表 all-reduce。混元 4 [案例 14](../hunyuan4/cases/14-ddp-fsdp-embedding.md) 的纯数据并行问题在这里不出现。
-  - 只在 libtpu 构建 `cl/963683785`（按构建号认作 0.0.46）上核过。换版本要重看 HLO（[`libtpu-052.md`](../hunyuan4/alignments/04-tpu-self/libtpu-052.md)）。改成真正的纯数据并行（每卡一个微批 4096 个下标）会落到门槛以下，要开 `embedding_grad_fp32`。
+  - 只在 libtpu 构建 `cl/963683785`（按构建号认作 0.0.46）上核过。换版本要重看 HLO（[`libtpu-052.md`](../hunyuan4/alignments/04-tpu-self/libtpu-052.md)）。改成真正的纯数据并行（每卡一个微批 4096 个下标）会落到门槛以下，要修。混元 4 的首选修法是把词嵌入表沿数据并行轴切开（`embedding_shard_over_data`，混元 4 台账 M54，只在混元 4 集成分支上）；退而用 `embedding_grad_fp32` 时有两个前提：① 验收用的 `0622774a` 还没有这个开关，它从 `hunyuan` 分支 `998a2e37`起有；② 混元 3 的梯度累积是 2，混元 4 查到「纯数据并行 + 梯度累积 + `embedding_grad_fp32`」同时成立时 XLA 会静默丢掉前面微批的词嵌入梯度（300 步 r 611），修复 `d5c9b113`（混元 4 台账 M55）只在混元 4 集成分支上。`hunyuan` 分支（读到 `8ac1d175`）的 `utils/gradient_accumulation.py` 没有这道修复；这条分支上会不会同样丢梯度没实测，用之前先移植 M55（[混元 4 MaxText 说明「这些开关在哪个分支」](../hunyuan4/frameworks/maxtext/README.md#这些开关在哪个分支)、[差异清单 A7](../../docs/reference/tpu-vs-gpu-differences.md#a7-fp32-参数的梯度先以-bf16-落地)）。
 - 注 51（TPU 诊断臂）：
   - 定位 TPU 那一份（只舍输出头反向的 dlogits、只经 dgrad 一路）用的臂（案例 01「TPU 自己的 BF16 那一份」「TPU 那一份再拆」两行）。
   - `--jax-default-matmul-precision highest` 会让 splash / megablox 在 BF16 操作数上出错，只配全 FP32 用。

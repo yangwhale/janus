@@ -20,7 +20,7 @@
 
 - **A**：TPU 检查脚本 `qk_clip_scan_check.py`（台账 J1）在 hy4-tiny（1 稠密层 + 10 MoE 层，τ 取 0.001）上实测，修前结果在 [`hy4-tiny11-qk-clip-scan.json`](../results/hy4-tiny11-qk-clip-scan.json)。扫描块 `moe_layers/layers_0` 的两层，实测每头 √scale 都是 0.3355 / 0.2889 / 0.3084 / 0.3196；按各层自己的最大 logit 算，第 1 层应为 0.3437 / 0.3494 / 0.3084 / 0.3375，第 2 层应为 0.3355 / 0.2889 / 0.3558 / 0.3196。4 个扫描块的实测缩放都等于两层期望的逐头最小值，即 logit 小的层跟着 logit 大的层多裁了。修后同一脚本复跑（MaxText `b87a55aa`），11 层每层每头的实测 √scale 与期望逐位相同（[`hy4-tiny11-qk-clip-scan-postfix.json`](../results/hy4-tiny11-qk-clip-scan-postfix.json)）；不扫描的层都对。单测 `qk_clip_scan_test.py` 修前 4 条全不过；修后 hy4-tiny 11 层每层每头 √scale 与期望一致（rtol 1e-5）。
 - **B**：单测 `mcore_compat_switches_test.py`（`reduce_microbatch_aux`）确认 max_logits 取最大、其余 aux 求和；`gradient_accumulation_nnx_test` 下 hy4-tiny CPU 梯度累积 2 训练跑通。
-- **B 的 TPU 实测（2026-11-11）**：现行配置（base2 关）把阈值调到 0.1，让 QK-Clip 真触发；累积 2（每设备微批 1，现行）对累积 1（每设备微批 2），全局批 16 不变，回放同一份 GPU batch，各 100 步，记逐层逐头最大 logit、缩放 η、被裁头数、loss。结果在 [`t1zo-qkclip-accum-tau01.json`](../alignments/01-mini/results/t1zo-qkclip-accum-tau01.json)：
+- **B 的 TPU 实测（2026-11-11）**：C 口径之前的对齐配置（base2 关，`tz-off-rep` 那一代）把阈值调到 0.1，让 QK-Clip 真触发；累积 2（每设备微批 1，对齐配置的切法）对累积 1（每设备微批 2），全局批 16 不变，回放同一份 GPU batch，各 100 步，记逐层逐头最大 logit、缩放 η、被裁头数、loss。结果在 [`t1zo-qkclip-accum-tau01.json`](../alignments/01-mini/results/t1zo-qkclip-accum-tau01.json)：
   - 第 1 步 64 个头的最大 logit，累积 2 ÷ 累积 1 在 0.997–1.003 之间，35 个逐位相同。M19 修之前那种「各 microbatch 求和」会让这个比值接近 2，这里没有。
   - 前 30 步两者之差与 GPU 两份重跑（`g6-qk-a` / `b`，只差 GPU 自己的求和顺序）之差同一量级：逐头最大 logit 的相对 L2，中位数 6.8e-3 对 6.6e-3（1.04 倍）；单头最大相对差 7.8e-2 对 5.8e-2（1.35 倍）；loss 的平均相对差 1.9e-6 对 2.8e-6（0.71 倍）。被裁头数前 30 步合计 205 对 208。
   - 100 步里 53 步有头被裁，多在前 50 步；之后最大 logit 回到阈值以下，很少再裁。

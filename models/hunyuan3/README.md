@@ -35,7 +35,7 @@
 
 ## 代码基准
 
-- TPU：`maxtext` 的 `hunyuan` 分支（具体 commit 每次报告写明）。
+- TPU：`maxtext` 的 `hunyuan` 分支（具体 commit 每次报告写明）。验收（正式被测、日常回归的 LKG）钉在 `0622774a`，结论只对这个提交成立；换提交先跑日常回归 T0、T1，对 LKG 逐位相同再用。
 - GPU：Megatron-Bridge 的混元 3 接入 + Megatron-Core，镜像 `nvcr.io/nvidia/nemo:26.10`（digest 每次报告写明）。
 
 ## 运行名前缀

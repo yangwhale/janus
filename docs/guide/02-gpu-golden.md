@@ -126,7 +126,7 @@ flowchart TB
 **所以最终 golden 是 `rcc`**（[术语表](../glossary.md#rcc)）：
 
 - GPU 生产程序 `rc` 原样不动，只把输出头 dgrad 改成 FP32、词表按 1024 分段、段间 FP32 累加（[`rr_arms.py`](../../models/hunyuan3/frameworks/megatron/rr_arms.py) 的 `dgrad-chunk`）。
-- 这是 GPU 生产与 TPU 生产之间唯一会累积到 1000 步、超出噪声的差。其余差别都已核对，在噪声内或两边共有（对齐报告第 5 节偏差台账）。
+- 这是 GPU 生产与 TPU 生产之间唯一会累积到 1000 步、超出噪声的差（截 4 层、1000 步、常数学习率 1e-5、golden 关分布式优化器下）。其余差别都已核对，在噪声内或两边共有（对齐报告第 5 节偏差台账）。
 - 修掉它，TPU 生产就落在 `rcc` 自己重跑的散布里（第 4 章）。
 
 三条理由：

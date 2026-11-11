@@ -56,7 +56,7 @@ levels:
       - rows:
           - name: 第 1 步逐张量梯度
             what: "TPU `tm2diag`（MaxText `3741e818`，当时的开关，含 M39–M41，没有 M42b、M50，base2 开）对 GPU 第 1 步参照 `gms-*` 三份；超出 GPU 噪声的张量对 CPU FP64 整网重算定责（规则同 T1，PROTOCOL 第 5 节）"
-            objects: 205 个张量（HF 名字；路由专家只比 GPU 全量抓数里有的 rank 0 本地 0–3 号，其余 12 个为什么不在抓数里没核）
+            objects: 205 个张量（HF 名字；路由专家只比 GPU 全量抓数里有的 rank 0 本地 0–3 号：全量抓数只由 rank 0 写盘，专家并行 4 时它本地是 16 个里的 0–3 号；`--dump-all-experts` 只去掉「本地专家只留前两个（weight0、weight1）」的筛选，要收齐其余 12 个得加 `--gather-experts`，`gms-*` 没加（读 `train_hy4mg.py` 与 `janus/dump/megatron.py`，没核抓数文件清单））
             agg: 逐张量算 r 与 R；有超 2N 而 R > 1.2 的判不过，只有 1–2N 的判待定
             src: {mid: "mid-tm2-step1-grad-vs-fp64:L3.step1.grads.vs_gpu"}
             why: >-

@@ -14,7 +14,7 @@
 
 ## 现状
 
-- 300 步最近一代 `tm-b` 没有不过（过 5、待定 4，都只略超 N）。`tm-b` base2 开、早于 M50；2026-11-11 起的现行对齐配置（关 base2、含 M50）在 mid 上尚无运行。
+- 300 步最近一代 `tm-b` 没有不过（过 5、待定 4，都只略超 N）。`tm-b` base2 开、早于 M50；2026-11-11 起的现行对齐配置（关 base2、含 M50、C 口径）在 mid 上尚无运行。
 - 第 1 步主 loss 对 CPU FP64 的相对差在 GPU 一侧（GPU +1.42e-5，TPU `tm-b` +4.0e-6，R 0.28；[`mid-step1-loss-vs-fp64.json`](results/mid-step1-loss-vs-fp64.json)）。
 - 第 1 步逐张量梯度：7 个张量未定责（sink 4 个、iHC 3 个，最大第 3 层 FFN 前 `hc_base` R 15.3），9 个张量 TPU 梯度文件取回损坏（取回时断流留下空洞，见 [`tm2diag-grad-file-holes.json`](results/tm2diag-grad-file-holes.json)），要重跑诊断再比。
 - 1000 步、L1 / L2 没做。对齐开关全开比全关贵 +46.8%，M13 约占 60%（运行没有登记、无结果文件，数字未核；见[对齐报告](ALIGNMENT-REPORT.md)）。

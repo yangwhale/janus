@@ -78,6 +78,19 @@ esac
 profile_resolve   # profile.sh（可被站点配置覆盖）：定 CONTEXT / POOL / COLLECT，生成 JobSet 里随站点变化的几段
 for a in "$@"; do case "$a" in *"'"*) echo "参数里不能有单引号：$a"; exit 1;; esac; done
 NAME=janus-$(echo "$RUN" | tr '[:upper:]_.' '[:lower:]--' | cut -c1-40 | sed 's/-*$//')
+# SLICES=<n>：起 n 个同拓扑的切片，切片之间走 DCN（MaxText 的 dcn_* 并行度由命令行给）。只支持默认的节点池配置：
+# NODEPOOL 写 n 个逗号分隔的节点池，每个切片独占一个（JobSet 的 exclusive-topology），环境变量 MEGASCALE_* 交给 JAX 认切片
+SLICES=${SLICES:-1}; AFFINITY=""; MSENV=""; MSEXPORT=""
+if [ "$SLICES" -gt 1 ]; then
+  [ -z "$JS_META" ] && [ -z "${JANUS_SITE_PROFILE:-}" ] || { echo "SLICES>1 只支持默认的节点池配置"; exit 1; }
+  [ "$(tr ',' '\n' <<< "$POOL" | grep -c .)" -ge "$SLICES" ] || { echo "SLICES=$SLICES 要 NODEPOOL 给至少 $SLICES 个逗号分隔的节点池"; exit 1; }
+  JS_META="  annotations: {alpha.jobset.sigs.k8s.io/exclusive-topology: cloud.google.com/gke-nodepool}"
+  NODE_SELECTOR=""
+  AFFINITY="            affinity: {nodeAffinity: {requiredDuringSchedulingIgnoredDuringExecution: {nodeSelectorTerms: [{matchExpressions: [{key: cloud.google.com/gke-nodepool, operator: In, values: [$POOL]}]}]}}}"
+  MSENV="              env:
+              - {name: MEGASCALE_SLICE_ID, valueFrom: {fieldRef: {fieldPath: \"metadata.annotations['jobset.sigs.k8s.io/job-index']\"}}}"
+  MSEXPORT="                export MEGASCALE_NUM_SLICES=$SLICES MEGASCALE_COORDINATOR_ADDRESS=$NAME-w-0-0.$NAME MEGASCALE_PORT=8080"
+fi
 G=$(basename "$GOLDEN")
 ARGS="$*"
 
@@ -114,7 +127,7 @@ spec:
   failurePolicy: {maxRestarts: 0}
   replicatedJobs:
   - name: w
-    replicas: 1
+    replicas: $SLICES
     template:
       spec:
         parallelism: $NODES
@@ -135,9 +148,11 @@ $NODE_SELECTOR
             - {key: google.com/tpu, operator: Exists, effect: NoSchedule}
             - {key: cloud.google.com/gke-spot, operator: Exists, effect: NoSchedule}
 $TOLERATIONS
+$AFFINITY
             containers:
             - name: jax
               image: $IMAGE
+$MSENV
               command: ["bash", "-c"]
               args:
               - |
@@ -160,6 +175,7 @@ $TOLERATIONS
                 $YMLENV
                 export PYTHONPATH=/janus:/deps/src JAX_PLATFORMS=tpu,cpu TPU_STDERR_LOG_LEVEL=0 TF_CPP_MIN_LOG_LEVEL=0
                 export LIBTPU_INIT_ARGS='${LIBTPU_INIT_ARGS:-}'
+$MSEXPORT
                 export MAXTEXT_COMMIT=$MAXTEXT_COMMIT JANUS_COMMIT=$JANUS_COMMIT JANUS_IMAGE=$IMAGE TPU_TOPOLOGY=$TOPO
                 set +e
                 cd /janus && python3 $TRAIN_DIR/$SCRIPT --load $CKPT --golden /data/golden/$G \\

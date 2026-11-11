@@ -32,7 +32,7 @@ L3 共 1 项检查。
 
 | 检查 | 比什么 | 对象 | 判法（严格｜参考） | 证据来源 | hy4-mid · tm-b（300 步，base2 开、早于 M50） | hy4-mid · L0 取 tm-a 一代（同一份检查点）；L3 tm2diag |
 |---|---|---|---|---|---|---|
-| 第 1 步逐张量梯度<br>`L3.step1.grads.vs_gpu` | TPU `tm2diag`（MaxText `3741e818`，当时的开关，含 M39–M41，没有 M42b、M50，base2 开）对 GPU 第 1 步参照 `gms-*` 三份；超出 GPU 噪声的张量对 CPU FP64 整网重算定责（规则同 T1，PROTOCOL 第 5 节） | 205 个张量（HF 名字；路由专家只比 GPU 全量抓数里有的 rank 0 本地 0–3 号，其余 12 个为什么不在抓数里没核）<br>比较单元：196 个张量<br>聚合：逐张量算 r 与 R；有超 2N 而 R > 1.2 的判不过，只有 1–2N 的判待定 | 超出 N（或 N = 0 且不低于分辨率下限）而未定责的张量数 ≤ 0｜参考：无 | 第 1 步诊断（TPU tm2diag 对 GPU 三份第 1 步参照 gms）＋CPU FP64 整网重算 | — | [7 ❌](results/mid-tm2-step1-grad-vs-fp64.json) |
+| 第 1 步逐张量梯度<br>`L3.step1.grads.vs_gpu` | TPU `tm2diag`（MaxText `3741e818`，当时的开关，含 M39–M41，没有 M42b、M50，base2 开）对 GPU 第 1 步参照 `gms-*` 三份；超出 GPU 噪声的张量对 CPU FP64 整网重算定责（规则同 T1，PROTOCOL 第 5 节） | 205 个张量（HF 名字；路由专家只比 GPU 全量抓数里有的 rank 0 本地 0–3 号：全量抓数只由 rank 0 写盘，专家并行 4 时它本地是 16 个里的 0–3 号；`--dump-all-experts` 只去掉「本地专家只留前两个（weight0、weight1）」的筛选，要收齐其余 12 个得加 `--gather-experts`，`gms-*` 没加（读 `train_hy4mg.py` 与 `janus/dump/megatron.py`，没核抓数文件清单））<br>比较单元：196 个张量<br>聚合：逐张量算 r 与 R；有超 2N 而 R > 1.2 的判不过，只有 1–2N 的判待定 | 超出 N（或 N = 0 且不低于分辨率下限）而未定责的张量数 ≤ 0｜参考：无 | 第 1 步诊断（TPU tm2diag 对 GPU 三份第 1 步参照 gms）＋CPU FP64 整网重算 | — | [7 ❌](results/mid-tm2-step1-grad-vs-fp64.json) |
 
 非 ✅ 格子的原因：
 

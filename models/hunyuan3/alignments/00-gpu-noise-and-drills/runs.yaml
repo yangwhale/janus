@@ -1,4 +1,4 @@
-# 00 · B200×8 自比 · 运行清单（按批次列；每次运行的完整参数见 ../../frameworks/megatron/README.md「第一阶段每次运行的参数」）
+# 00 · B200×8 自比 · 运行清单（按批次列；每次运行的完整参数见 ../../frameworks/megatron/README.md「第一阶段每次运行的参数」；g1k-* 不在那张表里，参数见 ../01-v5p-acceptance/runs.yaml 与 ../../goldens.md）
 # 运行目录在 POC Pod 的 /data/janus-runs/、/data/janus-runs2/（不对外）；GPU golden g1k-* 另有一份在 gs://<POC 桶>/janus/hunyuan3-4l/golden/。
 schema: 1
 alignment: 00-gpu-noise-and-drills
@@ -12,7 +12,7 @@ batches:
   - name: 全量抓数 golden（也是 01 / 02 的 golden；不重算，现在是归因参照，生产近似 golden 是 03 的 rc-*）
     runs: [g1k-a, g1k-b, g1k-c, g1k-det]
     steps: 1000
-    setting: g1k-a/b/c 默认，g1k-det 确定性；分布式优化器关；--dump-steps 1,1000 --full
+    setting: g1k-a/b/c 默认，--dump-steps 1,1000 --full；g1k-det 确定性，抓数参数未登记；分布式优化器关
     series: [results/series/g1k-a.metrics.jsonl, results/series/g1k-b.metrics.jsonl, results/series/g1k-c.metrics.jsonl, results/series/g1k-det.metrics.jsonl]
   - name: 全覆盖
     runs: [s-a, s-b, s-c, s-d, s-e, s-f, s-g, s-h, s-i, d-a, d-b]

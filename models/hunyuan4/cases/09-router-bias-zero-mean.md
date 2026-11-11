@@ -2,7 +2,7 @@
 
 # 案例 09：路由偏置均值 r 19.1——协议要求两边零均值更新，原版 Megatron-Core 没有这个更新
 
-> **状态：已修（台账 G14：对齐配置里 TPU 关 `routed_bias_zero_mean_update`；生产建议两边都开）。** [根源一览第 1 行](../ROOT-CAUSES.md#r1)；对齐报告 [D4](../alignments/01-mini/DETAILS.md#d4)。
+> **状态：已修（台账 G14：对齐配置里 TPU 关 `routed_bias_zero_mean_update`；生产建议两边都开）。** [根源一览第 1 行](../ROOT-CAUSES.md#r1)；对齐报告 [D4](../alignments/01-mini/DETAILS.md#d4)。已修的是本案 r 19.1 那个协议设置问题；以现行比较 `tc-a`（C 口径）为准，1000 步路由偏置均值带符号均值又是待定（N 1.04，TPU 1.36，r 1.31，未定责；C 口径另 5 份 0.36–0.80），和这里的协议问题不是一回事，见 [mini 对齐细节](../alignments/01-mini/DETAILS.md) L4 一行。
 
 ## 现象
 
@@ -34,5 +34,5 @@ TPU 设 `routed_bias_zero_mean_update: false` 重跑 6 份 `t1n-*`（`t1n-b` 与
   - 符号式固定步长的更新（DeepSeek 的 loss-free balancing，arXiv 2408.15664，DeepSeek-V3 采用）每步各专家更新之和一般不为 0，偏置的共同分量会漂移。例如 GLM-5.2 公开 checkpoint 第 6 层的 `e_score_correction_bias` 均值 15.6、标准差 8.71e-2（GLM-5.2 实践的 goldens）。
   - 减均值不改变 top-k，但防止漂移、保住分辨率：偏置相加若在 BF16 里做，15 附近 1 ulp 是 0.0625，已与标准差同量级。Qwen 的 ID Balancing（arXiv 2609.39137）同样把偏置拉回零均值。
   - 混元 4 的生产配方里 expert bias 与零均值更新都开；MaxText 一侧在我们修改过的 MaxText 里加入。
-  - GPU 一侧原版 Megatron-Core 没有这个选项，生产上需要在偏置更新后加一行减均值。
+  - GPU 一侧原版 Megatron-Core 没有这个选项。janus 的 GPU 训练入口已加同写法的 `--bias-zero-mean`（[改动台账](../CHANGES-LEDGER.md) G35）；生产配方臂里两边都开着各跑 1000 步，同配方 GPU 8 份尺子下 TPU 9 项全过（诊断，不进签字；TPU 只 1 份，三项一起改没单开；8 份尺子是看过借现行尺子的结果后才定的，借现行尺子时主 loss、梯度范数超），见[根源一览第 1 行](../ROOT-CAUSES.md#r1)。用原版 Megatron-Core 时仍要在偏置更新后加一行减均值。
   - 与硬件无关，没有证据表明它对 TPU 特别有利。

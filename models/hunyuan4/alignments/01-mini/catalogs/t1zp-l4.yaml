@@ -1,4 +1,4 @@
-# 混元 4 · T1 1000 步，验证：生产建议组合整体跑一次。TPU x5-prod = 现行对齐配置（tz-off-rep 那份 yml），按 01-mini DETAILS「生产配置建议」改：
+# 混元 4 · T1 1000 步，验证：生产建议组合整体跑一次。TPU x5-prod = C 口径之前的对齐配置（tz-off-rep 那份 yml），按 01-mini DETAILS「生产配置建议」改：
 # 开 splash_dsinks_fp32（M42，代替 M42b）、embedding_grad_fp32、rmsnorm_scale_grad_fp32；关只为对齐的 M8、M10、M27、M30、M36、M42b；「看情况」各行照对齐配置。
 # 判法与噪声同 t1zo-l4（被测换掉，其余逐字相同）。
 schema_version: 1

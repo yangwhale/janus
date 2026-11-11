@@ -1,5 +1,7 @@
 # 第 1 步 L1 单算子回放与 L2 逐层隔离回放（v5p 对 golden `g1k-a`）
 
+> 换代前的读数：maxtext `4d4ffac2`，打开 `dense_fp32_accumulation` 之前。现行判定按 FP64 R 比，见 [`phase2-l2-replay-rratio-on`](phase2-l2-replay-rratio-on.report.md)（四层前向 R 1.06 / 1.01 / 1.01 / 1.09，都过）与 `phase2-l1-ops-own-on`。
+
 ## 怎么做的
 
 - **脚本**：`../../../frameworks/maxtext/layer_replay.py`（L2）与 `l1_probes.py`（L1）。
@@ -77,7 +79,7 @@
   - 第 0 层是 `mlp.fc2.out`（4.17e-3，开按算子舍入后 4.08e-3，降到判据以下）；
   - 第 1–3 层都是 `attn.core.out`（4.3e-3 / 5.3e-3 / 6.2e-3）。
   - 第 0 层的 `attn.core.out` 只有 1.6e-3：同样的 kernel，越往后的层差越大。
-  - 推断和这些层的注意力分布有关，未查。
+  - 推断和这些层的注意力分布有关，未查。这里是对 golden 的差；现行按 FP64 R 判，四层都过（1.06 / 1.01 / 1.01 / 1.09，`phase2-l2-replay-rratio-on`）。
 - **路由翻转来自上游，不是路由 GEMM 本身**：
   - L1 用 golden 的路由输入时，翻转为 0；
   - L2 用 TPU 自己算出的 `mlp_norm.out`（对 golden 3.4e-3–3.9e-3）时，每层翻 3.5%–5.4%（142–220 个 token）。

@@ -1,9 +1,9 @@
-# 混元 4 · T2 B 1000 步：TPU tb5b-a（MaxText 2c28a4f4、janus 9c0f19a，T2 yml 现行开关：M39–M41、M42 关、M42b 开、base2 开）被测，
+# 混元 4 · T2 B 1000 步：TPU tb5b-a（MaxText 2c28a4f4、janus 9c0f19a，T2 yml 当时的开关：M39–M41、M42 关、M42b 开、base2 开）被测，
 # 回放 gb3-a；GPU gb3-a 为基线，噪声 gb3-a..h 两两 28 对。窗口与口径同 t2b5-l4.yaml（只改测试运行名，写于 tb5b-a 跑完之后）。
 schema_version: 1
 model: hunyuan4-trunc
 stage: t2b5b-l4
-description: T2 B L4，1000 步（TPU tb5b-a 被测，现行开关含 M42b，GPU gb3-a 为基线，GPU 噪声 28 对）
+description: T2 B L4，1000 步（TPU tb5b-a 被测，当时的开关含 M42b，GPU gb3-a 为基线，GPU 噪声 28 对）
 runs:
   test: tb5b-a
   golden: [gb3-a]

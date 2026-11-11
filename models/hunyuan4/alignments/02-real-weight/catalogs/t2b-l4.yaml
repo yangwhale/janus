@@ -1,6 +1,6 @@
 # 混元 4 · T2 阶段 B：真实权重截层 B（第 0 层稠密 + 第 1 层 MoE，无 MTP） 的 L4 验收（事先登记：写于任何 T2 运行之前，PROTOCOL.md 变更记录）。
 # 角色同 T1：GPU（Megatron，B200 × 8）是 golden / 基线，TPU（MaxText，v5p 2x2x2）是被测；TPU 配置 frameworks/maxtext/hy4-t2-b.yml
-#（T1 现行数值与优化器开关原样，含台账 M28 的 ihc_stream_sum_unrolled），回放 gb2-a 写下的 batch 与 loss_mask。
+#（T1 当时的数值与优化器开关原样，含台账 M28 的 ihc_stream_sum_unrolled），回放 gb2-a 写下的 batch 与 loss_mask。
 # 噪声只用 GPU：同设置 8 份 gb2-a..h 两两 28 对，每个判定量取各对的最大值；TPU 第二份 tb2-b 只核逐位，不进尺子。
 # 口径同 t1t-l4：grad_norm 以参照作分母（2026-11-10 起，原为两边均值）；param_norm 读更新之后参数范数的精确值（GPU param_norm_fp64，TPU param_norm_exact）。
 # 窗口：第 1–300 步与第 101–300 步（loss）；可选的 1000 步另写目录，不改本文件。学习率在 t2b-l0-settings.yaml。
