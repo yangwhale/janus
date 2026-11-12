@@ -282,6 +282,47 @@ XLA 分两种跑：关省舍入（`--xla_allow_excess_precision=false`，即 Max
 - 两路 norm dx 各自那次转 BF16，四种配置在 TPU 上都被省掉（融合内部的来回 convert 不产生舍入指令，与 iHC 那次的结论一致），这一点和 GPU 不同，但几种配置都一样，解释不了它们之间的差。
 - 所以这一段里离 GPU 更近的是 C（进收拢的梯度舍了，GPU 也舍），后段更低的却是不舍的两种（只开 M58、(a) 格）。按「哪一处没照 GPU 舍」找不到 M52 × M58 相冲的原因；后段残余推断不在 hc_head 这一段的舍入写法上，是这处 BF16 舍入的误差与别处一起在训练里积累的结果，GPU 一侧验证见上一节「GPU 上让进 hc_head 收拢的梯度留 FP32」一条：GPU 上这次舍入拿掉，前段鼓包出现、后段变低，与 TPU 上两种配置的差同向。
 
+### 整个训练步：被省掉的舍入全局清单
+
+上一节只看 hc_head 这一段。这里扫的是 C 口径的整个训练步（`hy4-mini-t1.yml`，MaxText `98a80d92`），在 CPU 上为 v5p-16 离线编译，读优化后的 HLO（`analysis/elided_rounding_scan.py`）。判据：一次 convert(f32→bf16)，在同一颗融合里又被 convert 回 f32 用（中间可以隔 bitcast、reshape），就是代码写了舍入、后端不舍。
+
+几点说明：
+- LLO 一侧核过。只含这种往返、没有真舍入也没有 reduce_precision 的 kernel 有 41 颗，`final_bundles` 里全部 0 条打包指令；负对照（同一配置关掉省舍入）同一判据挑出 35 颗，0 条打包的一颗都没有。LLO 只 dump 出 1666 颗 kernel，相同的 kernel 只编一次。
+- M36 / M52 / M58 已经用 reduce_precision 补上的，不在清单里：iHC 各处、hc_head 全部补上了。
+- 输入本来就在 BF16 网格上的往返（1475 处）不计。
+
+逐处读了 HLO 与源码之后归成下面几类。数字是 HLO 里的往返个数，scan 里的一处在每层都执行；「scan 外」指没进 scan 的层与 MTP 块，栈帧表是截短的，分不开这两样。数字出自 [`mini-c-elided-rounding-scan.json`](alignments/01-mini/results/mini-c-elided-rounding-scan.json)。
+
+| 位置 | TPU（实测，HLO） | GPU（读代码） | 在反向梯度路径上 | 往返数（scan 里 / scan 外 / XLA 插的） |
+|---|---|---|---|---|
+| **注意力输入的梯度合流**（input_layernorm 输出有三处要梯度：q / kv 两个下投影、输出门；索引器用的是 detach） | 两个下投影的输入梯度以 BF16 写出（舍了）；输出门那份在融合内往返（不舍）；三份在 FP32 里相加（HLO 把原 BF16 加法改成 FP32），舍一次再写出；同一颗里 dγ 与逐 token 的求和用的是没舍的和 | 三份各自舍 BF16（TE 的 dgrad 输出 BF16），autograd 在 BF16 里逐个相加、每加一次舍一次 | 是（激活梯度，往下传；和主因 iHC 流梯度同一类） | 与下一行合计 30 / 23 / 17 |
+| **MoE 输入的梯度合流**（pre_mlp_layernorm 输出：路由、共享专家、路由专家） | 路由在 FP32 里算，它的输入梯度转 BF16 那次在融合内往返（不舍）；三份 FP32 相加、舍一次 | 路由的输入梯度舍 BF16（`router_gating_linear` 反向转回输入 dtype），三份在 BF16 里逐个加 | 是 | 同上 |
+| **权重梯度**（各线性层，每个 microbatch 一次） | 窗口化 reduce-scatter 的分块在 FP32 里相加，转 BF16 再转回 FP32 进梯度累加：这次舍入被省掉（也有一部分位置以 BF16 写出、舍了，没逐个分） | golden 设 `gradient_accumulation_fusion=False`：TE 的权重梯度以 BF16 输出（舍一次），再加进 FP32 的 main_grad。Megatron 训练入口的命令行默认是开（`--no-gradient-accumulation-fusion` 才关），开时权重梯度直接在 FP32 里累加，不舍；生产怎么设的未确认 | 是（进优化器，不在层间传） | 45 / 28 / 2 |
+| 路由专家 act×up 的反向（`moe.py:174`） | d(act×up) = dy·prob 在 FP32 里算，转 BF16 那次在融合内往返 | 舍 BF16（act×up 是 BF16 张量） | 是 | 4 / 3 / — |
+| 输出门的预激活与 sigmoid 输出（`attention_mla.py:1531`、gate 投影） | 两次转 BF16 都在融合内往返，sigmoid 吃的是 FP32 的预激活、乘 core attention 输出的是 FP32 的门 | 都舍 BF16 | 前向（含反向里的重算） | 25 / 9 / — |
+| 稠密 MLP、共享专家 fc1 的输出（进 silu 前） | 在融合内往返 | 舍 BF16 | 前向（含重算） | 33 / 18 / — |
+| 路由专家 act×up（M40 想补的那次，`moe.py:1606`） | 以 BF16 写出给 fc2（舍了），同一颗里乘 prob 用的是没舍的值 | 先舍再乘 prob | 前向（含重算） | 8 / 5 / — |
+| MTP / 末层 norm 一带（`normalizations.py`） | norm 输出、norm 输入梯度的几次往返 | 舍 | 前向、反向各几处 | — / 13 / — |
+| 索引器掩码（`attention_mla.py:513`） | 往返，但值只有 0 和 −∞，舍不舍一样 | — | — | — / 9 / — |
+
+按「GPU 舍、TPU 省掉、在反向梯度路径上」排，前三处是：注意力输入合流、MoE 输入合流、权重梯度。前两处的写法和主因 iHC 流梯度是同一类：一个 BF16 激活被几处用，GPU 每份梯度舍、相加时每次舍，TPU 一起在 FP32 里加、只舍一次。
+
+**GPU 上照 TPU 的样子改这三处**（台账 G38，各 4 份 1000 步，对 GPU 16 份留一法；[`mini-gpu-tpulike-fanin-wgrad.json`](alignments/01-mini/results/mini-gpu-tpulike-fanin-wgrad.json)、MTP 见 [`-mtp`](alignments/01-mini/results/mini-gpu-tpulike-fanin-wgrad-mtp.json)）：
+
+| 开关 | 第 551–1000 步主 loss | 4 份 | 尾部在 | 置换 p | 第 51–100 步 | MTP 第 551–1000 步 |
+|---|---|---|---|---|---|---|
+| ATTNIN（注意力输入合流照 TPU） | +3.0e-6 | +1.7 / +2.0 / +2.3 / +6.1（e-6） | 2/4 | 0.021 | −0.9e-6（p 0.34） | +2.1e-5（p 0.035） |
+| FFNIN（MoE 输入合流照 TPU） | +1.0e-6 | −2.7 / +1.1 / +4.9 / +0.5 | 1/4 | 0.47 | +0.3e-6 | −8.6e-6（p 0.30） |
+| ATTNIN + FFNIN | +0.2e-6 | +0.1 / −0.6 / +0.5 / +0.8 | 0/4 | 0.87 | +0.4e-6 | −1.1e-5（p 0.15） |
+| WGRAD（权重梯度不先舍） | −0.4e-6 | −0.8 / −0.3 / −0.5 / +0.1 | 0/4 | 0.73 | +0.1e-6 | +1.6e-6（p 0.84） |
+
+对照：只改 iHC 流梯度（STREAM，G37）+3.9e-6，4 份都正，p 0.0025。
+
+结论（实测是上表的数字；解读是推断）：
+- **权重梯度排除**：GPU 不舍它，后段不动。
+- **分支输入合流没有复现出 C 口径剩下的约 +7e-6**。ATTNIN 单开 +3.0e-6，4 份都正，但两处一起改反而回到 +0.2e-6。照「两处都是同一类舍入、效应应该叠加」的想法，这对不上。四格一起看，ATTNIN 那个 p 0.021 很可能是 4 份样本里的偶然：按格数做 Bonferroni 是 0.084。ATTNIN 的 MTP 也被推高，和 TPU 上 MTP 偏低方向相反。
+- 所以 C 口径的残余在清单前三处里没找到。剩下的候选是前向那几类（输出门、fc1 输出、路由专家 act×up），以及不在这个扫描模式里的差（代码没写舍入、GPU 却舍了的地方；累加顺序）。
+
 ## 生产配方臂与 QK-Clip 梯度累积：要点与出处
 
 | 要点 | 出处 |

@@ -500,6 +500,10 @@ def main():
         check_for_nan_in_grad=True,
     )
     model = DistributedDataParallel(config=cfg, ddp_config=ddp_cfg, module=model)
+    if os.environ.get("HY4_TPU_LIKE_WGRAD") == "1":
+        n_wg = H.install_tpu_like_wgrad(model)
+        if rank == 0:
+            print("TPU_LIKE_WGRAD", n_wg, flush=True)
     import ast
 
     okv = {}

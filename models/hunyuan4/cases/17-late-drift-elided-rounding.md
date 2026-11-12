@@ -1,179 +1,236 @@
 [janus](../../../README.md) › [混元 4](../README.md) ｜ [案例](README.md) 17
 
-# 案例 17：后段为什么慢慢偏开：iHC 流梯度、被省掉的 BF16 舍入，以及一次扫全图找同类
+# 案例 17：后段为什么慢慢偏开：被编译器省掉的 BF16 舍入，以及「先编译、再扫描」
 
-混元 4 mini 训练 1000 步，TPU 的主 loss 在第 100–550 步和 GPU 分不开（更早还有一个小鼓包，另有原因），第 550 步以后一路比 GPU 高，到第 976–1000 步高 1.8e-5。前向没差，MTP、KD、libtpu 版本都不是原因。去掉 iHC，偏差就消失。再往下拆，主因是 iHC 流梯度的一处舍入写法：GPU 每加一次舍一次 BF16，TPU 在 FP32 里加完才舍。这个结论两头都验证过。
-补上这处舍入以后还有残余，于是换了个办法：不再一处一处猜，而是**先编译、再扫描**。把整个训练步离线编译出来，在编译产物里精准匹配「代码里声明了要舍 BF16、编译器却在融合里把它省掉」这一种模式，一次找出全图所有同类位置，问题的范围就清楚了。
+**一句话：** 代码里写了「这里舍成 BF16」，TPU 的编译器有时会把这次舍入省掉。省掉一处，每步差一点点，1000 步就攒成一条看得见的尾巴。我们先一处一处找到了主因（iHC 的流梯度），然后换了个办法：把整个训练步离线编译出来，在编译产物里一次扫出**所有**被省掉的舍入。
 
-> **状态：主因已定位（实测，两头验证）；残余在查。** 对齐配置从 2026-11-11 起是 C 口径（三个「照 GPU 一定舍 BF16」的开关全开，见下「先补背景」），主 loss 判档刚好过线，但后段的残余仍看得出来。全局清单给出了残余的候选范围（三类位置）。GPU 上对应的两个诊断开关（ATTNIN、WGRAD）在跑，没有结果之前不下结论。
+> **状态：主因已定位，两头都验证过；还有残余在查。** 现在的对齐配置（代号「C 口径」，定义见[下文](#c-口径反转三处全照-gpu-改后段反而没好)）主 loss 刚好判过，但后段的尾巴还看得出来。全图扫描列出了残余的候选；优先级最高的 ①、② 两类拆成三处在 GPU 上验证过，都没坐实（权重梯度排除；两处梯度合流单开有一点、合开消失，推断是偶然）。下一步在 TPU 上补注意力输入那一处，在跑。
+>
+> **只想拿方法的，直接跳到[「先编译、再扫描」](#先编译再扫描)。** 它不依赖混元 4，任何「TPU 和 GPU 舍入位置对不齐」的问题都能用；工具是 [`analysis/elided_rounding_scan.py`](../analysis/elided_rounding_scan.py)。
 
-> **推荐先读[第九幕「全局清单」](#第九幕全局清单先编译再扫描)。** 这一步的方法不依赖混元 4，任何「TPU 和 GPU 舍入位置对不齐」的问题都能直接拿去用；工具是 [`analysis/elided_rounding_scan.py`](../analysis/elided_rounding_scan.py)。
+整条故事线：
 
-## 先补背景：`astype` 会被省掉，`reduce_precision` 不会
+```mermaid
+flowchart LR
+  A["现象<br/>后段 TPU 比 GPU 高"] --> B["排除<br/>不是前向、不是哪项 loss、<br/>不是 libtpu 版本"]
+  B --> C["定主因<br/>iHC 流梯度少舍了几次<br/>两头验证"]
+  C --> D["C 口径反转<br/>三处全照 GPU 改<br/>后段反而没好"]
+  D --> E["抵消<br/>只修一处时<br/>两个偏差互相抵掉"]
+  E --> F["只剩编译器<br/>语义已逐位对齐"]
+  F --> G["先编译、再扫描<br/>一次列出全图<br/>被省掉的舍入"]
+  G --> H["上卡验证<br/>①② 两类没坐实<br/>继续往下查"]
+```
 
-混元 4 的计算习惯是「FP32 算、BF16 存」：一段运算在 FP32 里做完，结果舍成 BF16 再交给下一步。GPU（PyTorch）上写 `.to(bfloat16)`，这次舍入一定发生。MaxText（JAX）里对应的写法是 `x.astype(bf16)`，编译后变成一对 `convert(f32→bf16)` → `convert(bf16→f32)`（下一步又要 FP32 时）。
+## 先懂一件事：为什么「写了舍入」却可能没舍
 
-TPU 的编译器默认开着 excess precision：允许把中间结果留在 FP32、少舍几次。这对来回 convert 落在同一颗融合 kernel 里时，编译器直接拿 FP32 的值往下算，这次舍入就没了。`jax.lax.reduce_precision(x, 8, 7)` 是另一种写法：值还是 FP32，但尾数被截到 BF16 的 7 位。编译器把它当成一次真的运算，**不会省**。所以要「照 GPU 一定舍」，就把 `astype` 换成 `reduce_precision`。
+这一节回答：TPU 的代码明明照 GPU 写了舍 BF16，为什么实际没舍。
 
-本案例反复出现三个这样的开关，都在 `maxtext` 的混元 4 分支上，都只为照 GPU 的舍入位置（编号是[变更台账](../CHANGES-LEDGER.md)里的号）：
+**打个比方。** 报销规定每张发票先抹到「分」，每加一张，总数也抹到「分」。GPU 就这样老实记账：PyTorch 里写 `.to(bfloat16)`，这次舍入一定发生。TPU 的编译器像个聪明的会计：发现「这个数刚抹完，马上又要拿去算」，就直接用没抹的原数往下算。结果更准，但和 GPU 的账在最后一位上对不上。
 
-| 开关 | 改了哪里、改成什么 | 后文简称 |
-|---|---|---|
-| `ihc_force_bf16_rounding`（M36） | iHC（超连接）每层两处：送进分支的四路加权和（分支输入），以及残差更新后的流。原来是 `astype(bf16)`，换成 `reduce_precision` | iHC 强制舍 |
-| `hc_head_force_bf16_rounding`（M52） | hc_head 把四路流收成一路以后、进末层 RMSNorm 之前，强制舍 BF16（`reduce_precision`）。它的转置把反向传回来的梯度（余切）也舍一次。GPU 这里是 `.to(bfloat16)` | hc_head 强制舍 |
-| `ihc_stream_grad_gpu_order`（M58） | 两部分。① 流梯度：用一个 `custom_vjp` 函数 `stream_fanout` 把流复制成 3 份（加权和、门控、残差三处各用一份；hc_head 里是 2 份）。反向时每份的梯度先舍 BF16，再按 GPU autograd 的顺序逐个相加，每加一次舍一次，全用 `reduce_precision`。② 分支输出：注意力、MLP 的输出转 FP32 后用 `reduce_precision` 舍到 BF16 网格，它的梯度同样被舍。M59 `ihc_stream_grad_gpu_order_parts` 可以只开 ① 或只开 ② | 流梯度照 GPU 舍 |
+落到代码上：
 
-**C 口径**是 2026-11-11 起的对齐配置，就是这三处全开：
+- 混元 4 的习惯是「FP32 算、BF16 存」。MaxText（JAX）里写 `x.astype(bf16)`，下一步要 FP32 时再转回来。编译后是一对 `convert(f32→bf16)` → `convert(bf16→f32)`。
+- XLA 会把相邻的小运算合成一颗 kernel，叫**融合**；融合内部的中间值留在片上，不写回显存。
+- TPU 编译器默认开着 **excess precision**（允许中间结果多留精度）。上面那对来回如果落在同一颗融合里，编译器直接用 FP32 的值，**这次舍入就没了**。（这是实测出来的规律，见下文[「为什么能扫」](#为什么能扫)。）
+- 另一种写法 `jax.lax.reduce_precision(x, 8, 7)`：值还是 FP32，但尾数截到 BF16 的 7 位。编译器把它当成一次真的运算，**不会省**。
 
-| 配置 | iHC 强制舍（M36） | hc_head 强制舍（M52） | 流梯度照 GPU 舍（M58） |
-|---|---|---|---|
-| 对照（C 口径之前的对齐配置） | 开 | 关 | 关 |
-| 只开 M58 | 开 | 关 | 开 |
-| 只开 M52 | 开 | 开 | 关 |
-| **C 口径** | 开 | 开 | 开 |
+为什么不干脆把 excess precision 整个关掉？试过，离 GPU 更远。全局关掉，所有融合里的中间值都要舍一次，很可能比 GPU 舍得还多（推断）。所以只能逐处补：哪一处要「照 GPU 一定舍」，就把那里的 `astype` 换成 `reduce_precision`。本案例的三处改动都是这么做的。
 
-下文「只开 M58」「只开 M52」都是在 M36 已开的基础上。
+## 现象：前段一个小鼓包，后段一条尾巴
 
-## 先看结论：三层
+这一节回答：偏差长什么样，是不是真的。
 
-**第一层：主因是 iHC 流梯度的舍入写法（实测，两头验证）。**
+先说尺子，后文都用它：
 
-iHC（超连接）把每层的隐藏状态扩成四路「流」。GPU 上一路 BF16 的流在一层里有三处用到，反向时 autograd 把三份 BF16 梯度按「加权和 + 门控」再加「残差」的分组加起来，每加一次舍一次 BF16（CPU 上用 GPU 同一段代码逐位核过）。TPU 的代码里同样写了 BF16，但 excess precision（编译器允许把中间结果留在 FP32、少舍几次的开关，默认开）让编译器在融合里把这几次舍入省掉，三份梯度实际在 FP32 里加完才舍。
+- **纵轴**是主 loss 的相对差：(TPU − GPU 16 份的逐步均值) ÷ GPU，1e-6 量级。
+- **一份**是一次 1000 步运行。GPU 重跑 16 份量自己的波动；TPU 是确定性的，各份只换执行方式，量自己的扰动（明细见出处一节）。
+- **灰带**是 GPU 自己的波动，用**留一法**量：轮流拿一份 GPU 去比其余 15 份。红线明显跑出灰带，就不是 GPU 自己的随机波动能解释的。
+- 两组运行有没有真差别，用**置换检验**给 p 值，越小越不像巧合。
+- **前段**指第 51–100 步，**后段**指第 551–1000 步。后文「后段 +x」都是这一段的平均。
 
-两头各改一处：
+![C 口径之前的对齐配置：TPU 8 份主 loss 对 GPU 的相对差](../alignments/01-mini/figures/case17-drift.png)
 
-| 改哪边 | 改成什么 | 第 551–1000 步主 loss 对 GPU 16 份均值 | 份数 | 检验 |
-|---|---|---|---|---|
-| TPU（不开 M52） | 照 GPU 补上舍入（`ihc_stream_grad_gpu_order`，M58） | +9.4e-6 → +1.9e-6 | 对照 4 份、改后 5 份 | 置换检验 p 0.016 |
-| GPU | 照 TPU 不舍（`HY4_TPU_LIKE_STREAM`） | GPU 自己对 GPU 留一法 +3.9e-6，4 份都正 | 4 份 | p 0.0025 |
+图 1：左边 1000 步，右边延长到 2000 步。数据 [`mini-main-loss-drift.json`](../alignments/01-mini/results/mini-main-loss-drift.json)、[`mini-ihc-ablation.json`](../alignments/01-mini/results/mini-ihc-ablation.json) 的 `x2000`。
 
-TPU 照 GPU 写法就平，GPU 照 TPU 写法就飘。两边都去掉 iHC 后，两边都不飘。
+读图：
 
-**第二层：TPU 更准，但对不齐。**
+- **第 550 步起一路往上**，到第 976–1000 步高 1.8e-5，远出灰带。这是本案例要查的「尾巴」。
+- **不会无限变大。** 2000 步那 1 份在第 1000 步前后到顶，之后落回 GPU 两份的范围里（第 1001–1250 步平均 +2.9e-5；GPU 只有 2 份，尺子很粗，图上没画）。
+- **第 51–100 步有个小鼓包，原因另有一处**：混元 4 最后一层之后，由 **hc_head** 把多路隐藏状态收回一路，GPU 在这里舍一次 BF16，TPU 这次被省掉了（[根源一览第 28 行](../ROOT-CAUSES.md#r28)）。先记住它，后面它会和尾巴纠缠在一起。
 
-按单次运算看，三份梯度在 FP32 里加完只舍一次，比每加一次舍一次少舍两次，离精确值更近。这是按舍入次数推出来的；整条训练轨迹上谁离精确值更近，没有测。TPU 没有算错，只是和 GPU 的舍入位置不同。对齐要的是「同样的舍入位置」，所以 TPU 这边要补上这些舍入。生产训练不需要补（[根源一览第 30 行](../ROOT-CAUSES.md#r30)：不开）。
+<details>
+<summary>两件先排除掉的事：不是前向的差，也不是学习率；逐块数字</summary>
 
-**第三层：残余，以及全局清单给出的范围。**
+- **不是前向。** 同一份权重上 TPU、CPU FP64、CPU 上照 GPU 写法各算同几批：6 个状态 19 批，TPU 比 GPU 写法高 +0.83e-6 ± 1.15e-6，不到后段差距的一成（[`mini-main-loss-same-state.json`](../alignments/01-mini/results/mini-main-loss-same-state.json)）。所以偏差是训练里一步步攒出来的，要查更新路径。
+- **学习率是常数**，和它无关。分块偏差和 GPU 的 param_norm 同步（第 501 步起相关 0.96），和梯度范数无关（−0.11）。同一批运行的 MTP loss 反方向走，第 751–1000 步 −3.2e-5。
 
-C 口径下补全了 iHC、hc_head 两处，后段仍剩约 +7e-6：6 份第 551–1000 步 +6.9e-6，6 份里 5 份尾部在，和不修的对照分不开（p 0.32）。残余的机制还没查清，下面这几条都是查到的事实：
-
-- M52（hc_head 输出照 GPU 舍）一开，M58 的作用就测不出来了。
-- 拆到最后，两者的相冲点在 hc_head 那一次余切舍入上。
-- GPU 上拿掉这次舍入，前段出现鼓包、后段反而变低。「只开 M58 时后段变平」里有一部分是两处误差互相抵消，不全是修好了。
-
-于是不再逐处猜，改成把整步程序扫一遍：凡是「代码写了 f32→bf16、同一颗融合里又转回 f32」的位置都列出来。扣掉已经用 reduce_precision 补上的 iHC、hc_head，HLO 里还有 272 处往返。按类别归下来，值得查的是三类：
-
-1. 分支输入的梯度合流，典型是注意力输入：q、kv 下投影和输出门三份梯度在 FP32 里相加；
-2. 各线性层每个微批的 dW 不舍 BF16（GPU golden 关了 `gradient_accumulation_fusion`，每个微批的 dW 先出 BF16）；
-3. 前向的几处：输出门、fc1、路由专家的 act×up。
-
-其中整颗 kernel 只含这种往返、不含任何真舍入的有 41 颗，LLO 里打包指令全部是 0 条，确认舍入确实被省掉了。残余是不是来自这三类，要等 GPU 上的诊断开关跑完；在那之前，它们只是候选。
-
-## 怎么查到的
-
-下面按时间顺序讲。所有数字出自 [mini 对齐细节 D30](../alignments/01-mini/DETAILS.md#d30)、[知识库「mini 主 loss 共同偏高」](../knowledge.md#mini-主-loss-共同偏高要点与出处)与那里列的结果文件；PR 是 。
-
-尺子统一是：TPU 对 GPU 16 份的逐步均值，取第 551–1000 步（「后段」）的均值；GPU 自己的波动用 16 份轮流当被测的留一法量。两组运行之间的差用置换检验（每格 4–6 份，换执行方式的重复：默认、scoped VMEM 64 / 32 MiB、关延迟隐藏调度等）。
-
-## 第一幕：现象，以及跑到 2000 步
-
-C 口径之前的现行比较，主 loss 带符号均值 r 1.55（r = 差 ÷ GPU 重跑的噪声上限）。开、关 base2 各 4 份 TPU，主 loss 都比 GPU 16 份均值高，平均 +4.3e-6。
-
-按 25 步分块看偏差怎么随步数变（TPU 8 份对 GPU 16 份，[`mini-main-loss-drift.json`](../alignments/01-mini/results/mini-main-loss-drift.json)）：
+逐块数字（TPU 8 份对 GPU 16 份；鼓包那一行按 10 步分块，所以比图上 25 步一个点的峰值高）：
 
 | 步 | 偏差 | 读法 |
 |---|---|---|
 | 第 1 步 | −2.0e-6 | 8 份都偏低 |
-| 第 51–90 步 | 最高 +7.2e-6（第 71–80 步） | 一个小鼓包，8 份都偏高 |
+| 第 51–90 步 | 最高 +7.2e-6（第 71–80 步） | 小鼓包，8 份都偏高 |
 | 第 100–550 步 | 0 附近 | |
 | 第 601–625 步 | +4.1e-6 | 第 550 步起一路变大 |
 | 第 751–775 步 | +1.1e-5 | |
 | 第 976–1000 步 | +1.8e-5 | 每块 8 份里 7–8 份偏高；GPU 尺子 2–7e-6 |
 
-2–1000 步的 +4.3e-6 几乎全部来自第 501–1000 步。学习率是常数，和它无关。分块偏差与 GPU 的 param_norm 同步（第 501 步起相关 0.96），与梯度范数无关（−0.11）。同一批运行的 MTP loss 反方向走，第 751–1000 步 −3.2e-5。
+</details>
 
-先确认两件事。
+## 排除：不是哪项 loss，也不是 libtpu 版本
 
-- **不是前向的差。** 同一份权重上 TPU、CPU FP64、CPU BF16（GPU 写法）各算同几批：6 个状态 19 批，TPU 比 GPU 写法高 +0.83e-6 ± 1.15e-6，不到后段差距的一成（[`mini-main-loss-same-state.json`](../alignments/01-mini/results/mini-main-loss-same-state.json)）。所以偏差是训练里攒出来的，要查更新路径，不是查前向。
-- **不会越飘越大。** 延长到 2000 步，TPU 1 份对 GPU 2 份：第 1001–1250 步 +2.9e-5 到顶，之后三段 +5.4e-6、+7.4e-6、+4.1e-6，落回 GPU 两份的范围（[`mini-ihc-ablation.json`](../alignments/01-mini/results/mini-ihc-ablation.json) 的 `x2000`；2 份只有 1 对，尺子很粗）。
+这一节回答：最先怀疑的那几样，为什么都不是。
 
-前段那个小鼓包另有原因：hc_head 把四路流收成一路后那次 BF16 舍入，TPU 没做。补上它的开关是 `hc_head_force_bf16_rounding`（M52，[根源一览第 28 行](../ROOT-CAUSES.md#r28)）。这个开关后面还会出场。
+- **不是哪项 loss。** 两边同时关掉 MTP（多 token 预测的 loss）、关掉 KD（索引器的蒸馏 loss）、两个都关，尾巴都还在。
+- **不是 GPU 那边的已知问题。** GPU 索引器 RoPE 改成 FP32，TPU 对它仍飘。
+- **不是 libtpu 版本。** 0.0.52 和 0.0.46 一样飘。
+- **不是执行方式。** TPU 自比的 35 个 1000 步运行（换 libtpu、换芯片、换并行方式、换重算、换注意力实现等），第 751–1000 步全部为正；另试的五个小改动也都去不掉。
 
-## 第二幕：隔离实验，排除 MTP、KD、GPU 索引器 RoPE、libtpu
+<details>
+<summary>排除实验的数字</summary>
 
-后段先从「是不是某项 loss 带出来的」查起（[`mini-loss-isolation.json`](../alignments/01-mini/results/mini-loss-isolation.json)）。两侧同一语义把系数设 0，每种配置 GPU 4 份、TPU 2 份，TPU 对同配置 GPU 均值：
+每种配置 GPU 4 份、TPU 2 份，TPU 对同配置 GPU 均值（[`mini-loss-isolation.json`](../alignments/01-mini/results/mini-loss-isolation.json)）：
 
 | 配置 | 后段 | 两份的后段斜率 | GPU 留一法斜率范围 |
 |---|---|---|---|
-| 对照（同一条提交路径） | +1.48e-5 | — | — |
+| 对照（同一条提交路径，1 份） | +1.48e-5 | — | — |
 | A 关 MTP | +1.16e-5 | +4.3e-6、+2.3e-6 | −0.7e-6 到 +0.4e-6 |
-| B 关 KD | +9.0e-6 | +0.5e-6、+4.0e-6 | — |
+| B 关 KD | +9.0e-6 | +0.5e-6、+4.0e-6 | −2.3e-6 到 +1.9e-6 |
 | C 都关 | +8.7e-6 | +1.2e-6、+2.7e-6 | −0.7e-6 到 +1.0e-6 |
 
-三种都还飘，所以不是这两项 loss 造成的。另外两个候选也排除了：
+- GPU 索引器 RoPE 改 FP32（`HY4_INDEXER_ROPE_FP32`，台账 G34）跑 1 份，TPU 对它后段仍 +1.24e-5。
+- libtpu 0.0.52 的 golden 对 GPU 16 份后段 +7.7e-6，同配置 0.0.46 的 4 份 +9.8e-6。
+- 更早排除的五个（#385，每个 2 份）：MTP 不给 hc_head 参数梯度、MTP 与输出头共用末层 norm、RoPE 照 GPU 的 BF16 写法、MTP 残差强制舍 BF16、RMSNorm 输出处的反向梯度强制舍 BF16。第 751–1000 步都落在 70 份 TPU 运行的范围里。第 1 步梯度相对差改到 6e-3 的改动也去不掉尾巴。
 
-- **GPU 索引器 RoPE。** 真实宽度上 GPU 的 KD 偏高约六成来自索引器 RoPE 在 BF16 里算。mini 上 GPU 照同样写法改成 FP32（`HY4_INDEXER_ROPE_FP32`，台账 G34）跑 1 份，TPU 对它后段仍是 +1.24e-5。
-- **libtpu 版本。** 0.0.52 的 golden 对 GPU 16 份，后段 +7.7e-6，同配置 0.0.46 的 4 份 +9.8e-6，一样飘。
+</details>
 
-在这之前（#385）还排除了五个候选（每个 2 份，后段都落在 70 份 TPU 运行的范围里）：MTP 不给 hc_head 参数梯度、MTP 与输出头共用末层 norm、RoPE 照 GPU 的 BF16 写法、MTP 残差强制舍 BF16、RMSNorm 输出的余切强制舍 BF16。TPU 自比的 35 个 1000 步运行换了 libtpu、v7x、并行方式、重算、注意力实现等，第 751–1000 步主 loss 全部为正；第 1 步梯度相对差到 6e-3 的改动都去不掉它。
+## 定主因：iHC 流梯度少舍了几次
 
-## 第三幕：结构消融，去掉 iHC 尾部就消失
+这一节回答：问题在哪一块结构里，是什么差别，怎么证明它就是原因。
 
-剩下的嫌疑在模型结构里。最直接的办法是两边一起把 iHC 拿掉，看还飘不飘：
+### 先缩范围：去掉 iHC 就平
 
-- GPU 用 Megatron-Core 的 TransformerLayer 加 bias-dropout-add（与 MTP 层同一种写法），MaxText 用 `mhc_expansion_rate=1`。
-- 随机初始化用 `make_tiny_hf.py --no-ihc`，其余 167 个张量与 `hy4-mini-seed0` 逐位相同；CPU 上同一份权重、同一批数据，两边第 1 步 loss 相对差 −1.9e-6。
+两边一起把 iHC 拿掉（GPU 换成普通残差，MaxText 设 `mhc_expansion_rate=1`，其余权重逐位相同），后段落回 GPU 的范围（图 2 虚线）。范围从整个模型缩到了 iHC 一带。
 
-1000 步 GPU 3 份、TPU 2 份：TPU 后段 +1.9e-6、+0.7e-6，斜率 +0.5e-6、+0.15e-6，都在 GPU 范围（−1.0e-6 到 +1.2e-6）里（[`mini-ihc-ablation.json`](../alignments/01-mini/results/mini-ihc-ablation.json) 的 `noihc`；GPU 3 份只有 3 对，尺子粗）。
+### iHC 里哪里不一样
 
-范围从整个模型缩到 iHC 一带。
+iHC 每一层里，同一份流被用了三次：
 
-## 第四幕：开关拆半
+```mermaid
+flowchart LR
+  S["四路流 x<br/>（BF16）"] -->|门控| G["算系数<br/>pre、post"]
+  S -->|加权和| W["加权和 Σ pre·x<br/>= 分支输入"]
+  W --> B["分支<br/>注意力或 MLP"]
+  S -->|残差| R["残差直通"]
+  B --> P["新流 = 残差 + post × 分支输出"]
+  R --> P
+  G -.-> W
+  G -.-> P
+```
 
-iHC 里 TPU 和 GPU 不同的地方，读代码能列出来：GPU 上一路 BF16 的流在一层里有三处用到，三份梯度各舍 BF16、在 BF16 里相加，每加一次舍一次；分支输出（注意力、MLP 的输出）也是 BF16。TPU 的代码写的是 `astype(bf16)`，编译器在 excess precision 下可以把这几处的往返省掉。
+用了三次，反向时这份流就收到三份梯度，要加成一份。两边的加法不一样：
 
-开关 `ihc_stream_grad_gpu_order`（M58）用 reduce_precision 把这几处舍入补上。编译器不会省 reduce_precision，这是它和 `astype` 的区别。它又能拆成两半（M59）：
+```mermaid
+flowchart LR
+  subgraph GPU["GPU：每加一次舍一次"]
+    direction LR
+    a1["加权和那份<br/>舍 BF16"] --> s1(("＋"))
+    a2["门控那份<br/>舍 BF16"] --> s1
+    s1 --> r1["舍 BF16"] --> s2(("＋"))
+    a3["残差那份<br/>舍 BF16"] --> s2
+    s2 --> r2["舍 BF16"]
+  end
+  subgraph TPU["TPU（舍入被省掉后）：FP32 加完舍一次"]
+    direction LR
+    b1["加权和那份"] --> t1(("＋"))
+    b2["门控那份"] --> t1
+    b3["残差那份"] --> t1
+    t1 --> q1["舍 BF16"]
+  end
+```
 
-| 配置（C 口径之前，只开 M36 的基础上） | 后段 | 份数 |
-|---|---|---|
-| 对照 | +9.4e-6，4 份尾部都在 | 4 |
-| M58 全套 | +1.9e-6，2 份尾部在 | 5 |
-| 只补流梯度 | +0.6e-6，斜率平 | 1 |
-| 只补分支输出 | +3.0e-6，斜率平 | 1 |
+GPU 一共舍 5 次（三份各一次，两次相加各一次），这是 autograd 的行为，我们在 CPU 上用 GPU 同一段代码逐位核过。TPU 的代码同样写了 BF16，但按前面那条规律，这几处舍入落在融合里会被省掉，三份在 FP32 里加完、最后只舍 1 次。这一段没有单独看 LLO，所以 TPU 这半边是推断；下面两头验证会给它撑腰。
 
-M58 全套对对照差 −7.5e-6，置换检验 p 0.016。libtpu 0.0.52 上开 M58，后段从 +1.19e-5 降到 +5.2e-6。两半各 1 份，只说明两半都在起作用，分不出谁大。
+用记账的比方：三张发票，GPU 每加一张抹一次零，TPU 拿计算器加完再抹一次。每步每层差在最后一位，1000 步攒出尾巴。
 
-## 第五幕：两头验证
+### 补上它：流梯度照 GPU 舍
 
-单看 TPU 一侧，「补上舍入后变平」也可能是巧合。所以反过来在 GPU 上做：GPU 一侧加三个诊断开关（台账 G37），各只把一处改成 TPU 的样子，对 GPU 16 份留一法：
+对应的改动叫 **流梯度照 GPU 舍**（`ihc_stream_grad_gpu_order`，台账 M58）。在 `mhc.py` 里新增 `stream_fanout(x, 3)`，把流复制成三份分给加权和、门控、残差；反向时照 GPU 的顺序先把每份梯度舍 BF16，再逐个相加、每加一次舍一次，全用 `reduce_precision`。它另外还把分支输出补舍了一次 BF16。
 
-| GPU 开关 | 改成 TPU 的什么 | 后段 | 份数 | 检验 |
+![对照、只开 M58、去掉 iHC 三条分块曲线](../alignments/01-mini/figures/case17-fix-curves.png)
+
+图 2：数据同图 1；只开 M58 与去掉 iHC 两条取自 [`mini-ihc-ablation.json`](../alignments/01-mini/results/mini-ihc-ablation.json) 的 `ihc`、`noihc`。C 口径没有存逐块曲线，它的前段、后段见图 3。
+
+图 2 的蓝线：补上以后，尾巴下去了，和去掉 iHC 的虚线差不多。数字见下一小节的表。
+
+<details>
+<summary>「对照」指哪批运行</summary>
+
+图 1、图 2 的红线是 8 份（base2 开、关各 4）；改前改后的比较用另一批 4 份（与 8 份部分重叠），正文的对照数字都指这 4 份。
+
+</details>
+
+### 两头验证：GPU 照 TPU 写，GPU 自己也飘
+
+只在 TPU 一侧看，变平也可能是巧合。所以反过来，在 GPU 上**故意照 TPU 的样子不舍**，看 GPU 自己会不会长出尾巴（GPU 诊断开关台账 G37）：
+
+| 在哪边改 | 改成什么 | 后段 | 份数 | 检验 |
 |---|---|---|---|---|
-| `HY4_TPU_LIKE_STREAM` | 流转 FP32 给三处用，梯度在 FP32 里加完只舍一次 | +3.9e-6，4 份都正（+3.2e-6 到 +4.8e-6），斜率 +2.2e-6 | 4 | p 0.0025 |
-| `HY4_TPU_LIKE_HEAD` | hc_head 收拢输出不舍、FP32 进末层 norm | +0.2e-6；但第 51–100 步 +3.7e-6 | 4 | 后段 p 0.89；前段 p 0.001 |
-| 两处都改 | | +3.5e-6 | 4 | p 0.015 |
+| TPU | 照 GPU 补上舍入（M58） | +9.4e-6 → +1.9e-6 | 对照 4、改后 5 | p 0.016 |
+| GPU | 照 TPU 不舍（`HY4_TPU_LIKE_STREAM`） | GPU 自己对 GPU：+3.9e-6，4 份都正 | 4 | p 0.0025 |
 
-GPU 照 TPU 写法流梯度，GPU 自己就出现尾部。GPU 留一法 16 份里后段 ≥ +3.0e-6 的只有 3 份，只改流梯度那 4 份全在其中。只改 hc_head 则正好复现 TPU 的前段鼓包。
+TPU 照 GPU 写就平，GPU 照 TPU 写就飘，两边都去掉 iHC 就都不飘。三件事合起来，主因定为 **iHC 流梯度的舍入写法**（[根源一览第 30 行](../ROOT-CAUSES.md#r30)）。
 
-至此两头都验证了：
+GPU 上另一个开关只把 hc_head 收拢改成 TPU 的样子（`HY4_TPU_LIKE_HEAD`）：它不长尾巴，却**正好复现了 TPU 的前段鼓包**（+3.7e-6，p 0.001），鼓包的来历也坐实了。
 
-- TPU 照 GPU 补舍入，尾部下去；
-- GPU 照 TPU 不舍，尾部出现；
-- 两边都去掉 iHC，都不飘。
+**TPU 算错了吗？没有。** 按单次运算看，少舍几次离精确值更近（按舍入次数推的；整条轨迹上谁更近没测）。TPU 只是和 GPU 舍的位置不同。对齐要的是同样的舍入位置，所以对齐配置要补；生产训练不需要。
 
-主因定为 iHC 流梯度的舍入写法（[根源一览第 30 行](../ROOT-CAUSES.md#r30)）。
+<details>
+<summary>去掉 iHC、M58 拆半的细节</summary>
 
-## 第六幕：C 口径没修好，M52 和 M58 相冲
+- 去掉 iHC：GPU 用 Megatron-Core 的 TransformerLayer 加 bias-dropout-add（与 MTP 层同一种写法）；随机初始化用 `make_tiny_hf.py --no-ihc`，其余 167 个张量与 `hy4-mini-seed0` 逐位相同；CPU 上同一份权重、同一批数据，两边第 1 步 loss 相对差 −1.9e-6。1000 步 GPU 3 份、TPU 2 份：TPU 后段 +1.9e-6、+0.7e-6，斜率 +0.5e-6、+0.15e-6，都在 GPU 范围（−1.0e-6 到 +1.2e-6）里（GPU 3 份只有 3 对，尺子粗）。
+- M58 可以拆成两半单开（M59），各 1 份：只补流梯度 +0.6e-6、只补分支输出 +3.0e-6，斜率都平。只说明两半都在起作用，分不出谁大。
+- libtpu 0.0.52 上开 M58，后段从 +1.19e-5 降到 +5.2e-6。
 
-对齐配置随后改成 C 口径（项目负责人定）：M36（iHC 分支输入与流照 GPU 舍）、M52（hc_head 输出照 GPU 舍）、M58（iHC 流梯度照 GPU 舍）一起开，三处都是 GPU 的写法。照理前段、后段都该好。实测前段好了，后段没好（撤回了 #411 的「已定位」，#430、#438、#448 补齐份数和拆格）：
+</details>
 
-| 配置 | 后段 | 尾部在的份数 | 对对照（只开 M36） |
+## C 口径反转：三处全照 GPU 改，后段反而没好
+
+这一节回答：三处都照 GPU 改了以后，结果怎样。
+
+前段鼓包和后段尾巴各找到了一处原因，自然想把两处一起照 GPU 补上。再加上早就开着的一处，就是现在的对齐配置 **C 口径**。三处改动都只是把 `astype` 换成 `reduce_precision`，都在 `maxtext` 的混元 4 分支上：
+
+| 改动（开关，台账号） | 管哪里 | 代码怎么改 |
+|---|---|---|
+| **iHC 强制舍**（`ihc_force_bf16_rounding`，M36，早就开着） | iHC 每层的分支输入和新流这两个值 | `mhc.py` 的 `_xla_call` 里，这两处的 `.astype(x.dtype)` 前面套一层 `self._round(...)`，即 `reduce_precision` |
+| **hc_head 强制舍**（`hc_head_force_bf16_rounding`，M52） | hc_head 收拢的输出（修前段鼓包） | hc_head 的 `return out.astype(self.dtype)` 前加一行 `out = jax.lax.reduce_precision(out, 8, 7)`；这一行的反向也会把传回来的梯度舍一次 |
+| **流梯度照 GPU 舍**（`ihc_stream_grad_gpu_order`，M58） | 三份流梯度怎么加（修后段尾巴） | 上一节的 `stream_fanout`，外加分支输出补舍一次 |
+
+四种配置（M36 都开着）：
+
+| 配置 | iHC 强制舍（M36） | hc_head 强制舍（M52） | 流梯度照 GPU 舍（M58） |
 |---|---|---|---|
-| 只开 M58 | +1.9e-6 | 5 份里 2 份 | p 0.016 |
-| 只开 M52 | +12.5e-6 | 4 份都在 | 前段鼓包消失（p 0.029） |
-| C 口径（M36 + M52 + M58） | +6.9e-6 | 6 份里 5 份 | p 0.32，分不开 |
+| 对照（C 口径之前的对齐配置） | 开 | 关 | 关 |
+| 只开 M52 | 开 | 开 | 关 |
+| 只开 M58 | 开 | 关 | 开 |
+| **C 口径**（2026-11-11 起） | 开 | 开 | 开 |
 
-C 口径比只开 M58 大 +5.0e-6（p 0.024）。M52 开着时，再补 M58 全套或任一半都测不出作用（[`mini-factorial-c-parts-vs-m52.json`](../alignments/01-mini/results/mini-factorial-c-parts-vs-m52.json)）：
+照理前段、后段都该好。实测前段好了，后段没好：
+
+![TPU 四种配置与 GPU 诊断开关：前段、后段逐份的点](../alignments/01-mini/figures/case17-windows.png)
+
+图 3：每个点是一份 1000 步运行，横线是平均。左边 TPU 对 GPU 16 份均值（[`mini-factorial-tpu-6.json`](../alignments/01-mini/results/mini-factorial-tpu-6.json)），右边 GPU 对 GPU 16 份留一法（[`mini-gpu-tpulike.json`](../alignments/01-mini/results/mini-gpu-tpulike.json)、[`mini-gpu-headcot.json`](../alignments/01-mini/results/mini-gpu-headcot.json)）。
+
+- **前段（左上）：** 只要开了 M52，鼓包就没了。C 口径 6 份 −0.3e-6，对照 4 份 +3.9e-6，p 0.005。
+- **后段（左下）：** C 口径 +6.9e-6，6 份里 5 份尾巴在，和对照分不开（p 0.32），比只开 M58 高 5.0e-6（p 0.024）。
+- 也就是说，**M52 开着时，M58 的作用测不出来了**。（只开 M58 的前段比对照还高一点，因为 M58 本来就不管鼓包。）
+
+M52 一边修好了前段，一边让 M58 在后段的效果看不见了。把 M52 拆开看（台账 M62）：**只在前向舍、反向梯度原样传回**时，后段又和只开 M58 一样低了，但前段鼓包回来了。前段的好处和后段的麻烦，看来都跟 **hc_head 反向那次梯度舍入**有关。具体差在哪，下一节编出来看。
+
+<details>
+<summary>拆格的数字</summary>
+
+M52 开着时，再补 M58 全套或任一半都测不出作用（[`mini-factorial-c-parts-vs-m52.json`](../alignments/01-mini/results/mini-factorial-c-parts-vs-m52.json)）：
 
 | 在 M36 + M52 之上，各 4 份 | 后段 | 对只开 M52 |
 |---|---|---|
@@ -181,97 +238,110 @@ C 口径比只开 M58 大 +5.0e-6（p 0.024）。M52 开着时，再补 M58 全�
 | 只补流梯度一半 | +7.9e-6 | −4.6e-6，p 0.14 |
 | 只补分支输出一半 | +10.8e-6 | −1.7e-6，p 0.54 |
 
-再把 M52 拆开（各 4 份，台账 M62，[`mini-factorial-c-ab-vs-m52.json`](../alignments/01-mini/results/mini-factorial-c-ab-vs-m52.json)）：
+把 M52 拆成两半（各 4 份，[`mini-factorial-c-ab-vs-m52.json`](../alignments/01-mini/results/mini-factorial-c-ab-vs-m52.json)）：
 
-- **(a) M52 只在前向舍，余切原样传回**：后段 +3.7e-6，对只开 M52 p 0.029，和只开 M58 分不开；但前段鼓包回来了。
-- **(b) M58 不覆盖 hc_head**（配完整 M52）：后段 +4.3e-6，p 0.057；前段鼓包没有。
+- **M52 只在前向舍，反向梯度原样传回**（配 M58）：后段 +3.7e-6（对只开 M52 p 0.029），和只开 M58 分不开；前段鼓包回来了。
+- **M58 不碰 hc_head**（配完整 M52）：后段 +4.3e-6，p 0.057；前段鼓包没有。
 
-推断：M52 消前段鼓包，靠的是它在 hc_head 输出处舍余切；同一次舍入又让 M58 在后段的作用不见了。相冲点在 hc_head 输出处的余切舍入。
+</details>
 
-注意：这个相冲在 GPU 上看不到。GPU 上两处一起改（上一幕的「两处都改」）和只改流梯度差不多。
+## 抵消：只修一处时，两个偏差互相抵掉
 
-## 第七幕：CPU 逐位对照，和 v5p 上编出来的 LLO
+这一节回答：为什么「更像 GPU」的 C 口径，后段反而比「不像 GPU」的只开 M58 差。
 
-相冲点落在 hc_head 加末层 norm 这一小段。先在 CPU 上把这一段三方各算一遍反向，逐位比（[`hc-head-order-probe.json`](../alignments/01-mini/results/hc-head-order-probe.json)，[知识库「CPU 上逐位对照」](../knowledge.md#hc_head-加末层-norm-的反向cpu-上逐位对照)）。三方是：GPU 照 `Hy4FinalNorm` 逐行写、MaxText 真模块关省舍入、MaxText 真模块开省舍入。
+先把 hc_head 这一段编出来看（v5p 离线编译，读 HLO 和 LLO，，[`hc-head-llo-probe.json`](../alignments/01-mini/results/hc-head-llo-probe.json)）：C 口径和只开 M58 在这一段**只差一处**：hc_head 反向那次梯度舍入（传回 hc_head 收拢处的梯度舍不舍 BF16）。C 舍，和 GPU 一样；只开 M58 留 FP32。
 
-- 语义上唯一实质不同的一步：MaxText 给 MTP 另做一次末层 norm，两路各做一次 norm 反向再相加；GPU 是先把两路梯度加起来，只做一次 norm 反向。
-- C 口径再开 `mtp_input_shared_final_norm`（M53）后，和 GPU 只差 FP32 累加顺序：流梯度 dx 2.1e-5，逐位相同 99.993%。
-- 上卡 4 份：C + 共用 norm 后段 +5.0e-6，对 C 口径 p 0.40，后段没变。
+那就在 GPU 上把这一次舍入拿掉，看 GPU 往哪边走（GPU 开关 `HY4_TPU_LIKE_HEADCOT`，，4 份）：
 
-语义对齐到只差累加顺序，后段照旧。剩下的只能是 TPU 后端实际省掉了哪些舍入，这要看编译产物。
+![两个偏差抵消：TPU 与 GPU 拿掉同一次舍入后的方向](../alignments/01-mini/figures/case17-cancel.png)
 
-于是把这一段写成最小复现，CPU 上为 v5p 离线编译，读优化后 HLO 和 LLO（[`hc-head-llo-probe.json`](../alignments/01-mini/results/hc-head-llo-probe.json)，[知识库「同一段在 v5p 上编出来」](../knowledge.md#同一段在-v5p-上编出来哪几处舍入被省掉)）。读法沿用 iHC 那次（[TPU 自比 · 影响逐件 05](../alignments/04-tpu-self/impacts/05-ihc-bf16-rounding.md)）：
+图 4：点是格均值，箭头只表示方向。数据同图 3。
 
-> 开着 excess precision 时，**融合内部的来回 convert 不产生舍入指令**，跨融合边界的值按声明的 BF16 写回内存。HLO 里 `convert(f32→bf16)` 紧跟 `convert(bf16→f32)` 还在，LLO 里那颗 kernel 一条 BF16 打包指令（`vpack.*.bf16`）都没有。加上 reduce_precision 后，同一颗 kernel 里出现打包指令（iHC 的均方 kernel 多 256 条，hc_head 这一颗多 688 条）。
+两边方向一样：**拿掉这次舍入，前段往上鼓，后段往下压。** GPU 上前段 +4.9e-6（p 0.0002），后段 −2.9e-6，4 份都负（p 0.018）。大小对不上（TPU 两格后段差 5.0e-6，GPU 只动了 2.9e-6），所以下面的「抵消」是按方向推断的，不是加法分解。
 
-读出来的结果：
+用一个比方把这个推断串起来。一台秤有三个毛病：
 
-- C 口径和只开 M58 在这一段只差一处：**进 hc_head 收拢的梯度舍不舍 BF16**。C 舍（和 GPU 一样），只开 M58 留 FP32。
-- 两路 norm dx 各自那次转 BF16，四种配置都被省掉了。这和 GPU 不同，但各配置一样，解释不了它们之间的差。
+- 甲让读数偏重：iHC 流梯度少舍（主因，已找到）；
+- 乙让读数偏轻：hc_head 反向那次梯度少舍；
+- 丙让读数偏重：还没找到，在别处。
 
-这一段 C 更像 GPU，后段却是不舍的那两种（只开 M58、(a) 格）更低。按「哪一处没照 GPU 舍」，在这一段找不到相冲的原因。
+只修甲（只开 M58）：乙和丙大致抵掉，读数看上去「准了」。甲、乙都修（C 口径）：只剩丙，读数偏重。所以 C 口径后段那约 +7e-6 不是修坏了，而是把被乙遮住的丙露了出来。
 
-## 第八幕：GPU HEADCOT，发现是抵消
+由此推断两件事：
 
-C 和只开 M58 在 TPU 上只差这一次舍入。那就在 GPU 上把这一次舍入拿掉，看 GPU 会怎样。GPU 诊断开关 `HY4_TPU_LIKE_HEADCOT=1`：末层 norm 的反向 dx 留 FP32 直接给收拢输出，其余不变。4 份，对 GPU 16 份留一法（[`mini-gpu-headcot.json`](../alignments/01-mini/results/mini-gpu-headcot.json)）：
+1. 只开 M58 时后段变平，有一部分是抵消，**不全是修好了**。
+2. 剩下的约 +7e-6 主要来自 hc_head 这一段以外（下一节说为什么）。
 
-| | 第 51–100 步（前段） | 第 551–1000 步（后段） |
-|---|---|---|
-| GPU 拿掉这次舍入 | +4.9e-6（p 0.0002） | −2.9e-6，4 份都负（p 0.018） |
-| TPU 只开 M58（这次不舍） | +6.1e-6 | +1.7e-6 |
-| TPU C 口径（这次舍） | −0.5e-6 | +6.7e-6 |
+## 只剩编译器：下一个怀疑对象
 
-方向一样：这次舍入拿掉，前段出鼓包，后段被往下压。推断：
+这一节回答：丙可能是什么，为什么先怀疑编译器。
 
-1. M52 消前段鼓包，靠的就是这次余切舍入。
-2. 只开 M58 时后段变平，有一部分是这次舍入没照 GPU 做带来的下压，**是两处误差抵消，不全是修好了**。
-3. C 口径在这一段和 GPU 一致，它后段剩下的约 +7e-6 来自这一段以外。
+丙有两种可能：两边**算的东西**不一样（语义差），或者算的一样、**舍的位置**不一样。
 
-问题于是变了：前面一直在 iHC 到 hc_head 一段里逐处找「哪里没照 GPU 舍」，这一段已经找干净了。下一处在哪，凭读代码一处一处猜，猜不完。
+- **hc_head 这一段先排除。** CPU 上逐位比过，C 口径和 GPU 只差一处语义（MaxText 给 MTP 另做一次末层 norm）；把它也照 GPU 改掉，就只差 FP32 累加顺序。这样上卡，后段照旧（4 份 +5.0e-6，和 C 口径分不开，p 0.40）。这一段里还有两次 norm 梯度的 BF16 舍入被省掉，四种配置都一样，所以不是配置之间差别的来源，但可能是丙的一部分（扫描清单把它们归在 norm 类）。
+- **别处的语义**没有逐段核过。
+- **舍入位置：** 这一案到目前为止坐实的每一处差别（流梯度、hc_head 收拢、hc_head 那次梯度）都是同一种：代码写了舍，编译器省了。这一种有一个好处：**能机械地找全**。
 
-## 第九幕：全局清单：先编译、再扫描
+所以下一步先找编译器省掉的舍入。只是不能再一处一处读代码猜了，猜不完。
 
-> **这一步是整个排查里最有价值的方法。** 前八幕每次只查一处：读代码、写开关、上卡每格跑 4 份 1000 步。这一步换成在整个训练步的编译产物里，按一个精确的模式一次扫出所有同类位置。不占卡：只要 HLO 时编译约 2 分钟，带 LLO 确认约 15 分钟；扫描本身只要 HLO 时约 1 秒，读 LLO 时约 11 秒。
+<details>
+<summary>CPU 逐位对照的细节</summary>
 
-### 为什么能这么做
+，[`hc-head-order-probe.json`](../alignments/01-mini/results/hc-head-order-probe.json)：GPU 写法、MaxText 关省舍入、MaxText 开省舍入三方各算一遍 hc_head 加末层 norm 的反向。唯一实质不同是 MaxText 给 MTP 另做一次末层 norm，两路各做一次 norm 反向再相加；GPU 先把两路梯度加起来，只做一次。不开它时流梯度 dx 逐位相同 63.9%；C 口径再开 `mtp_input_shared_final_norm`（台账 M53）后 dx 差 2.1e-5，逐位相同 99.993%。上卡见 #455。
 
-第七幕里有一条规律，是在 iHC、hc_head 两个最小复现上实测出来的：
+</details>
 
-- 代码里写的 `x.astype(bf16)` 再用 FP32 去算，编译到优化后 HLO 里是一对 `convert(f32→bf16)` → `convert(bf16→f32)`。**这对往返就是代码在说「这里该舍一次 BF16」。**
-- 开着 excess precision 时，这对往返如果落在同一颗融合里，后端不产生舍入指令，直接拿 FP32 的值用。
-- 只有跨融合边界写回内存、或喂给 BF16 矩阵乘的值，才真的舍了。
+## 先编译、再扫描
 
-HLO 里 convert 还在，所以能从 HLO 认出「声明了」；LLO 里没有打包指令，所以能确认「被省掉了」。两层合起来，就是一个可以机械匹配的模式。
+这一节回答：怎么不靠猜，一次把全图所有「被省掉的舍入」找出来。**这是整个排查里最值得带走的方法。**
 
-这条规律反过来就是 C 口径里那些开关的作用：reduce_precision 编译器省不掉。M36、M52、M58 就是把这种往返换成了 reduce_precision。
+前面每查一处都要：读代码、写开关、上卡每格跑 4 份 1000 步。这一步改成**在整个训练步的编译产物里，按一个精确的模式一次扫出所有同类位置**。不占卡：编译约 2 分钟、扫描约 1 秒；要 LLO 确认时编译约 15 分钟。
 
-### 怎么做
+### 为什么能扫
 
-**1. 离线编译整步，不占卡。** 用 [`frameworks/maxtext/aot_hlo.py`](../frameworks/maxtext/aot_hlo.py) 在 CPU 上为 v5p-16 编 C 口径的训练步，和上卡编的是同一个程序（这个工具的来历见[案例 14「怎么从编译产物看通信」](14-ddp-fsdp-embedding.md#怎么从编译产物看通信)）。要 LLO 时，再让 libtpu 把每颗 kernel 的 `final_bundles` 存下来。
+**比方：** 代码里写 `astype(bf16)`，像在稿子上批了一句「这里四舍五入」。编译产物有两层：**优化后的 HLO** 像排好版但还留着批注的稿子，看它知道**代码声明了**要舍；**LLO** 像印出来的成品，是每颗 kernel 真正执行的机器指令，真舍 BF16 要用打包指令（`vpack.*.bf16`），看它知道**到底舍没舍**。
 
-| | 只要 HLO | HLO + LLO |
-|---|---|---|
-| 编译耗时 | 约 110 s | 830–1010 s |
-| 进程峰值内存 | 约 15 GiB | 41–43 GiB |
-| 产物 | 优化后 HLO 一份（约 35 MB） | 另有 LLO 目录约 720 MB，1666 颗 kernel（相同的 kernel 只编一次） |
+```mermaid
+flowchart LR
+  A["代码<br/>x.astype(bf16)"] --> B["HLO<br/>convert f32→bf16→f32<br/>声明：这里要舍"]
+  B -->|这对来回落在同一颗融合里| C["LLO：0 条打包指令<br/>没舍"]
+  B -->|写出融合，或喂给矩阵乘| D["LLO：有打包指令<br/>舍了"]
+  E["代码<br/>reduce_precision(x, 8, 7)"] --> F["HLO<br/>reduce-precision"] --> D
+```
 
-**2. 在 HLO 里匹配。** [`analysis/elided_rounding_scan.py`](../analysis/elided_rounding_scan.py) 对每个计算（融合的子计算）逐条看：
+这条规律是先在两小段代码上实测出来的：把 iHC、hc_head 各自写成最小复现，离线编译看 LLO（[`ihc_llo_probe.py`](../analysis/ihc_llo_probe.py)、[`hc_head_llo_probe.py`](../analysis/hc_head_llo_probe.py)）。来回落在同一颗融合里时，那颗 kernel 一条打包指令都没有；换成 `reduce_precision`，同一颗 kernel 就多出打包指令（iHC 那颗多 256 条，hc_head 那颗多 688 条）。
 
-| 规则 | 判成 |
+所以「HLO 里有这对来回，而且两头在同一颗融合里」就是一个可以机械匹配的模式，LLO 用来确认。这也说明了 C 口径那三处改动为什么管用：`reduce_precision` 编译器省不掉。
+
+### 怎么扫
+
+```mermaid
+flowchart TD
+  A["训练配置 yml"] --> B["CPU 上为 v5p-16 离线编译整步<br/>aot_hlo.py：和上卡是同一个程序，不占卡"]
+  B --> C["优化后 HLO"]
+  B -. 要确认时 .-> D["LLO：每颗 kernel 的机器指令"]
+  C --> E["扫描 elided_rounding_scan.py：找<br/>『转成 BF16，又在同一颗融合里转回 FP32』"]
+  E --> F["按源码行、形状归类<br/>得到清单和候选"]
+  D --> G["确认：挑出『整颗只有这种来回』的 kernel<br/>数打包指令，应该是 0 条"]
+  N["负对照：关掉省舍入再编一份"] --> M["同样挑法挑出来的，应该都不是 0 条"]
+  F --> V["上卡验证：GPU 照 TPU 不舍 / TPU 补 reduce_precision"]
+```
+
+扫描器对每一处 `bf16 convert` 判四种情况：
+
+| 看到的样子 | 判成 |
 |---|---|
-| `y = bf16 convert(x)`，x 是 f32，且 y 在**同一个计算里**被 `f32 convert(y)` 用到（中间可以隔着 bitcast、reshape、copy、transpose、broadcast、slice 这类只搬数据的 BF16 运算） | **省掉**（elided）：声明了舍入，同一颗融合里又转回 FP32 |
-| 转回 f32 之后紧跟一个舍到 BF16 网格的 `reduce-precision(exponent_bits=8, mantissa_bits=7)` | **已补**（covered）：有人用 reduce_precision 补上了，不算省掉 |
-| y 作为融合的输出写出、喂给矩阵乘或卷积、或给其他 BF16 运算 | **舍了**（kept） |
-| x 本身已在 BF16 网格上（x 是 reduce-precision 的结果，或刚从 BF16 转上来） | 跳过：来回是精确的，舍不舍都一样 |
+| 转成 BF16 后，在**同一个融合**里又被转回 FP32 用（中间可以隔着 reshape、transpose 这类只搬数据的运算） | **省掉**：声明了舍入，编译器没做 |
+| 转回 FP32 后紧跟一个 `reduce_precision(8, 7)` | **已补**：有人用 reduce_precision 补上了 |
+| BF16 结果写出融合、喂给矩阵乘，或给别的 BF16 运算 | **舍了** |
+| 输入本来就在 BF16 网格上 | 跳过：来回是精确的，舍不舍都一样 |
 
-每处再从 metadata 归类：
+每处再从 metadata 归类：最内层的 MaxText 源码行号、在不在层 scan 里、是前向还是反向（op_name 里有没有 `transpose(`）。
 
-- 源码位置：取 HLO 栈帧表里最内层的 MaxText 文件和行号；
-- 区域：op_name 里 `while/body` 的层数，2 层是层 scan 里，1 层是 scan 外（MTP 块、hc_head、嵌入、loss），0 层是优化器；
-- 前向还是反向：op_name 里有没有 `transpose(`；
-- 位置类：按源码行和形状（有没有序列维 4096 或 16384）归成「权重梯度」「分支输入梯度合流」「前向线性层输出」等类。
+<details>
+<summary>一处真实命中长什么样；编译耗时与内存</summary>
 
-一处真实的命中长这样（反向里重算的输出门，删去布局和 metadata）：
+一处 ③ 类命中，反向里重算的注意力输出门（删去布局和 metadata）：
 
 ```text
 %convolution.2585.clone.3 = f32[4096,8,256] convolution(%fusion.5209.clone.3, %fusion.5539.clone.3), ...
@@ -280,49 +350,103 @@ HLO 里 convert 还在，所以能从 HLO 认出「声明了」；LLO 里没有�
 %abs.1481.clone.3 = f32[4096,8,256] abs(%convert_element_type.25993.clone.3)                     ← 拿去做 sigmoid
 ```
 
-**3. 用 LLO 确认。** 挑出「整颗 kernel 只含『省掉』、没有『舍了』、没有 reduce_precision」的 kernel，数它 LLO 里 `vpack.*.bf16` 的条数。按上面的规律，应该一条都没有。
+| | 只要 HLO | HLO + LLO |
+|---|---|---|
+| 编译耗时 | 约 110 s | 830–1010 s |
+| 进程峰值内存 | 约 15 GiB | 41–43 GiB |
+| 扫描耗时 | 约 1 s | 约 11 s |
+| 产物 | 优化后 HLO 一份（约 35 MB） | 另有 LLO 目录约 720 MB，1666 颗 kernel（相同的只编一次） |
 
-负对照：同一配置加 `--xla_allow_excess_precision=false` 再编一份。这时编译器不许省舍入，同一批 kernel 应该全部有打包指令。
+离线编译工具 [`frameworks/maxtext/aot_hlo.py`](../frameworks/maxtext/aot_hlo.py) 的来历见[案例 14「怎么从编译产物看通信」](14-ddp-fsdp-embedding.md#怎么从编译产物看通信)。
 
-### 得到了什么
+</details>
 
-C 口径训练步（`hy4-mini-t1.yml`，v5p-16，libtpu 0.0.46，jax 0.11.1），按类的数字来自 MaxText `98a80d92` 的那次编译。在 MaxText `8d3d7561` 的 C 口径编译上复算，按类数字逐个相同。结果文件是 [`mini-c-elided-rounding-scan.json`](../alignments/01-mini/results/mini-c-elided-rounding-scan.json)：
+### 扫出了什么
 
-- **HLO：往返 272 处**（单位是「往返的使用」，一个 convert 在同一计算里每被转回一次算一处，不是 kernel 数）；
-- 已补的 55 处（covered：转回 FP32 后紧跟 reduce_precision）不在其中，其中 30 处在 `mhc.py`（iHC 与 hc_head），其余在 norm 和线性层；
-- 输入已在 BF16 网格上、来回精确的 1475 处已跳过；
-- iHC、hc_head 在 272 处里一处都没有：那几处的往返都已被 M36、M52、M58 的 reduce_precision 补上或换掉。
+先说结论：**全图 272 处被省掉的舍入，其中 ①、② 两类共 145 处在反向的梯度路径上，是头号嫌疑。**
 
-| 位置类 | 往返（处） | 层 scan 里 / scan 外 / XLA 自插 | GPU 那边 | 方向 | 优先级 |
+C 口径训练步（`hy4-mini-t1.yml`，v5p-16，libtpu 0.0.46，jax 0.11.1），结果文件 [`mini-c-elided-rounding-scan.json`](../alignments/01-mini/results/mini-c-elided-rounding-scan.json)：
+
+- **被省掉的舍入 272 处**（同一个 convert 在同一融合里每被转回一次算一处；输入本来就在 BF16 网格上、来回精确的 1475 处已跳过）。
+- **已补 55 处**不在其中，其中 30 处在 iHC 与 hc_head（`mhc.py`）。`mhc.py`（iHC 与 hc_head 本身的代码）在 272 处里一处都没有：M36、M52、M58 已经把那里补上了，这正好是一次自检。（hc_head 后面末层 norm 的两次梯度舍入算在 norm 一类里。）
+
+![272 处按位置归类](../alignments/01-mini/figures/case17-scan-classes.png)
+
+图 5：数据 `mini-c-elided-rounding-scan.json` 的 `elided_uses_by_class`。
+
+排优先级只看三条：GPU 那边会舍；TPU 这边省了；在反向的梯度路径上（梯度一步步累进参数，最像主因那样攒出尾巴）。三条都满足的是 ① 和 ②：
+
+| 候选 | 是什么 | GPU 那边 | 优先级 |
+|---|---|---|---|
+| **① 分支输入的梯度合流** | 和主因是同一种模式：几份梯度在 FP32 里加完才舍。典型是注意力输入处 q、kv 下投影和输出门三份梯度 | 三份 BF16 梯度在 BF16 里相加 | 高（上卡没坐实，见下一节） |
+| **② 每个微批的权重梯度 dW** | 各线性层每个微批算出的 dW 没舍 BF16，就直接累加 | GPU golden 关了 `gradient_accumulation_fusion`，每个微批的 dW 先出 BF16，再加进 FP32 的累加器 | 高（上卡后已排除，见下一节） |
+| ③ 前向的几处 | 线性层输出（fc1 等）、注意力输出门、路由专家的 act×up | 线性层输出是 BF16 | 中 |
+
+### LLO 确认：能单独核的都没舍
+
+- 整颗 kernel 只含「省掉」的来回、没有别的真舍入的，有 **41 颗**，41 颗的打包指令**全部是 0 条**（34 颗是 ② 每微批 dW，4 颗是索引器掩码，3 颗是 norm）。
+- **负对照**：同配置关掉省舍入（`--xla_allow_excess_precision=false`）再编，同样挑法挑出 35 颗，**没有一颗是 0 条**。
+- ① 和 ③ 的来回都落在同时含有真舍入的 kernel 里，那颗 kernel 的打包指令条数没法单独归给它们。所以它们的证据是 HLO 规则加上两个最小复现的规律，没有逐颗 LLO 核对。
+
+### 边界：这个方法找不到什么
+
+- **只找得到一类：代码声明了、编译器省掉了。** 代码里根本没写舍入的地方（比如 TPU 一开始就用 FP32 算、GPU 却舍了 BF16），HLO 里没有 convert，扫不出来，要靠读代码对照 GPU。累加顺序不同、超越函数近似不同，也不在这个模式里。
+- **清单只说 TPU 省了，不说 GPU 舍了。** 比如 ② 成立，是因为 GPU golden 关了 `gradient_accumulation_fusion`（`frameworks/megatron/train_hy4mg.py`）；要是开着，GPU 的 dW 也在 FP32 里累加，这一类就不算差异。
+- **找到的是候选，因果要上卡验证。** 272 处里哪些真影响轨迹，要像前面那样做两头验证。这次优先级最高的 ①、② 两类，上卡后都没坐实（下一节）。
+- **分类规则是按混元 4 mini 定的经验规则。** 靠源码行号和形状判，换模型、换 MaxText 提交要重核。① 里注意力输入和 MLP 输入的命中多在 `linears.py` 同一行，按行分不开。
+- **结论绑定编译器版本。** 融合怎么切会随 libtpu 版本、芯片代际变（[案例 15](15-libtpu-upgrade-final-norm-double-rounding.md) 就是融合变了导致舍入次数变了），换版本要重扫。
+
+<details>
+<summary>扫描结果的完整分类表</summary>
+
+按类的数字来自 MaxText `98a80d92` 的那次编译；在 `8d3d7561` 的 C 口径编译上复算，按类数字逐个相同。
+
+| 位置类 | 来回（处） | 层 scan 里 / scan 外 / XLA 自插 | GPU 那边 | 方向 | 优先级 |
 |---|---|---|---|---|---|
-| ① 分支输入的梯度合流（注意力输入处 q、kv 下投影和输出门三份梯度；另有 MoE 路由输入 7 处、XLA 自插 17 处） | 70 | 30 / 23 / 17 | 三份 BF16 梯度在 BF16 里相加 | 反向 | **高** |
-| ② 各线性层每个微批的 dW | 75 | 45 / 28 / 2 | 关了 `gradient_accumulation_fusion`：每个微批的 dW 先出 BF16，再加进 FP32 的 main_grad | 反向 | **高** |
+| ① 分支输入的梯度合流（注意力输入处 q、kv 下投影和输出门三份梯度；另有 MoE 路由输入 7 处、XLA 自插 17 处） | 70 | 30 / 23 / 17 | 三份 BF16 梯度在 BF16 里相加 | 反向 | 高（上卡没坐实） |
+| ② 各线性层每个微批的 dW | 75 | 45 / 28 / 2 | 每个微批的 dW 先出 BF16，再加进 FP32 的 main_grad | 反向 | 高（上卡已排除） |
 | ③a 前向线性层输出（fc1 等） | 51 | 33 / 18 / — | 线性层输出 BF16 | 前向 | 中 |
 | ③b 注意力输出门 | 34 | 25 / 9 / — | 同上 | 前向 | 中 |
 | ③c 路由专家 act×up | 13（另有反向 7） | 8 / 5 / — | 同上 | 前向 | 中 |
 | norm 输入梯度、norm 输出 | 7、6 | scan 外 | | | 低 |
 | 索引器掩码 | 9 | scan 外 | | | 无害：值是 0 和 −∞ 这类在 BF16 上精确的数 |
 
-优先级按三条排：GPU 那边会舍；TPU 这边省掉了；在反向的梯度路径上。前两类三条都满足。iHC 流梯度这个主因本来就属于「梯度合流」这一种（三份梯度合流），①是同一种模式在分支输入处又出现；②在每层每个线性层上都有。①里注意力、MLP 各占多少，扫描器只靠源码行和形状分不开（多数命中都在 `linears.py` 的同一行），GPU 上的 ATTNIN 开关只覆盖注意力输入这一处。
+其他细节：栈帧表是截短的，只看得到最内层几帧，scan 外的未进 scan 的层和 MTP 块分不开；op_name 里带 `transpose(` 的也包括反向里重算的前向（`checkpoint/rematted_computation`）。
 
-**LLO 确认**（MaxText `8d3d7561` 的 C 口径编译，带 LLO）：整颗 kernel 只含往返的有 41 颗，41 颗的打包指令全部是 0 条。
+</details>
 
-- 这 41 颗里，34 颗是②每微批 dW，4 颗是索引器掩码，3 颗是 norm。
-- 负对照：同配置关 excess precision 再编，同样挑法挑出 35 颗，没有一颗是 0 条。
-- ①和③的往返都落在同时含有真舍入的 kernel 里。那颗 kernel 的打包指令条数没法单独归给这几处往返，所以它们的证据是 HLO 规则加上 iHC、hc_head 两个最小复现确立的规律，没有逐颗 LLO 核对。
+## 上卡验证：残余查到哪了
 
-### 这个方法的边界
+这一节回答：扫出来的候选，哪些真的造成了后段的残余。
 
-- **只找得到一类：代码声明了、编译器省掉了。** 代码里根本没写舍入（例如一开始就用 FP32 算、GPU 却舍了 BF16）的地方，HLO 里没有 convert，扫不出来，要靠读代码对照 GPU。累加顺序不同、近似超越函数这类差，也不在这个模式里。
-- **GPU 自己会不会在这些位置舍，要对照 GPU 代码。** 清单只说 TPU 这边省掉了，不说 GPU 那边舍了。例如②成立，是因为 GPU golden 关了 `gradient_accumulation_fusion`（`frameworks/megatron/train_hy4mg.py`）；如果开着，GPU 的 dW 直接在 FP32 里累加，这一类就不算差异。
-- **找到的是候选，因果要上卡验证。** 272 处里哪些真的影响轨迹，要在 GPU 上照 TPU 的样子改（HEADCOT、STREAM 那种诊断开关）或在 TPU 上补 reduce_precision，各跑几份 1000 步看。本案例写到这里时，GPU 上 ATTNIN（①）、WGRAD（②）两个开关的实验还在跑。
-- **分类规则是按混元 4 mini 定的经验规则。** 位置类靠源码行号和形状（序列 4096、路由 token 16384）判，换模型、换 MaxText 提交要重核。栈帧表是截短的，只看得到最内层几帧；层 scan 外的未进 scan 的层和 MTP 块分不开。op_name 里带 `transpose(` 的也包括反向里重算的前向（`checkpoint/rematted_computation`），前向、反向要结合这一点读。
-- **LLO 只能确认「整颗只含往返」的 kernel。** 混合 kernel 的打包指令来自别的真舍入，条数不能拆开归属。
-- **结论绑定编译器版本。** 融合怎么切随 libtpu 版本、芯片代际变（案例 15 就是融合变了导致舍入次数变了），换版本要重扫。
+判据照主因那次：**GPU 照 TPU 改了会长出尾巴，TPU 补上舍入尾巴会下去**，两头都成立才算坐实。先做 GPU 一头，把 ①、② 两类拆成三处，在 GPU 上照 TPU 改（GPU 诊断开关台账 G38，各 4 份）：
+
+| 候选 | 对应扫描类 | GPU 照 TPU 改成什么 |
+|---|---|---|
+| 注意力输入的梯度合流（ATTNIN） | ① 里注意力输入那部分 | q、kv 下投影和输出门三份梯度在 FP32 里加完、只舍一次 |
+| MoE 输入的梯度合流（FFNIN） | ① 里 MoE 输入那部分（路由输入 7 处，加 XLA 自插的一部分） | 路由、共享专家、路由专家三份梯度同上，路由那份不先舍 BF16 |
+| 每个微批的 dW（WGRAD） | ② | dW 直接在 FP32 里累加，不先舍 BF16 |
+
+![①、② 两类拆成三处在 GPU 上照 TPU 改，后段逐份的点](../alignments/01-mini/figures/case17-gpu-candidates.png)
+
+图 6：数据 [`mini-gpu-tpulike-fanin-wgrad.json`](../alignments/01-mini/results/mini-gpu-tpulike-fanin-wgrad.json)；STREAM 一格是主因在 GPU 上的大小，作参照（[`mini-gpu-tpulike.json`](../alignments/01-mini/results/mini-gpu-tpulike.json)）。
+
+读图：
+
+- **dW 排除。** WGRAD −0.4e-6（p 0.73）：GPU 不舍它，后段不动。
+- **两处梯度合流没坐实。** ATTNIN 单开 +3.0e-6（4 份都正，p 0.021），像是有一点；但和 FFNIN 一起开，反而回到 +0.2e-6（p 0.87）。同一类舍入，合起来应该叠加（推断），这里对不上。四格一起看，0.021 按格数校正（× 4）是 0.084，很可能是 4 份样本里的偶然（推断）。ATTNIN 还把 MTP loss 推高了 +2.1e-5，方向和 TPU 上 MTP 偏低相反。
+- 所以 C 口径的残余，**在 ①、② 两类里没找到**。
+
+接下来：
+
+- 在 TPU 上补 ATTNIN 那一处（C 口径之上，4 份），看另一头：**在跑**。
+- 剩下的候选：清单里前向那几类（输出门、fc1 输出、路由专家 act×up），以及扫描找不到的差（代码没写舍入、GPU 却舍了的地方；累加顺序）。
+
+更细的对照（逐处 TPU 怎么省、GPU 怎么舍）见[知识库「整个训练步：被省掉的舍入全局清单」](../knowledge.md#整个训练步被省掉的舍入全局清单)。
 
 ## 在自己的模型上怎么用
 
-前提：MaxText 训练镜像（jax、libtpu 和上卡一致；镜像 digest 见 `frameworks/maxtext/run.sh`），CPU 机器，内存 ≥ 48 GiB（要 LLO 时）。
+前提：MaxText 训练镜像（jax、libtpu 和上卡一致；镜像 digest 见 `frameworks/maxtext/run.sh`），一台 CPU 机器，内存 ≥ 48 GiB（要 LLO 时）。
 
 **1. 离线编译，存 HLO 和 LLO。**
 
@@ -345,24 +469,27 @@ python models/hunyuan4/analysis/elided_rounding_scan.py \
   --jf $OUT/jf --out $OUT/elided.json --positions
 ```
 
-`--jf` 可以不给（只做 HLO 匹配）；`--out` 不给就只打印。
-
-屏幕上先打印 LLO 核对（只含往返的 kernel 数、其中 0 条打包的数），再打印按模块的计数和逐个源码位置。JSON 里：
-
-| 字段 | 内容 |
-|---|---|
-| `llo_check` | 只含往返的 kernel 数、其中打包指令 0 条的数、非 0 的例子 |
-| `elided_uses_by_class` | 按位置类、按区域（层 scan 里 / scan 外 / XLA 自插）的往返处数 |
-| `elided_uses_by_module` | 按区域 / 模块的往返处数 |
-| `sites` | 每个源码位置一行：省掉、舍了、已补各几处，前向、反向各几处，形状，所在的 kernel 和每颗的打包指令条数 |
-| `skipped_exact_converts` | 输入已在 BF16 网格上、来回精确而跳过的处数 |
-| `positions`（加 `--positions` 时） | 逐处清单：每一处往返（省掉或已补）所在的计算、kernel、区域 / 模块、源码位置、前向还是反向、省掉 / 已补 / 舍了各几路、位置类、那颗 kernel 的打包指令条数、是不是「整颗只含往返」 |
+`--jf` 可以不给（只做 HLO 匹配）；`--out` 不给就只打印。屏幕上先打印 LLO 核对，再打印按模块的计数和逐个源码位置。
 
 **3. 负对照（建议做一次）。** 同一条命令在 `XLA_FLAGS` 里加 `--xla_allow_excess_precision=false` 再编、再扫，`llo_check` 里 0 条打包的 kernel 应该变成 0 颗。不是 0 就说明规律在你的版本上不成立，清单不能直接用。
 
-**4. 读清单。** 逐类问三个问题：GPU 那边在这里舍不舍（读 GPU 代码、看训练参数）；在不在反向梯度路径上；有没有现成的 reduce_precision 开关能补。三条都满足的，排进上卡验证。验证照第五幕做两头：TPU 补上舍入看偏差下不下去，GPU 照 TPU 不舍看偏差出不出来。
+**4. 读清单。** 逐类问三个问题：GPU 那边在这里舍不舍（读 GPU 代码、看训练参数）；在不在反向梯度路径上；有没有现成的 reduce_precision 开关能补。三条都满足的，排进上卡验证，照[两头验证](#两头验证gpu-照-tpu-写gpu-自己也飘)那样做：TPU 补上看偏差下不下去，GPU 照 TPU 不舍看偏差出不出来。
 
 换模型时，`classify_position` 里的源码行号和形状要按自己的模型改；`elided_uses_by_module` 与 `sites` 不依赖这些规则，可以先看。
+
+<details>
+<summary>输出 JSON 的字段</summary>
+
+| 字段 | 内容 |
+|---|---|
+| `llo_check` | 只含来回的 kernel 数、其中打包指令 0 条的数、非 0 的例子 |
+| `elided_uses_by_class` | 按位置类、按区域（层 scan 里 / scan 外 / XLA 自插）的来回处数 |
+| `elided_uses_by_module` | 按区域 / 模块的来回处数 |
+| `sites` | 每个源码位置一行：省掉、舍了、已补各几处，前向、反向各几处，形状，所在的 kernel 和每颗的打包指令条数 |
+| `skipped_exact_converts` | 输入已在 BF16 网格上、来回精确而跳过的处数 |
+| `positions`（加 `--positions` 时） | 逐处清单：每一处来回所在的计算、kernel、区域 / 模块、源码位置、前向还是反向、省掉 / 已补 / 舍了各几路、位置类、那颗 kernel 的打包指令条数、是不是「整颗只含来回」 |
+
+</details>
 
 ## 实测与推断
 
@@ -373,13 +500,22 @@ python models/hunyuan4/analysis/elided_rounding_scan.py \
 | 两边去掉 iHC 后不飘 | 实测（GPU 3 份、TPU 2 份，尺子粗） |
 | 主因是 iHC 流梯度的舍入写法 | 实测，两头验证（TPU p 0.016，GPU p 0.0025） |
 | TPU 的写法单次运算离精确值更近 | 推断（按舍入次数）；轨迹上谁更近没测 |
-| M52 与 M58 相冲在 hc_head 输出处的余切舍入 | 拆格是实测；「相冲点在这里」是推断 |
+| C 口径（三处全开）前段鼓包没了，后段和对照分不开 | 实测（前段 p 0.005；后段 p 0.32） |
+| M52 与 M58 相冲在 hc_head 反向那次梯度舍入 | 拆格是实测；「相冲点在这里」是推断 |
 | 只开 M58 的后段变平有一部分是抵消 | 推断（GPU HEADCOT 方向一致，实测） |
-| 融合内部的来回 convert 不产生舍入指令 | 实测（iHC、hc_head 两个最小复现；整步 41 颗只含往返的 kernel 全 0 条，负对照 35 颗全非 0） |
-| 全图 272 处往返、三类位置 | 实测（HLO 匹配） |
-| 残余来自这三类 | **在查**（GPU ATTNIN、WGRAD 在跑） |
+| 只剩编译器省掉的舍入值得先查 | 推断（hc_head 一段语义已对齐、上卡不变是实测；别处语义没逐段核） |
+| 融合内部的来回 convert 不产生舍入指令 | 实测（两个最小复现；整步 41 颗只含来回的 kernel 全 0 条，负对照 35 颗全非 0） |
+| 全图 272 处被省掉的舍入、三类候选 | 实测（HLO 匹配） |
+| 残余不来自 ② 每微批 dW | 实测（GPU WGRAD −0.4e-6，p 0.73） |
+| 残余不来自 ① 两处梯度合流 | 数字是实测（单开 +3.0e-6、p 0.021；合开 +0.2e-6、p 0.87）；判为偶然是推断 |
+| 残余来自哪里 | **在查**（TPU 补注意力输入合流在跑；前向几类与扫描外的差待查） |
 
-## 这次排查用到的 janus 能力
+## 出处与工具
+
+所有数字出自 [mini 对齐细节 D30](../alignments/01-mini/DETAILS.md#d30)、[知识库「mini 主 loss 共同偏高」](../knowledge.md#mini-主-loss-共同偏高要点与出处)和上文各图注里的结果文件；排查过程的 PR 是 。比较的口径：TPU 对 GPU 16 份的逐步均值；GPU 自己的波动用 16 份轮流当被测的留一法量；两组运行之间的差用置换检验，每格 4–6 份，份与份之间只换执行方式（默认、scoped VMEM 64 / 32 MiB、关延迟隐藏调度等）；例外是只开 M58、C 口径两格各有 1 份换了重算策略（`remat_policy=full`），对照格的 `ti-o-a` 是另一个代码提交，都按 D30 计入。图由 [`analysis/plot_case17_figures.py`](../analysis/plot_case17_figures.py) 从这些结果文件画出。
+
+<details>
+<summary>这次排查用到的 janus 能力</summary>
 
 | 能力 | 在本案例中的作用 |
 |---|---|
@@ -388,6 +524,8 @@ python models/hunyuan4/analysis/elided_rounding_scan.py \
 | 单因素交叉与置换检验（[`mini_factorial_cells.py`](../analysis/mini_factorial_cells.py)，`--control gpu-loo`） | 每格 4–6 份，给出 p 值，区分真作用和轨迹偶然 |
 | GPU 一侧的诊断开关（台账 G37：STREAM、HEAD、BRANCH、HEADCOT） | 两头验证；发现抵消 |
 | CPU 逐位对照（[`hc_head_order_probe.py`](../analysis/hc_head_order_probe.py)） | 把 hc_head 一段的语义差缩到只差累加顺序 |
-| 最小复现的 HLO / LLO 计数（[`ihc_llo_probe.py`](../analysis/ihc_llo_probe.py)、[`hc_head_llo_probe.py`](../analysis/hc_head_llo_probe.py)） | 确立「融合内往返不舍」的规律 |
+| 最小复现的 HLO / LLO 计数（[`ihc_llo_probe.py`](../analysis/ihc_llo_probe.py)、[`hc_head_llo_probe.py`](../analysis/hc_head_llo_probe.py)） | 确立「融合内来回不舍」的规律 |
 | 整步离线编译（[`aot_hlo.py`](../frameworks/maxtext/aot_hlo.py)、[`hlo_screen.py`](../alignments/04-tpu-self/hlo_screen.py)） | 不占卡拿到上卡同一个程序 |
 | **全图扫描（[`elided_rounding_scan.py`](../analysis/elided_rounding_scan.py)）** | **一次列出全部被省掉的舍入，给出残余的候选范围** |
+
+</details>

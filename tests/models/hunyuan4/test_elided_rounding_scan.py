@@ -1,4 +1,4 @@
-"""analysis/elided_rounding_scan.py：认出「声明了 BF16 舍入、同一颗融合里又转回 FP32」的往返（案例 17 第九幕），
+"""analysis/elided_rounding_scan.py：认出「声明了 BF16 舍入、同一颗融合里又转回 FP32」的往返（案例 17「先编译、再扫描」），
 不把 reduce_precision 补上的、真舍了的、输入本来就在 BF16 网格上的算进去；LLO 核对只看「整颗只含往返」的 kernel。"""
 
 import sys

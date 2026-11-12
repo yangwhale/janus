@@ -339,6 +339,141 @@ class _NormHeadCotFP32(torch.autograd.Function):
         return dx, dw, None
 
 
+class _TapFP32Grad(torch.autograd.Function):
+    """诊断（HY4_TPU_LIKE_ATTNIN）：FP32 张量（值都在 BF16 网格上）的 BF16 副本，前向逐位不变；反向把这一处的 BF16 梯度
+    升成 FP32 交上去，几处的梯度于是在 FP32 里相加。"""
+
+    @staticmethod
+    def forward(ctx, x32):
+        return x32.to(torch.bfloat16)
+
+    @staticmethod
+    def backward(ctx, g):
+        return g.float()
+
+
+class _TapNoGrad(torch.autograd.Function):
+    """诊断（HY4_TPU_LIKE_ATTNIN）：交给 MLASelfAttention 的 hidden_states。所有要梯度的用处都已改道（_TapFP32Grad），
+    梯度不该走到这里；走到了说明漏了一处，直接报错。"""
+
+    @staticmethod
+    def forward(ctx, x32):
+        return x32.to(torch.bfloat16)
+
+    @staticmethod
+    def backward(ctx, g):
+        raise RuntimeError("HY4_TPU_LIKE_ATTNIN：注意力输入有一处用处没有改道")
+
+
+class _GateFP32DGrad(torch.autograd.Function):
+    """诊断（HY4_TPU_LIKE_ATTNIN）：输出门的线性层，前向照原样调这一层（BF16 输入、BF16 输出），反向的输入梯度留 FP32
+    （dy 升 FP32 乘 FP32 的权重，不舍 BF16），权重梯度同 TE：BF16 矩阵乘（FP32 累加）出 BF16。模仿 TPU 上这一处
+    输入梯度的 BF16 舍入被省掉（01-mini D30 全局清单：注意力输入梯度合流那颗 kernel 里，输出门这一份的转换是融合内的往返）。"""
+
+    @staticmethod
+    def forward(ctx, x32, w, layer):
+        xb = x32.to(torch.bfloat16)
+        with torch.no_grad():
+            y, _ = layer(xb)
+        ctx.save_for_backward(xb, w)
+        return y
+
+    @staticmethod
+    def backward(ctx, dy):
+        xb, w = ctx.saved_tensors
+        dx = dy.float() @ w.float()
+        dw = dy.reshape(-1, dy.shape[-1]).t() @ xb.reshape(-1, xb.shape[-1])
+        return dx, dw.to(w.dtype), None
+
+
+class _RouterGatingFP32DGrad(torch.autograd.Function):
+    """诊断（HY4_TPU_LIKE_FFNIN）：路由打分的线性层，输入是 FP32（值在 BF16 网格上）。前向转回权重的 dtype 照原样调
+    Megatron-Core 的 router_gating_linear（TE 的 GEMM 不收 BF16 权重配 FP32 输入），反向的输入梯度留 FP32 不转回
+    BF16，权重 / 偏置梯度同原写法（FP32 里算、转回权重的 dtype）。"""
+
+    @staticmethod
+    def forward(ctx, inp32, weight, bias, router_dtype, orig):
+        ctx.save_for_backward(inp32, weight)
+        ctx.has_bias = bias is not None
+        ctx.router_dtype = router_dtype
+        with torch.no_grad():
+            return orig(inp32.to(weight.dtype), weight, bias, router_dtype)
+
+    @staticmethod
+    def backward(ctx, gy):
+        inp32, weight = ctx.saved_tensors
+        g = gy.reshape(-1, gy.shape[-1]).to(ctx.router_dtype)
+        x = inp32.reshape(-1, inp32.shape[-1]).to(ctx.router_dtype)
+        dx = (g @ weight.to(ctx.router_dtype)).view(*inp32.shape[:-1], -1).float()
+        dw = (g.t() @ x).to(weight.dtype)
+        db = g.sum(dim=0).to(weight.dtype) if ctx.has_bias else None
+        return dx, dw, db, None, None
+
+
+def _install_router_gating_fp32_dgrad() -> None:
+    """HY4_TPU_LIKE_FFNIN：router 模块里的 router_gating_linear 换成「输入是 FP32 时走 _RouterGatingFP32DGrad」。幂等。"""
+    from megatron.core.transformer.moe import router as R
+
+    orig = R.router_gating_linear
+    if getattr(orig, "_hy4_fp32_dgrad", False):
+        return
+
+    def gating(inp, weight, bias, router_dtype):
+        if inp.dtype == torch.float32 and weight.dtype != torch.float32:
+            return _RouterGatingFP32DGrad.apply(inp, weight, bias, router_dtype, orig)
+        return orig(inp, weight, bias, router_dtype)
+
+    gating._hy4_fp32_dgrad = True
+    R.router_gating_linear = gating
+
+
+def install_tpu_like_ffnin(moe) -> None:
+    """诊断（HY4_TPU_LIKE_FFNIN）：MoE 层的输入（pre_mlp_layernorm 的输出）有三处要梯度：路由、共享专家、路由专家
+    （经 token 分发）。路由改吃 FP32 的输入（值相同，路由本来就在 FP32 里算），它的输入梯度于是留 FP32 不舍；共享专家与
+    路由专家照旧吃 BF16、梯度照旧舍 BF16；三份在 FP32 里相加、只舍一次 BF16 再进 norm 的反向。模仿 TPU 上这一处的样子
+    （01-mini D30 全局清单：MoE 输入梯度合流那颗 kernel 里，路由那一份的转换是融合内的往返、相加在 FP32 里）。"""
+    _install_router_gating_fp32_dgrad()
+    orig_forward, orig_route = moe.forward, moe.route
+    orig_shared, orig_pre = moe.shared_experts_compute, moe.preprocess
+    moe._fan_x32 = None
+
+    def forward(hidden_states, *a, **k):
+        x32 = _ToFloatRoundOnce.apply(hidden_states)
+        moe._fan_x32 = x32
+        try:
+            return orig_forward(_TapNoGrad.apply(x32), *a, **k)
+        finally:
+            moe._fan_x32 = None
+
+    def route(hidden_states, *a, **k):
+        return orig_route(hidden_states if moe._fan_x32 is None else moe._fan_x32, *a, **k)
+
+    def shared(hidden_states, *a, **k):
+        x32 = moe._fan_x32
+        return orig_shared(hidden_states if x32 is None else _TapFP32Grad.apply(x32), *a, **k)
+
+    def pre(hidden_states, *a, **k):
+        x32 = moe._fan_x32
+        return orig_pre(hidden_states if x32 is None else _TapFP32Grad.apply(x32), *a, **k)
+
+    moe.forward, moe.route, moe.shared_experts_compute, moe.preprocess = forward, route, shared, pre
+
+
+def install_tpu_like_wgrad(model) -> int:
+    """诊断（HY4_TPU_LIKE_WGRAD）：TE 线性层（含路由专家的分组线性层）改成权重梯度直接在 FP32 的 main_grad 里累加
+    （TE 的 fuse_wgrad_accumulation，等于 Megatron 的 gradient_accumulation_fusion），每个 microbatch 的权重梯度不再
+    先舍成 BF16。模仿 TPU 上 XLA 省掉权重梯度的那次 BF16 舍入（01-mini D30 全局清单）。要在 DDP 建好 main_grad 之后调。
+    返回改了几个模块。"""
+    n = 0
+    for mod in model.modules():
+        if hasattr(mod, "fuse_wgrad_accumulation") and not mod.fuse_wgrad_accumulation:
+            for prm in mod.parameters(recurse=False):
+                assert hasattr(prm, "main_grad"), "HY4_TPU_LIKE_WGRAD：参数没有 main_grad（要在 DDP 之后调）"
+            mod.fuse_wgrad_accumulation = True
+            n += 1
+    return n
+
+
 def _tpu_like(part: str) -> bool:
     return os.environ.get(f"HY4_TPU_LIKE_{part}") == "1"
 
@@ -680,8 +815,22 @@ class Hy4MLASelfAttention(MLASelfAttention):
             w.is_qkv = True
             w.qkv_split_shapes = [config.v_head_dim] * config.num_attention_heads
         self._gate_input = None
+        self._fan_x32 = None
+        if _tpu_like("ATTNIN"):
+            # 注意力输入（input_layernorm 的输出）有三处要梯度：q / kv 两个下投影与输出门（索引器用的是 detach）。
+            # 两个下投影改吃 _fan_x32 的 BF16 副本，梯度照旧由层自己舍成 BF16，但在 FP32 里与输出门的 FP32 梯度相加
+            for lin in (self.linear_q_down_proj, self.linear_kv_down_proj):
+                _reroute_to_fan(lin, self)
 
     def forward(self, hidden_states, attention_mask, *args, **kwargs):
+        if _tpu_like("ATTNIN"):
+            # 诊断：三份梯度在 FP32 里相加、只舍一次 BF16 再进 input_layernorm 的反向（前向的值不变）
+            x32 = _ToFloatRoundOnce.apply(hidden_states)
+            self._fan_x32 = self._gate_input = x32
+            try:
+                return super().forward(_TapNoGrad.apply(x32), attention_mask, *args, **kwargs)
+            finally:
+                self._fan_x32 = self._gate_input = None
         self._gate_input = hidden_states
         try:
             return super().forward(hidden_states, attention_mask, *args, **kwargs)
@@ -690,8 +839,24 @@ class Hy4MLASelfAttention(MLASelfAttention):
 
     def _run_core_attention(self, *args, **kwargs):
         out = super()._run_core_attention(*args, **kwargs)
-        gate, _ = self.linear_gate(self._gate_input)
+        if self._fan_x32 is not None:
+            gate = _GateFP32DGrad.apply(self._fan_x32, self.linear_gate.weight, self.linear_gate)
+        else:
+            gate, _ = self.linear_gate(self._gate_input)
         return out * torch.sigmoid(gate)
+
+
+def _reroute_to_fan(lin: nn.Module, owner: nn.Module) -> None:
+    """诊断（HY4_TPU_LIKE_ATTNIN）：这一层的输入换成 owner._fan_x32 的 BF16 副本（值相同），梯度以 FP32 交给 _fan_x32。"""
+    orig = lin.forward
+
+    def fwd(inp, *a, **k):
+        x32 = owner._fan_x32
+        if x32 is None:
+            return orig(inp, *a, **k)
+        return orig(_TapFP32Grad.apply(x32), *a, **k)
+
+    lin.forward = fwd
 
 
 # ------------------------------------------------------------------ 解码层
@@ -1056,6 +1221,8 @@ def apply_mlp_semantics(model) -> None:
             eb = getattr(mod.router, "expert_bias", None)
             if eb is not None:
                 mark_keep_in_fp32(eb)
+            if _tpu_like("FFNIN") and not hasattr(mod, "_fan_x32"):
+                install_tpu_like_ffnin(mod)
             if getattr(mod, "shared_experts", None) is not None:
                 mod.shared_experts.config = _no_clamp(mod.shared_experts.config)
 
