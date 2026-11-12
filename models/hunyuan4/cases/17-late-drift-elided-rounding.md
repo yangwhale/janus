@@ -287,7 +287,7 @@ M52 开着时，再补 M58 全套或任一半都测不出作用（[`mini-factori
 <details>
 <summary>CPU 逐位对照的细节</summary>
 
-，[`hc-head-order-probe.json`](../alignments/01-mini/results/hc-head-order-probe.json)：GPU 写法、MaxText 关省舍入、MaxText 开省舍入三方各算一遍 hc_head 加末层 norm 的反向。唯一实质不同是 MaxText 给 MTP 另做一次末层 norm，两路各做一次 norm 反向再相加；GPU 先把两路梯度加起来，只做一次。不开它时流梯度 dx 逐位相同 63.9%；C 口径再开 `mtp_input_shared_final_norm`（台账 M53）后 dx 差 2.1e-5，逐位相同 99.993%。上卡见 #455。
+，[`hc-head-order-probe.json`](../alignments/01-mini/results/hc-head-order-probe.json)：GPU 写法、MaxText 关省舍入、MaxText 开省舍入三方各算一遍 hc_head 加末层 norm 的反向。唯一实质不同是 MaxText 给 MTP 另做一次末层 norm，两路各做一次 norm 反向再相加；GPU 先把两路梯度加起来，只做一次。不开它时流梯度 dx 逐位相同 63.9%；C 口径再开 `mtp_input_shared_final_norm`（台账 M53）后 dx 差 2.1e-5，逐位相同 99.993%。上卡结果见 D30。 #455。
 
 </details>
 
