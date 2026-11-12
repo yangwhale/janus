@@ -1,0 +1,81 @@
+# 04 · 上下文并行的 loss 偏移 · 运行清单。数据位置写成占位，不写桶名。
+# 长跑的逐步 loss 在 results/series/<运行名>.json；第 1 步运行目录在 gs://<POC 桶>/janus/issue10/st1/<运行名>/（只留 exp_avg 与 meta）。
+# 被抢占收回的运行从头重跑，不拼接；series 里只放跑满的那一次。
+schema: 1
+alignment: 04-cp-issue10
+conditions:
+  A: "随机初始化缩层混元 3（hunyuan3-smoke 16 层），v5p-8，FineWeb-Edu，峰值 3e-4、预热 300、余弦 3000 步"
+  E2: "同 A，数据为 FineWeb 前 2 万篇（约 2.1e7 词元），num_epoch=10"
+  B0: "真实权重截 4 层，v5p-8，FineWeb-Edu，30 步冒烟（看第 0 步）"
+  B: "真实权重截 4 层，v5p-8，FineWeb-Edu，学习率恒定 1e-5，3000 步"
+  H5: "真实权重截 4 层，v5p 16 片，FineWeb-Edu，学习率恒定 1e-5"
+  E1: "真实权重截 4 层，v5p-8，FineWeb-Edu，峰值 1e-4、预热 300、余弦到 0，3000 步"
+step1:
+  setting: "真实权重截 4 层，回放 g1k-a 第 1 步，2 步，--dump-steps 1 --full --no-hooks --full-only decoder，tokamax splash，sa_use_base2_exp=False（另注的除外）；代码 hunyuan@8ac1d175"
+  runs:
+    - {name: i10-st-b2, change: "基线 FSDP 8，base2 关"}
+    - {name: i10-st-bv40, change: "只改编译：40 MiB"}
+    - {name: i10-st-bv56, change: "只改编译：56 MiB"}
+    - {name: i10-st-bon, change: "base2 开"}
+    - {name: i10-st-ag2, change: "CP2 All-Gather"}
+    - {name: i10-st-ag4, change: "CP4 All-Gather"}
+    - {name: i10-st-rg2, change: "CP2 Ring"}
+    - {name: i10-st-rg2nlr, change: "CP2 Ring 关负载均衡"}
+    - {name: i10-st-rg4, change: "CP4 Ring"}
+    - {name: i10-st-ul2, change: "CP2 Ulysses"}
+    - {name: i10-st-ul4, change: "CP4 Ulysses"}
+    - {name: i10-st-usp4, change: "USP 2×2"}
+    - {name: i10-st-usp4nl, change: "USP 2×2 关负载均衡"}
+    - {name: i10-st-usp4-qkvf32, change: "USP 2×2 + 诊断补丁（q/k/v 权重梯度留 FP32）"}
+    - {name: i10-st-b-qkvf32, change: "基线 + 同一补丁"}
+    - {name: i10-st-b-noexcess, change: "基线 + --xla_allow_excess_precision=false"}
+    - {name: i10-st-usp4x, change: "同 i10-st-usp4，XLA_DUMP=1 取编译后的 HLO"}
+    - {name: i10-st-bx, change: "同基线，XLA_DUMP=1"}
+long:
+  - {name: B, condition: A, change: "纯 DP8 基线", series: results/series/B.json}
+  - {name: Br, condition: A, change: "同程序重跑", series: results/series/Br.json}
+  - {name: N1, condition: A, change: "只改编译：片上内存上限 64 MiB", series: results/series/N1.json}
+  - {name: N2, condition: A, change: "只改编译：片上内存上限 24 MiB", series: results/series/N2.json}
+  - {name: AG2, condition: A, change: "DP4 × CP2 All-Gather", series: results/series/AG2.json}
+  - {name: RG2, condition: A, change: "DP4 × CP2 Ring", series: results/series/RG2.json}
+  - {name: UL2, condition: A, change: "DP4 × CP2 Ulysses（关负载均衡）", series: results/series/UL2.json}
+  - {name: E2B, condition: E2, change: "条件 A 的基线，数据只用前 2 万篇、循环约 4.7 轮", series: results/series/E2B.json}
+  - {name: E2N1, condition: E2, change: "同上 + 片上内存上限 64 MiB", series: results/series/E2N1.json}
+  - {name: E2RG2, condition: E2, change: "同上 + CP2 Ring", series: results/series/E2RG2.json}
+  - {name: RSB, condition: B0, change: "真实权重 30 步：FSDP 8，base2 开", series: results/series/RSB.json}
+  - {name: RSBnb, condition: B0, change: "30 步：base2 关", series: results/series/RSBnb.json}
+  - {name: RSRG2, condition: B0, change: "30 步：FSDP 4 × CP2 Ring", series: results/series/RSRG2.json}
+  - {name: RSAG2, condition: B0, change: "30 步：CP2 All-Gather", series: results/series/RSAG2.json}
+  - {name: RSAG2nb, condition: B0, change: "30 步：CP2 All-Gather，base2 关", series: results/series/RSAG2nb.json}
+  - {name: RSUL2, condition: B0, change: "30 步：CP2 Ulysses", series: results/series/RSUL2.json}
+  - {name: RB, condition: B, change: "FSDP 8 基线，base2 开", series: results/series/RB.json}
+  - {name: RBnb, condition: B, change: "基线 base2 关", series: results/series/RBnb.json}
+  - {name: RRG2, condition: B, change: "FSDP 4 × CP2 Ring", series: results/series/RRG2.json}
+  - {name: RN1, condition: B, change: "只改编译：片上内存上限 64 MiB", series: results/series/RN1.json}
+  - {name: RAG2, condition: B, change: "CP2 All-Gather（约 700 步时取消）", series: results/series/RAG2.json}
+  - {name: RUL2, condition: B, change: "CP2 Ulysses（约 700 步时取消）", series: results/series/RUL2.json}
+  - {name: RN2, condition: B, change: "片上内存上限 24 MiB（约 700 步时取消）", series: results/series/RN2.json}
+  - {name: H5B, condition: H5, change: "16 片 FSDP 16 基线，跑到 2300 步，第 2000 步存档", series: results/series/H5B.json}
+  - {name: H5Br, condition: H5, change: "从第 2000 步存档续训：基线（核逐位）", series: results/series/H5Br.json}
+  - {name: H5Bnb, condition: H5, change: "续训：base2 关", series: results/series/H5Bnb.json}
+  - {name: H5RG2, condition: H5, change: "续训：CP2 Ring", series: results/series/H5RG2.json}
+  - {name: H5AG2, condition: H5, change: "续训：CP2 All-Gather", series: results/series/H5AG2.json}
+  - {name: E1B, condition: E1, change: "FSDP 8 基线，base2 开", series: results/series/E1B.json}
+  - {name: E1N1, condition: E1, change: "只改编译：片上内存上限 64 MiB", series: results/series/E1N1.json}
+  - {name: E1N56, condition: E1, change: "只改编译：56 MiB", series: results/series/E1N56.json}
+  - {name: E1N40, condition: E1, change: "只改编译：40 MiB", series: results/series/E1N40.json}
+  - {name: E1Nsa256, condition: E1, change: "只改编译：splash 反向分块 256", series: results/series/E1Nsa256.json}
+  - {name: E1Bnb, condition: E1, change: "基线 base2 关", series: results/series/E1Bnb.json}
+  - {name: E1Bnbv, condition: E1, change: "基线 base2 关 + 64 MiB", series: results/series/E1Bnbv.json}
+  - {name: E1AG2, condition: E1, change: "CP2 All-Gather", series: results/series/E1AG2.json}
+  - {name: E1AG2v64, condition: E1, change: "CP2 All-Gather + 64 MiB", series: results/series/E1AG2v64.json}
+  - {name: E1UL2, condition: E1, change: "CP2 Ulysses（关负载均衡）", series: results/series/E1UL2.json}
+  - {name: E1UL2v64, condition: E1, change: "CP2 Ulysses + 64 MiB", series: results/series/E1UL2v64.json}
+  - {name: E1RG2, condition: E1, change: "CP2 Ring", series: results/series/E1RG2.json}
+  - {name: E1RG2v, condition: E1, change: "CP2 Ring + 64 MiB", series: results/series/E1RG2v.json}
+  - {name: E1RG2v40, condition: E1, change: "CP2 Ring + 40 MiB", series: results/series/E1RG2v40.json}
+  - {name: E1RG2v56, condition: E1, change: "CP2 Ring + 56 MiB", series: results/series/E1RG2v56.json}
+  - {name: E1RG2sa256, condition: E1, change: "CP2 Ring + splash 反向分块 256", series: results/series/E1RG2sa256.json}
+  - {name: E1RG2nl, condition: E1, change: "CP2 Ring 关负载均衡", series: results/series/E1RG2nl.json}
+  - {name: E1USP4, condition: E1, change: "FSDP 2 × Ring 2 × Ulysses 2 USP", series: results/series/E1USP4.json}
+  - {name: E1USP4qkvf32, condition: E1, change: "USP + 诊断补丁（q/k/v 权重梯度留 FP32；第 1510 步被抢占收回，只有前 1510 步）", series: results/series/E1USP4qkvf32.json}

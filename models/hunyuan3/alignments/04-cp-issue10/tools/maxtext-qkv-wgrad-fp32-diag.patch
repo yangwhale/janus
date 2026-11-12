@@ -1,0 +1,28 @@
+diff --git a/src/maxtext/layers/attentions.py b/src/maxtext/layers/attentions.py
+index bfaed862..608d6733 100644
+--- a/src/maxtext/layers/attentions.py
++++ b/src/maxtext/layers/attentions.py
+@@ -573,6 +573,7 @@ class Attention(nnx.Module):
+         shard_mode=self.config.shard_mode,
+         weight_grad_in_kernel_order=self.config.dense_weight_grad_in_kernel_order,
+         fp32_accumulation=getattr(self.config, "dense_fp32_accumulation", False),
++        kernel_grad_fp32=("qkvf32" in str(getattr(self.config, "run_name", ""))),  # issue10 diagnostic: run name with qkvf32 keeps q/k/v kernel grad fp32
+         block_size=block_size,
+         rngs=self.rngs,
+     )
+@@ -613,6 +614,7 @@ class Attention(nnx.Module):
+         shard_mode=self.config.shard_mode,
+         weight_grad_in_kernel_order=self.config.dense_weight_grad_in_kernel_order,
+         fp32_accumulation=getattr(self.config, "dense_fp32_accumulation", False),
++        kernel_grad_fp32=("qkvf32" in str(getattr(self.config, "run_name", ""))),  # issue10 diagnostic: run name with qkvf32 keeps q/k/v kernel grad fp32
+         matmul_precision=self.config.matmul_precision,
+         use_bias=self.use_bias_in_projections,
+         block_size=block_size,
+@@ -657,6 +659,7 @@ class Attention(nnx.Module):
+         shard_mode=self.config.shard_mode,
+         weight_grad_in_kernel_order=self.config.dense_weight_grad_in_kernel_order,
+         fp32_accumulation=getattr(self.config, "dense_fp32_accumulation", False),
++        kernel_grad_fp32=("qkvf32" in str(getattr(self.config, "run_name", ""))),  # issue10 diagnostic: run name with qkvf32 keeps q/k/v kernel grad fp32
+         matmul_precision=self.config.matmul_precision,
+         use_bias=self.use_bias_in_projections,
+         rngs=self.rngs,

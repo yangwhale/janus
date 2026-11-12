@@ -31,6 +31,7 @@
 #   DATA_BUCKET  Pod 读的桶（gs://…，例如与 TPU 同区域的一份副本）：GOLDEN、CKPT、HF_MANIFEST 的默认值改到它下面；
 #                OUT 仍在 BUCKET 下。不给时 DATA_BUCKET=BUCKET
 #   NAMESPACE    默认 default
+#   PIP_WHEEL    gs://…/x.whl：Pod 里先 pip install --no-deps（镜像自带的包比 MaxText 要求的旧时用，例如 tokamax）
 #
 # 站点配置：默认提交到自己的节点池（CONTEXT + NODEPOOL）。集群特有的提交设置（队列标签、节点选择、配额检查等）放在
 # 仓库外的站点配置文件里，通过 JANUS_SITE_PROFILE=<文件路径> 指定（接口见 profile.sh 开头与 README「站点配置」）。
@@ -65,6 +66,9 @@ XF="${XLA_FLAGS:-}"
 [ -n "${XLA_DUMP:-}" ] && XF="$XF --xla_dump_to=/data/xla --xla_dump_hlo_as_text --xla_dump_hlo_module_re=.*train_step.*"
 case "$XF" in *"'"*) echo "XLA_FLAGS 里不能有单引号"; exit 1;; esac
 XLAENV=""
+PIPLINE=""
+# PIP_WHEEL=gs://…/x.whl：Pod 里先 pip install --no-deps 这个 wheel（例如镜像自带的 tokamax 比 MaxText 要求的旧）
+[ -n "${PIP_WHEEL:-}" ] && PIPLINE="gcloud storage cp $PIP_WHEEL /tmp/ && pip install -q --no-deps /tmp/$(basename $PIP_WHEEL)"
 [ -n "${XF// /}" ] && XLAENV="export XLA_FLAGS='${XF# }'"
 : "${MAXTEXT_PKG:?先 source <(bash stage.sh …)}" "${MAXTEXT_PKG_SHA256:?}" "${MAXTEXT_COMMIT:?}"
 : "${JANUS_PKG:?}" "${JANUS_PKG_SHA256:?}" "${JANUS_COMMIT:?}"
@@ -147,6 +151,7 @@ $TOLERATIONS
                 gcloud storage cp $JANUS_PKG /tmp/janus.tgz
                 echo '$JANUS_PKG_SHA256  /tmp/janus.tgz' | sha256sum -c -
                 mkdir -p /janus && tar --no-same-owner -xzf /tmp/janus.tgz -C /janus
+                $PIPLINE
                 mkdir -p /data/golden/$G /data/runs
                 gcloud storage cp $GOLDEN/meta.json /data/golden/$G/
                 gcloud storage cp -r $GOLDEN/data /data/golden/$G/

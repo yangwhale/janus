@@ -612,14 +612,32 @@ def main(argv=None):
     dmap = data_sharding.devices_indices_map(shape)
     starts = sorted({idx[0].start or 0 for idx in dmap.values()})
     per_shard = gb.global_rows // len(starts)              # 每个 batch 分片的行数（= 每 rank 的 microbatch 数时才对得上）
-    if per_shard != micro:
+    cp_degree = int(mesh.shape.get("context", 1)) * int(mesh.shape.get("context_usp_ulysses", 1))
+    if per_shard != micro and cp_degree == 1:
         raise SystemExit(f"每个 batch 分片 {per_shard} 行，与 golden 每 rank {micro} 个 microbatch 对不上")
+    # 上下文并行：batch 维只按数据 / FSDP 轴切，一个分片里有几个 rank 的行，行与 rank 的一一对应不再成立。
+    # MaxText 的梯度累积按全局 total_weights 归一化（gradient_accumulation.py），行怎么分进微批不改数学。
+    # 负载均衡的重排在 MaxText 的数据加载器里做（train_utils.setup_train_loop），回放绕过了加载器，这里照它补上同一个重排。
+    from maxtext.utils import max_utils as _mu
+    from maxtext.utils import maxtext_utils as _mtu
+    reorder_cp = _mu.reordered_cp_size(config, mesh)
+    reorder_fn = None
+    if reorder_cp > 1:
+        from maxtext.common.common_types import ReorderStrategy as _RS
+        _rs = config.context_parallel_reorder_strategy
+        _rs = _RS.DUAL_CHUNK_SWAP if _rs == _RS.AUTO else _rs
+        reorder_fn = _mtu.get_reorder_callable(reorder_cp, config.shard_mode, _rs, config.hardware)
+        print(f"[janus] 上下文并行负载均衡：回放的 batch 按 {_rs} 重排（cp {reorder_cp}）", flush=True)
     for dev, idx in dmap.items():
         shard_devices.setdefault(str((idx[0].start or 0) // per_shard), []).append(
             {"id": dev.id, "process": dev.process_index, "coords": list(getattr(dev, "coords", []) or [])})
 
     def put(arrs: dict[str, np.ndarray]):
-        return {k: jax.make_array_from_callback(v.shape, data_sharding, lambda i, v=v: v[i]) for k, v in arrs.items()}
+        out = {k: jax.make_array_from_callback(v.shape, data_sharding, lambda i, v=v: v[i]) for k, v in arrs.items()}
+        if reorder_fn is not None:
+            with jax.set_mesh(mesh):
+                out = reorder_fn(out)
+        return out
 
     batches_sha = hashlib.sha256(b"".join((gb.dir / f"rank{r}.jsonl").read_bytes() for r in gb.ranks)).hexdigest()
     meta = build_meta(a, config, mesh, golden_meta, shard_devices, batches_sha)

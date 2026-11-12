@@ -17,6 +17,7 @@
 | 7 | [`alignments/01-v5p-acceptance/`](alignments/01-v5p-acceptance/README.md) | TPU v5p 迁移验收，L0 到 L4；[案例 01](alignments/01-v5p-acceptance/cases/01-loss-offset-param-norm.md) 是「GPU 参照自己有偏」的完整证据 |
 | 8 | [`alignments/02-v7x-acceptance/`](alignments/02-v7x-acceptance/README.md) | 同一套验收在 TPU v7x 上 |
 | 9 | [`regression/`](regression/README.md) | 验收通过以后的日常回归：TPU 对上一次验证过的 TPU 运行（LKG） |
+| 10 | [`alignments/04-cp-issue10/`](alignments/04-cp-issue10/README.md) | 上下文并行（All-Gather / Ring / Ulysses / USP）的 loss 偏移：三段形态在什么条件下复现、每种 CP 第 1 步对 FP64、USP 多一次 BF16 舍入的根因 |
 
 全部检查一张表：[总览 `dashboard/dashboard.md`](dashboard/dashboard.md)（怎么读见指南[第 5 章](../../docs/guide/05-reading-results.md)）。离签字还差什么：[签字清单](../../docs/guide/05-reading-results.md#56-签字清单现在离签字还差什么)。
 
@@ -25,7 +26,7 @@
 | 路径 | 放什么 |
 |---|---|
 | `ALIGNMENT-REPORT.md`、`CHECKS.md`、`goldens.md`、`config-alignment.md` | 结论、检查清单与两份主要依据（见上表）；`CHECKS.md` 由 `dashboard/build.py` 生成 |
-| `alignments/` | 四个对齐实践。每个文件夹：`README.md`（逐级大表 + 结论）、`setup.md`、`runs.yaml`、`catalogs/`（检查项目录）、`results/`（结果文件）、`figures/` |
+| `alignments/` | 五个对齐实践（04 是 CP 专题）。每个文件夹：`README.md`（逐级大表 + 结论）、`setup.md`、`runs.yaml`、`catalogs/`（检查项目录）、`results/`（结果文件）、`figures/` |
 | `dashboard/` | `build.py` 从各实践的 `results/` 生成跨实践总览 `dashboard.md` 与检查清单 `../CHECKS.md`（骨架在 `checks.yaml`） |
 | `frameworks/megatron/`、`frameworks/maxtext/` | GPU 侧 / TPU 侧操作手册与脚本：训练、抓数、回放、提交作业（[GPU](frameworks/megatron/README.md)、[TPU](frameworks/maxtext/README.md)） |
 | `model/` | 两边共用的代码：名字与布局映射 `name_map.yaml`、截层、HF 与 Megatron / MaxText 互转、逐张量核对 |
