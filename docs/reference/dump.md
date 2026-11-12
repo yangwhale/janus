@@ -206,7 +206,7 @@ models/hunyuan3/frameworks/megatron/run.sh <运行名> <步数> --janus-run <目
 - **第 1 步梯度**：正式 L3 用训练步实际用的梯度，由第 1 步全量抓数里的 Adam 一阶动量反推（相对误差约 1e-7）。文件完整性核导出文件的 sha256 与反推梯度的全局范数（C 口径之前的配置 `tz-off-rep` 上做过：[`t1zo-step1-train-grad-file-check.json`](../../models/hunyuan4/alignments/01-mini/results/t1zo-step1-train-grad-file-check.json)；混元 4 [`PROTOCOL.md`](../../models/hunyuan4/PROTOCOL.md#0-现行口径按变更记录汇总) 第 0 节；现行 C 口径的第 1 步全量抓数 `s1f-c` 上也做了：728 个张量 sha256 无不符，反推范数相对差 4.3e-7，[`t1zc-step1-train-grad-file-check.json`](../../models/hunyuan4/alignments/01-mini/results/t1zc-step1-train-grad-file-check.json)）。
   - `--diag-step1` 单独编一个只算梯度、不更新的程序（与训练同一个梯度累积函数），写 HF 名字与布局的 FP32 梯度后退出。它和训练步分开编译，同一状态、同一批数据的梯度不逐位相同（205 个张量相对差中位数 2.9e-4），只作旁证（PROTOCOL 变更记录 2026-11-09）。
 - **激活**：梯度累积 2 时训练步里不抓（同混元 3）；接线核对用 `probe_forward.py` 的诊断前向。
-- **自检**：抓与不抓整次运行逐步比。C 口径之前的配置上：第 1 步全量抓数的 `tz-off-rep` 对不抓的 `tz-off-qkc` 1000 步 47 个逐步量逐位相同（[`t1zo-determinism`](../../models/hunyuan4/alignments/01-mini/results/t1zo-determinism.report.md)）。换配置要重做这一条：C 口径上没重做。`s1f-c` 是单独跑的 1 步抓数，它与不抓的 `tc-a` 第 1 步的 loss、grad_norm 等逐步量是否逐位相同没核。
+- **自检**：抓与不抓整次运行逐步比。C 口径之前的配置上：第 1 步全量抓数的 `tz-off-rep` 对不抓的 `tz-off-qkc` 1000 步 47 个逐步量逐位相同（[`t1zo-determinism`](../../models/hunyuan4/alignments/01-mini/results/t1zo-determinism.report.md)）。换配置要重做这一条：C 口径上没重做。`s1f-c` 是单独跑的 1 步抓数，它与不抓的 `tc-a` 只核了第 1 步 `raw_grad_norm` 与裁剪后范数两个量，逐位相同（[mini `goldens.md`](../../models/hunyuan4/alignments/01-mini/goldens.md) `s1f-c` 一行；`tc-a` 一侧读的是运行目录里的 `metrics.jsonl`，不在仓库里）；loss 等其余逐步量，以及抓数改没改程序，都没核。
 
 ## 抓完以后：两侧共同的检查
 

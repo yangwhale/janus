@@ -18,7 +18,7 @@ FMT_PATHS ?= janus/__init__.py janus/__main__.py janus/cli.py janus/demo.py janu
              models/glm52/analysis/param_counts.py \
              models/hunyuan4/frameworks/megatron/hy4_mcore.py models/hunyuan4/frameworks/megatron/hy4_weights.py models/hunyuan4/frameworks/megatron/hy4_bridge.py \
              models/hunyuan4/frameworks/megatron/equiv_hf.py models/hunyuan4/frameworks/megatron/bridge_check.py models/hunyuan4/frameworks/megatron/train_hy4mg.py models/hunyuan4/frameworks/megatron/hy4_capture.py models/hunyuan4/analysis/fp64_l1_gpu.py models/hunyuan4/analysis/qk_clip_nonpositive_repro.py models/hunyuan4/analysis/sigmoid_silu_probe.py models/hunyuan4/analysis/ihc_sum_order_probe.py models/hunyuan4/analysis/rmsnorm_dgamma_probe.py \
-             models/hunyuan4/analysis/attn_scores_fp32_unit.py models/hunyuan4/analysis/ihc_param_grad_conditioning.py models/hunyuan4/analysis/step1_train_grad_file_check.py models/hunyuan4/analysis/tpu_grad_file_holes.py \
+             models/hunyuan4/analysis/attn_scores_fp32_unit.py models/hunyuan4/analysis/ihc_param_grad_conditioning.py models/hunyuan4/analysis/step1_train_grad_file_check.py models/hunyuan4/analysis/tpu_grad_file_holes.py models/hunyuan4/analysis/elided_rounding_scan.py tests/models/hunyuan4/test_elided_rounding_scan.py \
              models/hunyuan3/analysis/rebaseline_sensitivity.py models/hunyuan3/analysis/tpu_vs_rc_loss.py \
              models/hunyuan4/frameworks/megatron/indexer_kd_check.py models/hunyuan4/frameworks/megatron/export_hf_grads.py \
              models/hunyuan4/frameworks/megatron/step1_ref.py models/hunyuan4/analysis/step1_vs_fp64.py \

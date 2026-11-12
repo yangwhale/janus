@@ -35,8 +35,8 @@ def _summ(rel: np.ndarray) -> dict:
     }
 
 
-def gpu_loo(root: str) -> dict:
-    g = np.array([series(root, x, "lm_loss") for x in GPU])
+def gpu_loo(root: str, field: str = "lm_loss") -> dict:
+    g = np.array([series(root, x, field) for x in GPU])
     out = {}
     for i, name in enumerate(GPU):
         rest = np.delete(g, i, 0).mean(0)
@@ -44,8 +44,8 @@ def gpu_loo(root: str) -> dict:
     return out
 
 
-def per_run(root: str, run: str, gm: np.ndarray) -> dict:
-    rel = (series(root, run, "lm_loss") - gm) / gm
+def per_run(root: str, run: str, gm: np.ndarray, field: str = "lm_loss") -> dict:
+    rel = (series(root, run, field) - gm) / gm
     return {
         "lm_51_100": float(rel[50:100].mean()),
         "lm_551_1000": float(rel[550:].mean()),
@@ -80,9 +80,14 @@ def main():
     ap.add_argument("--root", required=True)
     ap.add_argument("--control", required=True, help="名字=逗号分隔的运行")
     ap.add_argument("--cell", nargs="+", required=True, help="名字=逗号分隔的运行")
+    ap.add_argument(
+        "--field",
+        default="lm_loss",
+        help="逐步记录里的字段（默认主 loss；MTP 用 mtp_loss_mt）。「尾部在」的阈值只对主 loss 有意义",
+    )
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
-    gm = np.array([series(a.root, x, "lm_loss") for x in GPU]).mean(0)
+    gm = np.array([series(a.root, x, a.field) for x in GPU]).mean(0)
     loo = a.control == "gpu-loo"
     cells = dict(s.split("=", 1) for s in ([] if loo else [a.control]) + a.cell)
     cname = "gpu-loo" if loo else a.control.split("=", 1)[0]
@@ -91,12 +96,13 @@ def main():
         "tail_threshold_751_1000": TAIL_THRESHOLD,
         "block": BLOCK,
         "steps": STEPS,
+        "field": a.field,
         "control": cname,
         "cells": {},
     }
     vals = {}
     if loo:
-        vals[cname] = gpu_loo(a.root)
+        vals[cname] = gpu_loo(a.root, a.field)
         lv = list(vals[cname].values())
         out["cells"][cname] = {
             "runs": vals[cname],
@@ -108,7 +114,7 @@ def main():
             out["cells"][cname][k] = {"mean": float(np.mean(v)), "min": float(min(v)), "max": float(max(v))}
     for name, runs in cells.items():
         rs = runs.split(",")
-        pr = {r: per_run(a.root, r, gm) for r in rs}
+        pr = {r: per_run(a.root, r, gm, a.field) for r in rs}
         vals[name] = pr
         cell = {"runs": pr}
         for k in ("lm_51_100", "lm_551_1000", "lm_751_1000", "late_slope_per100"):

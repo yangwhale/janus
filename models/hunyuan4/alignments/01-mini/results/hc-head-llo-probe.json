@@ -1,0 +1,202 @@
+{
+ "what": "hc_head + 末层 RMSNorm + 输出头最小复现（analysis/hc_head_llo_probe.py，x bf16[1,4096,4,1024]，词表 16384），CPU 上为 v5p 2x2x1 单设备 AOT 编译（excess precision 默认开），按变体数：(1) 进 hc_head 收拢的梯度所在的 norm 反向那颗 kernel（HLO 里两路 norm dx 各转 bf16、两路相加被改成 FP32 加法 float_type_correction）的 HLO convert / reduce-precision 条数与 LLO 打包指令条数；(2) M58 流梯度那颗 kernel；(3) 按 mhc.py / normalizations.py 归类的全部融合合计",
+ "versions": {
+  "libtpu_jax": "0.0.46 0.11.1",
+  "maxtext": "98a80d92"
+ },
+ "kernels": {
+  "base": {
+   "norm_bwd_cotangent_kernel": {
+    "fusion": "fusion.32",
+    "hlo": {
+     "convert_to_bf16": 2,
+     "reduce_precision": 0,
+     "float_type_correction_add": 1
+    },
+    "llo": {
+     "vpack.c.bf16": 0,
+     "vpack.i.bf16": 0,
+     "vunpack.c.l.bf16": 1062,
+     "vunpack.c.h.bf16": 1023,
+     "vadd.f32": 2064,
+     "vmul.f32": 4128
+    }
+   },
+   "fanout_kernel": null
+  },
+  "m58": {
+   "norm_bwd_cotangent_kernel": {
+    "fusion": "fusion.31",
+    "hlo": {
+     "convert_to_bf16": 2,
+     "reduce_precision": 0,
+     "float_type_correction_add": 1
+    },
+    "llo": {
+     "vpack.c.bf16": 0,
+     "vpack.i.bf16": 0,
+     "vunpack.c.l.bf16": 1062,
+     "vunpack.c.h.bf16": 1023,
+     "vadd.f32": 2064,
+     "vmul.f32": 4128
+    }
+   },
+   "fanout_kernel": {
+    "fusion": "reduce-precision_convert_fusion",
+    "hlo": {
+     "convert_to_bf16": 3,
+     "reduce_precision": 3,
+     "float_type_correction_add": 0
+    },
+    "llo": {
+     "vpack.c.bf16": 824,
+     "vpack.i.bf16": 1648,
+     "vunpack.c.l.bf16": 824,
+     "vunpack.c.h.bf16": 0,
+     "vadd.f32": 1648,
+     "vmul.f32": 2472
+    }
+   }
+  },
+  "c": {
+   "norm_bwd_cotangent_kernel": {
+    "fusion": "convert_reduce-precision_fusion",
+    "hlo": {
+     "convert_to_bf16": 2,
+     "reduce_precision": 1,
+     "float_type_correction_add": 1
+    },
+    "llo": {
+     "vpack.c.bf16": 0,
+     "vpack.i.bf16": 688,
+     "vunpack.c.l.bf16": 1056,
+     "vunpack.c.h.bf16": 1026,
+     "vadd.f32": 2064,
+     "vmul.f32": 4128
+    }
+   },
+   "fanout_kernel": {
+    "fusion": "reduce-precision_convert_fusion",
+    "hlo": {
+     "convert_to_bf16": 3,
+     "reduce_precision": 3,
+     "float_type_correction_add": 0
+    },
+    "llo": {
+     "vpack.c.bf16": 824,
+     "vpack.i.bf16": 1648,
+     "vunpack.c.l.bf16": 824,
+     "vunpack.c.h.bf16": 0,
+     "vadd.f32": 1648,
+     "vmul.f32": 2472
+    }
+   }
+  },
+  "c_fwdonly": {
+   "norm_bwd_cotangent_kernel": {
+    "fusion": "fusion.31",
+    "hlo": {
+     "convert_to_bf16": 2,
+     "reduce_precision": 0,
+     "float_type_correction_add": 1
+    },
+    "llo": {
+     "vpack.c.bf16": 0,
+     "vpack.i.bf16": 0,
+     "vunpack.c.l.bf16": 1058,
+     "vunpack.c.h.bf16": 1027,
+     "vadd.f32": 2064,
+     "vmul.f32": 4128
+    }
+   },
+   "fanout_kernel": {
+    "fusion": "reduce-precision_convert_fusion",
+    "hlo": {
+     "convert_to_bf16": 3,
+     "reduce_precision": 3,
+     "float_type_correction_add": 0
+    },
+    "llo": {
+     "vpack.c.bf16": 824,
+     "vpack.i.bf16": 1648,
+     "vunpack.c.l.bf16": 824,
+     "vunpack.c.h.bf16": 0,
+     "vadd.f32": 1648,
+     "vmul.f32": 2472
+    }
+   }
+  },
+  "c_shared": {
+   "norm_bwd_cotangent_kernel": {
+    "fusion": "fusion.18",
+    "hlo": {
+     "convert_to_bf16": 3,
+     "reduce_precision": 1,
+     "float_type_correction_add": 1
+    },
+    "llo": {
+     "vpack.c.bf16": 96,
+     "vpack.i.bf16": 96,
+     "vunpack.c.l.bf16": 64,
+     "vunpack.c.h.bf16": 32,
+     "vadd.f32": 2618,
+     "vmul.f32": 288
+    }
+   },
+   "fanout_kernel": {
+    "fusion": "reduce-precision_convert_fusion",
+    "hlo": {
+     "convert_to_bf16": 3,
+     "reduce_precision": 3,
+     "float_type_correction_add": 0
+    },
+    "llo": {
+     "vpack.c.bf16": 824,
+     "vpack.i.bf16": 1648,
+     "vunpack.c.l.bf16": 824,
+     "vunpack.c.h.bf16": 0,
+     "vadd.f32": 1648,
+     "vmul.f32": 2472
+    }
+   }
+  }
+ },
+ "by_source_totals": {
+  "base": {
+   "convert_to_f32": 18,
+   "vpack_bf16": 1226,
+   "vunpack_bf16": 8813,
+   "convert_to_bf16": 6,
+   "reduce_precision": 2
+  },
+  "m58": {
+   "convert_to_f32": 18,
+   "vpack_bf16": 2874,
+   "vunpack_bf16": 8813,
+   "convert_to_bf16": 6,
+   "reduce_precision": 5
+  },
+  "c": {
+   "convert_to_f32": 18,
+   "vpack_bf16": 4314,
+   "vunpack_bf16": 8298,
+   "reduce_precision": 7,
+   "convert_to_bf16": 7
+  },
+  "c_fwdonly": {
+   "convert_to_f32": 18,
+   "vpack_bf16": 3626,
+   "vunpack_bf16": 8301,
+   "reduce_precision": 6,
+   "convert_to_bf16": 7
+  },
+  "c_shared": {
+   "convert_to_f32": 15,
+   "vpack_bf16": 3352,
+   "vunpack_bf16": 6648,
+   "reduce_precision": 5,
+   "convert_to_bf16": 7
+  }
+ },
+ "training_step_match": "训练步（hy4-mini 对齐 yml 的 C 口径、v5p-16 离线编译，MaxText 98a80d92 分支提交 338c9737）同一处是一颗融合：输出头那一路与 MTP 那一路的 norm dx 各 convert(bf16)→convert(f32)、两路相加（FP32）、再 reduce-precision（M52，mhc.py 第 756 行），结构与最小复现相同"
+}

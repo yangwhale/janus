@@ -86,7 +86,7 @@ flowchart LR
   - 实际的 jax / jaxlib / libtpu 版本在运行时读出来写进 `meta.json`；在 Pod 里另装 libtpu 时以 `meta.versions.libtpu_pip` 为准。
   - 这个镜像带 jax 0.11.1、libtpu 0.0.46，两个模型的对齐都在它上面测；混元 3 的运行只记了构建号 `cl/963683785`，按构建号认作 0.0.46，构建号到 pip 版本的对应已由同构建号的探针运行核过（[环境「两个模型实测用的版本」](../reference/environment.md#两个模型实测用的版本)）。
   - **libtpu 版本会改数值，不只改求和顺序**：混元 4 上 0.0.46 → 0.0.52，「RMSNorm 多舍一次」的影响从 r 1.06 变成 5.50，词嵌入 scatter 插排序的门槛也变了。换版本前先看 [`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md)：先建新 golden、重测已知敏感项，再做别的。0.0.50 / 0.0.50.1 不用（[环境](../reference/environment.md#tpu-侧)）。
-  - **v5p 上 0.0.46、0.0.48、0.0.51、0.0.52 都有一个 jit 静默算错的编译器 bug**（多输出 fusion 含 DUS，[混元 4 案例 16](../../models/hunyuan4/cases/16-jit-miscompile-sub8-row-block.md)）。存档的 292 份训练步程序扫出 0 处，覆盖混元 3 截 4 层与混元 4 mini 存了 HLO 的运行；mini 现行比较 `tc-a`（C 口径，MaxText `8d3d7561`）与C 口径另 4 份 `tc-b … tc-e`（只改执行方式的 3 份加 full 重算的 `tc-e`；后补的 `tc-f` 没扫）、C 口径之前的现行比较 `tz-off-rep`、推荐组合 `x5-prod` 没存 HLO，在 CPU 上按 `meta.json` 重编后扫也都是 0 处（离线程序与上卡程序是同一份是推断，依据：存了 HLO 的 `ts-g-a` 按同一办法在 CPU 重编，规范化后与 TPU 上存下的逐行相同，见 `models/hunyuan4/results/jit-miscompile-offline-scan.json` 的 `calib`；`tc-*` 的 `8d3d7561` 没有存了 HLO 的运行可校准，依据弱一层）；没扫的：混元 4 mid、真实宽度截层（06）、生产尺寸，混元 3 正式被测（`t-rmap-on-1000`、`t-v7x-on-1000`）；新形状、新切分上线前先用 `models/hunyuan4/analysis/hlo_mof_dus_scan.py` 扫一遍训练步的优化后程序（[差异清单 F8](../reference/tpu-vs-gpu-differences.md#f8-jit-静默算错dus-和读同一缓冲的算子被合进一颗多输出-fusion)）。
+  - **v5p 上 0.0.46、0.0.48、0.0.51、0.0.52 都有一个 jit 静默算错的编译器 bug**（多输出 fusion 含 DUS，[混元 4 案例 16](../../models/hunyuan4/cases/16-jit-miscompile-sub8-row-block.md)）。存档的 300 份训练步程序扫出 0 处，覆盖混元 3 截 4 层与混元 4 mini 存了 HLO 的运行；mini 现行比较 `tc-a`（C 口径，MaxText `8d3d7561`）与 C 口径另 5 份 `tc-b … tc-f`（只改执行方式的 4 份加 full 重算的 `tc-e`）、C 口径之前的现行比较 `tz-off-rep`、推荐组合 `x5-prod` 没存 HLO，在 CPU 上按 `meta.json` 重编后扫也都是 0 处（离线程序与上卡程序是同一份是推断，依据：存了 HLO 的 `ts-g-a` 按同一办法在 CPU 重编，规范化后与 TPU 上存下的逐行相同，见 `models/hunyuan4/results/jit-miscompile-offline-scan.json` 的 `calib`；`tc-*` 的 `8d3d7561` 没有存了 HLO 的运行可校准，依据弱一层）；没扫的：L3 用的 1 步抓数运行 `s1f-c`、混元 4 mid、真实宽度截层（06）、生产尺寸，混元 3 正式被测（`t-rmap-on-1000`、`t-v7x-on-1000`）；新形状、新切分上线前先用 `models/hunyuan4/analysis/hlo_mof_dus_scan.py` 扫一遍训练步的优化后程序（[差异清单 F8](../reference/tpu-vs-gpu-differences.md#f8-jit-静默算错dus-和读同一缓冲的算子被合进一颗多输出-fusion)）。
 - **对齐阶段不加性能类 libtpu 参数**（`LIBTPU_INIT_ARGS` 默认空）。
   - 要加，先用「同程序、只改这一个开关」证明它不改数学（[方法详解：环境](../reference/environment.md#tpu-侧)「TPU 侧」）。
 - **把 GPU 侧的产物搬到桶里**：
@@ -269,7 +269,7 @@ source <(bash models/hunyuan3/frameworks/maxtext/stage.sh <maxtext 克隆> [maxt
 
 - 默认提交到你自己的节点池。
 - `run.sh` 提交一个 JobSet，每台主机跑同一条命令，进程 0 写运行目录。
-- 要跨几个切片（走 DCN）跑：混元 3 没测过多切片。多切片（几个切片之间走 DCN）只测过一次：混元 4 TPU 自比 B15，两个 v5p 8 片切片走 DCN 做数据并行 2、切片内 FSDP 8，300 步一份。曲线对单切片在噪声内，但第 1 步 `hc_head` 三个梯度离 FP64 0.51–0.57（单切片 0.02–0.07），对自比 golden 的 R 最大 21.1，靠 iHC 豁免才不算未定责，机制没核（是不是差异清单 A16 待核）。上多切片前先查第 1 步 `hc_head` 梯度；更多切片、DCN 上做 FSDP、1000 步都没测（[环境「TPU 侧」](../reference/environment.md#tpu-侧)）。
+- 要跨几个切片（走 DCN）跑：混元 3 没测过多切片。多切片（几个切片之间走 DCN）只测过一次：混元 4 TPU 自比 B15，两个 v5p 8 片切片走 DCN 做数据并行 2、切片内 FSDP 8，300 步一份。曲线对单切片在噪声内，但第 1 步 `hc_head` 三个梯度离 FP64 0.51–0.57（单切片 0.02–0.07），对自比 golden 的 R 最大 21.1，靠 iHC 豁免才不算未定责。离线查过是差异清单 A16 同一型：B15 存下的训练步程序里主输出头反向的卷积 kernel 并进了末层 RMSNorm 的行和，单切片 16 片同一切法（B2c）没有、不偏，所以是走 DCN 改了融合切分；LLO 里省没省那次舍入、上卡加 barrier 都没核。上多切片前先用 `models/hunyuan4/analysis/hc_head_dgrad_fusion.py` 查训练步程序里主头 kernel 有没有并进行和；更多切片、DCN 上做 FSDP、1000 步都没测（[环境「TPU 侧」](../reference/environment.md#tpu-侧)）。
 - 提交机等训练结束（Pod 打出 `JANUS_READY`）后：
   - 把运行目录取回本地 `~/janus-runs/`；
   - 再传到 `gs://<POC 桶>/janus/hunyuan3-4l/tpu/<运行名>/`。

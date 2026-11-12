@@ -55,6 +55,8 @@ PRIVATE_REFS = [
 LOCAL_ABS_PATH = re.compile(r"(?<![\w.])/(" + "ho" + "me" + "|" + "Us" + "ers" + r")/[A-Za-z_][\w.-]*/")
 # 桶名只许写占位：gs://<POC 桶>/…、gs://…、gs://$VAR、gs://{…}。紧跟字母数字就是写了真名。
 REAL_BUCKET = re.compile("gs" + r"://[A-Za-z0-9]")
+# 合并冲突标记：解冲突漏掉一块时，make check 别的检查都不报，读者会直接看到两版原文
+CONFLICT_MARKER = re.compile(r"^(" + "<" * 7 + "|" + ">" * 7 + r")( |$)|^" + "=" * 7 + "$")
 
 
 def tracked_text_files():
@@ -116,6 +118,11 @@ def test_no_private_repo_refs():
 def test_no_local_absolute_paths():
     bad = scan([LOCAL_ABS_PATH])
     assert not bad, "不写本机绝对路径（会带出用户名），改成仓库相对路径：\n" + "\n".join(bad)
+
+
+def test_no_merge_conflict_markers():
+    bad = scan([CONFLICT_MARKER])
+    assert not bad, "解冲突漏了，文件里还留着冲突标记：\n" + "\n".join(bad)
 
 
 def test_patterns_catch_examples():

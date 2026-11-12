@@ -28,13 +28,13 @@ hy4-mini 保留混元 4 的全部结构与每头维度，只缩宽度与个数�
 
 | 比较 | 步数 | 被测 / 基线 | 结果 |
 |---|---|---|---|
-| [`t1zc-l4`](results/t1zc-l4.report.md) | 1000 | TPU `tc-a`（C 口径 6 份的第一份；`tc-e` 改了重算策略，其余只改执行方式）/ GPU `g3-a` | 过 8、不过 0、待定 1（路由偏置均值 r 1.31，C 口径另 5 份过）；主 loss 过（r 0.98）。C 口径 6 份都没有不过（`tc-b` 主 loss 1.14、MTP 1.06–1.07，`tc-f` 梯度范数 1.04 待定；[`t1zc-repeats-6.json`](results/t1zc-repeats-6.json)（5 份时 [`t1zc-repeats.json`](results/t1zc-repeats.json)））。后段偏高的主因已定位到 iHC 流梯度的舍入写法（只开 M36 + M58 那一格第 551–1000 步均值降到 +1.9e-6，p 0.016，5 份里 2 份仍超尾部阈值）；C 口径 6 份第 551–1000 步还高 +6.9e-6，和只开 M36 的对照分不开（p 0.32，[`mini-factorial-tpu-6.json`](results/mini-factorial-tpu-6.json)），残余机制待查（[D30](DETAILS.md#d30)） |
+| [`t1zc-l4`](results/t1zc-l4.report.md) | 1000 | TPU `tc-a`（C 口径 6 份的第一份；`tc-e` 改了重算策略，其余只改执行方式）/ GPU `g3-a` | 过 8、不过 0、待定 1（路由偏置均值 r 1.31，C 口径另 5 份过）；主 loss 过（r 0.98）。C 口径 6 份都没有不过（`tc-b` 主 loss 1.14、MTP 1.06–1.07，`tc-f` 梯度范数最大单步 1.04 待定（MARE 0.95 过）；[`t1zc-repeats-6.json`](results/t1zc-repeats-6.json)（5 份时 [`t1zc-repeats.json`](results/t1zc-repeats.json)））。后段偏高的主因已定位到 iHC 流梯度的舍入写法（只开 M36 + M58 那一格第 551–1000 步均值降到 +1.9e-6，p 0.016，5 份里 2 份仍超尾部阈值）；C 口径 6 份第 551–1000 步还高 +6.9e-6，和只开 M36 的对照分不开（p 0.32，[`mini-factorial-tpu-6.json`](results/mini-factorial-tpu-6.json)），C 口径的后段没修掉：M52 开着时补 M58 全套或任一半都测不出作用（对只开 M52 p 0.14 / 0.14 / 0.54，[`mini-factorial-c-parts-vs-m52.json`](results/mini-factorial-c-parts-vs-m52.json)），机制待查（[D30](DETAILS.md#d30)） |
 | [`t1zo-l4`](results/t1zo-l4.report.md) | 1000 | 上一代：TPU `tz-off-rep`（C 口径之前，M52、M58 不开）/ GPU `g3-a` | 过 7、不过 0、待定 2（主 loss 全程与后段，r 1.55 / 1.52）；更早的 `t1zg-a`（base2 开）见[历代比较](../../dashboard/history.md) |
 
 | mini 挡签字的项 | 状态 |
 |---|---|
 | 第 1 步 163 个超出噪声 | C 口径（2026-11-11 重判）对 GPU 6 份 15 对：超出噪声且比 GPU 远的是第 3 层 FFN 前 `hc_fn`（1.14 N）与 MTP enorm，按 [D11 豁免规则](DETAILS.md#d11-rule) 单列：`hc_fn` 计入未定责，`enorm` 不计入（挡不挡签字待拍板）；C 口径之前是 169 个超出、第 3 层注意力前 `hc_scale` 计入未定责；仍缺 2b |
-| 训练曲线待定（2a） | 以现行比较 tc-a 为准：1000 步路由偏置均值待定（r 1.31，C 口径另 5 份过）；前 300 步 grad_norm 待定（r 1.01，C 口径另 4 份 `tc-b … tc-e` 0.81–0.92（`tc-f` 前 300 步 0.90，[`mini-config-c-vs-m58.json`](results/mini-config-c-vs-m58.json)）、都过）；主 loss 现已刚好过线（MARE 0.98；C 口径另 `tc-b` 主 loss 1.14 待定；后段没修掉，见 D30）；1000 步 grad_norm `tc-a` 过，C 口径 `tc-f` 1.04 待定。QK-Clip 全局最大 logit 1000 步与前 300 步待定（1.09、1.05）是 C 口径之前另一份运行（`tz-off-qkq`，配置与 `tc-a` 不同）的读数，C 口径上没重判；它与 grad_norm 在 base2 开时已接受，是否沿用尚未决定（[D2](DETAILS.md#d2)、[D29](DETAILS.md#d29)） |
+| 训练曲线待定（2a） | 以现行比较 tc-a 为准：1000 步路由偏置均值待定（r 1.31，C 口径另 5 份过）；前 300 步 grad_norm 待定（r 1.01，C 口径另 4 份 `tc-b … tc-e` 0.81–0.92（`tc-f` 前 300 步 0.90，[`mini-config-c-vs-m58.json`](results/mini-config-c-vs-m58.json)）、都过）；主 loss 现已刚好过线（MARE 0.98；C 口径另 `tc-b` 主 loss 1.14 待定；后段没修掉，见 D30）；1000 步 grad_norm `tc-a` 过，C 口径 `tc-f` 最大单步 1.04 待定（MARE 0.95 过）。QK-Clip 全局最大 logit 1000 步与前 300 步待定（1.09、1.05）是 C 口径之前另一份运行（`tz-off-qkq`，配置与 `tc-a` 不同）的读数，C 口径上没重判；它与 grad_norm 在 base2 开时已接受，是否沿用尚未决定（[D2](DETAILS.md#d2)、[D29](DETAILS.md#d29)） |
 | 低阈值 QK-Clip 第 1 步第 4 层（3a） | C 口径之前、关 base2 后 R 1.55，未定责；C 口径上要重测（[D31](DETAILS.md#d31)） |
 | golden 对 GPU 生产程序 | 没比 |
 | 三条事后判法的前瞻验证 | 已在 PROTOCOL 事先登记，用真实权重截层下一批运行验证 |

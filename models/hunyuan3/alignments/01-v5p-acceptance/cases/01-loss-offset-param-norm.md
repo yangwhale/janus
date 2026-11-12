@@ -67,7 +67,7 @@
 - GPU 生产用 BF16 张量核做这次求和，沿 ŵ̄ 偏 −6.5e-4（第 1 步，只算矩阵乘）。
   - B200 张量核每 16 个乘积对齐到最大指数、低位向零截掉。这个累加模型在 CPU 上复现 B200 GEMM 逐位相同（第一阶段 `phase1-l1` 的 `L1.emulate.gemm`）。
   - 输出改 FP32、关 reduced-precision reduction，读数都不变，偏差在累加里（「输出头 dgrad 消融：分段还是 FP32」行）。
-- cuBLAS 13.8 在 B200 上的 FP32 一次累加（关 TF32）也有偏：第 1 步 −1.7e-6，训练到 θ_299（第 300 步开始时的状态）上 −2.6e-4（「GPU 精确的输出头 dgrad」行）。
+- cuBLAS 13.8 在 B200 上的 FP32 一次累加（关 TF32）也有偏：第 1 步 −1.8e-6，训练到 θ_299（第 300 步开始时的状态）上 −2.6e-4（「GPU 精确的输出头 dgrad」行）。
   - 同一份数据在 CPU 上 FP32 一次累加只有 −3.4e-8，所以问题在这个库的长累加内核，不在 FP32 本身。内核内部怎么累加没有源码，机制是推断。
 - 在 B200 / cuBLAS 13.8 上，分段累加去掉偏差（同一份训练张量在一张 B200 上换写法重算 dh，单步离线）。第 1 / 100 / 300 步沿 ŵ̄：
   - BF16 张量核按 1024 分段、段间 FP32 累加：−6.9e-7 / +8.3e-7 / +3.1e-7。
@@ -350,7 +350,7 @@ flowchart TD
    - 关键结果：
      - 沿 ŵ̄ 第 1 / 100 步 −6.5e-4 / −6.1e-4，朝 0 截断、随收缩长度 K 增大。
      - 换成精确 dgrad 后，GPU 复现 TPU 的 h̄·û、第 0 层漂移和约六成的 param_norm 漂移（`p2-dgradx-1k-a/b` +1.27e-2 – +1.31e-2 对 TPU +2.11e-2，60% – 62%）。
-     - 更正（11-06）：`dgrad-exact` 用的 B200 cuBLAS FP32 乘法第 1 步对 FP64 −1.7e-6，训练中途并不精确（θ_299 −2.6e-4，见「GPU 精确的输出头 dgrad」行），所以这一臂只去掉了 BF16 那一部分偏差；分段累加的 `dgrad-chunk` 才是精确的。
+     - 更正（11-06）：`dgrad-exact` 用的 B200 cuBLAS FP32 乘法第 1 步对 FP64 −1.8e-6，训练中途并不精确（θ_299 −2.6e-4，见「GPU 精确的输出头 dgrad」行），所以这一臂只去掉了 BF16 那一部分偏差；分段累加的 `dgrad-chunk` 才是精确的。
    - 判定：🔴 根因（GPU golden 一侧）
 2. 逐步拆分
    - 测试：GPU `g-sd-300` + 同状态参照 `g-sdr-K` / `g-sdx-K` / `g-sdb-K`；TPU `t-sd-300c`（独立梯度探针，FP32 参照权重先舍 BF16）
@@ -566,7 +566,7 @@ flowchart TD
       - ④ 路由偏置更新后的值。
     - 关键结果：
       - ① 各层非 MoE 观测点 rel_l2 7e-7 – 7.6e-6，沿 û 的带符号差 ≤ 7e-7；第 3 层路由专家 5.1e-6（0 个槽位翻转，megablox 与 `ragged_dot` 相差 ≤ 2e-8）；第 1、2 层各有 1 / 3 个槽位翻转（分差 1.6e-8、≤ 6e-7 的近似平局），MoE 输出因此 8.6e-4 / 2.4e-3。
-      - ② 沿 ŵ̄ 的带符号相对误差：GPU 精确 −1.6e-6，TPU 精确 −1.2e-6（highest）/ +2.1e-6（high）；对照 GPU 生产 −4.4e-4、TPU 生产 −2.6e-5（v7x 回放 `t-v7x-headx-prod`；第 6 节 v5p 回放 `t-head-replay` 同一 batch 是 −2.4e-5）。
+      - ② 沿 ŵ̄ 的带符号相对误差（参照是各自 logits 的 FP64 softmax 乘 BF16 权重）：GPU 精确 −1.6e-6，TPU 精确 −1.2e-6（highest）/ +2.1e-6（high）；对照 GPU 生产 −4.4e-4、TPU 生产 −2.6e-5（v7x 回放 `t-v7x-headx-prod`；第 6 节 v5p 回放 `t-head-replay` 同一 batch 是 −2.4e-5）。
       - ③ 非路由张量 rel_l2 8.5e-6 – 3.1e-5、尺度比 1 ± 3e-5；输出层 3.6e-5（尺度比 0.999994）；路由权重 1.1e-3 – 1.2e-3（翻转带来）。
       - ④ 三层 192 个偏置逐位相同。
       - 原始数字在：
@@ -632,7 +632,7 @@ flowchart TD
       - 输出头反向两侧都用 `head_bwd_ref.py` 对各自 logits 的 FP64 参照。
     - 关键结果：
       - 逐层前向：非 MoE 观测点 rel_l2 8e-7 – 1.3e-5；第 3 层路由专家 4.1e-6（0 个槽位翻转）；第 1、2 层各有 1 / 2 个槽位翻转（分差 ≤ 5.6e-8 / 2.9e-7），MoE 输出因此 1.4e-3 / 3.2e-3。
-      - 输出头 dgrad 沿 ŵ̄：GPU 精确 −2.58e-4（dh rel_l2 4.2e-5），TPU 精确 −4.5e-6（1.6e-6）；第 1 步时 GPU 精确是 −1.6e-6。
+      - 输出头 dgrad 沿 ŵ̄：GPU 精确 −2.58e-4（dh rel_l2 4.2e-5），TPU 精确 −4.5e-6（1.6e-6）；第 1 步时 GPU 精确是 −1.6e-6（这一行的参照都是 `head_bwd_ref.py`：用各自的 logits 在 FP64 里重算 softmax 再乘，[`case01-exact-replay-299.json`](../results/case01-exact-replay-299.json)、[`case01-exact-head-dgrad.json`](../results/case01-exact-head-dgrad.json)；同一份 dlogits 直接在 FP64 里乘作参照时，第 1 步是 −1.8e-6、θ_299 是 −2.6e-4，[`case01-cublas-fp32-longk.json`](../results/case01-cublas-fp32-longk.json)）。
       - 原始数字在 [`../results/case01-exact-replay-299.json`](../results/case01-exact-replay-299.json)。
     - 判定：
       - 🔴 找到两侧精确不一样的那一处：GPU 精确的输出头 dgrad。

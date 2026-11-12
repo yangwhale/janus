@@ -177,6 +177,35 @@ L4 的三个工具：
 
 假设表按成本从低到高排，参见案例 01 第 6 节。每行写假设、怎么验、判据。先查名单与配置对照（几分钟），再跑短运行（几十分钟），最后才跑 1000 步。
 
+### 扫全图找被省掉的舍入
+
+查到「某一处 BF16 舍入 TPU 没做」以后，不要接着一处一处读代码去猜下一处。把整个训练步离线编译出来，扫一遍编译产物，一次列出全图同类的位置。完整的来龙去脉见[混元 4 案例 17 第九幕](../../models/hunyuan4/cases/17-late-drift-elided-rounding.md#第九幕全局清单先编译再扫描)。
+
+**为什么能扫。** 代码里写 `x.astype(bf16)` 再拿去做 FP32 运算，优化后 HLO 里会留下一对 `convert(f32→bf16)` → `convert(bf16→f32)`，这就是「这里该舍一次」的声明。TPU 上开着 excess precision（默认开）时，这对往返如果落在同一颗融合里，后端不产生舍入指令：LLO 里那颗 kernel 一条 BF16 打包指令（`vpack.*.bf16`）都没有。只有跨融合边界写回内存、或喂给 BF16 矩阵乘的值，才真的舍了。所以从 HLO 能认出「声明了」，从 LLO 能确认「被省掉了」。reduce_precision 编译器省不掉，这是补舍入时用它、不用 `astype` 的原因。
+
+**怎么扫。**
+
+1. 离线编译，不占卡：用 [`aot_hlo.py`](../../models/hunyuan4/frameworks/maxtext/aot_hlo.py)，在 `LIBTPU_INIT_ARGS` 里加 `--xla_jf_dump_to=<目录>/jf --xla_jf_dump_llo_text=true` 存 LLO（混元 4 mini 整步：只要 HLO 约 110 s、15 GiB；带 LLO 830–1010 s、41–43 GiB）。已经在用 [`hlo_screen.py`](../../models/hunyuan4/alignments/04-tpu-self/hlo_screen.py) 跑前离线筛的，把这两个开关写进臂的 `libtpu_args`，缓存目录里就有 `train_step.after_optimizations.txt` 和 `jf/`。
+2. 扫描：
+
+   ```bash
+   python models/hunyuan4/analysis/elided_rounding_scan.py \
+     --hlo <目录>/xla/module_*.jit_train_step.*.after_optimizations.txt --jf <目录>/jf --out elided.json --positions
+   ```
+
+   每一处往返判成「省掉」「已补」（转回 FP32 后紧跟 reduce_precision）或「舍了」，按源码行、区域（层 scan 里 / 外）、前向反向和位置类归总；`--positions` 另给逐处清单，含所在 kernel 和它的打包指令条数。
+3. 负对照：`XLA_FLAGS` 加 `--xla_allow_excess_precision=false` 再编、再扫。「整颗只含往返」的 kernel 里打包指令 0 条的应该变成 0 颗，不是 0 颗就说明规律在这个版本上不成立。
+
+**怎么读。** 逐类问三件事：GPU 在这里舍不舍；在不在反向梯度路径上；有没有现成开关能补。三条都满足的排进上卡验证，照「两头验证」做：TPU 补上舍入看偏差下不下去，GPU 照 TPU 不舍看偏差出不出来。
+
+**边界。**
+
+- 只找得到「代码声明了、编译器省掉了」这一类。代码里根本没写舍入的、累加顺序不同的、近似超越函数，扫不出来。
+- GPU 那边舍不舍要对照 GPU 代码，清单只说 TPU 这边。
+- 清单是候选，因果要上卡验证。
+- 位置类的规则按混元 4 mini 的源码行和形状写，换模型要改；按模块、按源码行的计数不依赖它。
+- 融合随 libtpu 版本和芯片代际变，换版本要重扫。
+
 ## 3 · 修复：一次改一件事
 
 ### 改哪里

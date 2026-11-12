@@ -1,0 +1,43 @@
+{
+ "what": "C + 共用 norm（mtp_input_shared_final_norm）4 份按现行检查项目录（catalogs/t1zo-l4.yaml，--test 换被测，GPU g3 16 份 120 对）判 1000 步的摘要",
+ "runs": {
+  "tcm-a": {
+   "summary": {
+    "pass": 6,
+    "fail": 0,
+    "inconclusive": 3
+   },
+   "not_pass": [
+    "L4.loss",
+    "L4.loss.tail",
+    "L4.router.bias_mean"
+   ]
+  },
+  "tcm-b": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "not_pass": []
+  },
+  "tcm-c": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "not_pass": []
+  },
+  "tcm-d": {
+   "summary": {
+    "pass": 8,
+    "fail": 0,
+    "inconclusive": 1
+   },
+   "not_pass": [
+    "L4.router.bias_mean"
+   ]
+  }
+ }
+}

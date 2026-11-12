@@ -1246,14 +1246,18 @@ def plain_legend(v):
     fac = json.loads((RES / f"{FACTORIAL}.json").read_text())["cells"]
     fb, fm, fc = (fac[k]["lm_551_1000"]["mean"] for k in ("base", "M58", "C"))
     ftail = json.loads((RES / f"{FACTORIAL}.json").read_text())["tail_threshold_751_1000"]
-    rep = json.loads((RES / f"{REPEATS_C}.json").read_text())["by_check"]
+    rep_all = json.loads((RES / f"{REPEATS_C}.json").read_text())
+    rep, rep_tpu = rep_all["by_check"], rep_all["tpu"]
+    by_name = {"signed_mean": "带符号均值", "mare": "平均绝对相对误差", "max_step": "最大单步"}
     rep_inco = []
     for cid in ("L4.loss", "L4.loss.tail", "L4.mtp_loss", "L4.mtp_loss.tail", "L4.grad_norm"):
         vals = rep[cid]["c"]["values"]
         if len(vals) != len(REPEATS_C_RUNS):
             raise SystemExit(f"{REPEATS_C}.json 的 {cid} 份数和 REPEATS_C_RUNS 对不上")
         rep_inco += [
-            f"{run} {L4_NAME[cid]} {x:.2f} 倍" for run, x in zip(REPEATS_C_RUNS, vals) if x > 1 and run != "tc-a"
+            f"{run} {L4_NAME[cid]}（{by_name[rep_tpu[run]['checks'][cid]['by']]}）{x:.2f} 倍"
+            for run, x in zip(REPEATS_C_RUNS, vals)
+            if x > 1 and run != "tc-a"
         ]
     ql = next(c for c in json.loads(_resolve(HEAD_QK_L1).read_text())["checks"] if c["id"] == "L1.qkclip.max_logit")
     qm = ql["metrics"]
@@ -1293,7 +1297,7 @@ def plain_legend(v):
             else "；"
         )
         + "、".join(one(r) for r in acc)
-        + "，另列（按 D11 豁免规则：比 GPU 远的张量都单列，enorm 的接受理由「两边离精确值都不到一次 BF16 舍入」复核成立、不计入，超连接小参数没有登记过接受、计入；单列的挡不挡签字待拍板）。"
+        + "，另列（按 D11 豁免规则：比 GPU 远的张量都单列，enorm 的接受理由「两边离精确值都不到一次 BF16 舍入」复核成立、不计入，超连接小参数 hc_fn 是 base2 开那一代登记接受的 6 个之一，但接受理由没有数值门槛、复核不了，计入（是否沿用待拍板）；单列的挡不挡签字待拍板）。"
         f"GPU 第一步参照 2026-11-11 从 3 份补到 6 份（看过 3 份的判定之后补跑，6 份能否作正式判定待拍板），C 口径之前那一代 3 份时是 {s3['metrics']['n_over_n']} 个超出、{s3['metrics']['n_unattributed_over_n']} 个未定责），"
         f"低阈值下（C 口径之前的配置）第一步第 {qm['worst_layer']} 层每头最大注意力打分离精确值 GPU {_e(qm['rel_l2_gpu_vs_ref'], False)}、TPU {_e(qm['rel_l2_tpu_vs_ref'], False)}，"
         f"{qm['r_ratio']:.2f} 倍（未定责），"

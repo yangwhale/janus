@@ -1,0 +1,2212 @@
+{
+ "what": "hc_head + 末层 RMSNorm 反向：MaxText 各写法对 GPU（Hy4FinalNorm autograd，TE norm 语义仿写）逐级比；前缀 xoff：XLA 关省舍入（MaxText 写法的语义）；xon：XLA 默认（CPU 上的代数化简会省掉 FP32→BF16→FP32 往返）；后缀 _elide：xoff 下手写的推断写法，去掉 TPU 可能省掉的 BF16 往返；_shared：MTP 与输出头共用一次末层 norm；c_gate 在非 _elide 时与 GPU 舍成 BF16 后的门控梯度比；FP64 参照是 GPU 写法全 FP64",
+ "shape": {
+  "S": 128,
+  "B": 2,
+  "K": 4,
+  "D": 256
+ },
+ "gpu_on_bf16_grid": {
+  "g_out": true,
+  "c_sum": true,
+  "c_gate": false,
+  "dx": true
+ },
+ "material_threshold_rel_l2_vs_gpu": 0.0001,
+ "gpu_rel_l2_vs_fp64": {
+  "g_out": 0.0023518681337049195,
+  "c_sum": 0.0028737545979144858,
+  "c_gate": 0.002675460845643403,
+  "dx": 0.0033001050288526696,
+  "d_hc_fn": 0.002682933739378349,
+  "d_hc_base": 0.006943889368265737,
+  "d_hc_scale": 0.00788257141226674,
+  "d_norm_w": 0.0025563556410446143
+ },
+ "variants": {
+  "xoff_base": {
+   "g_out": {
+    "bitwise_equal_frac": 0.620086669921875,
+    "rel_l2_vs_gpu": 0.0032783259290480498,
+    "rel_l2_vs_fp64": 0.0023666241733807532,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.6407508850097656,
+    "rel_l2_vs_gpu": 0.0033813663600966593,
+    "rel_l2_vs_fp64": 0.0028966518382924026,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.3833656311035156,
+    "rel_l2_vs_gpu": 0.004165615559316014,
+    "rel_l2_vs_fp64": 0.003242576135773904,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.6393585205078125,
+    "rel_l2_vs_gpu": 0.0033995763611209136,
+    "rel_l2_vs_fp64": 0.0033171113433425135,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.00351266314124519,
+    "rel_l2_vs_fp64": 0.0027814952850149137,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0028361034466783197,
+    "rel_l2_vs_fp64": 0.007178471103442237,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.00034960837859736516,
+    "rel_l2_vs_fp64": 0.007530207220658754,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.0546875,
+    "rel_l2_vs_gpu": 0.0030115416596580512,
+    "rel_l2_vs_fp64": 0.002510267175145565,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": false
+   },
+   "module_dx_equal": false,
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xoff_base_elide": {
+   "g_out": {
+    "bitwise_equal_frac": 1.52587890625e-05,
+    "rel_l2_vs_gpu": 0.0023518649820931485,
+    "rel_l2_vs_fp64": 6.159347406766701e-08,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": false
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 3.814697265625e-06,
+    "rel_l2_vs_gpu": 0.0028737766062357883,
+    "rel_l2_vs_fp64": 7.637664480058116e-08,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": false
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 1.52587890625e-05,
+    "rel_l2_vs_gpu": 0.0026758526855062037,
+    "rel_l2_vs_fp64": 1.5822058029891915e-07,
+    "gpu_rel_l2_vs_fp64": 0.002675460845643403,
+    "values_on_bf16_grid": false
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.5720443725585938,
+    "rel_l2_vs_gpu": 0.00368884754003705,
+    "rel_l2_vs_fp64": 0.001655908240500879,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.000244140625,
+    "rel_l2_vs_gpu": 0.002683250975523108,
+    "rel_l2_vs_fp64": 3.184817869300395e-07,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0069300377241561075,
+    "rel_l2_vs_fp64": 4.457018009797218e-07,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.007820865644820483,
+    "rel_l2_vs_fp64": 5.7235495216261234e-08,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.05859375,
+    "rel_l2_vs_gpu": 0.003126089198864647,
+    "rel_l2_vs_fp64": 0.0017335331799825944,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": false
+   },
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xoff_base_shared": {
+   "g_out": {
+    "bitwise_equal_frac": 0.99993896484375,
+    "rel_l2_vs_gpu": 9.357895344132385e-07,
+    "rel_l2_vs_fp64": 0.0023518682547059764,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.9999198913574219,
+    "rel_l2_vs_gpu": 2.1486678334877388e-05,
+    "rel_l2_vs_fp64": 0.002873737945723009,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.9997520446777344,
+    "rel_l2_vs_gpu": 3.663225677147463e-05,
+    "rel_l2_vs_fp64": 0.003141927650469392,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.9999275207519531,
+    "rel_l2_vs_gpu": 2.1491711907982094e-05,
+    "rel_l2_vs_fp64": 0.0033001107707468016,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.018798828125,
+    "rel_l2_vs_gpu": 1.558908947978918e-06,
+    "rel_l2_vs_fp64": 0.002682815483080485,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 3.1325298747500674e-06,
+    "rel_l2_vs_fp64": 0.006941167460786275,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 5.295759332451883e-07,
+    "rel_l2_vs_fp64": 0.007883105162620098,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 1.0,
+    "rel_l2_vs_gpu": 0.0,
+    "rel_l2_vs_fp64": 0.0025563556410446143,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": true
+   },
+   "module_dx_equal": true,
+   "first_differing_stage": "g_out",
+   "first_material_stage": null
+  },
+  "xoff_base_shared_elide": {
+   "g_out": {
+    "bitwise_equal_frac": 1.52587890625e-05,
+    "rel_l2_vs_gpu": 0.0023518650952026945,
+    "rel_l2_vs_fp64": 5.605351542180661e-08,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": false
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 3.814697265625e-06,
+    "rel_l2_vs_gpu": 0.002873776759810625,
+    "rel_l2_vs_fp64": 7.218710974897552e-08,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": false
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 3.814697265625e-06,
+    "rel_l2_vs_gpu": 0.002675853025922844,
+    "rel_l2_vs_fp64": 1.529696738032955e-07,
+    "gpu_rel_l2_vs_fp64": 0.002675460845643403,
+    "values_on_bf16_grid": false
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.5720405578613281,
+    "rel_l2_vs_gpu": 0.0036888941927109764,
+    "rel_l2_vs_fp64": 0.0016559082331900914,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0026832470414958126,
+    "rel_l2_vs_fp64": 3.197158781160347e-07,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.006929782652005707,
+    "rel_l2_vs_fp64": 6.480697849977532e-07,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.007821130432787106,
+    "rel_l2_vs_fp64": 2.0963968146234443e-07,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.53125,
+    "rel_l2_vs_gpu": 0.0029469856178748225,
+    "rel_l2_vs_fp64": 0.0016398705921307234,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": true
+   },
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xoff_c": {
+   "g_out": {
+    "bitwise_equal_frac": 0.620086669921875,
+    "rel_l2_vs_gpu": 0.0032783259290480498,
+    "rel_l2_vs_fp64": 0.0023666241733807532,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.6407508850097656,
+    "rel_l2_vs_gpu": 0.0033813663600966593,
+    "rel_l2_vs_fp64": 0.0028966518382924026,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.3833656311035156,
+    "rel_l2_vs_gpu": 0.004165615559316014,
+    "rel_l2_vs_fp64": 0.003242576135773904,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.6393585205078125,
+    "rel_l2_vs_gpu": 0.0033995763611209136,
+    "rel_l2_vs_fp64": 0.0033171113433425135,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.00351266314124519,
+    "rel_l2_vs_fp64": 0.0027814952850149137,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0028361034466783197,
+    "rel_l2_vs_fp64": 0.007178471103442237,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.00034960837859736516,
+    "rel_l2_vs_fp64": 0.007530207220658754,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.0546875,
+    "rel_l2_vs_gpu": 0.0030115416596580512,
+    "rel_l2_vs_fp64": 0.002510267175145565,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": false
+   },
+   "module_dx_equal": false,
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xoff_c_elide": {
+   "g_out": {
+    "bitwise_equal_frac": 0.7302703857421875,
+    "rel_l2_vs_gpu": 0.0028090175632252837,
+    "rel_l2_vs_fp64": 0.0016682341701174884,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.003258674861134921,
+    "rel_l2_vs_fp64": 0.0016682154041258036,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": false
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0030776825097747723,
+    "rel_l2_vs_fp64": 0.002072414478899044,
+    "gpu_rel_l2_vs_fp64": 0.002675460845643403,
+    "values_on_bf16_grid": false
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.7416877746582031,
+    "rel_l2_vs_gpu": 0.0029157655559944834,
+    "rel_l2_vs_fp64": 0.0028506677911593076,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.003024215619080121,
+    "rel_l2_vs_fp64": 0.002004817816644214,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.002544443708522277,
+    "rel_l2_vs_fp64": 0.007476096293608278,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.012263831199436531,
+    "rel_l2_vs_fp64": 0.0044779303123873345,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.0546875,
+    "rel_l2_vs_gpu": 0.0030115416596580512,
+    "rel_l2_vs_fp64": 0.002510267175145565,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": false
+   },
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xoff_c_fwdonly": {
+   "g_out": {
+    "bitwise_equal_frac": 0.620086669921875,
+    "rel_l2_vs_gpu": 0.0032783259290480498,
+    "rel_l2_vs_fp64": 0.0023666241733807532,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.6407508850097656,
+    "rel_l2_vs_gpu": 0.0033813663600966593,
+    "rel_l2_vs_fp64": 0.0028966518382924026,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.3833656311035156,
+    "rel_l2_vs_gpu": 0.004165615559316014,
+    "rel_l2_vs_fp64": 0.003242576135773904,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.6393585205078125,
+    "rel_l2_vs_gpu": 0.0033995763611209136,
+    "rel_l2_vs_fp64": 0.0033171113433425135,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.00351266314124519,
+    "rel_l2_vs_fp64": 0.0027814952850149137,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0028361034466783197,
+    "rel_l2_vs_fp64": 0.007178471103442237,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.00034960837859736516,
+    "rel_l2_vs_fp64": 0.007530207220658754,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.0546875,
+    "rel_l2_vs_gpu": 0.0030115416596580512,
+    "rel_l2_vs_fp64": 0.002510267175145565,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": false
+   },
+   "module_dx_equal": false,
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xoff_c_fwdonly_elide": {
+   "g_out": {
+    "bitwise_equal_frac": 3.0517578125e-05,
+    "rel_l2_vs_gpu": 0.0023403366473186984,
+    "rel_l2_vs_fp64": 0.00023081282753383914,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": false
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 1.1444091796875e-05,
+    "rel_l2_vs_gpu": 0.0028649584536513933,
+    "rel_l2_vs_fp64": 0.00023073609871403211,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": false
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 1.1444091796875e-05,
+    "rel_l2_vs_gpu": 0.0024666593446744755,
+    "rel_l2_vs_fp64": 0.0010039747890502088,
+    "gpu_rel_l2_vs_fp64": 0.002675460845643403,
+    "values_on_bf16_grid": false
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.6420097351074219,
+    "rel_l2_vs_gpu": 0.003328229152045168,
+    "rel_l2_vs_fp64": 0.0023126864164007914,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.002460104782974788,
+    "rel_l2_vs_fp64": 0.001024776595605586,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0046273277472315836,
+    "rel_l2_vs_fp64": 0.003132920763171211,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.007505679701884055,
+    "rel_l2_vs_fp64": 0.00031772765413498323,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.0546875,
+    "rel_l2_vs_gpu": 0.0030115416596580512,
+    "rel_l2_vs_fp64": 0.002510267175145565,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": false
+   },
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xoff_c_fwdonly_shared": {
+   "g_out": {
+    "bitwise_equal_frac": 0.99993896484375,
+    "rel_l2_vs_gpu": 9.357895344132385e-07,
+    "rel_l2_vs_fp64": 0.0023518682547059764,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.9999198913574219,
+    "rel_l2_vs_gpu": 2.1486678334877388e-05,
+    "rel_l2_vs_fp64": 0.002873737945723009,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.9997520446777344,
+    "rel_l2_vs_gpu": 3.663225677147463e-05,
+    "rel_l2_vs_fp64": 0.003141927650469392,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.9999275207519531,
+    "rel_l2_vs_gpu": 2.1491711907982094e-05,
+    "rel_l2_vs_fp64": 0.0033001107707468016,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.018798828125,
+    "rel_l2_vs_gpu": 1.558908947978918e-06,
+    "rel_l2_vs_fp64": 0.002682815483080485,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 3.1325298747500674e-06,
+    "rel_l2_vs_fp64": 0.006941167460786275,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 5.295759332451883e-07,
+    "rel_l2_vs_fp64": 0.007883105162620098,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 1.0,
+    "rel_l2_vs_gpu": 0.0,
+    "rel_l2_vs_fp64": 0.0025563556410446143,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": true
+   },
+   "module_dx_equal": true,
+   "first_differing_stage": "g_out",
+   "first_material_stage": null
+  },
+  "xoff_c_fwdonly_shared_elide": {
+   "g_out": {
+    "bitwise_equal_frac": 1.52587890625e-05,
+    "rel_l2_vs_gpu": 0.002340337067958584,
+    "rel_l2_vs_fp64": 0.00023081256849078247,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": false
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 3.814697265625e-06,
+    "rel_l2_vs_gpu": 0.0028649588063374143,
+    "rel_l2_vs_fp64": 0.00023073584374059557,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": false
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 1.1444091796875e-05,
+    "rel_l2_vs_gpu": 0.0024666617259868854,
+    "rel_l2_vs_fp64": 0.0010039713511328055,
+    "gpu_rel_l2_vs_fp64": 0.002675460845643403,
+    "values_on_bf16_grid": false
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.6420211791992188,
+    "rel_l2_vs_gpu": 0.0033281653592196854,
+    "rel_l2_vs_fp64": 0.0023126074575390916,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0024601010257449137,
+    "rel_l2_vs_fp64": 0.0010247691791270331,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.004627788846808746,
+    "rel_l2_vs_fp64": 0.0031325972767088615,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0075062092778173,
+    "rel_l2_vs_fp64": 0.000317193903781626,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.5859375,
+    "rel_l2_vs_gpu": 0.002592364789356431,
+    "rel_l2_vs_fp64": 0.0022582728209061256,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": true
+   },
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xoff_c_shared": {
+   "g_out": {
+    "bitwise_equal_frac": 0.99993896484375,
+    "rel_l2_vs_gpu": 9.357895344132385e-07,
+    "rel_l2_vs_fp64": 0.0023518682547059764,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.9999198913574219,
+    "rel_l2_vs_gpu": 2.1486678334877388e-05,
+    "rel_l2_vs_fp64": 0.002873737945723009,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.9997520446777344,
+    "rel_l2_vs_gpu": 3.663225677147463e-05,
+    "rel_l2_vs_fp64": 0.003141927650469392,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.9999275207519531,
+    "rel_l2_vs_gpu": 2.1491711907982094e-05,
+    "rel_l2_vs_fp64": 0.0033001107707468016,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.018798828125,
+    "rel_l2_vs_gpu": 1.558908947978918e-06,
+    "rel_l2_vs_fp64": 0.002682815483080485,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 3.1325298747500674e-06,
+    "rel_l2_vs_fp64": 0.006941167460786275,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 5.295759332451883e-07,
+    "rel_l2_vs_fp64": 0.007883105162620098,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 1.0,
+    "rel_l2_vs_gpu": 0.0,
+    "rel_l2_vs_fp64": 0.0025563556410446143,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": true
+   },
+   "module_dx_equal": true,
+   "first_differing_stage": "g_out",
+   "first_material_stage": null
+  },
+  "xoff_c_shared_elide": {
+   "g_out": {
+    "bitwise_equal_frac": 0.7302703857421875,
+    "rel_l2_vs_gpu": 0.002809017562505985,
+    "rel_l2_vs_fp64": 0.0016682341762781247,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0032586748605114477,
+    "rel_l2_vs_fp64": 0.0016682154103015584,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": false
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0030776816412588265,
+    "rel_l2_vs_fp64": 0.002072413983751534,
+    "gpu_rel_l2_vs_fp64": 0.002675460845643403,
+    "values_on_bf16_grid": false
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.7416877746582031,
+    "rel_l2_vs_gpu": 0.0029157655559944834,
+    "rel_l2_vs_fp64": 0.0028506677911593076,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0030242148003018898,
+    "rel_l2_vs_fp64": 0.0020048179016466496,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.002544389705798052,
+    "rel_l2_vs_fp64": 0.0074760619698423,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.012263831199436531,
+    "rel_l2_vs_fp64": 0.0044779303123873345,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.5859375,
+    "rel_l2_vs_gpu": 0.002592364789356431,
+    "rel_l2_vs_fp64": 0.0022582728209061256,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": true
+   },
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xoff_c_skiphead": {
+   "g_out": {
+    "bitwise_equal_frac": 0.620086669921875,
+    "rel_l2_vs_gpu": 0.0032783259290480498,
+    "rel_l2_vs_fp64": 0.0023666241733807532,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.6407508850097656,
+    "rel_l2_vs_gpu": 0.0033813663600966593,
+    "rel_l2_vs_fp64": 0.0028966518382924026,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.3833656311035156,
+    "rel_l2_vs_gpu": 0.004165615559316014,
+    "rel_l2_vs_fp64": 0.003242576135773904,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.6393585205078125,
+    "rel_l2_vs_gpu": 0.0033995763611209136,
+    "rel_l2_vs_fp64": 0.0033171113433425135,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.00351266314124519,
+    "rel_l2_vs_fp64": 0.0027814952850149137,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0028361034466783197,
+    "rel_l2_vs_fp64": 0.007178471103442237,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.00034960837859736516,
+    "rel_l2_vs_fp64": 0.007530207220658754,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.0546875,
+    "rel_l2_vs_gpu": 0.0030115416596580512,
+    "rel_l2_vs_fp64": 0.002510267175145565,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": false
+   },
+   "module_dx_equal": false,
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xoff_c_skiphead_elide": {
+   "g_out": {
+    "bitwise_equal_frac": 0.7302703857421875,
+    "rel_l2_vs_gpu": 0.0028090175632252837,
+    "rel_l2_vs_fp64": 0.0016682341701174884,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.003258674861134921,
+    "rel_l2_vs_fp64": 0.0016682154041258036,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": false
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0030776825097747723,
+    "rel_l2_vs_fp64": 0.002072414478899044,
+    "gpu_rel_l2_vs_fp64": 0.002675460845643403,
+    "values_on_bf16_grid": false
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.5851173400878906,
+    "rel_l2_vs_gpu": 0.003969990048976308,
+    "rel_l2_vs_fp64": 0.002345055013150765,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.003024215619080121,
+    "rel_l2_vs_fp64": 0.002004817816644214,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.002544443708522277,
+    "rel_l2_vs_fp64": 0.007476096293608278,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.012263831199436531,
+    "rel_l2_vs_fp64": 0.0044779303123873345,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.0546875,
+    "rel_l2_vs_gpu": 0.0030115416596580512,
+    "rel_l2_vs_fp64": 0.002510267175145565,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": false
+   },
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xoff_c_skiphead_shared": {
+   "g_out": {
+    "bitwise_equal_frac": 0.99993896484375,
+    "rel_l2_vs_gpu": 9.357895344132385e-07,
+    "rel_l2_vs_fp64": 0.0023518682547059764,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.9999198913574219,
+    "rel_l2_vs_gpu": 2.1486678334877388e-05,
+    "rel_l2_vs_fp64": 0.002873737945723009,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.9997520446777344,
+    "rel_l2_vs_gpu": 3.663225677147463e-05,
+    "rel_l2_vs_fp64": 0.003141927650469392,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.9999275207519531,
+    "rel_l2_vs_gpu": 2.1491711907982094e-05,
+    "rel_l2_vs_fp64": 0.0033001107707468016,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.018798828125,
+    "rel_l2_vs_gpu": 1.558908947978918e-06,
+    "rel_l2_vs_fp64": 0.002682815483080485,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 3.1325298747500674e-06,
+    "rel_l2_vs_fp64": 0.006941167460786275,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 5.295759332451883e-07,
+    "rel_l2_vs_fp64": 0.007883105162620098,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 1.0,
+    "rel_l2_vs_gpu": 0.0,
+    "rel_l2_vs_fp64": 0.0025563556410446143,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": true
+   },
+   "module_dx_equal": true,
+   "first_differing_stage": "g_out",
+   "first_material_stage": null
+  },
+  "xoff_c_skiphead_shared_elide": {
+   "g_out": {
+    "bitwise_equal_frac": 0.7302703857421875,
+    "rel_l2_vs_gpu": 0.002809017562505985,
+    "rel_l2_vs_fp64": 0.0016682341762781247,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0032586748605114477,
+    "rel_l2_vs_fp64": 0.0016682154103015584,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": false
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0030776816412588265,
+    "rel_l2_vs_fp64": 0.002072413983751534,
+    "gpu_rel_l2_vs_fp64": 0.002675460845643403,
+    "values_on_bf16_grid": false
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.5851173400878906,
+    "rel_l2_vs_gpu": 0.003969990048854164,
+    "rel_l2_vs_fp64": 0.002345055028578945,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0030242148003018898,
+    "rel_l2_vs_fp64": 0.0020048179016466496,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.002544389705798052,
+    "rel_l2_vs_fp64": 0.0074760619698423,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.012263831199436531,
+    "rel_l2_vs_fp64": 0.0044779303123873345,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.5859375,
+    "rel_l2_vs_gpu": 0.002592364789356431,
+    "rel_l2_vs_fp64": 0.0022582728209061256,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": true
+   },
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xoff_m52": {
+   "g_out": {
+    "bitwise_equal_frac": 0.620086669921875,
+    "rel_l2_vs_gpu": 0.0032783259290480498,
+    "rel_l2_vs_fp64": 0.0023666241733807532,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.6407508850097656,
+    "rel_l2_vs_gpu": 0.0033813663600966593,
+    "rel_l2_vs_fp64": 0.0028966518382924026,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.3833656311035156,
+    "rel_l2_vs_gpu": 0.004165615559316014,
+    "rel_l2_vs_fp64": 0.003242576135773904,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.6393585205078125,
+    "rel_l2_vs_gpu": 0.0033995763611209136,
+    "rel_l2_vs_fp64": 0.0033171113433425135,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.00351266314124519,
+    "rel_l2_vs_fp64": 0.0027814952850149137,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0028361034466783197,
+    "rel_l2_vs_fp64": 0.007178471103442237,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.00034960837859736516,
+    "rel_l2_vs_fp64": 0.007530207220658754,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.0546875,
+    "rel_l2_vs_gpu": 0.0030115416596580512,
+    "rel_l2_vs_fp64": 0.002510267175145565,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": false
+   },
+   "module_dx_equal": false,
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xoff_m52_elide": {
+   "g_out": {
+    "bitwise_equal_frac": 0.7302703857421875,
+    "rel_l2_vs_gpu": 0.0028090175632252837,
+    "rel_l2_vs_fp64": 0.0016682341701174884,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.003258674861134921,
+    "rel_l2_vs_fp64": 0.0016682154041258036,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": false
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0030776825097747723,
+    "rel_l2_vs_fp64": 0.002072414478899044,
+    "gpu_rel_l2_vs_fp64": 0.002675460845643403,
+    "values_on_bf16_grid": false
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.5851173400878906,
+    "rel_l2_vs_gpu": 0.003969990048976308,
+    "rel_l2_vs_fp64": 0.002345055013150765,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.003024215619080121,
+    "rel_l2_vs_fp64": 0.002004817816644214,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.002544443708522277,
+    "rel_l2_vs_fp64": 0.007476096293608278,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.012263831199436531,
+    "rel_l2_vs_fp64": 0.0044779303123873345,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.0546875,
+    "rel_l2_vs_gpu": 0.0030115416596580512,
+    "rel_l2_vs_fp64": 0.002510267175145565,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": false
+   },
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xoff_m52_shared": {
+   "g_out": {
+    "bitwise_equal_frac": 0.99993896484375,
+    "rel_l2_vs_gpu": 9.357895344132385e-07,
+    "rel_l2_vs_fp64": 0.0023518682547059764,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.9999198913574219,
+    "rel_l2_vs_gpu": 2.1486678334877388e-05,
+    "rel_l2_vs_fp64": 0.002873737945723009,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.9997520446777344,
+    "rel_l2_vs_gpu": 3.663225677147463e-05,
+    "rel_l2_vs_fp64": 0.003141927650469392,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.9999275207519531,
+    "rel_l2_vs_gpu": 2.1491711907982094e-05,
+    "rel_l2_vs_fp64": 0.0033001107707468016,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.018798828125,
+    "rel_l2_vs_gpu": 1.558908947978918e-06,
+    "rel_l2_vs_fp64": 0.002682815483080485,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 3.1325298747500674e-06,
+    "rel_l2_vs_fp64": 0.006941167460786275,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 5.295759332451883e-07,
+    "rel_l2_vs_fp64": 0.007883105162620098,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 1.0,
+    "rel_l2_vs_gpu": 0.0,
+    "rel_l2_vs_fp64": 0.0025563556410446143,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": true
+   },
+   "module_dx_equal": true,
+   "first_differing_stage": "g_out",
+   "first_material_stage": null
+  },
+  "xoff_m52_shared_elide": {
+   "g_out": {
+    "bitwise_equal_frac": 0.7302703857421875,
+    "rel_l2_vs_gpu": 0.002809017562505985,
+    "rel_l2_vs_fp64": 0.0016682341762781247,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0032586748605114477,
+    "rel_l2_vs_fp64": 0.0016682154103015584,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": false
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0030776816412588265,
+    "rel_l2_vs_fp64": 0.002072413983751534,
+    "gpu_rel_l2_vs_fp64": 0.002675460845643403,
+    "values_on_bf16_grid": false
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.5851173400878906,
+    "rel_l2_vs_gpu": 0.003969990048854164,
+    "rel_l2_vs_fp64": 0.002345055028578945,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0030242148003018898,
+    "rel_l2_vs_fp64": 0.0020048179016466496,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.002544389705798052,
+    "rel_l2_vs_fp64": 0.0074760619698423,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.012263831199436531,
+    "rel_l2_vs_fp64": 0.0044779303123873345,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.5859375,
+    "rel_l2_vs_gpu": 0.002592364789356431,
+    "rel_l2_vs_fp64": 0.0022582728209061256,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": true
+   },
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xoff_m58": {
+   "g_out": {
+    "bitwise_equal_frac": 0.620086669921875,
+    "rel_l2_vs_gpu": 0.0032783259290480498,
+    "rel_l2_vs_fp64": 0.0023666241733807532,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.6407508850097656,
+    "rel_l2_vs_gpu": 0.0033813663600966593,
+    "rel_l2_vs_fp64": 0.0028966518382924026,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.3833656311035156,
+    "rel_l2_vs_gpu": 0.004165615559316014,
+    "rel_l2_vs_fp64": 0.003242576135773904,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.6393585205078125,
+    "rel_l2_vs_gpu": 0.0033995763611209136,
+    "rel_l2_vs_fp64": 0.0033171113433425135,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.00351266314124519,
+    "rel_l2_vs_fp64": 0.0027814952850149137,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0028361034466783197,
+    "rel_l2_vs_fp64": 0.007178471103442237,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.00034960837859736516,
+    "rel_l2_vs_fp64": 0.007530207220658754,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.0546875,
+    "rel_l2_vs_gpu": 0.0030115416596580512,
+    "rel_l2_vs_fp64": 0.002510267175145565,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": false
+   },
+   "module_dx_equal": false,
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xoff_m58_elide": {
+   "g_out": {
+    "bitwise_equal_frac": 1.52587890625e-05,
+    "rel_l2_vs_gpu": 0.0023518649820931485,
+    "rel_l2_vs_fp64": 6.159347406766701e-08,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": false
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 3.814697265625e-06,
+    "rel_l2_vs_gpu": 0.0028737766062357883,
+    "rel_l2_vs_fp64": 7.637664480058116e-08,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": false
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 1.52587890625e-05,
+    "rel_l2_vs_gpu": 0.0026758526855062037,
+    "rel_l2_vs_fp64": 1.5822058029891915e-07,
+    "gpu_rel_l2_vs_fp64": 0.002675460845643403,
+    "values_on_bf16_grid": false
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.633514404296875,
+    "rel_l2_vs_gpu": 0.00333572766386976,
+    "rel_l2_vs_fp64": 0.0023002983277980705,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.000244140625,
+    "rel_l2_vs_gpu": 0.002683250975523108,
+    "rel_l2_vs_fp64": 3.184817869300395e-07,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0069300377241561075,
+    "rel_l2_vs_fp64": 4.457018009797218e-07,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.007820865644820483,
+    "rel_l2_vs_fp64": 5.7235495216261234e-08,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.05859375,
+    "rel_l2_vs_gpu": 0.003126089198864647,
+    "rel_l2_vs_fp64": 0.0017335331799825944,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": false
+   },
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xoff_m58_shared": {
+   "g_out": {
+    "bitwise_equal_frac": 0.99993896484375,
+    "rel_l2_vs_gpu": 9.357895344132385e-07,
+    "rel_l2_vs_fp64": 0.0023518682547059764,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.9999198913574219,
+    "rel_l2_vs_gpu": 2.1486678334877388e-05,
+    "rel_l2_vs_fp64": 0.002873737945723009,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.9997520446777344,
+    "rel_l2_vs_gpu": 3.663225677147463e-05,
+    "rel_l2_vs_fp64": 0.003141927650469392,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.9999275207519531,
+    "rel_l2_vs_gpu": 2.1491711907982094e-05,
+    "rel_l2_vs_fp64": 0.0033001107707468016,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.018798828125,
+    "rel_l2_vs_gpu": 1.558908947978918e-06,
+    "rel_l2_vs_fp64": 0.002682815483080485,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 3.1325298747500674e-06,
+    "rel_l2_vs_fp64": 0.006941167460786275,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 5.295759332451883e-07,
+    "rel_l2_vs_fp64": 0.007883105162620098,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 1.0,
+    "rel_l2_vs_gpu": 0.0,
+    "rel_l2_vs_fp64": 0.0025563556410446143,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": true
+   },
+   "module_dx_equal": true,
+   "first_differing_stage": "g_out",
+   "first_material_stage": null
+  },
+  "xoff_m58_shared_elide": {
+   "g_out": {
+    "bitwise_equal_frac": 1.52587890625e-05,
+    "rel_l2_vs_gpu": 0.0023518650952026945,
+    "rel_l2_vs_fp64": 5.605351542180661e-08,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": false
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 3.814697265625e-06,
+    "rel_l2_vs_gpu": 0.002873776759810625,
+    "rel_l2_vs_fp64": 7.218710974897552e-08,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": false
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 3.814697265625e-06,
+    "rel_l2_vs_gpu": 0.002675853025922844,
+    "rel_l2_vs_fp64": 1.529696738032955e-07,
+    "gpu_rel_l2_vs_fp64": 0.002675460845643403,
+    "values_on_bf16_grid": false
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.633514404296875,
+    "rel_l2_vs_gpu": 0.00333572766174981,
+    "rel_l2_vs_fp64": 0.0023002983276383033,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0026832470414958126,
+    "rel_l2_vs_fp64": 3.197158781160347e-07,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.006929782652005707,
+    "rel_l2_vs_fp64": 6.480697849977532e-07,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.007821130432787106,
+    "rel_l2_vs_fp64": 2.0963968146234443e-07,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.53125,
+    "rel_l2_vs_gpu": 0.0029469856178748225,
+    "rel_l2_vs_fp64": 0.0016398705921307234,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": true
+   },
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xon_base": {
+   "g_out": {
+    "bitwise_equal_frac": 0.620086669921875,
+    "rel_l2_vs_gpu": 0.0032783259290480498,
+    "rel_l2_vs_fp64": 0.0023666241733807532,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.5643196105957031,
+    "rel_l2_vs_gpu": 0.0037024536968027553,
+    "rel_l2_vs_fp64": 0.0023477864192749426,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.40309906005859375,
+    "rel_l2_vs_gpu": 0.003909926421075256,
+    "rel_l2_vs_fp64": 0.0024662971943030243,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.5655975341796875,
+    "rel_l2_vs_gpu": 0.0037210002666900888,
+    "rel_l2_vs_fp64": 0.0028422747332953724,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.003257656664786844,
+    "rel_l2_vs_fp64": 0.0018078957568017934,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0050086794883908384,
+    "rel_l2_vs_fp64": 0.0049162160806439335,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0039026215773948747,
+    "rel_l2_vs_fp64": 0.003949187141592997,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.05859375,
+    "rel_l2_vs_gpu": 0.003126089198864647,
+    "rel_l2_vs_fp64": 0.0017335331799825944,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": false
+   },
+   "module_dx_equal": true,
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xon_base_shared": {
+   "g_out": {
+    "bitwise_equal_frac": 0.99993896484375,
+    "rel_l2_vs_gpu": 9.357895344132385e-07,
+    "rel_l2_vs_fp64": 0.0023518682547059764,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.9298286437988281,
+    "rel_l2_vs_gpu": 0.0009781245457768995,
+    "rel_l2_vs_fp64": 0.0028666819610317688,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.6122093200683594,
+    "rel_l2_vs_gpu": 0.0023413864978389376,
+    "rel_l2_vs_fp64": 0.0030071980543262254,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.9281501770019531,
+    "rel_l2_vs_gpu": 0.0010005850498273573,
+    "rel_l2_vs_fp64": 0.003295815059607366,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0015330146381444952,
+    "rel_l2_vs_fp64": 0.0025117638013474747,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0036775870410902943,
+    "rel_l2_vs_fp64": 0.004040978792010792,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.002348051425353624,
+    "rel_l2_vs_fp64": 0.005516011303873091,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.58203125,
+    "rel_l2_vs_gpu": 0.002158891581257408,
+    "rel_l2_vs_fp64": 0.002198523608804718,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": true
+   },
+   "module_dx_equal": true,
+   "first_differing_stage": "g_out",
+   "first_material_stage": "c_sum"
+  },
+  "xon_c": {
+   "g_out": {
+    "bitwise_equal_frac": 0.620086669921875,
+    "rel_l2_vs_gpu": 0.0032783259290480498,
+    "rel_l2_vs_fp64": 0.0023666241733807532,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.6407508850097656,
+    "rel_l2_vs_gpu": 0.0033813663600966593,
+    "rel_l2_vs_fp64": 0.0028966518382924026,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.3833656311035156,
+    "rel_l2_vs_gpu": 0.004165615559316014,
+    "rel_l2_vs_fp64": 0.003242576135773904,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.6393470764160156,
+    "rel_l2_vs_gpu": 0.003399588815088948,
+    "rel_l2_vs_fp64": 0.003317111040497895,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.003512625076554537,
+    "rel_l2_vs_fp64": 0.0027817047307311243,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.002849096557534316,
+    "rel_l2_vs_fp64": 0.007190719913694865,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0003376046574438076,
+    "rel_l2_vs_fp64": 0.007542305562001517,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.0546875,
+    "rel_l2_vs_gpu": 0.0030115416596580512,
+    "rel_l2_vs_fp64": 0.002510267175145565,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": false
+   },
+   "module_dx_equal": true,
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xon_c_fwdonly": {
+   "g_out": {
+    "bitwise_equal_frac": 0.620086669921875,
+    "rel_l2_vs_gpu": 0.0032783259290480498,
+    "rel_l2_vs_fp64": 0.0023666241733807532,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.5684432983398438,
+    "rel_l2_vs_gpu": 0.003694134899584709,
+    "rel_l2_vs_fp64": 0.0023567693144647644,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.415557861328125,
+    "rel_l2_vs_gpu": 0.0037908006429059416,
+    "rel_l2_vs_fp64": 0.002707692648927647,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.5699615478515625,
+    "rel_l2_vs_gpu": 0.0037128160652371654,
+    "rel_l2_vs_fp64": 0.0028517457703740785,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.003095245413273183,
+    "rel_l2_vs_fp64": 0.002175161030901818,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0025503347993520143,
+    "rel_l2_vs_fp64": 0.006884490607571965,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 2.506659417360558e-05,
+    "rel_l2_vs_fp64": 0.007857307228874498,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.0546875,
+    "rel_l2_vs_gpu": 0.0030115416596580512,
+    "rel_l2_vs_fp64": 0.002510267175145565,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": false
+   },
+   "module_dx_equal": true,
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xon_c_fwdonly_shared": {
+   "g_out": {
+    "bitwise_equal_frac": 0.99993896484375,
+    "rel_l2_vs_gpu": 9.357895344132385e-07,
+    "rel_l2_vs_fp64": 0.0023518682547059764,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.9999198913574219,
+    "rel_l2_vs_gpu": 2.1486678334877388e-05,
+    "rel_l2_vs_fp64": 0.002873737945723009,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.9997520446777344,
+    "rel_l2_vs_gpu": 3.663225677147463e-05,
+    "rel_l2_vs_fp64": 0.003141927650469392,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.9999275207519531,
+    "rel_l2_vs_gpu": 2.1491711907982094e-05,
+    "rel_l2_vs_fp64": 0.0033001107707468016,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.018798828125,
+    "rel_l2_vs_gpu": 1.558908947978918e-06,
+    "rel_l2_vs_fp64": 0.002682815483080485,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 3.1325298747500674e-06,
+    "rel_l2_vs_fp64": 0.006941167460786275,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 5.295759332451883e-07,
+    "rel_l2_vs_fp64": 0.007883105162620098,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 1.0,
+    "rel_l2_vs_gpu": 0.0,
+    "rel_l2_vs_fp64": 0.0025563556410446143,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": true
+   },
+   "module_dx_equal": true,
+   "first_differing_stage": "g_out",
+   "first_material_stage": null
+  },
+  "xon_c_shared": {
+   "g_out": {
+    "bitwise_equal_frac": 0.99993896484375,
+    "rel_l2_vs_gpu": 9.357895344132385e-07,
+    "rel_l2_vs_fp64": 0.0023518682547059764,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.9999198913574219,
+    "rel_l2_vs_gpu": 2.1486678334877388e-05,
+    "rel_l2_vs_fp64": 0.002873737945723009,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.9997520446777344,
+    "rel_l2_vs_gpu": 3.663225677147463e-05,
+    "rel_l2_vs_fp64": 0.003141927650469392,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.9999275207519531,
+    "rel_l2_vs_gpu": 2.1491711907982094e-05,
+    "rel_l2_vs_fp64": 0.0033001107707468016,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.018798828125,
+    "rel_l2_vs_gpu": 1.558908947978918e-06,
+    "rel_l2_vs_fp64": 0.002682815483080485,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 3.1325298747500674e-06,
+    "rel_l2_vs_fp64": 0.006941167460786275,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 5.295759332451883e-07,
+    "rel_l2_vs_fp64": 0.007883105162620098,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 1.0,
+    "rel_l2_vs_gpu": 0.0,
+    "rel_l2_vs_fp64": 0.0025563556410446143,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": true
+   },
+   "module_dx_equal": true,
+   "first_differing_stage": "g_out",
+   "first_material_stage": null
+  },
+  "xon_c_skiphead": {
+   "g_out": {
+    "bitwise_equal_frac": 0.620086669921875,
+    "rel_l2_vs_gpu": 0.0032783259290480498,
+    "rel_l2_vs_fp64": 0.0023666241733807532,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.6407508850097656,
+    "rel_l2_vs_gpu": 0.0033813663600966593,
+    "rel_l2_vs_fp64": 0.0028966518382924026,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.3833656311035156,
+    "rel_l2_vs_gpu": 0.004165615559316014,
+    "rel_l2_vs_fp64": 0.003242576135773904,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.6393470764160156,
+    "rel_l2_vs_gpu": 0.003399588815088948,
+    "rel_l2_vs_fp64": 0.003317111040497895,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.003512625076554537,
+    "rel_l2_vs_fp64": 0.0027817047307311243,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.002849096557534316,
+    "rel_l2_vs_fp64": 0.007190719913694865,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0003376046574438076,
+    "rel_l2_vs_fp64": 0.007542305562001517,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.0546875,
+    "rel_l2_vs_gpu": 0.0030115416596580512,
+    "rel_l2_vs_fp64": 0.002510267175145565,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": false
+   },
+   "module_dx_equal": true,
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xon_c_skiphead_shared": {
+   "g_out": {
+    "bitwise_equal_frac": 0.99993896484375,
+    "rel_l2_vs_gpu": 9.357895344132385e-07,
+    "rel_l2_vs_fp64": 0.0023518682547059764,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.9999198913574219,
+    "rel_l2_vs_gpu": 2.1486678334877388e-05,
+    "rel_l2_vs_fp64": 0.002873737945723009,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.9997520446777344,
+    "rel_l2_vs_gpu": 3.663225677147463e-05,
+    "rel_l2_vs_fp64": 0.003141927650469392,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.9999275207519531,
+    "rel_l2_vs_gpu": 2.1491711907982094e-05,
+    "rel_l2_vs_fp64": 0.0033001107707468016,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.018798828125,
+    "rel_l2_vs_gpu": 1.558908947978918e-06,
+    "rel_l2_vs_fp64": 0.002682815483080485,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 3.1325298747500674e-06,
+    "rel_l2_vs_fp64": 0.006941167460786275,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 5.295759332451883e-07,
+    "rel_l2_vs_fp64": 0.007883105162620098,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 1.0,
+    "rel_l2_vs_gpu": 0.0,
+    "rel_l2_vs_fp64": 0.0025563556410446143,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": true
+   },
+   "module_dx_equal": true,
+   "first_differing_stage": "g_out",
+   "first_material_stage": null
+  },
+  "xon_m52": {
+   "g_out": {
+    "bitwise_equal_frac": 0.620086669921875,
+    "rel_l2_vs_gpu": 0.0032783259290480498,
+    "rel_l2_vs_fp64": 0.0023666241733807532,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.6407508850097656,
+    "rel_l2_vs_gpu": 0.0033813663600966593,
+    "rel_l2_vs_fp64": 0.0028966518382924026,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.3833656311035156,
+    "rel_l2_vs_gpu": 0.004165615559316014,
+    "rel_l2_vs_fp64": 0.003242576135773904,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.6393470764160156,
+    "rel_l2_vs_gpu": 0.003399588815088948,
+    "rel_l2_vs_fp64": 0.003317111040497895,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.003512625076554537,
+    "rel_l2_vs_fp64": 0.0027817047307311243,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.002849096557534316,
+    "rel_l2_vs_fp64": 0.007190719913694865,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0003376046574438076,
+    "rel_l2_vs_fp64": 0.007542305562001517,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.0546875,
+    "rel_l2_vs_gpu": 0.0030115416596580512,
+    "rel_l2_vs_fp64": 0.002510267175145565,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": false
+   },
+   "module_dx_equal": true,
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xon_m52_shared": {
+   "g_out": {
+    "bitwise_equal_frac": 0.99993896484375,
+    "rel_l2_vs_gpu": 9.357895344132385e-07,
+    "rel_l2_vs_fp64": 0.0023518682547059764,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.9999198913574219,
+    "rel_l2_vs_gpu": 2.1486678334877388e-05,
+    "rel_l2_vs_fp64": 0.002873737945723009,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.9997520446777344,
+    "rel_l2_vs_gpu": 3.663225677147463e-05,
+    "rel_l2_vs_fp64": 0.003141927650469392,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.9999275207519531,
+    "rel_l2_vs_gpu": 2.1491711907982094e-05,
+    "rel_l2_vs_fp64": 0.0033001107707468016,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.018798828125,
+    "rel_l2_vs_gpu": 1.558908947978918e-06,
+    "rel_l2_vs_fp64": 0.002682815483080485,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 3.1325298747500674e-06,
+    "rel_l2_vs_fp64": 0.006941167460786275,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 5.295759332451883e-07,
+    "rel_l2_vs_fp64": 0.007883105162620098,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 1.0,
+    "rel_l2_vs_gpu": 0.0,
+    "rel_l2_vs_fp64": 0.0025563556410446143,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": true
+   },
+   "module_dx_equal": true,
+   "first_differing_stage": "g_out",
+   "first_material_stage": null
+  },
+  "xon_m58": {
+   "g_out": {
+    "bitwise_equal_frac": 0.620086669921875,
+    "rel_l2_vs_gpu": 0.0032783259290480498,
+    "rel_l2_vs_fp64": 0.0023666241733807532,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.5643196105957031,
+    "rel_l2_vs_gpu": 0.0037024536968027553,
+    "rel_l2_vs_fp64": 0.0023477864192749426,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.40309906005859375,
+    "rel_l2_vs_gpu": 0.003909926421075256,
+    "rel_l2_vs_fp64": 0.0024662971943030243,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.5655975341796875,
+    "rel_l2_vs_gpu": 0.0037210002666900888,
+    "rel_l2_vs_fp64": 0.0028422747332953724,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.003257656664786844,
+    "rel_l2_vs_fp64": 0.0018078957568017934,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0050086794883908384,
+    "rel_l2_vs_fp64": 0.0049162160806439335,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0039026215773948747,
+    "rel_l2_vs_fp64": 0.003949187141592997,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.05859375,
+    "rel_l2_vs_gpu": 0.003126089198864647,
+    "rel_l2_vs_fp64": 0.0017335331799825944,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": false
+   },
+   "module_dx_equal": true,
+   "first_differing_stage": "g_out",
+   "first_material_stage": "g_out"
+  },
+  "xon_m58_shared": {
+   "g_out": {
+    "bitwise_equal_frac": 0.99993896484375,
+    "rel_l2_vs_gpu": 9.357895344132385e-07,
+    "rel_l2_vs_fp64": 0.0023518682547059764,
+    "gpu_rel_l2_vs_fp64": 0.0023518681337049195,
+    "values_on_bf16_grid": true
+   },
+   "c_sum": {
+    "bitwise_equal_frac": 0.9298286437988281,
+    "rel_l2_vs_gpu": 0.0009781245457768995,
+    "rel_l2_vs_fp64": 0.0028666819610317688,
+    "gpu_rel_l2_vs_fp64": 0.0028737545979144858,
+    "values_on_bf16_grid": true
+   },
+   "c_gate": {
+    "bitwise_equal_frac": 0.6122093200683594,
+    "rel_l2_vs_gpu": 0.0023413864978389376,
+    "rel_l2_vs_fp64": 0.0030071980543262254,
+    "gpu_rel_l2_vs_fp64": 0.0031419771063177413,
+    "values_on_bf16_grid": true
+   },
+   "dx": {
+    "bitwise_equal_frac": 0.9281501770019531,
+    "rel_l2_vs_gpu": 0.0010005850498273573,
+    "rel_l2_vs_fp64": 0.003295815059607366,
+    "gpu_rel_l2_vs_fp64": 0.0033001050288526696,
+    "values_on_bf16_grid": true
+   },
+   "d_hc_fn": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0015330146381444952,
+    "rel_l2_vs_fp64": 0.0025117638013474747,
+    "gpu_rel_l2_vs_fp64": 0.002682933739378349,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_base": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.0036775870410902943,
+    "rel_l2_vs_fp64": 0.004040978792010792,
+    "gpu_rel_l2_vs_fp64": 0.006943889368265737,
+    "values_on_bf16_grid": false
+   },
+   "d_hc_scale": {
+    "bitwise_equal_frac": 0.0,
+    "rel_l2_vs_gpu": 0.002348051425353624,
+    "rel_l2_vs_fp64": 0.005516011303873091,
+    "gpu_rel_l2_vs_fp64": 0.00788257141226674,
+    "values_on_bf16_grid": false
+   },
+   "d_norm_w": {
+    "bitwise_equal_frac": 0.58203125,
+    "rel_l2_vs_gpu": 0.002158891581257408,
+    "rel_l2_vs_fp64": 0.002198523608804718,
+    "gpu_rel_l2_vs_fp64": 0.0025563556410446143,
+    "values_on_bf16_grid": true
+   },
+   "module_dx_equal": true,
+   "first_differing_stage": "g_out",
+   "first_material_stage": "c_sum"
+  }
+ }
+}

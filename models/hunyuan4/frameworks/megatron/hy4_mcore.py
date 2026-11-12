@@ -316,6 +316,29 @@ class _ToFloatRoundOnce(torch.autograd.Function):
         return g.to(ctx.dtype)
 
 
+class _NormHeadCotFP32(torch.autograd.Function):
+    """诊断（HY4_TPU_LIKE_HEADCOT）：末层 RMSNorm 照 TE 的语义算前向（hc_head 收拢输出先舍 BF16，FP32 里算、输出舍一次），
+    反向的 dx 留 FP32 不舍、直接作为 hc_head 收拢输出（FP32）的梯度，模仿 TPU 上只开 M58 时进收拢的梯度不舍 BF16
+    （01-mini D30；v5p 上编出来的 LLO 里那颗 kernel 没有打包指令）。dγ 在 FP32 里求和后转回权重的 dtype。"""
+
+    @staticmethod
+    def forward(ctx, out, w, eps):
+        xf = out.to(w.dtype).float()
+        rs = torch.rsqrt(xf.square().mean(-1, keepdim=True) + eps)
+        ctx.save_for_backward(xf, w, rs)
+        return (xf * rs * w.float()).to(w.dtype)
+
+    @staticmethod
+    def backward(ctx, dy):
+        xf, w, rs = ctx.saved_tensors
+        dyf = dy.float()
+        xhat = xf * rs
+        g = dyf * w.float()
+        dx = rs * (g - xhat * (g * xhat).mean(-1, keepdim=True))
+        dw = (dyf * xhat).sum(dim=tuple(range(dyf.dim() - 1))).to(w.dtype)
+        return dx, dw, None
+
+
 def _tpu_like(part: str) -> bool:
     return os.environ.get(f"HY4_TPU_LIKE_{part}") == "1"
 
@@ -372,6 +395,9 @@ class Hy4FinalNorm(MegatronModule):
                 # 模仿 TPU 上 XLA 省掉这次舍入（MaxText 不开 hc_head_force_bf16_rounding 时）
                 w = self.norm.weight.float()
                 return (out * torch.rsqrt(out.square().mean(-1, keepdim=True) + self.norm_eps) * w).to(x.dtype)
+            if _tpu_like("HEADCOT"):
+                assert not getattr(self.norm, "zero_centered_gamma", False)
+                return _NormHeadCotFP32.apply(out, self.norm.weight, self.norm_eps)
             out = out.to(x.dtype)
         return self.norm(out)
 

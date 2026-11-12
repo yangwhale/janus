@@ -1,0 +1,709 @@
+{
+ "what": "mini C 口径训练步（hy4-mini-t1.yml，MaxText 98a80d92，v5p-16 离线编译，省舍入默认开）里被省掉的 BF16 舍入：优化后 HLO 里 convert(f32→bf16) 在同一颗融合里又被 convert 回 f32 使用（穿过 bitcast / reshape 这类只搬数据的运算）的位置，按源码行归类。elided_uses = 这样的往返（后端不产生舍入指令）；kept_uses = 以 BF16 写出、喂 BF16 运算等真舍了的使用；covered_uses = 转回 f32 后紧跟舍到 BF16 网格的 reduce_precision（M36 / M52 / M58 等已补）。输入已在 BF16 网格上的往返（skipped_exact_converts）不计。区：decoder = 层 scan 里、outside_scan = scan 外（未进 scan 的层与 MTP 块；栈帧表截短，分不开）、no_metadata = XLA 自己插的转换（原 BF16 运算改在 FP32 里算后的舍入）",
+ "tool": "analysis/elided_rounding_scan.py",
+ "maxtext": "98a80d92",
+ "llo_check": {
+  "excess_precision_on": {
+   "kernels_only_elided": 41,
+   "with_zero_packs": 41,
+   "nonzero_examples": [],
+   "n_llo_kernels_dumped": 1666
+  },
+  "excess_precision_off": {
+   "kernels_only_elided": 35,
+   "with_zero_packs": 0,
+   "nonzero_examples": [
+    [
+     "fusion.19564",
+     1024
+    ],
+    [
+     "fusion.19667",
+     1024
+    ],
+    [
+     "fusion.19674",
+     1024
+    ],
+    [
+     "convert_add_fusion.47",
+     192
+    ],
+    [
+     "convert_add_fusion.48",
+     192
+    ],
+    [
+     "convert_add_fusion.49",
+     192
+    ],
+    [
+     "fusion.19771",
+     128
+    ],
+    [
+     "fusion.19912",
+     128
+    ],
+    [
+     "fusion.19968",
+     128
+    ],
+    [
+     "fusion.19972",
+     128
+    ]
+   ],
+   "n_llo_kernels_dumped": 1661
+  },
+  "note": "同一 C 口径（MaxText 8d3d7561 + 对齐 yml，libtpu 0.0.46，v5p，带 LLO dump 的离线编译；按类计数与 98a80d92 那一遍逐项相同）。省舍入开：只含往返、没有真舍入使用也没有 reduce_precision 的 kernel 全部 0 条 vpack.*.bf16；负对照（--xla_allow_excess_precision=false）同一判据挑出的 kernel 0 条打包的是 0 颗。LLO 只 dump 出 1666 颗 kernel（相同 kernel 只编一次）"
+ },
+ "elided_uses_by_class": {
+  "attn_gate_fwd": {
+   "scan": 25,
+   "outside_scan": 9
+  },
+  "branch_input_dgrad_sum": {
+   "other": 17,
+   "outside_scan": 23,
+   "scan": 30
+  },
+  "dense_out_fwd": {
+   "scan": 33,
+   "outside_scan": 18
+  },
+  "indexer_mask_exact": {
+   "outside_scan": 9
+  },
+  "norm_input_dgrad_sum": {
+   "outside_scan": 7
+  },
+  "norm_output_fwd": {
+   "outside_scan": 6
+  },
+  "routed_expert_actup_dgrad": {
+   "outside_scan": 3,
+   "scan": 4
+  },
+  "routed_expert_actup_fwd": {
+   "scan": 8,
+   "outside_scan": 5
+  },
+  "weight_grad": {
+   "outside_scan": 28,
+   "scan": 45,
+   "other": 2
+  }
+ },
+ "class_rule": "analysis/elided_rounding_scan.py 的 classify_position（按源码行与形状的经验规则；区 scan / outside_scan / other = 层 scan 里 / scan 外 / XLA 自己插的转换）",
+ "elided_uses_by_module": {
+  "decoder/attention": 15,
+  "decoder/mlp": 114,
+  "decoder/moe": 16,
+  "no_metadata/other": 19,
+  "outside_scan/attention": 15,
+  "outside_scan/mlp": 69,
+  "outside_scan/moe": 11,
+  "outside_scan/norm": 13
+ },
+ "skipped_exact_converts": 1475,
+ "sites": [
+  {
+   "module": "decoder/attention",
+   "site": "attention_mla.py:1531",
+   "converts": 20,
+   "elided_uses": 15,
+   "kept_uses": 5,
+   "covered_uses": 0,
+   "forward": 5,
+   "backward": 15,
+   "n_kernels": 20,
+   "shapes": {
+    "1,4096,8,256": 20
+   },
+   "ops": {
+    "checkpoint/rematted_computation/convert_element_type": 10,
+    "body/eval_jaxpr/convert_element_type": 5
+   },
+   "elided_kernels": [
+    "bitcast_multiply_fusion.217",
+    "bitcast_multiply_fusion.220",
+    "bitcast_multiply_fusion.222",
+    "bitcast_multiply_fusion.224",
+    "bitcast_multiply_fusion.226",
+    "fusion.19244",
+    "fusion.19294",
+    "fusion.19350",
+    "fusion.19406",
+    "fusion.19455",
+    "multiply_reduce_fusion.1070",
+    "multiply_reduce_fusion.1079",
+    "multiply_reduce_fusion.1088",
+    "multiply_reduce_fusion.1097",
+    "multiply_reduce_fusion.1106"
+   ]
+  },
+  {
+   "module": "decoder/mlp",
+   "site": "linears.py:203",
+   "converts": 80,
+   "elided_uses": 71,
+   "kept_uses": 24,
+   "covered_uses": 0,
+   "forward": 0,
+   "backward": 80,
+   "n_kernels": 80,
+   "shapes": {
+    "4096,1024": 15,
+    "512,4096": 10,
+    "128,256": 8
+   },
+   "ops": {
+    "eval_jaxpr/checkpoint/convert_element_type": 71
+   },
+   "elided_kernels": [
+    "convert_add_fusion.47",
+    "convert_add_fusion.48",
+    "convert_add_fusion.49",
+    "convert_add_fusion.50",
+    "convert_add_fusion.53",
+    "convert_add_fusion.54",
+    "convert_add_fusion.55",
+    "convert_add_fusion.56",
+    "convert_add_fusion.57",
+    "fusion.19791",
+    "fusion.19800",
+    "fusion.19803",
+    "fusion.19805",
+    "fusion.19811",
+    "fusion.19812",
+    "fusion.19813",
+    "fusion.19820",
+    "fusion.19822",
+    "fusion.19823",
+    "fusion.19824",
+    "fusion.19825",
+    "fusion.19826",
+    "fusion.19842",
+    "fusion.19846",
+    "fusion.19849",
+    "fusion.19851",
+    "fusion.19857",
+    "fusion.19858",
+    "fusion.19859",
+    "fusion.19866",
+    "fusion.19868",
+    "fusion.19869",
+    "fusion.19870",
+    "fusion.19871",
+    "fusion.19872",
+    "fusion.19888",
+    "fusion.19892",
+    "fusion.19895",
+    "fusion.19897",
+    "fusion.19903",
+    "fusion.19904",
+    "fusion.19905",
+    "fusion.19912",
+    "fusion.19914",
+    "fusion.19915",
+    "fusion.19916",
+    "fusion.19917",
+    "fusion.19918",
+    "fusion.19934",
+    "fusion.19943",
+    "fusion.19946",
+    "fusion.19948",
+    "fusion.19958",
+    "fusion.19959",
+    "fusion.19960",
+    "fusion.19968",
+    "fusion.19972",
+    "fusion.19973",
+    "fusion.19974",
+    "fusion.19975",
+    "fusion.19976",
+    "fusion.19978",
+    "fusion.19987",
+    "fusion.19989",
+    "fusion.19991",
+    "fusion.19993",
+    "multiply_reduce_fusion.1070",
+    "multiply_reduce_fusion.1079",
+    "multiply_reduce_fusion.1088",
+    "multiply_reduce_fusion.1097",
+    "multiply_reduce_fusion.1106"
+   ]
+  },
+  {
+   "module": "decoder/mlp",
+   "site": "linears.py:211",
+   "converts": 64,
+   "elided_uses": 43,
+   "kept_uses": 20,
+   "covered_uses": 6,
+   "forward": 13,
+   "backward": 51,
+   "n_kernels": 52,
+   "shapes": {
+    "1,4096,256": 24,
+    "4096,8,256": 10,
+    "4096,1024": 10
+   },
+   "ops": {
+    "checkpoint/rematted_computation/convert_element_type": 30,
+    "body/eval_jaxpr/convert_element_type": 13
+   },
+   "elided_kernels": [
+    "bitcast_multiply_fusion.217",
+    "bitcast_multiply_fusion.220",
+    "bitcast_multiply_fusion.222",
+    "bitcast_multiply_fusion.224",
+    "bitcast_multiply_fusion.226",
+    "fusion.19203",
+    "fusion.19244",
+    "fusion.19262",
+    "fusion.19294",
+    "fusion.19327",
+    "fusion.19338",
+    "fusion.19350",
+    "fusion.19383",
+    "fusion.19394",
+    "fusion.19406",
+    "fusion.19432",
+    "fusion.19443",
+    "fusion.19455",
+    "fusion.19481",
+    "fusion.19784",
+    "fusion.19791",
+    "fusion.19835",
+    "fusion.19842",
+    "fusion.19881",
+    "fusion.19888",
+    "fusion.19927",
+    "fusion.19934",
+    "reduce-precision_bitcast_fusion.72",
+    "reduce-precision_bitcast_fusion.73",
+    "reduce-precision_bitcast_fusion.74",
+    "reduce-precision_bitcast_fusion.75"
+   ]
+  },
+  {
+   "module": "decoder/moe",
+   "site": "moe.py:1606",
+   "converts": 8,
+   "elided_uses": 8,
+   "kept_uses": 4,
+   "covered_uses": 0,
+   "forward": 4,
+   "backward": 4,
+   "n_kernels": 8,
+   "shapes": {
+    "16384,256": 8
+   },
+   "ops": {
+    "shard_map/ffn_act/convert_element_type": 8
+   },
+   "elided_kernels": [
+    "fusion.19782",
+    "fusion.19833",
+    "fusion.19879",
+    "fusion.19925",
+    "multiply_convert_fusion.31.kernel_args_2_",
+    "multiply_convert_fusion.32.kernel_args_2_",
+    "multiply_convert_fusion.33.kernel_args_2_",
+    "multiply_convert_fusion.34.kernel_args_2_"
+   ]
+  },
+  {
+   "module": "decoder/moe",
+   "site": "moe.py:174",
+   "converts": 12,
+   "elided_uses": 4,
+   "kept_uses": 8,
+   "covered_uses": 0,
+   "forward": 4,
+   "backward": 8,
+   "n_kernels": 12,
+   "shapes": {
+    "16384,256": 12
+   },
+   "ops": {
+    "checkpoint/shard_map/convert_element_type": 4
+   },
+   "elided_kernels": [
+    "fusion.19789",
+    "fusion.19840",
+    "fusion.19886",
+    "fusion.19932"
+   ]
+  },
+  {
+   "module": "decoder/moe",
+   "site": "moe.py:765",
+   "converts": 4,
+   "elided_uses": 4,
+   "kept_uses": 0,
+   "covered_uses": 0,
+   "forward": 0,
+   "backward": 4,
+   "n_kernels": 4,
+   "shapes": {
+    "4096,1024": 4
+   },
+   "ops": {
+    "eval_jaxpr/checkpoint/convert_element_type": 4
+   },
+   "elided_kernels": [
+    "fusion.19792",
+    "fusion.19843",
+    "fusion.19889",
+    "fusion.19935"
+   ]
+  },
+  {
+   "module": "no_metadata/other",
+   "site": "?",
+   "converts": 904,
+   "elided_uses": 19,
+   "kept_uses": 916,
+   "covered_uses": 0,
+   "forward": 904,
+   "backward": 0,
+   "n_kernels": 639,
+   "shapes": {
+    "1,4096,2,128": 252,
+    "1,4096,8,256": 82,
+    "1,4096,2,64": 72
+   },
+   "ops": {
+    "": 19
+   },
+   "elided_kernels": [
+    "convert_add_fusion.51",
+    "convert_add_fusion.52",
+    "fusion.19593",
+    "fusion.19664",
+    "fusion.19700",
+    "fusion.19742",
+    "fusion.19805",
+    "fusion.19851",
+    "fusion.19897",
+    "fusion.19948",
+    "fusion.19993",
+    "multiply_reduce_fusion.1044",
+    "multiply_reduce_fusion.1052",
+    "multiply_reduce_fusion.1060",
+    "multiply_reduce_fusion.1070",
+    "multiply_reduce_fusion.1079",
+    "multiply_reduce_fusion.1088",
+    "multiply_reduce_fusion.1097",
+    "multiply_reduce_fusion.1106"
+   ]
+  },
+  {
+   "module": "outside_scan/attention",
+   "site": "attention_mla.py:513",
+   "converts": 8,
+   "elided_uses": 9,
+   "kept_uses": 0,
+   "covered_uses": 0,
+   "forward": 8,
+   "backward": 0,
+   "n_kernels": 8,
+   "shapes": {
+    "1,4096,4096": 8
+   },
+   "ops": {
+    "body/eval_jaxpr/convert_element_type": 9
+   },
+   "elided_kernels": [
+    "compare_and_fusion.24",
+    "compare_and_fusion.25",
+    "exponential_reduce_fusion.26",
+    "exponential_reduce_fusion.27",
+    "fusion.19497",
+    "fusion.19577",
+    "fusion.19581",
+    "fusion.19638"
+   ]
+  },
+  {
+   "module": "outside_scan/attention",
+   "site": "attention_mla.py:1531",
+   "converts": 9,
+   "elided_uses": 6,
+   "kept_uses": 3,
+   "covered_uses": 0,
+   "forward": 6,
+   "backward": 3,
+   "n_kernels": 9,
+   "shapes": {
+    "1,4096,8,256": 9
+   },
+   "ops": {
+    "eval_jaxpr/jvp()/convert_element_type": 6
+   },
+   "elided_kernels": [
+    "bitcast_multiply_fusion.228",
+    "bitcast_multiply_fusion.232",
+    "bitcast_multiply_fusion.235",
+    "multiply_reduce_fusion.1044",
+    "multiply_reduce_fusion.1052",
+    "multiply_reduce_fusion.1060"
+   ]
+  },
+  {
+   "module": "outside_scan/mlp",
+   "site": "linears.py:203",
+   "converts": 50,
+   "elided_uses": 46,
+   "kept_uses": 13,
+   "covered_uses": 0,
+   "forward": 0,
+   "backward": 50,
+   "n_kernels": 50,
+   "shapes": {
+    "4096,1024": 9,
+    "512,4096": 6,
+    "128,256": 6
+   },
+   "ops": {
+    "transpose(jvp(jvp()))/checkpoint/convert_element_type": 30,
+    "eval_jaxpr/transpose(jvp())/convert_element_type": 16
+   },
+   "elided_kernels": [
+    "fusion.19624",
+    "fusion.19635",
+    "fusion.19637",
+    "fusion.19662",
+    "fusion.19664",
+    "fusion.19684",
+    "fusion.19694",
+    "fusion.19696",
+    "fusion.19698",
+    "fusion.19700",
+    "fusion.19706",
+    "fusion.19707",
+    "fusion.19708",
+    "fusion.19715",
+    "fusion.19717",
+    "fusion.19718",
+    "fusion.19719",
+    "fusion.19720",
+    "fusion.19721",
+    "fusion.19731",
+    "fusion.19736",
+    "fusion.19738",
+    "fusion.19740",
+    "fusion.19742",
+    "fusion.19748",
+    "fusion.19749",
+    "fusion.19750",
+    "fusion.19758",
+    "fusion.19771",
+    "fusion.19772",
+    "fusion.19773",
+    "fusion.19774",
+    "fusion.19775",
+    "multiply_convert_fusion.38",
+    "multiply_reduce_fusion.1052",
+    "multiply_reduce_fusion.1060",
+    "select_add_fusion.217",
+    "select_add_fusion.222",
+    "select_add_fusion.223",
+    "select_add_fusion.224",
+    "select_add_fusion.227",
+    "select_add_fusion.232",
+    "select_add_fusion.234",
+    "select_add_fusion.235",
+    "select_add_fusion.236",
+    "select_add_fusion.237"
+   ]
+  },
+  {
+   "module": "outside_scan/mlp",
+   "site": "linears.py:211",
+   "converts": 38,
+   "elided_uses": 21,
+   "kept_uses": 19,
+   "covered_uses": 4,
+   "forward": 30,
+   "backward": 8,
+   "n_kernels": 34,
+   "shapes": {
+    "4096,1024": 11,
+    "4096,256": 8,
+    "4096,8,256": 6
+   },
+   "ops": {
+    "eval_jaxpr/jvp()/convert_element_type": 17,
+    "checkpoint/rematted_computation/convert_element_type": 4
+   },
+   "elided_kernels": [
+    "bitcast_multiply_fusion.228",
+    "bitcast_multiply_fusion.232",
+    "bitcast_multiply_fusion.235",
+    "fusion.19486",
+    "fusion.19533",
+    "fusion.19567",
+    "fusion.19569",
+    "fusion.19593",
+    "fusion.19595",
+    "fusion.19608",
+    "fusion.19624",
+    "fusion.19673",
+    "fusion.19724",
+    "reduce-precision_bitcast_fusion.68",
+    "reduce-precision_bitcast_fusion.69",
+    "reduce-precision_bitcast_fusion.70",
+    "reduce-precision_bitcast_fusion.71"
+   ]
+  },
+  {
+   "module": "outside_scan/mlp",
+   "site": "linears.py:478",
+   "converts": 2,
+   "elided_uses": 2,
+   "kept_uses": 2,
+   "covered_uses": 0,
+   "forward": 0,
+   "backward": 2,
+   "n_kernels": 2,
+   "shapes": {
+    "4096,1024": 1,
+    "1024,4096": 1
+   },
+   "ops": {
+    "eval_jaxpr/transpose(jvp())/convert_element_type": 2
+   },
+   "elided_kernels": [
+    "fusion.19618",
+    "fusion.19670"
+   ]
+  },
+  {
+   "module": "outside_scan/moe",
+   "site": "moe.py:1606",
+   "converts": 5,
+   "elided_uses": 5,
+   "kept_uses": 3,
+   "covered_uses": 0,
+   "forward": 3,
+   "backward": 2,
+   "n_kernels": 5,
+   "shapes": {
+    "16384,256": 5
+   },
+   "ops": {
+    "shard_map/ffn_act/convert_element_type": 5
+   },
+   "elided_kernels": [
+    "fusion.19606",
+    "fusion.19671",
+    "fusion.19722",
+    "multiply_convert_fusion.35.kernel_args_2_",
+    "multiply_convert_fusion.36.kernel_args_2_"
+   ]
+  },
+  {
+   "module": "outside_scan/moe",
+   "site": "moe.py:174",
+   "converts": 8,
+   "elided_uses": 3,
+   "kept_uses": 5,
+   "covered_uses": 0,
+   "forward": 3,
+   "backward": 5,
+   "n_kernels": 8,
+   "shapes": {
+    "16384,256": 8
+   },
+   "ops": {
+    "checkpoint/shard_map/convert_element_type": 2,
+    "transpose(jvp())/shard_map/convert_element_type": 1
+   },
+   "elided_kernels": [
+    "fusion.19622",
+    "fusion.19682",
+    "fusion.19729"
+   ]
+  },
+  {
+   "module": "outside_scan/moe",
+   "site": "moe.py:765",
+   "converts": 3,
+   "elided_uses": 3,
+   "kept_uses": 0,
+   "covered_uses": 0,
+   "forward": 0,
+   "backward": 3,
+   "n_kernels": 3,
+   "shapes": {
+    "4096,1024": 3
+   },
+   "ops": {
+    "transpose(jvp(jvp()))/checkpoint/convert_element_type": 2,
+    "eval_jaxpr/transpose(jvp())/convert_element_type": 1
+   },
+   "elided_kernels": [
+    "fusion.19625",
+    "fusion.19685",
+    "fusion.19732"
+   ]
+  },
+  {
+   "module": "outside_scan/norm",
+   "site": "normalizations.py:167",
+   "converts": 19,
+   "elided_uses": 7,
+   "kept_uses": 12,
+   "covered_uses": 5,
+   "forward": 0,
+   "backward": 19,
+   "n_kernels": 16,
+   "shapes": {
+    "1,4096,1024": 12,
+    "1,4096,512": 6,
+    "1024,1,4096": 1
+   },
+   "ops": {
+    "eval_jaxpr/transpose(jvp())/convert_element_type": 7
+   },
+   "elided_kernels": [
+    "fusion.19626",
+    "fusion.19665",
+    "fusion.19670",
+    "fusion.19674",
+    "fusion.19675"
+   ]
+  },
+  {
+   "module": "outside_scan/norm",
+   "site": "normalizations.py:201",
+   "converts": 25,
+   "elided_uses": 6,
+   "kept_uses": 20,
+   "covered_uses": 0,
+   "forward": 23,
+   "backward": 2,
+   "n_kernels": 22,
+   "shapes": {
+    "1,4096,1024": 18,
+    "1,4096,512": 6,
+    "1024,1,4096": 1
+   },
+   "ops": {
+    "eval_jaxpr/jvp()/convert_element_type": 6
+   },
+   "elided_kernels": [
+    "fusion.19564",
+    "fusion.19565",
+    "fusion.19667",
+    "fusion.19670",
+    "fusion.19674",
+    "fusion.19675"
+   ]
+  }
+ ]
+}
