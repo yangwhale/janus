@@ -13,6 +13,10 @@ dtype 按 hy4_map.hf_dtype（与发布的检查点同一种分布：iHC、hc_hea
 
 `--no-ihc`（结构消融：主干换成普通残差，只有一条流）：照常按同一个随机数顺序造出全部张量，再去掉 iHC 与 hc_head 的
 参数，config 写 `hc_mult` 1、`enable_ihc` false。所以其余张量与不加这个参数时逐位相同。
+
+扩展：同目录下文件名是 `make_tiny_hf_*.py` 的模块可以加自己的尺寸（`CONFIGS`：名字 → 维度，`--config` 多出这些选项；
+它们的初值用扩展的 `init`）、参数（`add_args`）、另外的张量（`extra_tensors`，在上面这些张量之后按扩展自己的顺序造，
+所以前面的张量逐位不变）与 config 键（`finish_config`）。
 """
 from __future__ import annotations
 
@@ -31,7 +35,8 @@ def hf_shapes(c: dict, layers: int, mtp: int) -> dict[str, tuple]:
     D, V, n = c["hidden_size"], c["vocab_size"], c["hc_mult"]
     H, ql, kl = c["num_attention_heads"], c["q_lora_rank"], c["kv_lora_rank"]
     nope, rope, v = c["qk_nope_head_dim"], c["qk_rope_head_dim"], c["v_head_dim"]
-    nh, hd = c["index_n_heads"], c["index_head_dim"]
+    dsa = c.get("use_dsa", True)
+    nh, hd = (c["index_n_heads"], c["index_head_dim"]) if dsa else (0, 0)
     F, I, E = c["intermediate_size"], c["moe_intermediate_size"], c["n_routed_experts"]
     Is = I * c.get("n_shared_experts", 1)
     s = {"model.embed_tokens.weight": (V, D), "lm_head.weight": (V, D), "model.norm.weight": (D,)}
@@ -78,14 +83,14 @@ def hf_shapes(c: dict, layers: int, mtp: int) -> dict[str, tuple]:
             s[m + "shared_experts.down_proj.weight"] = (D, Is)
 
     for i in range(layers):
-        layer(f"model.layers.{i}.", c["mlp_layer_types"][i], c["indexer_types"][i] == "full", True)
+        layer(f"model.layers.{i}.", c["mlp_layer_types"][i], dsa and c["indexer_types"][i] == "full", True)
     for j in range(mtp):
         p = f"model.mtp_layers.{j}."
         s[p + "enorm.weight"] = (D,)
         s[p + "hnorm.weight"] = (D,)
         s[p + "eh_proj.weight"] = (D, 2 * D)
         s[p + "final_layernorm.weight"] = (D,)
-        layer(p, "sparse", True, False)
+        layer(p, "sparse", dsa, False)
     return s
 
 
@@ -134,25 +139,44 @@ def write_safetensors(path: Path, tensors: dict[str, np.ndarray]):
             f.write(b)
 
 
+def load_extensions() -> list:
+    """同目录下的 `make_tiny_hf_*.py`（按文件名顺序导入）。"""
+    import importlib
+    import sys
+
+    here = Path(__file__).resolve().parent
+    if str(here) not in sys.path:
+        sys.path.insert(0, str(here))
+    return [importlib.import_module(f.stem) for f in sorted(here.glob("make_tiny_hf_*.py"))]
+
+
 def main(argv=None):
+    exts = load_extensions()
+    ext_of = {name: e for e in exts for name in e.CONFIGS}
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--out", required=True)
     p.add_argument("--layers", type=int, default=4)
     p.add_argument("--mtp", type=int, default=1)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--vocab", type=int, default=None, help="改词表大小（默认取 config：tiny 1024、mini 120832）")
-    p.add_argument("--config", choices=("tiny", "mini", "mid"), default="tiny")
+    p.add_argument("--config", choices=("tiny", "mini", "mid", *ext_of), default="tiny")
     p.add_argument("--no-ihc", action="store_true", help="去掉 iHC 与 hc_head（其余张量与不加时逐位相同）")
+    for e in exts:
+        e.add_args(p)
     p.add_argument("--std", type=float, default=None,
                    help="权重矩阵的标准差（默认 tiny 0.02；mini、mid 取 HF initializer_range 0.006）")
     a = p.parse_args(argv)
     import sys
 
-    from maxtext.checkpoint_conversion.utils import hf_model_configs
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from hy4_map import hf_dtype, stage_hf_config
-    base = {"tiny": hf_model_configs.hy4_tiny_dict, "mini": hf_model_configs.hy4_mini_dict,
-            "mid": getattr(hf_model_configs, "hy4_mid_dict", None)}[a.config]
+    ext = ext_of.get(a.config)
+    if ext is not None:  # 扩展的尺寸：维度在扩展里
+        base = ext.CONFIGS[a.config]
+    else:
+        from maxtext.checkpoint_conversion.utils import hf_model_configs
+        base = {"tiny": hf_model_configs.hy4_tiny_dict, "mini": hf_model_configs.hy4_mini_dict,
+                "mid": getattr(hf_model_configs, "hy4_mid_dict", None)}[a.config]
     if base is None:
         raise SystemExit("MaxText 分支里没有 hy4_mid_dict（要含 hy4-mid 的提交）")
     std = a.std if a.std is not None else (0.02 if a.config == "tiny" else 0.006)
@@ -165,7 +189,9 @@ def main(argv=None):
     rng = np.random.default_rng(a.seed)
     tensors = {}
     for name, shp in hf_shapes(c, a.layers, a.mtp).items():
-        if name.endswith(("layernorm.weight", "norm.weight", "enorm.weight", "hnorm.weight", "k_norm.weight")):
+        if ext is not None:
+            x = ext.init(name, shp, std, c, rng)
+        elif name.endswith(("layernorm.weight", "norm.weight", "enorm.weight", "hnorm.weight", "k_norm.weight")):
             x = 1.0 + 0.05 * rng.standard_normal(shp)
         elif name.endswith("e_score_correction_bias"):
             x = 0.01 * rng.standard_normal(shp)
@@ -175,6 +201,7 @@ def main(argv=None):
     if a.no_ihc:
         tensors = {k: v for k, v in tensors.items() if ".hc_pre." not in k and not k.startswith("model.hc_head.")}
         c["hc_mult"] = 1
+    states = [e.extra_tensors(a, c, tensors, rng, std) for e in exts]  # 扩展另外的张量（接在后面造）
     write_safetensors(out / "model.safetensors", tensors)
     (out / "model.safetensors.index.json").write_text(json.dumps(
         {"metadata": {}, "weight_map": {k: "model.safetensors" for k in sorted(tensors)}}, indent=1))
@@ -183,6 +210,8 @@ def main(argv=None):
     cfg = full_config(c)
     if a.no_ihc:
         cfg["enable_ihc"] = False
+    for e, st in zip(exts, states, strict=True):
+        e.finish_config(a, c, cfg, st)
     (out / "config.json").write_text(json.dumps(cfg, indent=1))
     print(f"写了 {len(tensors)} 个张量到 {out}")
 

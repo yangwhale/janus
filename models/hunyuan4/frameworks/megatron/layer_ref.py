@@ -20,12 +20,30 @@ import json
 import os
 import sys
 import time
-from types import SimpleNamespace
 
 import torch
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+
+
+def step1_build_args(hf_dir: str, aux_loss, hf_cfg: dict) -> argparse.Namespace:
+    """给 `step1_ref.build` 的参数：先取 `step1_ref` 命令行的全部默认值（含扩展的开关），再定单层回放要的几项，
+    最后由扩展按 HF config 补自己的档位。不在这里另列字段：`build` 新读一项（如 --rope-theta、--qk-clip-max-logit）时
+    这里自动带上它的默认值。"""
+    import hy4_ext
+    import step1_ref as R
+
+    args = R.make_parser().parse_args(["--hf", hf_dir, "--out", ""])
+    args.layers = 0  # 建全部层，按 --layers 挑着回放
+    args.mtp = None  # 跟 config
+    args.indexer_loss = 0.1
+    args.head_chunk = 1024
+    args.log_max_logit = False
+    args.expert_store = ""  # 专家照常载成 FP64
+    args.aux_loss = aux_loss
+    hy4_ext.call("layer_ref_args", args, hf_cfg)  # 扩展按 HF config 补 step1_ref.build 要读的开关
+    return args
 
 
 def main():
@@ -42,6 +60,7 @@ def main():
         action="store_true",
         help="另存这一层参数的梯度（同一个余切），名字 <层>.param.<Megatron 层内参数名>",
     )
+    p.add_argument("--aux-loss", type=float, default=None, help="序列级辅助 loss 系数（默认同 step1_ref.build 的默认）")
     a = p.parse_args()
 
     import step1_ref as R
@@ -58,12 +77,17 @@ def main():
     for nm in ("get", "get_slice"):
         setattr(W.Safetensors, nm, R._unforced(getattr(W.Safetensors, nm)))
     R.relax_mask_dtype(dt)
+    import hy4_ext
     from safetensors import safe_open
     from safetensors.torch import save_file
 
-    args = SimpleNamespace(hf=a.hf, layers=0, mtp=None, indexer_loss=0.1, head_chunk=1024, log_max_logit=False)
+    hf_cfg = json.load(open(os.path.join(a.hf, "config.json")))
+    args = step1_build_args(a.hf, a.aux_loss, hf_cfg)
     hf, cfg, model, L, mtp, _ = R.build(args, dt)
-    model.eval()  # 单层回放只看层输出与输入梯度；索引器 KD 只更新索引器参数，不影响这两个量
+    if any(hy4_ext.call("layer_ref_train_mode", hf_cfg)):
+        model.train()  # 扩展要训练模式（如路由器把辅助 loss 挂进反向）；没有 dropout，前向不变
+    else:
+        model.eval()  # 单层回放只看层输出与输入梯度；索引器 KD 只更新索引器参数，不影响这两个量
     fwd = R._unforced(lambda: safe_open(a.gpu_l1, "pt"))()
     bwd = R._unforced(lambda: safe_open(a.gpu_l1_bwd, "pt"))()
 

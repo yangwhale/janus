@@ -7,6 +7,7 @@ GLOBAL / LAYER / ATTN / INDEXER / MOE_FIXED / MTP_EXTRA / layer_plan / mtp_names
 - 稠密层与共享专家的 fc1 = cat(gate_proj, up_proj)，沿第 0 维拆回两半；
 - 路由专家：Megatron 的 linear_fc1.weight{e} / linear_fc2.weight{e} 就是 HF 的 gate_up_proj[e] / down_proj[e]，
   按专家号叠回 [E_dump, 2I, D] / [E_dump, D, I]；
+- 扩展另有的参数：名字表与拆法由扩展给（hy4_ext 的 `export_hf_names`、`export_plan`、`export_read`、`export_cfg`）；
 - 其余原样（MLA 的 q / kv 上投影、hc_fn 等载入时也是原样拷贝，列序即 HF 的列序）。
 
 全量抓数只在 rank 0 上做：非专家梯度是完整的（DP 归约后各 rank 相同）；路由专家只有 rank 0 本地的那几个
@@ -25,6 +26,7 @@ import re
 import struct
 from types import SimpleNamespace
 
+import hy4_ext
 import numpy as np
 
 
@@ -49,6 +51,7 @@ def mcore_to_hf(cfg) -> dict:
                 out[m + "mlp.experts.linear_fc2"] = (h + "mlp.experts.down_proj", "experts")
             else:
                 out[m] = (h, None)
+    hy4_ext.call("export_hf_names", cfg, out)  # 扩展另有的参数：out[Megatron 名] = (HF 名, 变换)
     return out
 
 
@@ -72,11 +75,12 @@ def main():
     L = hf["num_hidden_layers"]
     cfg = SimpleNamespace(
         num_layers=L,
-        hy4_indexer_types=hf["indexer_types"][:L],
+        hy4_indexer_types=hf.get("indexer_types", [])[:L],
         moe_layer_freq=[int(t == "sparse") for t in hf["mlp_layer_types"][:L]],
         mtp_num_layers=int(hf.get("num_nextn_predict_layers", 0)),
         num_moe_experts=hf["n_routed_experts"],
     )
+    hy4_ext.call("export_cfg", hf, cfg)  # 扩展按 HF config 补 / 改 cfg 的字段
     table = mcore_to_hf(cfg)
     # 只记每个张量在哪个文件、哪个键，写出时才逐个读：T2 一层路由专家的 FP32 主权重约 43 GB，整份读进内存再拼、
     # 再整体序列化会超过 100 GB；逐个读、逐个写，峰值约等于最大的一个输出张量（叠好的 gate_up_proj）。
@@ -102,6 +106,8 @@ def main():
             assert shape[0] == 2 * half, (name, shape)
             plan[h[0]] = (("half", f, k, 0, half), [half, *shape[1:]])
             plan[h[1]] = (("half", f, k, 1, half), [half, *shape[1:]])
+        elif hy4_ext.first("export_plan", cfg, plan, h, tf, f, k, shape):
+            pass  # 扩展的变换：在 plan 里登记 HF 名 → (取法, 输出形状)，取法由 export_read 读
         else:
             plan[h] = (("one", f, k), shape)
     side = {}
@@ -125,6 +131,9 @@ def main():
         if how[0] == "half":
             g = get(how[1], how[2])
             return np.ascontiguousarray(g[: how[4]] if how[3] == 0 else g[how[4] :])
+        ext = hy4_ext.first("export_read", how, get)
+        if ext is not None:
+            return ext
         parts = how[1]
         first = get(*parts[0])
         out = np.empty((len(parts), *first.shape), np.float32)

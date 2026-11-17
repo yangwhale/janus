@@ -57,7 +57,7 @@ def mcore_tensors(hf: dict, cfg: dict, ep: int, ep_rank: int):
                         moe_layer_freq=[1 if t == "sparse" else 0 for t in cfg["mlp_layer_types"]],
                         num_moe_experts=int(cfg["n_routed_experts"]), mtp_num_layers=int(cfg.get("num_nextn_predict_layers", 0)))
     out = {}
-    for m, h in hw.GLOBAL:
+    for m, h in hw.global_plan(cfg.get("hc_mult", 4)):  # 末层只取本 config 有的那种写法（同 hy4_mcore 的默认 4）
         out[m] = (hf[h], h)
     E = c.num_moe_experts
     n_local = E // ep

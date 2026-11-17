@@ -12,16 +12,17 @@
 
 | 文件 | 作用 |
 |---|---|
-| [`hy4_mcore.py`](hy4_mcore.py) | 模型：config 映射、门控 MLA、DSA（逐层 full / shared、索引器 RoPE 放后段、带 sink 的稀疏注意力）、iHC、hc_head、FP32 输出头（可选 dgrad 分段）、MTP spec。另有只作诊断的环境变量 `HY4_INDEXER_ROPE_FP32`（台账 G34）、`HY4_TPU_LIKE_STREAM` / `HEAD` / `BRANCH`（G37）和 `enable_ihc: false` 的结构消融（G36）：默认都不设、不开，golden 也不设；设了会改 GPU 的数值，跑 golden 前确认环境里没有它们 |
+| [`hy4_mcore.py`](hy4_mcore.py) | 模型：config 映射、门控 MLA、DSA（逐层 full / shared、索引器 RoPE 放后段、带 sink 的稀疏注意力）、iHC、hc_head、FP32 输出头（可选 dgrad 分段）、MTP spec。另有只作诊断的环境变量 `HY4_INDEXER_ROPE_FP32`（台账 G34）、`HY4_TPU_LIKE_STREAM` / `HEAD` / `BRANCH`（G37）、`HY4_TPU_LIKE_ATTNK`（G39，注意力照 tokamax splash 的舍入写法，实现在 [`tpu_like_attn.py`](tpu_like_attn.py)）和 `enable_ihc: false` 的结构消融（G36）：默认都不设、不开，golden 也不设；设了会改 GPU 的数值，跑 golden 前确认环境里没有它们 |
 | [`hy4_weights.py`](hy4_weights.py) | checkpoint 名 → Megatron 参数名的对照表；直接载入（TP = 1，EP 按 Megatron 切法） |
 | [`hy4_bridge.py`](hy4_bridge.py) | Megatron-Bridge v0.7.0 的桥：`Hy4ModelProvider` + `HYV4Bridge`（`model_type: hy_v4`），同一张对照表 |
 | [`equiv_hf.py`](equiv_hf.py) | 对 HF 参考实现的等价性检查：FP32、截层、真实权重，比逐层输出、DSA 选中位置、logits、MTP、loss 与逐参数梯度 |
 | [`bridge_check.py`](bridge_check.py) | 核桥：Bridge 载入的每个参数与 `hy4_weights` 直接载入的逐位相同 |
 | [`train_hy4mg.py`](train_hy4mg.py) | 训练入口：Megatron-Core 自己的循环（DDP + `forward_backward_func`，分布式优化器可选，T1 / T2 不开）；T1 / T2 用 Muon（照原版 Megatron-Core / emerging_optimizers），AdamW 时期的数据排法与指标名与当时的 HF golden 相同 |
 | [`hy4_capture.py`](hy4_capture.py) | 逐算子 / 逐层抓数（L1 / L2）：`--l1-capture-step N`，第 N 步 rank 0 第 0 个 microbatch，名字与布局照 HF 一侧，格式见下文「逐算子与逐层抓数」 |
+| [`hy4_ext.py`](hy4_ext.py) | 扩展点：别的模型变体与训练开关写在 `hy4_ext_*.py` 里，经这里登记的扩展点接进上面这些共用文件（config 字段、注意力 spec、训练入口的参数 / 数据 / 指标等）；没有扩展时各文件就是本页写的行为 |
 | [`step1_ref.py`](step1_ref.py) | 第 1 步整网梯度的 CPU 参照（L3 定责用）：同一套模型代码与本目录训练入口的 loss 语义，在 CPU 上全程 FP64（或 FP32 自检）跑全局批 16 条，写 HF 名字的逐参数梯度、loss、离散选择；比较脚本 `analysis/step1_vs_fp64.py`，串联 `analysis/step1_fp64_ref.sh` |
 | [`pod_run.sh`](pod_run.sh)、[`pget.py`](pget.py) | Pod 里的整条流程（不依赖进 Pod 执行命令）：拉代码 / HF / 数据 → L0 → Bridge 自检 → GPU 等价性 → 训练 → 传桶；单机多机同一个脚本 |
-| [`jobset.yaml`](jobset.yaml) | 多机作业模板（每台一个 Pod，GPU 与 RDMA 网卡走 DRA） |
+| [`jobset.yaml`](jobset.yaml) | 多机作业模板（每台一个 Pod，GPU 按 `nvidia.com/gpu` 申请，RDMA 网卡走 DRA） |
 
 ## Megatron 没有、在这里补的
 
@@ -67,7 +68,7 @@ RUNS="mg-a:1:10: mg-c:3:10:" EQUIV="1:fwdbwd" BRIDGE=2 bash pod_run.sh
 
 - 训练只要 Megatron-Core 与 TE，不用 transformers；等价性检查要 transformers 5.22.1（`pod_run.sh` 现装并核 sha256）。
 - `NVIDIA_TF32_OVERRIDE=0` 真关 TF32；`meta.json` 的 `tf32` 一栏是启动时 FP32 GEMM 对 FP64 的实测。
-- 只支持 TP = 1、CP = 1、不打包序列；DP、EP、PP 可以组合（T1 / T2 的 golden 用 DP 8 + EP 4，每份运行的 `meta.json` 记 `parallelism`）。
+- 只支持 TP = 1、不打包序列；DP、EP、PP 可以组合（T1 / T2 的 golden 用 DP 8 + EP 4，每份运行的 `meta.json` 记 `parallelism`）。上下文并行要由扩展的注意力变体提供（DSA 路径只支持 CP = 1）。
 
 ## 多机、并行与存档
 
@@ -81,7 +82,7 @@ RUNS="mg-a:1:10: mg-c:3:10:" EQUIV="1:fwdbwd" BRIDGE=2 bash pod_run.sh
 
 | 多出来的 | 写法 |
 |---|---|
-| RDMA 网卡 | 每台再要 8 张，和 GPU 一样走 DRA（`deviceClassName: mrdma.google.com`，count 8）；容器 `privileged` |
+| RDMA 网卡 | 每台再要 8 张，走 DRA（`deviceClassName: mrdma.google.com`，count 8）；容器 `privileged`。GPU 按 `nvidia.com/gpu: 8` 申请（原来的 `gpu.nvidia.com` DeviceClass 2026-11-13 起集群里没有了） |
 | 机器数与 0 号机地址 | 环境变量 `NNODES`、`MASTER_ADDR`（JobSet 的 `<名字>-w-0-0.<名字>`）；`NODE_RANK` 自动取 `JOB_COMPLETION_INDEX` |
 | 网络库 | 不用另装：镜像自带 NCCL 2.31 和 GCP 的网络插件（gIB），`NNODES > 1` 时 `pod_run.sh` 不再关插件 |
 
@@ -111,6 +112,8 @@ TP 不支持。完整模型每卡一份的非专家参数靠 PP 分段放下（�
 
 存档里有：模型（含路由偏置）、优化器（FP32 主权重、Muon 动量、Adam 两个矩与步数）、RNG、已吃数据的 sha256 与下一步的步号。续跑要求并行设置相同；存档在每台机器的本地盘上，续跑要落在同一组机器上，或者先把存档拷过去。
 
+**分段续跑（单作业 1 小时放不下时）**：前一段 `--steps N --save-at N` 加环境变量 `CKPT_UP=1`（跑完把每台的存档传到桶里同一运行目录下）；后一段同一运行名、`--steps <总步数> --resume=<运行名>/ckpt/step_N`，加 `PRELOAD=<前一段的桶内运行目录>`：开跑前把前一段的 metrics、data（指纹与 batch）、meta 拉到本地（存档只拉本机 rank 的），训练接着往里追加，跑完只传这一段新写或改过的文件。两段的桶内目录叠起来（后一段覆盖前一段）就是一份完整的运行目录。
+
 ### 已验证
 
 细节与结果文件见 [05 · GPU 扩展](../../alignments/05-gpu-scale/README.md)。hy4-mini 的对照是单机 golden `g3-a` 前 300 步，尺子是单机同设置 8 份两两的波动上限。
@@ -139,7 +142,7 @@ TP 不支持。完整模型每卡一份的非专家参数靠 PP 分段放下（�
 | 文件 | 内容 |
 |---|---|
 | `step_<N>_fwd.safetensors` | 前向张量，原 dtype（BF16 激活、FP32 的路由 logits / 概率 / iHC 系数等） |
-| `step_<N>_bwd.safetensors` | 反向梯度，名字是前向名加 `.grad`：embedding 输出、每层输入 / 输出、iHC 两处混合的输出（`<层>.attn_hc.out.grad`、`<层>.ffn_hc.out.grad`）、MTP 的 `eh_proj` 输出 |
+| `step_<N>_bwd.safetensors` | 反向梯度，名字是前向名加 `.grad`：embedding 输出、每层输入 / 输出、iHC 两处混合的输出（`<层>.attn_hc.out.grad`、`<层>.ffn_hc.out.grad`）、MTP 的 `eh_proj` 输出；MTP 输出头这一段：`final_layernorm` 输出（dy）、输出头输出（`hf.mtp.lm_head.out.grad`）；扩展另抓的见扩展的说明 |
 | `step_<N>_grad_micro0.safetensors` | 只在加 `--l1-grad-micro0` 时写：第 0 个 microbatch 反向做完时本 rank 各参数的 main_grad（逐层回放的参数梯度对照） |
 | `step_<N>_index.json` | 每个张量一条：`src`（Megatron 模块名）、`port`（`input` / `output` / `grad` / `buffer`）、`layout`、`shape`、`dtype`；另有 `extra`（lm_loss 等） |
 
@@ -148,6 +151,8 @@ TP 不支持。完整模型每卡一份的非专家参数靠 PP 分段放下（�
 - 每层：`in0` / `out0`（层输入 / 输出，4 路流）、`attn_hc` / `ffn_hc` 的 `in` / `post` / `out`、两个 RMSNorm 的输出、注意力内部（`self_attn.core.{query,key,value,qr,x,out}`、`gate_proj.out`、`topk`）、MLP（稠密层 `fc1.out` / `fc2.in`；MoE 层路由 `mlp.gate.{in,logits,probs,routing_map,expert_bias}`、共享专家、路由专家 `fc1.out` / `fc2.in` / `permuted_probs` / `tokens_per_expert` / `out`）。
 - 层的真正输入是 `in0`；janus 抓数里的 `layers.<L>.in` 是 input_layernorm 的输出，不是层输入。
 - FP64 标准答案：`analysis/fp64_l1_gpu.py --hf <HF 目录> --l1 <运行目录>/l1 --mtp --json … --save …`，每个算子取 GPU 抓到的输入在 CPU 上 FP64 重算，与 GPU 输出比 rel_L2；路由用 GPU 当时的 `expert_bias`，选中集合不同的 token 单独计数。
+- 激活梯度没有除以 token 数（参数梯度在 `finalize_model_grads` 里才除以全步主 loss token 数）。带 MTP 时 index 的 `extra.mtp_ce_cotangent_scale` 是 MTP 交叉熵逐 token 的余切（再乘 MTP 掩码）。
+- `--l1-capture-qbwd`：MTP 层注意力另抓 `self_attn.core.query.grad`（核的 dq）、`self_attn.core.out.grad`（门乘之前）；扩展抓的投影也可以挂（`hy4_capture._qbwd_hook`）。不加时抓数逐位不变。
 - 抓数前后输出逐位一致这一条**还没做**。golden 的设置下 GPU 重跑本身不逐位（见 mini 的 [`goldens.md`](../../alignments/01-mini/goldens.md) 的噪声）；但确定性模式（`--deterministic`）下同设置重跑逐位（[05「存档续跑」](../../alignments/05-gpu-scale/README.md#存档续跑逐位)），可以在这个模式下逐位核。这样核出的结论只覆盖确定性内核：golden 没开确定性模式（`deterministic_mode` False，见 mini 的 [`config-alignment.md`](../../alignments/01-mini/config-alignment.md)），它用的非确定性内核路径上只能核到「在噪声内」。确定性模式换没换内核、和 golden 的数值路径差多少，没查。
 
 ## sigmoid / silu 各处的实际算法
@@ -173,7 +178,7 @@ T1 的 g2 / g3 设置（代码 `hy4_mcore.py` sha256 `4dab75aa…`，Megatron-Co
   - sigmoid 是 `one / (one + std::exp(-opmath_t{a}))`（`aten/src/ATen/native/cuda/UnarySpecialOpsKernel.cu`）；
   - silu 是 `x_acc / (opmath_t(1) + ::exp(-x_acc))`（`ActivationSiluKernel.cu`）；
   - BF16 输入时 opmath 是 FP32。
-  - 是 `expf` 还是 fast-math 的 `__expf`：镜像里 PyTorch 的编译选项未确认。实测 FP32 `torch.exp` 在 [-30, 30] 上最大误差 1.89 ulp，在 CUDA 文档给 `expf` 的 2 ulp 上界之内；推断不是 `__expf`（它的误差随 |x| 增大）。
+  - 是 `expf` 还是 fast-math 的 `__expf`：镜像里 PyTorch 的编译选项未确认。实测 FP32 `torch.exp` 在 [-30, 30] 上最大误差 1.89 ulp，在 CUDA 编程指南给单精度 `expf` 列的 2 ulp 之内（文档值：NVIDIA 注明是大量但非穷举测试里观测到的最大误差、不作保证，所以不是严格上界）；推断不是 `__expf`（它的误差随 |x| 增大）。
 - B200 实测（[`analysis/sigmoid_silu_probe.py`](../../analysis/sigmoid_silu_probe.py)，对 FP64）：
 
 | 运算 | 输入 | 结果 |

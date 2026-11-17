@@ -12,6 +12,13 @@
   （Megatron 名字，FP32），即这一行单独的参数梯度，给逐层回放比参数梯度用。
 iHC 两处混合的输出（分支输入）另抓梯度 `<层>.attn_hc.out.grad` / `.ffn_hc.out.grad`。
 
+MTP 输出头这一段另抓三处梯度：`hf.mtp.lm_head.out.grad`（输出头输出的梯度）、`hf.model.mtp_layers.0.final_layernorm.out.grad`
+（输出头 dgrad 交回的 dy）；`qbwd=True` 时 MTP 层注意力另抓 q 路的梯度（见 `_qbwd_hook`）。
+
+扩展（hy4_ext）可以另抓自己的东西：构造时多给的关键字参数原样放进 `self.ext`，扩展点 `capture_init`（构造完）、
+`capture_module`（逐个子模块，返回 True 表示这个子模块由扩展挂钩子）、`capture_moe`（路由专家层）读它决定抓不抓；
+扩展换掉的函数登记进 `self._restore`，`finish` 时还原。不给这些参数时抓的东西与没有扩展时逐个相同。
+
 只在不开整层重算时用（重算会让前向钩子在反向里再触发一次）。格式说明另见 `README.md`「逐算子与逐层抓数」。
 """
 
@@ -21,6 +28,7 @@ import json
 import os
 import re
 
+import hy4_ext
 import torch
 
 LP = r"^(decoder\.layers\.(\d+)|mtp\.layers\.0\.mtp_model_layer)"
@@ -45,8 +53,19 @@ def _sb_to_bs(t: torch.Tensor) -> torch.Tensor:
 
 
 class Hy4Capture:
-    def __init__(self, model_core, config, rundir: str, step: int, grad_micro0: bool = False):
+    def __init__(
+        self,
+        model_core,
+        config,
+        rundir: str,
+        step: int,
+        grad_micro0: bool = False,
+        qbwd: bool = False,
+        **ext,
+    ):
         self.core, self.cfg, self.step = model_core, config, step
+        self.qbwd = qbwd  # MTP 层注意力 q 路另抓反向（见 _qbwd_hook）
+        self.ext = ext  # 扩展的抓数选项（见模块说明）
         self.grad_micro0 = grad_micro0  # 另存第 0 个 microbatch 之后各参数的 main_grad（逐层回放的参数梯度对照）
         self.bwd0_seen, self.grads0 = False, None
         self.out = os.path.join(rundir, "l1")
@@ -56,7 +75,9 @@ class Hy4Capture:
         self.active = False
         self.handles = []
         self.head_calls = 0
+        self._restore = []  # (对象, 属性名, 原值)：finish 时还原包过的函数
         self._install()
+        hy4_ext.call("capture_init", self)
 
     # ---- 记录
     def _put(self, name, t, src, port, layout, bwd=False):
@@ -147,7 +168,12 @@ class Hy4Capture:
                         if (not self.cfg.mtp_num_layers or self.head_calls == 2)
                         else "hf.mtp.lm_head.out"
                     )
-                    self._act(tag, _first(out), mname, "output")
+                    o = _first(out)
+                    self._act(tag, o, mname, "output")
+                    if tag == "hf.mtp.lm_head.out" and isinstance(o, torch.Tensor) and o.requires_grad:
+                        o.register_hook(
+                            self._grad_hook(tag, mname)
+                        )  # MTP logits 的梯度（扩展在进交叉熵前另舍过一次时，这里是舍入反向之后的）
 
                 reg(mod.register_forward_hook(head_fwd))
                 continue
@@ -165,8 +191,14 @@ class Hy4Capture:
                 def mtp_fwd(m, a, o, hn=hn, n=mname, which=which_):
                     o = _first(o)
                     self._act(hn + ".out", o, n, "output")
-                    if which == "eh_proj" and self.active and isinstance(o, torch.Tensor) and o.requires_grad:
-                        o.register_hook(self._grad_hook(hn + ".out", n))  # = MTP 层输入的梯度
+                    if (
+                        which in ("eh_proj", "final_layernorm")
+                        and self.active
+                        and isinstance(o, torch.Tensor)
+                        and o.requires_grad
+                    ):
+                        # eh_proj：= MTP 层输入的梯度；final_layernorm：= 输出头 dgrad 交回来的梯度（dy）
+                        o.register_hook(self._grad_hook(hn + ".out", n))
 
                 reg(mod.register_forward_hook(mtp_fwd))
                 continue
@@ -200,6 +232,8 @@ class Hy4Capture:
                         o[1].register_hook(self._grad_hook(f"{pre}.{sub}.out", n))  # 分支输入（iHC 混合输出）的梯度
 
                 reg(mod.register_forward_hook(hc_fwd))
+            elif hy4_ext.first("capture_module", self, sub, pre, mname, mod):
+                pass  # 扩展挂了钩子（登记在 self.handles）
             elif sub in ("input_layernorm", "pre_mlp_layernorm"):
                 hn = "input_layernorm" if sub == "input_layernorm" else "post_attention_layernorm"
                 reg(
@@ -230,9 +264,12 @@ class Hy4Capture:
                         t = kwargs.get(nm, args[i] if i < len(args) else None)
                         if nm in ("query", "key", "value", "x", "qr"):
                             self._act(f"{pre}.self_attn.core.{nm}", t, n, "input")
+                        if nm == "query":
+                            self._qbwd_hook(pre, "core.query", t, n)
 
                 def core_fwd(m, args, kwargs, out, pre=pre, n=mname):
                     self._act(f"{pre}.self_attn.core.out", _first(out), n, "output")
+                    self._qbwd_hook(pre, "core.out", _first(out), n)
                     if self.active and getattr(m, "last_topk", None) is not None:
                         self._put(f"{pre}.self_attn.topk", m.last_topk, n, "output", "b,s,k")
 
@@ -244,6 +281,7 @@ class Hy4Capture:
                         lambda m, a, o, pre=pre, n=mname: self._act(f"{pre}.mlp.out", _first(o), n, "output")
                     )
                 )
+                hy4_ext.call("capture_moe", self, mod, pre, mname)
             elif sub in ("mlp.linear_fc1", "mlp.shared_experts.linear_fc1", "mlp.experts.linear_fc1"):
                 tag = {
                     "mlp.linear_fc1": "mlp.fc1.out",
@@ -316,6 +354,14 @@ class Hy4Capture:
                     )
                 )
 
+    def _qbwd_hook(self, pre, what, t, src):
+        """qbwd=True 且是 MTP 层时，给这个张量挂梯度钩子（`<层>.self_attn.<what>.grad`）：core.query（核的 dq）、core.out
+        （核输出、门乘之前的余切）；扩展抓的投影也可以用它。默认不挂，抓数与原来逐位相同。"""
+        if not (self.qbwd and self.active and pre == "hf.model.mtp_layers.0"):
+            return
+        if isinstance(t, torch.Tensor) and t.requires_grad:
+            t.register_hook(self._grad_hook(f"{pre}.self_attn.{what}", src))
+
     # ---- 开关与写出
     def begin(self):
         self.active, self.active_bwd = True, True
@@ -330,6 +376,11 @@ class Hy4Capture:
         self.active_bwd = False
         for h in self.handles:
             h.remove()
+        for obj, attr, val in reversed(self._restore):
+            if val is None:
+                obj.__dict__.pop(attr, None)  # 原来没有实例属性：删掉即回到类上的原方法
+            else:
+                setattr(obj, attr, val)
         os.makedirs(self.out, exist_ok=True)
         save_file(self.fwd, os.path.join(self.out, f"step_{self.step}_fwd.safetensors"))
         save_file(self.bwd, os.path.join(self.out, f"step_{self.step}_bwd.safetensors"))

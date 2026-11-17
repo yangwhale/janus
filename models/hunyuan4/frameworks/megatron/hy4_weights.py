@@ -3,6 +3,8 @@
 同一张表给两处用：`load_hf_into_mcore`（等价性检查、训练脚本直接载入）与 Megatron-Bridge 的
 `HYV4Bridge.mapping_registry`（hy4_bridge.py）。只支持 TP = 1；EP 按 Megatron 的切法（每个 EP rank 拿连续的
 num_experts / EP 个专家）；PP 时只载入本段有的参数（本段的解码层按全局层号取，嵌入 / 输出头 / MTP 在哪段载哪段）。
+没有索引器的注意力变体（扩展认领的 config，`hy4_indexer_types` 为空）不载索引器；扩展另有的参数由 hy4_ext 的
+`load_extra` 载入（共用部分的名字不变）。
 
 checkpoint 里的名字是公开 checkpoint 的原名（`hc_attn_layer.hc_pre.hc_fn`、`learnable_sink_param`、
 `linear_gate` 等），不是 HF 模块名；HF transformers 加载时按 `conversion_mapping.py` 的 "hy_v4" 改名，
@@ -16,6 +18,7 @@ import os
 import re
 import struct
 
+import hy4_ext
 import torch
 
 # (Megatron 名, checkpoint 名)。{i} 是解码层号。
@@ -28,6 +31,9 @@ GLOBAL = [
     ("decoder.final_layernorm.hc_scale", "model.hc_head.hc_head_scale"),
     ("decoder.final_layernorm.weight", "model.norm.weight"),  # hc_mult = 1（没有 iHC 的结构消融）：末层是普通 RMSNorm
 ]
+# GLOBAL 同时列了末层的两种写法（有 iHC：hc_head + RMSNorm；hc_mult 1：普通 RMSNorm），两者互斥。
+# 要逐项对得上模型参数的地方用 global_plan 取本 config 实际有的那几项，不要直接遍历 GLOBAL。
+_PLAIN_FINAL_NORM = "decoder.final_layernorm.weight"
 LAYER = [
     ("attn_hc.fn", "hc_attn_layer.hc_pre.hc_fn"),
     ("attn_hc.base", "hc_attn_layer.hc_pre.hc_base"),
@@ -104,13 +110,22 @@ class Safetensors:
             return fh.get_slice(name)[lo:hi]
 
 
+def global_plan(hc_mult: int) -> list[tuple[str, str]]:
+    """本 config 实际有的全局参数 (Megatron 名, checkpoint 名)：嵌入、输出头，加上末层——hc_mult 1 是普通 RMSNorm
+    （`decoder.final_layernorm.weight`），否则是 hc_head 的三个张量与它后面的 RMSNorm（`decoder.final_layernorm.norm.weight`）。"""
+    plain = int(hc_mult) == 1
+    return [
+        (m, h) for m, h in GLOBAL if not m.startswith("decoder.final_layernorm.") or (m == _PLAIN_FINAL_NORM) == plain
+    ]
+
+
 def layer_plan(config, i: int):
     """第 i 层（0 起）的 (Megatron 名后缀, checkpoint 名后缀, 变换)。变换：None 原样；'cat' 两个张量沿第 0 维拼。"""
     out = [
         (m, h, None) for m, h in LAYER if getattr(config, "hc_mult", 4) > 1 or not m.startswith(("attn_hc.", "ffn_hc."))
     ]
     out += [("self_attention." + m, h, None) for m, h in ATTN]
-    if config.hy4_indexer_types[i] == "full":
+    if config.hy4_indexer_types and config.hy4_indexer_types[i] == "full":  # 没有索引器的变体：hy4_indexer_types 为空
         out += [("self_attention." + m, h, None) for m, h in INDEXER]
     if config.moe_layer_freq[i]:
         out += [("mlp." + m, h, None) for m, h in MOE_FIXED]
@@ -168,7 +183,7 @@ def load_hf_into_mcore(
             dst.copy_(t.to(dst.dtype))
         done[mname] = True
 
-    for m, h in GLOBAL:
+    for m, h in global_plan(config.hc_mult):
         if m in params:  # PP：嵌入在首段（与 MTP 段），输出头与 hc_head 在末段
             put(m, st.get(h))
     grouped = any(".experts.linear_fc1.weight" in k for k in params)
@@ -207,10 +222,17 @@ def load_hf_into_mcore(
                     put(expert_param_name(m, "linear_fc2", e, grouped), dn[e])
             else:
                 put(m, st.get(h))
+    hy4_ext.call("load_extra", params, config, st, put)  # 扩展另有的参数：put(Megatron 名, checkpoint 张量)
     if strict:
         missing = [k for k in params if k not in done]
         assert not missing, f"没有载入的参数：{missing[:10]}（共 {len(missing)}）"
     return chk if verify else done
+
+
+def has_indexer(config) -> bool:
+    """注意力带不带 DSA 索引器（MTP 层用它判断）：默认带；扩展的变体可以经 hy4_ext 的 `has_indexer` 说不带。"""
+    r = hy4_ext.first("has_indexer", config)
+    return True if r is None else bool(r)
 
 
 def mtp_names(config):
@@ -222,7 +244,7 @@ def mtp_names(config):
     inner = pm + "mtp_model_layer."
     out.append((inner + "input_layernorm.weight", ph + "input_layernorm.weight", None))
     out.append((inner + "pre_mlp_layernorm.weight", ph + "post_attention_layernorm.weight", None))
-    for m, h in ATTN + INDEXER:
+    for m, h in ATTN + (INDEXER if has_indexer(config) else []):
         out.append((inner + "self_attention." + m, ph + h, None))
     for m, h in MOE_FIXED:
         out.append((inner + "mlp." + m, ph + h, None))

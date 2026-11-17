@@ -5,13 +5,15 @@
         --hf <截好的 HF 目录> --tokens tokens.npy --layers 1 --steps 10 --name <运行名> --out <运行根目录> \
         [--mtp] [--recompute] [--ep 4] [--pp 2 --pp-first 5] [--deterministic] [--save-at 10] [--resume <存档目录>]
 
-并行：DP = 卡数 ÷ PP，全局批固定 16，GA = 16 ÷ DP（DP 要整除 16）；EP 在 DP 里切；PP 的切分点要落在 full 层上
+并行：DP = 卡数 ÷ (PP·CP)，全局批默认 16（--gbs），GA = 全局批 ÷ DP（DP 要整除它）；EP 在 DP·CP 里切；PP 的切分点要落在 full 层上
 （hy4_mcore.check_pp_split）。存档：--save-at 的步做完后每个 rank 存一份（模型、优化器含 Muon 动量与 FP32 主权重、
 RNG、下一步的步号即数据游标），--resume 从存档的下一步接着跑，要求并行设置与存档相同。
 
 设置（T1 的取值见 models/hunyuan4/alignments/01-mini/config-alignment.md 与 PROTOCOL.md 第 1.2 节；下面写的是命令行默认值）：
-- 数据：tokens.npy [样本, seq+1]，第 s 步第 m 个 microbatch、DP rank r 取第 (s-1)·16 + m·N + r 条（N = 卡数），
+- 数据：tokens.npy [样本, seq+1]，第 s 步第 m 个 microbatch、DP rank r 取第 (s-1)·GBS + m·DP + r 条，
   tokens = 前 seq 个，labels = 后 seq 个；每步每 rank 每个 microbatch 记 sha256（data/rank<r>.jsonl）。
+- 上下文并行（CP，参数由扩展提供，默认 1）：每个 DP 组只由 CP rank 0 记整行的 batch（--save-batches 的格式与不切序列时
+  相同），文件编号是 DP rank；loss、范数等归约在 DP·CP 组上做。
 - 优化器：Megatron 分布式优化器（Adam，AdamW 解耦衰减），lr 常数、β 0.9 / 0.95、ε 1e-8、权重衰减 0.1
   **对全部参数**（不按「一维参数与偏置不衰减」分组，HF golden 同）；梯度裁剪 1.0（grad_norm 记裁剪前）。
   --indexer-loss 0 时索引器参数 requires_grad=False（AdamW 时期）；默认 0.1：Megatron-Core 的 DSA 索引器 KD loss
@@ -23,6 +25,9 @@ RNG、下一步的步号即数据游标），--resume 从存档的下一步接�
 - QK-Clip（--qk-clip）：Megatron-Core 的 clip_qk 遍历主干；--qk-clip-mtp on（默认，同 MaxText）时 MTP 层照同一流程裁。
 - 生产配方开关（默认都关，T1 不用；台账 G35）：--lr-schedule cosine（照 MaxText 的 cosine 调度逐步设学习率）、
   --yarn-factor（RoPE 频率做 YaRN 插值，不乘 mscale）、--bias-zero-mean on（路由偏置更新量减去对专家的均值）。
+
+扩展（hy4_ext）：模型变体自己的参数、配方（`--recipe`）、数据源、逐 microbatch 的输入、优化器与指标由扩展点接进来
+（`train_args`、`train_recipes`、`train_batches`、`train_micro`、`train_optimizer` 等，见各调用处）；没有扩展时就是上面这些。
 
 指标（metrics.jsonl）：loss、mtp_loss、indexer_loss（MaxText 口径）、grad_norm、param_norm（FP32 主权重）、lr、
 step_time_s、peak_alloc_gib、router.bias_mean / bias_std（每个 MoE 层）、max_attention_logit。
@@ -44,8 +49,23 @@ import torch.distributed as dist
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import hy4_ext  # noqa: E402
 
-GBS = 16  # 全局批固定 16；DP = 卡数，GA = 16 / DP（hy4-mini 在 1–4 卡上跑时累积步数随之变）
+GBS = 16  # 全局批默认 16（--gbs）；DP = 卡数，GA = 16 / DP（hy4-mini 在 1–4 卡上跑时累积步数随之变）
+
+# 命令行默认值按配方取（命令行给了的不动）。t1：hy4-mini / T2 的现行设置（原来的默认值）；扩展可以加配方（train_recipes），
+# 配方里 qk_clip 为 True 时默认开 QK-Clip（--no-qk-clip 关）
+RECIPES = {
+    "t1": {
+        "wd": 0.1,
+        "optimizer": "adam",
+        "adam_eps": 1e-8,
+        "bias_zero_mean": "off",
+        "indexer_loss": 0.1,
+        "aux_loss": 0.0,
+    },
+}
+RECIPES.update(hy4_ext.collect("train_recipes") or {})
 
 
 def sha(a: np.ndarray) -> str:
@@ -62,6 +82,63 @@ def tf32_probe(dev) -> dict:
         "NVIDIA_TF32_OVERRIDE": os.environ.get("NVIDIA_TF32_OVERRIDE"),
         "torch_allow_tf32": torch.backends.cuda.matmul.allow_tf32,
     }
+
+
+class _PlainWrap(torch.nn.Module):
+    """--cpu：代替 Float16Module 的壳（同样的 .module 与 forward），不转精度。"""
+
+    def __init__(self, module):
+        super().__init__()
+        self.module = module
+        self.config = module.config
+
+    def forward(self, *args, **kwargs):
+        return self.module(*args, **kwargs)
+
+    def set_input_tensor(self, t):
+        return self.module.set_input_tensor(t)
+
+
+def _sync(cpu: bool) -> None:
+    if not cpu:
+        torch.cuda.synchronize()
+
+
+def _cpu_setup() -> None:
+    """--cpu：Megatron-Core 在 CPU 上建模型、DDP 与优化器要的补丁（同 step1_ref.cpu_megatron_setup，另把 cuda 当前设备指到 CPU）。"""
+    os.environ.setdefault("MASTER_ADDR", "127.0.0.1")
+    os.environ.setdefault("MASTER_PORT", str(29500 + os.getpid() % 1000))
+    os.environ.setdefault("RANK", "0")
+    os.environ.setdefault("WORLD_SIZE", "1")
+    os.environ.setdefault("LOCAL_RANK", "0")
+    torch.cuda.current_device = lambda: "cpu"
+    # Megatron-Core 的优化器外壳里有写死 device="cuda" 的小张量：CPU 冒烟时把这几个工厂函数的 cuda 设备换成 CPU
+    for fn_name in ("tensor", "zeros", "ones", "empty", "full", "arange"):
+        orig_fn = getattr(torch, fn_name)
+
+        def shim(*args, _f=orig_fn, **kw):
+            if str(kw.get("device", "")).startswith("cuda"):
+                kw["device"] = "cpu"
+            return _f(*args, **kw)
+
+        setattr(torch, fn_name, shim)
+    import contextlib
+
+    class _Stream:  # CPU 上没有流：等待、记事件都是空操作
+        def __getattr__(self, _n):
+            return lambda *x, **k: None
+
+    torch.cuda.current_stream = lambda *x, **k: _Stream()
+    torch.cuda.Stream = lambda *x, **k: _Stream()
+    torch.cuda.stream = lambda *x, **k: contextlib.nullcontext()
+    torch.cuda.synchronize = lambda *x, **k: None
+    import megatron.core.transformer.multi_latent_attention as _mla
+
+    if _mla.QuantizedTensor is None:
+        _mla.QuantizedTensor = ()
+    import megatron.core.transformer.multi_token_prediction as _mtp
+
+    _mtp.is_inference_column_parallel_linear = lambda m: False
 
 
 def maxtext_lr(count: int, peak: float, warmup: int, final_frac: float, length: int) -> float:
@@ -168,23 +245,23 @@ def install_bias_zero_mean():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--hf", required=True)
-    ap.add_argument("--tokens", required=True)
+    ap.add_argument("--tokens", default=None, help="tokens.npy；扩展给了别的数据源时不用")
     ap.add_argument("--layers", type=int, required=True)
     ap.add_argument("--mtp", action="store_true")
     ap.add_argument("--mtp-factor", type=float, default=None, help="默认取 config 的 mtp_loss_factor")
     ap.add_argument("--steps", type=int, required=True)
     ap.add_argument("--seq", type=int, default=4096)
     ap.add_argument("--lr", type=float, default=1e-5)
-    ap.add_argument("--wd", type=float, default=0.1)
+    ap.add_argument("--wd", type=float, default=None, help="权重衰减；默认按配方（t1 0.1，作用于全部参数）")
     ap.add_argument("--clip", type=float, default=1.0)
     ap.add_argument("--head-chunk", type=int, default=1024, help="输出头 dgrad 分段长度；0 = 一次乘完")
     ap.add_argument("--bias-rate", type=float, default=1e-3, help="路由偏置更新率（DeepSeek-V3 公开值，项目负责人定）")
     ap.add_argument(
         "--bias-zero-mean",
-        default="off",
+        default=None,
         choices=["on", "off"],
         help="路由偏置零均值更新：每层的更新量先减去对专家取的均值再加到偏置上（同 MaxText routed_bias_zero_mean_update；"
-        "原版 Megatron-Core 没有，T1 关）",
+        "原版 Megatron-Core 没有；默认按配方，t1 关）",
     )
     ap.add_argument(
         "--lr-schedule",
@@ -208,11 +285,14 @@ def main():
     ap.add_argument(
         "--indexer-loss",
         type=float,
-        default=0.1,
-        help="索引器 KD 系数，MaxText 口径（各产出层取平均再乘它）；逐层系数 = 它 ÷ 产出层数。0 = 冻结索引器",
+        default=None,
+        help="索引器 KD 系数，MaxText 口径（各产出层取平均再乘它）；逐层系数 = 它 ÷ 产出层数。0 = 冻结索引器。"
+        "默认按配方（t1 0.1）",
     )
     ap.add_argument("--ep", type=int, default=8)
-    ap.add_argument("--pp", type=int, default=1, help="流水线并行段数；DP = 卡数 ÷ PP")
+    ap.add_argument("--pp", type=int, default=1, help="流水线并行段数；DP = 卡数 ÷ (PP·CP)")
+    ap.add_argument("--gbs", type=int, default=16, help="全局批（行数）")
+    ap.add_argument("--rope-theta", type=float, default=None, help="覆盖 HF config 的 RoPE theta")
     ap.add_argument(
         "--pp-first", type=int, default=0, help="首段层数（Megatron num_layers_in_first_pipeline_stage）；0 = 均分"
     )
@@ -233,8 +313,14 @@ def main():
         "逐张量 sha256，存档续跑的逐位检查用",
     )
     ap.add_argument("--recompute", action="store_true", help="每个解码层整层重算（Megatron full / uniform / 1）")
-    ap.add_argument("--optimizer", default="adam", choices=["adam", "muon"])
-    ap.add_argument("--adam-eps", type=float, default=1e-8)
+    ap.add_argument(
+        "--optimizer",
+        default=None,
+        choices=["adam", "muon", *(hy4_ext.collect("train_optimizers") or [])],
+        help="adam / muon：Megatron-Core 原样（t1 默认 adam，T1 / T2 传 muon）；扩展的优化器用 Megatron 的 adam 外壳、"
+        "由扩展换掉内层的 step（train_optimizer）",
+    )
+    ap.add_argument("--adam-eps", type=float, default=None, help="默认按配方（t1 1e-8）")
     ap.add_argument("--adam-beta2", type=float, default=0.95)
     ap.add_argument(
         "--opt-kv",
@@ -261,8 +347,16 @@ def main():
         "用 Megatron-Core 的 QKV 拆分）或整矩阵",
     )
     ap.add_argument("--qk-clip", action="store_true")
+    ap.add_argument("--no-qk-clip", action="store_true", help="配方默认开 QK-Clip 时用它关掉")
     ap.add_argument("--qk-clip-alpha", type=float, default=0.5)
     ap.add_argument("--qk-clip-threshold", type=float, default=100.0)
+    ap.add_argument(
+        "--qk-clip-max-logit",
+        default="with_sink",
+        choices=["with_sink", "no_sink"],
+        help="QK-Clip 每头最大 logit 含不含 sink：with_sink（默认）= max(sink, max q·k)，同生产 TPU；"
+        "no_sink = 只取 q·k（原版 Megatron-Core），诊断用",
+    )
     ap.add_argument(
         "--qk-clip-mtp",
         default="on",
@@ -341,6 +435,11 @@ def main():
         help="这一步 rank 0 第 0 个 microbatch 逐算子抓输入 / 输出与每层输入输出的梯度（hy4_capture.py，写 l1/）；不能开 --recompute",
     )
     ap.add_argument(
+        "--l1-capture-qbwd",
+        action="store_true",
+        help="和 --l1-capture-step 一起用：MTP 层注意力另抓 q 路的梯度（core.query / core.out，见 hy4_capture._qbwd_hook）",
+    )
+    ap.add_argument(
         "--l1-grad-micro0",
         action="store_true",
         help="和 --l1-capture-step 一起用：另存第 0 个 microbatch 反向做完时 rank 0 各参数的 main_grad（l1/step_<N>_grad_micro0.safetensors）",
@@ -351,22 +450,62 @@ def main():
         help="诊断：第 1 步 rank 0 第 0 个 microbatch 的每个产出 KD 的层（full 层与 MTP 层），存 KD 的原始输入"
         "（教师 q / k、索引器 q / k / w、top-k）与记下的 KD 值；第 0 层的文件名不变",
     )
+    ap.add_argument(
+        "--recipe",
+        default=None,
+        choices=list(RECIPES),
+        help="默认值的出处：t1（hy4-mini / T2 的现行设置）或扩展加的配方；不给时由扩展按 HF config 定，否则 t1",
+    )
+    ap.add_argument(
+        "--aux-loss",
+        type=float,
+        default=None,
+        help="序列级辅助 loss 系数（Megatron-Core seq_aux_loss）；默认按配方（t1 0）",
+    )
+    ap.add_argument(
+        "--cpu",
+        action="store_true",
+        help="CPU 冒烟（gloo、不用 TE、路由专家走 SequentialMLP、BF16 照旧）：只验证流程与接线，数值不代表 GPU",
+    )
     ap.add_argument("--name", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--side", default="gpu-perturb-megatron")
     ap.add_argument("--image", default="")
     ap.add_argument("--code", default="")
+    ap.set_defaults(cp=1)  # 上下文并行的段数：参数由扩展加（train_args），没有扩展时是 1
+    hy4_ext.call("train_args", ap)  # 扩展的参数
     a = ap.parse_args()
+    hf_raw = json.load(open(os.path.join(a.hf, "config.json")))
+    from types import SimpleNamespace
 
-    dist.init_process_group("nccl", timeout=datetime.timedelta(minutes=60))
+    # 交给扩展点的上下文：下面随着建好的东西陆续填（rank、并行、模型、dump……），扩展也可以在里面放自己的状态
+    T = SimpleNamespace(a=a, hf_raw=hf_raw)
+    a.recipe = a.recipe or hy4_ext.first("train_default_recipe", hf_raw) or "t1"
+    rdef = RECIPES[a.recipe]
+    for k, v in rdef.items():
+        if k != "qk_clip" and getattr(a, k) is None:
+            setattr(a, k, v)
+    if rdef.get("qk_clip") and not a.no_qk_clip:
+        a.qk_clip = True
+    if a.no_qk_clip:
+        a.qk_clip = False
+    hy4_ext.call("train_post_parse", T)  # 扩展检查自己的参数
+    assert a.tokens is not None or hy4_ext.first("train_has_data", T), "要给 --tokens"
+
+    if a.cpu:
+        _cpu_setup()
+    dist.init_process_group("gloo" if a.cpu else "nccl", timeout=datetime.timedelta(minutes=60))
     rank, world = dist.get_rank(), dist.get_world_size()
-    global DP, GA
-    assert world % a.pp == 0, (world, a.pp)
-    DP = world // a.pp
+    global DP, GA, GBS
+    GBS = a.gbs
+    assert world % (a.pp * a.cp) == 0, (world, a.pp, a.cp)
+    DP = world // (a.pp * a.cp)
     assert GBS % DP == 0, f"全局批 {GBS} 不能被 DP {DP} 整除"
     GA = GBS // DP
-    torch.cuda.set_device(int(os.environ["LOCAL_RANK"]))
-    dev = torch.device("cuda")
+    hy4_ext.call("train_check_parallel", T)  # 扩展检查并行设置（如上下文并行的条件）
+    if not a.cpu:
+        torch.cuda.set_device(int(os.environ["LOCAL_RANK"]))
+    dev = torch.device("cpu" if a.cpu else "cuda")
     torch.backends.cuda.matmul.allow_tf32 = False
     torch.backends.cudnn.allow_tf32 = False
     det_env = {}
@@ -390,7 +529,8 @@ def main():
         det_env = {
             k: os.environ.get(k) for k in ("NCCL_ALGO", "NVTE_ALLOW_NONDETERMINISTIC_ALGO", "CUBLAS_WORKSPACE_CONFIG")
         }
-    probe = tf32_probe(dev)
+    probe = {"cpu": True} if a.cpu else tf32_probe(dev)
+    hy4_ext.call("train_probe", T, dev, probe)  # 扩展的精度实测与相应的设置，记进 probe（meta 的 tf32）
 
     import hy4_mcore as H
     from hy4_weights import load_hf_into_mcore
@@ -402,39 +542,58 @@ def main():
     from megatron.core.transformer.module import Float16Module
 
     ps.initialize_model_parallel(
-        tensor_model_parallel_size=1, pipeline_model_parallel_size=a.pp, expert_model_parallel_size=a.ep
+        tensor_model_parallel_size=1,
+        pipeline_model_parallel_size=a.pp,
+        context_parallel_size=a.cp,
+        expert_model_parallel_size=a.ep,
     )
     assert ps.get_data_parallel_world_size() == DP, (ps.get_data_parallel_world_size(), DP)
+    cp_rank = ps.get_context_parallel_rank()
+    T.rank, T.world, T.DP, T.GA, T.GBS, T.dev, T.cp_rank = rank, world, DP, GA, GBS, dev, cp_rank
+    hy4_ext.call("train_parallel", T, ps)  # 扩展按并行组设自己的状态
+    DPCP = DP * a.cp  # 非专家参数在 DP·CP 个 rank 上各一份
     is_first, is_last = ps.is_pipeline_first_stage(), ps.is_pipeline_last_stage()
     pp_grp = ps.get_pipeline_model_parallel_group() if a.pp > 1 else None
     if a.pp > 1:
         assert not a.l1_capture_step and not a.diag_kd_dump, "--l1-capture-step / --diag-kd-dump 只支持 PP = 1"
-    model_parallel_cuda_manual_seed(1234)
-    hf, hf_filled = H.complete_hf_config(json.load(open(os.path.join(a.hf, "config.json"))))
+    if not a.cpu:
+        model_parallel_cuda_manual_seed(1234)
+    hf, hf_filled = H.complete_hf_config(hf_raw)
     kw = H.hy4_config_kwargs(hf, num_layers=a.layers)
     mtp_factor = a.mtp_factor if a.mtp_factor is not None else float(hf.get("mtp_loss_factor", 0.1))
-    n_idx = sum(t == "full" for t in hf["indexer_types"][: a.layers]) + int(a.mtp)
+    idx_types = kw["hy4_indexer_types"]  # 扩展的注意力变体没有索引器时为空
+    n_idx = sum(t == "full" for t in idx_types) + int(a.mtp) if idx_types else 0
     extra = dict(
         hy4_train_indexer=a.indexer_loss > 0,
-        dsa_indexer_loss_coeff=H.indexer_loss_coeff_per_layer(
-            a.indexer_loss, hf["indexer_types"][: a.layers], int(a.mtp)
-        ),
-        dsa_indexer_use_sparse_loss=True,  # hy4-preview：indexer_sparse_training
         calculate_per_token_loss=a.per_token_loss == "on",
         hy4_muon_exclude_ihc=False,  # 由下面 --muon-exclude-ihc 按名字标 use_muon=False
         hy4_muon_gate=a.muon_gate,
         hy4_attn_scores_fp32=a.attn_scores_fp32 == "on",
-        params_dtype=torch.bfloat16,
-        bf16=True,
-        transformer_impl="transformer_engine",
-        moe_grouped_gemm=True,
+        params_dtype=torch.float32
+        if a.cpu
+        else torch.bfloat16,  # CPU 冒烟：FP32 参数（Megatron 的 BF16 外壳只认 CUDA 张量）
+        bf16=not a.cpu,
+        transformer_impl="local" if a.cpu else "transformer_engine",
+        moe_grouped_gemm=not a.cpu,
+        **({"use_cpu_initialization": True, "moe_token_dispatcher_type": "allgather"} if a.cpu else {}),
         expert_model_parallel_size=a.ep,
         perform_initialization=False,
         hy4_head_chunk=a.head_chunk,
         moe_router_bias_update_rate=a.bias_rate,
         cross_entropy_loss_fusion=False,
         gradient_accumulation_fusion=False,
+        context_parallel_size=a.cp,
     )
+    if a.rope_theta is not None:
+        extra["rotary_base"] = float(a.rope_theta)
+    if idx_types:
+        extra.update(
+            dsa_indexer_loss_coeff=H.indexer_loss_coeff_per_layer(a.indexer_loss, idx_types, int(a.mtp)),
+            dsa_indexer_use_sparse_loss=True,  # hy4-preview：indexer_sparse_training
+        )
+    hy4_ext.call("train_config", T, hf, extra)  # 扩展的 config 字段（自己的开关等）
+    if a.aux_loss > 0:  # Megatron-Core 的序列级辅助 loss（seq_aux_loss）
+        extra.update(moe_router_load_balancing_type="seq_aux_loss", moe_aux_loss_coeff=a.aux_loss)
     if a.mtp:
         extra.update(mtp_num_layers=1, mtp_loss_scaling_factor=mtp_factor)
     if a.pp > 1:
@@ -454,12 +613,13 @@ def main():
             qk_clip_alpha=a.qk_clip_alpha,
             qk_clip_threshold=a.qk_clip_threshold,
             log_max_attention_logit=True,
+            hy4_qk_clip_max_logit=a.qk_clip_max_logit,
         )
     dist_opt = a.dist_opt == "on" or (a.dist_opt == "auto" and a.optimizer == "adam")
     cfg = H.Hy4Config(**{**kw, **extra})  # extra 覆盖 hy4_config_kwargs 的默认（如 dsa_indexer_loss_coeff）
     pp_stages = H.check_pp_split(cfg)  # 每段的全局层号范围；切分点不在 full 层上就报错
     rg = H.stage_layers(cfg)  # 本段的全局层号
-    model = H.build_model(cfg, use_te=True, vocab_size=hf["vocab_size"], max_seq=a.seq, mtp=a.mtp).to(dev)
+    model = H.build_model(cfg, use_te=not a.cpu, vocab_size=hf["vocab_size"], max_seq=a.seq, mtp=a.mtp).to(dev)
     yarn_info = None
     if a.yarn_factor != 1.0:
         yarn_info = apply_yarn(
@@ -469,9 +629,8 @@ def main():
             print("YARN", json.dumps(yarn_info), flush=True)
     if a.bias_zero_mean == "on":
         install_bias_zero_mean()
-    model = Float16Module(
-        cfg, model
-    )  # 先转精度再载入：BF16 参数拿到 checkpoint 的原值，FP32 参数（iHC、偏置等）不经 BF16
+    # 先转精度再载入：BF16 参数拿到 checkpoint 的原值，FP32 参数（iHC、偏置等）不经 BF16；CPU 冒烟全 FP32，只套一层同接口的壳
+    model = _PlainWrap(model) if a.cpu else Float16Module(cfg, model)
     t0 = time.time()
     load_hf_into_mcore(model.module, cfg, a.hf, ep_rank=ps.get_expert_model_parallel_rank(), ep_size=a.ep)
     load_s = time.time() - t0
@@ -500,6 +659,8 @@ def main():
         check_for_nan_in_grad=True,
     )
     model = DistributedDataParallel(config=cfg, ddp_config=ddp_cfg, module=model)
+    if H.parts_from_env() and rank == 0:
+        print("TPU_LIKE_ATTNK", ",".join(sorted(H.parts_from_env())), flush=True)
     if os.environ.get("HY4_TPU_LIKE_WGRAD") == "1":
         n_wg = H.install_tpu_like_wgrad(model)
         if rank == 0:
@@ -517,7 +678,8 @@ def main():
         okv.setdefault("muon_coefficient_type", "simple")
         okv.setdefault("muon_nesterov", True)
     ocfg = OptimizerConfig(
-        optimizer=a.optimizer,
+        # 扩展的优化器：Megatron 的 adam 外壳，内层的 step 由扩展换掉（train_optimizer）
+        optimizer=a.optimizer if a.optimizer in ("adam", "muon") else "adam",
         lr=a.lr,
         min_lr=a.lr,
         weight_decay=a.wd,
@@ -525,8 +687,8 @@ def main():
         adam_beta2=a.adam_beta2,
         adam_eps=a.adam_eps,
         clip_grad=a.clip,
-        bf16=True,
-        params_dtype=torch.bfloat16,
+        bf16=not a.cpu,
+        params_dtype=torch.float32 if a.cpu else torch.bfloat16,
         use_distributed_optimizer=dist_opt,
         **okv,
     )
@@ -536,6 +698,7 @@ def main():
             if any(t in n for t in pats):
                 p.use_muon = False
     opt = get_megatron_optimizer(ocfg, [model], config_overrides={})  # {}：不按一维参数 / 偏置分组免衰减
+    hy4_ext.call("train_optimizer", T, opt, model, cfg)  # 扩展的优化器换掉内层的 step（选了它时）
     if rank == 0 and a.optimizer == "muon":  # 每个参数实际走哪个优化器（Megatron-Core 的判法）
         from megatron.core.optimizer.emerging_optimizers import _is_muon_excluded
 
@@ -561,14 +724,22 @@ def main():
         g["lr"] = a.lr
         assert g["weight_decay"] == a.wd, g["weight_decay"]
     cfg.finalize_model_grads_func = finalize_model_grads
+    hy4_ext.call("train_finalize", T, cfg, finalize_model_grads)  # 扩展可以包一层 finalize_model_grads_func
     cfg.no_sync_func = model.no_sync
     fb = get_forward_backward_func()
 
     n_frozen = sum(p.numel() for p in model.parameters() if not p.requires_grad)
     n_train = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    tokens = np.load(a.tokens, mmap_mode="r")
     need = a.steps * GBS
-    assert tokens.shape[0] >= need and tokens.shape[1] >= a.seq + 1, (tokens.shape, need)
+    T.need = need
+    data = hy4_ext.first("train_data", T)  # 扩展的数据源：{"sha": 前 n 条的 sha256 函数, "meta": 记进 meta.data 的字段}
+    if data is None:
+        tokens = np.load(a.tokens, mmap_mode="r")
+        assert tokens.shape[0] >= need and tokens.shape[1] >= a.seq + 1, (tokens.shape, need)
+
+    def data_sha(n):  # 前 n 条数据的 sha256（续跑核数据用）
+        return data["sha"](n) if data is not None else sha(np.asarray(tokens[:n]))
+
     dp_rank = ps.get_data_parallel_rank()
     rundir = os.path.join(a.out, a.name)
     os.makedirs(rundir, exist_ok=True)
@@ -580,7 +751,7 @@ def main():
             "run_name": a.name,
             "side": a.side,
             "framework": "megatron-core",
-            "model": {"name": "hy4-preview", "layers": a.layers, "mtp": a.mtp},
+            "model": {"name": hy4_ext.first("train_model_name", T) or "hy4-preview", "layers": a.layers, "mtp": a.mtp},
             "code": {
                 "janus": a.code,
                 "hy4_mcore_sha256": hashlib.sha256(open(H.__file__, "rb").read()).hexdigest(),
@@ -591,11 +762,13 @@ def main():
                 "torch": torch.__version__,
                 "cuda": torch.version.cuda,
                 "megatron_core": megatron.core.__version__,
-                "nccl": ".".join(map(str, torch.cuda.nccl.version())),
+                "nccl": None if a.cpu else ".".join(map(str, torch.cuda.nccl.version())),
             },
-            "hardware": {"gpu": torch.cuda.get_device_name(0), "count": world},
+            "hardware": {"gpu": "cpu" if a.cpu else torch.cuda.get_device_name(0), "count": world},
             "parallelism": {
                 "dp": DP,
+                "cp": a.cp,
+                "cp_layout": hy4_ext.first("train_cp_layout", T),  # 扩展的上下文并行怎么切
                 "ep": a.ep,
                 "tp": 1,
                 "pp": a.pp,
@@ -621,21 +794,29 @@ def main():
                 "betas": [0.9, a.adam_beta2],
                 "eps": a.adam_eps,  # 原来写死 1e-8，与实际的 adam_eps 不符（台账 G24）
                 "weight_decay_effective": a.wd,
-                "weight_decay_groups": "all parameters",
+                "weight_decay_groups": hy4_ext.first("train_wd_groups", T) or "all parameters",
+                "recipe": a.recipe,
+                "aux_loss": {"type": "seq_aux_loss (Megatron-Core)", "coeff": a.aux_loss} if a.aux_loss > 0 else None,
+                **(hy4_ext.collect("train_meta_config", T, cfg) or {}),  # 扩展自己的设置
                 "optimizer": a.optimizer,
                 "adam_eps": a.adam_eps,
                 "adam_beta2": a.adam_beta2,
                 "optimizer_extra": {k: str(v) for k, v in okv.items()},
                 "distributed_optimizer": dist_opt,
                 "muon_exclude_ihc": a.muon_exclude_ihc if a.optimizer == "muon" else None,
-                "qk_clip": {"on": a.qk_clip, "alpha": a.qk_clip_alpha, "threshold": a.qk_clip_threshold},
+                "qk_clip": {
+                    "on": a.qk_clip,
+                    "alpha": a.qk_clip_alpha,
+                    "threshold": a.qk_clip_threshold,
+                    "max_logit": a.qk_clip_max_logit,
+                },
                 "clip": a.clip,
                 "seq": a.seq,
                 "head_dgrad_chunk": a.head_chunk,
                 "recompute": a.recompute,
                 "rope": "interleaved (MLA: mla_rotary_interleaved; indexer: dsa_indexer_rope_interleaved)",
                 "mla_latent_norm_eps": cfg.attention_latent_norm_epsilon,
-                "indexer_k_norm_eps": cfg.dsa_indexer_k_norm_epsilon,
+                "indexer_k_norm_eps": cfg.dsa_indexer_k_norm_epsilon if idx_types else None,
                 "mtp_loss_factor": mtp_factor if a.mtp else None,
                 "routing_bias_update_rate": a.bias_rate,
                 "indexer_trained": a.indexer_loss > 0,
@@ -651,6 +832,7 @@ def main():
                     "eod_mask": a.eod_mask,
                     "eod_token_id": int(hf["eos_token_id"]),
                     "rule": "input token == eod -> 0",
+                    "segments": hy4_ext.first("train_meta_segments", T),  # 扩展按文档分段时怎么分
                 },
                 "per_token_loss": a.per_token_loss,
                 "attn_scores_fp32": bool(cfg.hy4_attn_scores_fp32),
@@ -672,14 +854,15 @@ def main():
             },
             "data": {
                 "tokens": a.tokens,
-                "tokens_sha256_first_rows": sha(np.asarray(tokens[:need])),
-                "layout": f"sample=(step-1)*16+micro*{DP}+rank",
+                **(data["meta"] if data is not None else {}),
+                "tokens_sha256_first_rows": data_sha(need),
+                "layout": f"sample=(step-1)*{GBS}+micro*{DP}+rank",
             },
             "steps": {"first": 1, "last": a.steps, "convention": "golden_step = step"},
             "dtypes": {
                 "master": "float32",
                 "compute": "bfloat16",
-                "fp32_modules": "lm_head, iHC, hc_head, sinks, indexer k_norm",
+                "fp32_modules": "lm_head, iHC, hc_head, sinks" + (", indexer k_norm" if idx_types else ""),
             },
             "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "tf32": probe,
@@ -701,13 +884,16 @@ def main():
                 "indexer_loss.L": "产出层 L（主干层号或 mtp0）的 KD：逐行平均 KL × 逐层系数；各 L 之和 = indexer_loss",
                 "grad_norm_fp64": "本程序 FP64 重算的裁剪前梯度范数（main_grad，参数，不含 buffer），核对 grad_norm 用",
                 "grad_sq.G": "裁剪前梯度平方和按组：indexer / mtp / experts / hc / embed_head / rest",
-                "qk.max_logit.L": "层 L（主干层号或 mtp0）每头的最大缩放 q·k（DP 上取 MAX，QK-Clip 之前），列表长 = 头数",
+                "qk.max_logit.L": "层 L（主干层号或 mtp0）每头的最大缩放 q·k，按 --qk-clip-max-logit 含 / 不含 sink（DP 上取 MAX，QK-Clip 之前），列表长 = 头数",
                 "qk.eta.L": "每头的缩放 η = min(1, τ ÷ 最大 logit)；q_nope × η^α、q_rope × η、k_nope × η^(1−α)（Megatron-Core MLA.clip_qk）",
                 "qk.clipped.L": "层 L 被裁的头数（最大 logit > τ）；qk.clipped_total = 各层之和",
                 "mtp_loss_mt": "MaxText 口径（M22 开）：每个 microbatch 0.1 × Σ_rank(MTP 均值_r × 主 loss 有效 token_r) ÷ Σ_rank 有效 token_r，再对 microbatch 平均",
                 "router.bias_mean.L": "L = 主干层号（0 起，与 HF 层号相同）；mtp0 = MTP 层",
+                **(hy4_ext.collect("train_metrics_fields") or {}),  # 扩展另记的指标
             },
         }
+        T.model, T.cfg = model, cfg
+        hy4_ext.call("train_meta", T, meta)  # 扩展往 meta 里加自己的一节
         if rank == 0:
             print("META", json.dumps(meta["params"]), flush=True)
     from janus.dump.megatron import JanusDump
@@ -728,13 +914,24 @@ def main():
         **({"full_steps": {int(x) for x in a.full_steps.replace("+", ",").split(",") if x}} if a.full_steps else {}),
     )
 
+    if a.cp > 1:  # 每个 DP 组只由 CP rank 0 记整行；文件编号用 DP rank（连续，与 TPU 回放的 rank 对应）
+        dump.data_rank = dp_rank
     eod = int(hf["eos_token_id"])
     pos = torch.arange(a.seq, device=dev).unsqueeze(0)
+    T.dump, T.eod, T.pos, T.dp_rank, T.hf = dump, eod, pos, dp_rank, hf
+    hy4_ext.call("train_data_ready", T)  # 扩展准备取数要用的东西（如本 rank 的序列下标）
+    # 扩展自己记 MTP loss 时（返回 True），下面的 MTP 指标由扩展算（train_mtp_metrics），不用 Megatron-Core 的 tracker
+    T.mtp_tracked = bool(hy4_ext.first("train_mtp_tracked", T))
 
     def batches(step):
+        """本步本 rank 的各个 microbatch：{tokens, labels, loss_mask, position_ids} [1, S]，扩展可以另放自己的字段。"""
+        ext = hy4_ext.first("train_batches", T, step)  # 扩展自己的数据源（train_data 给的）
+        if ext is not None:
+            return ext
         out = []
         for m in range(GA):
             row = np.asarray(tokens[(step - 1) * GBS + m * DP + dp_rank, : a.seq + 1]).astype(np.int64)
+            hy4_ext.call("text_row_check", row, hf)  # 扩展对 token 文件行的检查
             tok, lab = row[:-1][None], row[1:][None]
             lm = (tok != eod).astype(np.float32) if a.eod_mask == "on" else np.ones_like(tok, dtype=np.float32)
             b = {
@@ -743,14 +940,23 @@ def main():
                 "loss_mask": torch.from_numpy(lm).to(dev),
                 "position_ids": pos,
             }
-            dump._record_batch(b)  # data/rank<r>.jsonl 指纹与 nonpad；--save-batches 时整批落盘（janus 格式）
-            out.append((b["tokens"], b["labels"], b["loss_mask"]))
+            mb = {}
+            # 扩展可以改 b（如按文档重算的位置、段号，随 batch 一起落盘）、在 mb 里放自己的字段
+            hy4_ext.call("train_text_batch", T, tok, b, mb)
+            if a.cp == 1 or cp_rank == 0:  # CP：只由 CP rank 0 记整行（指纹与落盘的格式同不切序列）
+                dump._record_batch(b)  # data/rank<r>.jsonl 指纹与 nonpad；--save-batches 时整批落盘（janus 格式）
+            mb.update(tokens=b["tokens"], labels=b["labels"], loss_mask=b["loss_mask"], position_ids=b["position_ids"])
+            hy4_ext.call("train_localize", T, b, mb)  # 上下文并行：扩展把 mb 换成本 rank 的 token
+            out.append(mb)
         return out
 
     micro = {"n": 0}
 
     def fstep(it, model):
-        ids, labels, lm = next(it)
+        mb = next(it)
+        ids, labels, lm, pos_m = mb["tokens"], mb["labels"], mb["loss_mask"], mb["position_ids"]
+        pad_kw = {}
+        hy4_ext.call("train_micro", T, mb, pad_kw)  # 扩展按这个 microbatch 设自己的状态、往 pad_kw 里放交给模型的参数
         mk = micro["n"]  # 本步第几个 microbatch：shared 层的 top-k 按它存取（hy4_mcore.set_topk_micro）
         micro["n"] += 1
         H.set_topk_micro(mk)
@@ -758,7 +964,7 @@ def main():
             chc.begin_micro(chc_state["m"], ids)
             chc_state["m"] += 1
         # 逐 token loss [1, S]；loss_mask 也交给模型，MTP 按它（滚动后）算（MTP loss 由 MTPLossAutoScaler 加进反向）
-        out = model(ids, pos, attention_mask=None, labels=labels, loss_mask=lm)
+        out = model(ids, pos_m, attention_mask=None, labels=labels, loss_mask=lm, **pad_kw)
         if out.requires_grad:  # 这个 microbatch 的反向到达本段输出时切回它的号（之后整层重算的 shared 层取对 top-k）
             out.register_hook(lambda g, mk=mk: H.set_topk_micro(mk))
 
@@ -802,7 +1008,7 @@ def main():
                     )
                 diag_kd["want"] = False
             if (
-                a.mtp
+                a.mtp and not T.mtp_tracked
             ):  # mtp_loss_mt 用：本 microbatch 本 rank 的 MTP 均值（tracker 是累加的，取增量）× 主 loss 有效 token 数
                 from megatron.core.transformer.multi_token_prediction import MTPLossLoggingHelper
 
@@ -834,11 +1040,9 @@ def main():
                 w = getattr(p, "main_param", None)
                 w = p if w is None else w
                 v = w.detach().double().pow(2).sum()
-                psq += v / (DP // a.ep) if not getattr(p, "allreduce", True) else v / DP  # 专家在 DP/EP 组间复制
+                psq += v / (DPCP // a.ep) if not getattr(p, "allreduce", True) else v / DPCP  # 专家在 DP·CP/EP 组间复制
         dist.all_reduce(psq)
         return psq
-
-    from types import SimpleNamespace
 
     ctx = SimpleNamespace(
         model=[model],
@@ -856,7 +1060,15 @@ def main():
         if rank == 0:
             from hy4_capture import Hy4Capture
 
-            cap = Hy4Capture(model.module.module, cfg, rundir, a.l1_capture_step, grad_micro0=a.l1_grad_micro0)
+            cap = Hy4Capture(
+                model.module.module,
+                cfg,
+                rundir,
+                a.l1_capture_step,
+                grad_micro0=a.l1_grad_micro0,
+                qbwd=a.l1_capture_qbwd,
+                **(hy4_ext.collect("train_capture_kwargs", T) or {}),  # 扩展的抓数选项（Hy4Capture.ext）
+            )
     chc, chc_state = None, {"on": False, "m": 0}
     chc_steps = {int(x) for x in str(a.choices_capture_step).replace("+", ",").split(",") if x}
     if chc_steps:
@@ -904,7 +1116,7 @@ def main():
             if g is None:
                 continue
             v = g.detach().double().square().sum()
-            acc[keys.index(grad_group(n))] += v / (DP // a.ep) if not getattr(p, "allreduce", True) else v / DP
+            acc[keys.index(grad_group(n))] += v / (DPCP // a.ep) if not getattr(p, "allreduce", True) else v / DPCP
         dist.all_reduce(acc)
         out = {f"grad_sq.{k}": float(acc[i]) for i, k in enumerate(keys)}
         out["grad_norm_fp64"] = float(acc.sum().sqrt())
@@ -917,7 +1129,7 @@ def main():
     has_mtp = bool(a.mtp and getattr(mm, "mtp_process", False))
     save_at = {int(x) for x in a.save_at.replace("+", ",").split(",") if x}
     save_root = a.save_dir or os.path.join(rundir, "ckpt")
-    par_sig = {"world": world, "dp": DP, "ep": a.ep, "pp": a.pp, "pp_stage_layers": pp_stages, "gbs": GBS}
+    par_sig = {"world": world, "dp": DP, "cp": a.cp, "ep": a.ep, "pp": a.pp, "pp_stage_layers": pp_stages, "gbs": GBS}
 
     def save_ckpt(step):
         d = os.path.join(save_root, f"step_{step}")
@@ -931,14 +1143,14 @@ def main():
                 # 已经吃掉的前 step·16 条的 sha256：续跑时核同一份数据
                 "data": {
                     "consumed_rows": step * GBS,
-                    "consumed_sha256": sha(np.asarray(tokens[: step * GBS])),
+                    "consumed_sha256": data_sha(step * GBS),
                     "layout": meta["data"]["layout"],
                 },
                 "model": model.state_dict(),
                 "optimizer": opt.state_dict(),
                 "rng": {
                     "torch": torch.get_rng_state(),
-                    "cuda": torch.cuda.get_rng_state(),
+                    "cuda": None if a.cpu else torch.cuda.get_rng_state(),
                     "numpy": np.random.get_state(),
                     "tracker": tensor_parallel.get_cuda_rng_tracker().get_states(),
                 },
@@ -957,13 +1169,12 @@ def main():
         t_load = time.time()
         ck = torch.load(os.path.join(a.resume, f"rank{rank:05d}.pt"), map_location=dev, weights_only=False)
         assert ck["parallelism"] == par_sig, ("续跑的并行设置与存档不同", ck["parallelism"], par_sig)
-        assert ck["data"]["consumed_sha256"] == sha(np.asarray(tokens[: ck["data"]["consumed_rows"]])), (
-            "续跑的数据与存档时不同"
-        )
+        assert ck["data"]["consumed_sha256"] == data_sha(ck["data"]["consumed_rows"]), "续跑的数据与存档时不同"
         model.load_state_dict(ck["model"])
         opt.load_state_dict(ck["optimizer"])
         torch.set_rng_state(ck["rng"]["torch"].cpu())
-        torch.cuda.set_rng_state(ck["rng"]["cuda"].cpu())
+        if ck["rng"]["cuda"] is not None:  # CPU 冒烟存的是 None
+            torch.cuda.set_rng_state(ck["rng"]["cuda"].cpu())
         np.random.set_state(ck["rng"]["numpy"])
         tensor_parallel.get_cuda_rng_tracker().set_states(ck["rng"]["tracker"])
         start = int(ck["next_step"])
@@ -1027,7 +1238,7 @@ def main():
         with open(os.path.join(rundir, "load_check.json"), "w") as f:
             json.dump({**load_check, "param_norm_step0": p0, "resumed_from": a.resume or None}, f, indent=1)
     for step in range(start, a.steps + 1):
-        torch.cuda.synchronize()
+        _sync(a.cpu)
         dist.barrier()
         t0 = time.time()
         ctx.state.train_state.step = step - 1
@@ -1043,15 +1254,18 @@ def main():
             chc_state.update(on=True, m=0)
         model.zero_grad_buffer()
         opt.zero_grad()
+        step_batches = batches(step)
+        hy4_ext.call("train_step_begin", T, step, step_batches)  # 扩展按本步的 batch 设状态
         stats = fb(
             forward_step_func=fstep,
-            data_iterator=iter(batches(step)),
+            data_iterator=iter(step_batches),
             model=[model],
             num_microbatches=GA,
             seq_length=a.seq,
             micro_batch_size=1,
             forward_only=False,
         )
+        hy4_ext.call("train_step_end", T, step)  # 扩展核对 / 清本步的状态
         if chc is not None and step in chc_steps:
             chc.end_step(
                 {"run": a.name, "attn_scores_fp32": bool(cfg.hy4_attn_scores_fp32), "recompute": bool(a.recompute)}
@@ -1061,7 +1275,20 @@ def main():
                 chc.close()
                 chc = None
         if cap is not None and step == a.l1_capture_step:
-            cap.finish({"run": a.name, "attn_scores_fp32": bool(cfg.hy4_attn_scores_fp32)})
+            cap_extra = {"run": a.name, "attn_scores_fp32": bool(cfg.hy4_attn_scores_fp32)}
+            if a.mtp:
+                from megatron.core.transformer.multi_token_prediction import MTPLossAutoScaler
+
+                # 抓到的激活梯度没有除以 token 数（per-token：参数梯度在 finalize_model_grads 里才除以全步主 loss token 数）；
+                # MTP 交叉熵逐 token 的余切 = 这个系数 × MTP 掩码，重放 CE 反向直接用它
+                cap_extra["mtp_ce_cotangent_scale"] = (
+                    float(cfg.mtp_loss_scaling_factor)
+                    / int(cfg.mtp_num_layers)
+                    * float(MTPLossAutoScaler.main_loss_backward_scale)
+                )
+                cap_extra["activation_grads_divided_by_tokens"] = False
+            hy4_ext.call("train_capture_extra", T, cap_extra)  # 扩展记进抓数 index 的 extra
+            cap.finish(cap_extra)
             cap = None
         if a.lr_schedule == "cosine":  # 第 step 步是第 step − 1 次更新（MaxText 的 count 从 0 起，第 1 步 lr = 0）
             lr_now = maxtext_lr(step - 1, a.lr, a.warmup_steps, a.lr_final_fraction, a.steps)
@@ -1128,19 +1355,22 @@ def main():
                     {k: v.contiguous() for k, v in qk_snap.items()},
                     os.path.join(rundir, "qk_clip", f"step_{step}.safetensors"),
                 )
-        torch.cuda.synchronize()
+        _sync(a.cpu)
         dt = time.time() - t0
         sv = dict(qk_vals)  # 本段的指标（段内 DP 上已归约），最后跨段合并
         if max_logit is not None:
             sv["max_attention_logit"] = float(max_logit)
         if is_last:  # 主 loss 只在末段：[loss 和, token 数]，全局批的 token 平均
             lv = torch.stack([s["loss"] for s in stats]).sum(0)
-            dist.all_reduce(lv, group=ps.get_data_parallel_group())
+            # CP：各 rank 是同一行的不同 token，loss 和与 token 数在 DP·CP 组上相加
+            dist.all_reduce(lv, group=ps.get_data_parallel_group(with_context_parallel=True))
             sv["lm_loss"] = float(lv[0] / lv[1].clamp_min(1))
         psq = pnorm_sq()
-        mem = torch.tensor([torch.cuda.max_memory_allocated() / 2**30], device=dev)
+        mem = torch.tensor([0.0 if a.cpu else torch.cuda.max_memory_allocated() / 2**30], device=dev)
         dist.all_reduce(mem, op=dist.ReduceOp.MAX)
-        if has_mtp:  # MTPLossLoggingHelper 每个 microbatch 累加一次本 rank 的 MTP loss（已按 token 平均）
+        if has_mtp and T.mtp_tracked:  # 扩展自己记的 MTP loss：由扩展算 MTP 指标
+            hy4_ext.call("train_mtp_metrics", T, sv, mm, mtp_factor)
+        elif has_mtp:  # MTPLossLoggingHelper 每个 microbatch 累加一次本 rank 的 MTP loss（已按 token 平均）
             from megatron.core.transformer.multi_token_prediction import MTPLossLoggingHelper
 
             tr = MTPLossLoggingHelper.tracker

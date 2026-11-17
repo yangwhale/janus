@@ -103,6 +103,7 @@
 
 ### Changed
 
+- 混元 4 GPU 一侧的共用文件（`hy4_mcore.py`、`hy4_weights.py`、`hy4_capture.py`、`train_hy4mg.py`、`step1_ref.py`、`layer_ref.py`、`export_hf_grads.py`、`equiv_hf.py`、`pod_run.sh`，TPU 一侧的 `replay.py`、`run.sh`，`model/make_tiny_hf.py`）加扩展点：别的模型变体写在同目录的扩展模块里（`hy4_ext_*.py`、`pod_run_ext_*.sh`、`replay_ext_*.py`、`run_ext_*.sh`、`make_tiny_hf_*.py`），共用文件不依赖它们；没有扩展时各文件的行为就是共用部分（`frameworks/megatron/hy4_ext.py`）。CPU 上 hy4-tiny 的训练、存档、抓数、第 1 步 FP64 参照、单层参照、梯度导出、HF 目录与回放核对，输出与改动前逐位相同
 - **[判定]** 混元 4 TPU 自比的 iHC 豁免加倍数上限：iHC 张量 R ≤ 5.22 才单列、不计入未定责，超过的记未定责（`analysis/tpu_self_compare.py` 的 `IHC_R64_CAP`；上限取 01-mini D11 实际接受过的最大 R 5.218；PROTOCOL 变更记录 2026-11-12）。旧结果已全部重判写回（`analysis/tpu_self_ihc_cap_rejudge.py --apply`，台账 J74；旧档存 `verdict.before_ihc_cap`）：220 个结果文件里 9 个换档，都是 `hc_head` 偏的那几次（D3、H2、B15、V17 及 L7、L21）从略超 / 在噪声内变成超
 - **[判定]** 混元 4 mini 对齐配置改 C 口径：四份对齐 yml 在已开的 `ihc_force_bf16_rounding`（M36）之外再开 `hc_head_force_bf16_rounding`（M52）与 `ihc_stream_grad_gpu_order`（M58），TPU 在 iHC 与 hc_head 一带照 GPU 的写法「FP32 算、BF16 存」，GPU 不改；MaxText `8d3d7561`。现行比较从 `tz-off-rep` 换成 C 口径第一份 `tc-a`（同配置 5 份 `tc-a … tc-e` 都判、都报）。现行判定：1000 步 9 项过 8、待定 1（路由偏置均值，带符号均值 r 1.31，`t1zc-l4`），主 loss 由待定（r 1.55、1.52）变过（MARE r 0.98、0.97）；前 300 步过 8、待定 1（grad_norm MARE r 1.01，`t1zc300-l4`）。`tz-off-rep` 降为上一代，结果保留、不重判。主 loss 后段的主因定到 iHC 流梯度的舍入写法（混元 4 `ROOT-CAUSES.md` 第 30 行），取代之前的「根因未定」；C 口径下后段还剩约 +6.6e-6，机制待查。L3 第 1 步梯度、优化器一步、路由一致率、L1、L2、QK-Clip、健康信号、同设置重跑、存档续跑、抓数不改数值、案例 16 的特征扫描没在 C 口径上重判，沿用上一代读数（各文档标「C 口径上没重判」；其中 L3 第 1 步随后在 C 口径上重判，案例 16 的扫描随后补扫 `tc-a … tc-e`）。另加 GPU 一侧诊断开关 G37（`HY4_TPU_LIKE_*`，默认不改行为）、`models/hunyuan4/analysis/mini_factorial_cells.py`，结果 `t1zc-repeats.json`、`tc-l0-settings`、`tc-l0-config`、`mini-factorial-tpu.json`、`mini-factorial-c-vs-m58.json`、`mini-gpu-tpulike.json`。变更记录见混元 4 `PROTOCOL.md` 2026-11-11
 - 混元 4 mini D30 更正：主 loss 后段根因未定，范围缩到 iHC 到 hc_head 一段（之前写的「已定位到 iHC 流的 BF16 舍入点」撤回）。判定不变
@@ -140,6 +141,10 @@
 
 ### Fixed
 
+- 混元 4 Megatron 一侧两个 CPU 参照工具在 `main` 上原样跑不起来，已修：
+  - `equiv_hf.py --backward` 比梯度时报 `KeyError: 'decoder.final_layernorm.weight'`。当初为去掉 iHC 的结构消融在 `hy4_weights.GLOBAL` 里加了普通末层 RMSNorm 一项，它与 hc_head 那几项互斥，载入时按「模型里有没有」筛掉了，比梯度时没筛。改为 `hy4_weights.global_plan(hc_mult)` 按 config 只给实际有的几项，载入、比梯度、`analysis/l0_init_vs_gpu_mcore.py` 都用它（后者原来会把这一项算成「只在一边」）。
+  - `layer_ref.py` 报 `step1_ref.build` 缺 `rope_theta`。单层回放手写了一份 `build` 的参数，`build` 后来新读的 `rope_theta`、`qk_clip_max_logit`（扩展还有 `attn_q_chunk`、`mtp_padding_mask`、`vit_attn`）没跟上。改为从 `step1_ref.make_parser()` 取全部默认值，再定单层回放要的几项。
+  - 两个工具的输出与坏之前的版本逐位相同；新单测 `tests/models/hunyuan4/test_megatron_ref_tools.py`。判定不变
 - 混元 4 文档跟上 L3 第 1 步的 C 口径重判：L3 第 1 步各处换成 C 口径读数（未定责是第 3 层 FFN 前 `hc_fn`，`hc_scale` 改标 C 口径之前）；只开 M36 + M58 那一格写明 5 份里 2 份仍超尾部阈值，C 口径主 loss 过主要是前 100 步鼓包没了；`tc-f` grad_norm 1.04、`tc-b` 主 loss 1.14 待定上总览；总览加存档续跑逐位一行。判定不变
 - 混元 4 文档与结果文件对齐：主 loss 后段按 `mini-factorial-tpu-6.json` 写明 C 口径 6 份的尾部和只开 M36 的对照分不开（p 0.32，尾部消失只在只开 M36 + M58 那一格），总览头条改为从这个文件读数；L3 改 C 口径后检查清单、总览、对齐细节的说明同步；检查清单缺口表被 YAML 折行吞掉的一行恢复；前 300 步 C 口径另 4 份（不是 5 份）；C 口径之前的格子逐处标明。判定不变
 - 混元 4 TPU 自比 `tpu_self_compare.py` 的程序指纹改用跑前离线筛同一套规范化（`hlo_screen.py` 的 `canon_lines`）。已提交的 184 份结果用 `analysis/refresh_program_fingerprint.py` 从运行目录里存下的 HLO 重算 `hlo.program_fingerprint` 与 `hlo.program_equal`，其余字段不动；`program_equal` 变了的只有 C13、E11 两份（false → true）。不改判档。变更记录见混元 4 `PROTOCOL.md` 2026-11-11

@@ -13,6 +13,13 @@
 #   EQUIV       空格分隔的「层数:模式」，模式里含 bwd 则反向、含 mtp 则带 MTP、含 replay 则灌 HF 的 top-k（如 fwdbwdmtpreplay），如 "1:fwdbwd 3:fwd"；HF 在 cuda:1、Megatron（TE）在 cuda:0
 #   RUNS        空格分隔的「运行名:层数:步数:附加参数（逗号分隔）」，如 "mg-a:1:10: mg-c:3:10:--recompute"
 #   JOB         作业名（结果目录名）
+#   PRELOAD     分段续跑的后一段：桶内前一段的运行目录（<前缀>/megatron/<前一个作业>/runs/<运行名>）。RUNS 只写这一个运行名
+#               （同名，--resume=<运行名>/ckpt/step_<N>）；开跑前把它拉到 /data/runs/<运行名>/（不拉 DONE、训练日志与存档；gcloud 的 --exclude 按整串匹配，所以写 ^ckpt/.*；存档另外只拉
+#               本机那些 rank 的文件），训练接着往 metrics.jsonl、data/ 里追加，跑完只传这一段新写或改过的文件
+#   CKPT_UP     非空时每个运行跑完把本机的存档（/data/runs/<运行名>/ckpt/）传到桶里同一运行目录下（分段续跑的前一段用）
+# 扩展：代码包里本目录下的 pod_run_ext_*.sh 在拉完代码后读进来（source），可以定义 pod_ext_data（自己拉 HF 与数据、设
+# DATA_ARG，返回 0；返回 1 就照常拉 tokens.npy）与 pod_ext_run_env（参数是一个运行的附加参数，打印要交给 env 的参数）；
+# 扩展自己的环境变量写在扩展文件开头。
 set -o pipefail
 mkdir -p /data/out
 exec > >(tee -a /data/out/pod.log) 2>&1
@@ -80,9 +87,15 @@ gcloud storage cp -q "gs://$BKT/$CODE" /data/code.tgz && tar -xzf /data/code.tgz
 echo "CODE_OK $(ls /data/janus-src | head -3 | tr '\n' ' ')"
 python3 -m pip install -q --no-deps -e /data/janus-src 2>&1 | tail -1   # janus 包（训练入口用 janus.dump.megatron 写运行目录）
 G=/data/janus-src/models/hunyuan4/frameworks/megatron
+for f in "$G"/pod_run_ext_*.sh; do [ -e "$f" ] && . "$f"; done
 t0=$(date +%s)
 srcs=""; for f in $HF_FILES; do srcs="$srcs gs://$BKT/$PFX/hf/${HFDIR:-hy4-4l}/$f"; done
-gcloud storage cp -q $srcs /data/hf/ && gcloud storage cp -q "gs://$BKT/$PFX/data/${TOKFILE:-tokens.npy}" /data/ds/tokens.npy || { echo DL_FAIL; exit 1; }
+if declare -F pod_ext_data >/dev/null && pod_ext_data "$srcs"; then
+  :   # 扩展拉了 HF 与数据，DATA_ARG 由扩展设
+else
+  gcloud storage cp -q $srcs /data/hf/ && gcloud storage cp -q "gs://$BKT/$PFX/data/${TOKFILE:-tokens.npy}" /data/ds/tokens.npy || { echo DL_FAIL; exit 1; }
+  DATA_ARG="--tokens /data/ds/tokens.npy"
+fi
 echo "DL_SECONDS $(( $(date +%s) - t0 ))"; du -sh /data/hf /data/ds
 # L0：拉下来的每个张量按原始字节对 tensor_sha256.json 逐个核（只核 index 里指向已下载文件的张量）
 ( cd $G && python3 - <<'PY' ) || { echo L0_HF_SHA_FAIL; exit 1; }
@@ -145,20 +158,41 @@ if [ "$NNODES" -gt 1 ]; then
   DIST="--nnodes $NNODES --node_rank $NODE_RANK --master_addr $MASTER_ADDR"
 fi
 port=$MASTER_PORT
+MARK=/data/out/.run_mark
+if [ -n "$PRELOAD" ]; then
+  # 分段续跑：RUNS 只有一个运行；本机的 rank 是 NODE_RANK·NPROC … +NPROC−1
+  pname=${RUNS%%:*}; pd=/data/runs/$pname; mkdir -p $pd; t0=$(date +%s)
+  gcloud storage rsync -r -q --exclude='^ckpt/.*|^DONE$|^train.*\.log$' "gs://$BKT/$PRELOAD" $pd || { echo PRELOAD_FAIL; exit 1; }
+  for r in $(seq $((NODE_RANK * ${NPROC:-8})) $(((NODE_RANK + 1) * ${NPROC:-8} - 1))); do
+    f=$(printf 'rank%05d.pt' $r)
+    for src in $(gcloud storage ls "gs://$BKT/$PRELOAD/ckpt/*/$f"); do
+      dst=$pd/ckpt/$(basename "$(dirname "$src")"); mkdir -p $dst
+      gcloud storage cp -q "$src" $dst/ || { echo PRELOAD_CKPT_FAIL $src; exit 1; }
+    done
+  done
+  echo "PRELOAD_OK $PRELOAD seconds=$(( $(date +%s) - t0 )) metrics_lines=$(wc -l < $pd/metrics.jsonl 2>/dev/null) ckpt=$(ls $pd/ckpt/*/ 2>/dev/null | grep -c pt)"
+fi
+touch $MARK
 for spec in $RUNS; do
   IFS=: read -r name L steps extra <<< "$spec"; extra=${extra//,/ }
   echo "RUN_START $name L=$L steps=$steps extra=$extra $(date -u +%FT%TZ)"
   t0=$(date +%s)
   # --resume 的相对路径按 /data/runs 解析（如 --resume=ck-c/ckpt/step_10）
   extra=$(echo "$extra" | sed -E 's#--resume=([^/ ][^ ]*)#--resume=/data/runs/\1#')
-  ( cd $G && torchrun $DIST --master_port $port --nproc_per_node ${NPROC:-8} train_hy4mg.py --hf /data/hf --tokens /data/ds/tokens.npy \
+  RUNENV=""; declare -F pod_ext_run_env >/dev/null && RUNENV=$(pod_ext_run_env "$extra")   # 扩展给这个运行的环境
+  ( cd $G && env $RUNENV torchrun $DIST --master_port $port --nproc_per_node ${NPROC:-8} train_hy4mg.py --hf /data/hf $DATA_ARG \
       --layers $L --steps $steps --name $name --out /data/runs --code "$CODE" --image "$IMAGE" $extra ) > /data/out/$name.log 2>&1
   rc=$?; port=$((port + 1))   # 每个运行换一个端口，免得上一个运行的端口还没释放
   echo "RUN_END $name rc=$rc seconds=$(( $(date +%s) - t0 ))"
   grep -E "^(META|STEP|LOAD_CHECK|PARAM_NORM_STEP0|MUON_PARTITION|CKPT_SAVED|CKPT_LOADED) " /data/out/$name.log; grep -E "^\[rank[0-9]+\]:.*(Error|error)|OOM" /data/out/$name.log | tail -5
-  for f in meta.json metrics.jsonl load_check.json optimizer_partition.json DONE; do [ -f /data/runs/$name/$f ] && up /data/runs/$name/$f runs/$name/$f; done
+  # 续跑的后一段（PRELOAD）只传这一段新写或改过的文件：拉下来的前一段文件原样不动，不能让没写它的那台机器拿旧版覆盖
+  NEW=""; [ -n "$PRELOAD" ] && NEW="-newer $MARK"
+  for f in meta.json metrics.jsonl load_check.json optimizer_partition.json DONE; do [ -n "$(find /data/runs/$name/$f $NEW 2>/dev/null)" ] && up /data/runs/$name/$f runs/$name/$f; done
   # data/：每 rank 的输入指纹（rank<r>.jsonl）与 --save-batches 的 batch（batches/rank<r>.{bin,jsonl}，TPU 回放用）；多机时每台传自己那些 rank 的
-  ( cd /data/runs/$name && find data params_sha state_sha step_* modules.txt kd_*.pt qk_clip l1 choices -type f 2>/dev/null ) | while read -r f; do up /data/runs/$name/$f runs/$name/$f; done | grep -c PUT_FAIL
+  ( cd /data/runs/$name && find data params_sha state_sha step_* modules.txt kd_*.pt qk_clip l1 choices -type f $NEW 2>/dev/null ) | while read -r f; do up /data/runs/$name/$f runs/$name/$f; done | grep -c PUT_FAIL
+  if [ -n "$CKPT_UP" ] && [ -d /data/runs/$name/ckpt ]; then
+    t0=$(date +%s); gcloud storage cp -q -r /data/runs/$name/ckpt "gs://$BKT/$OUT/runs/$name/" && echo "CKPT_UP_OK $name seconds=$(( $(date +%s) - t0 )) bytes=$(du -sb /data/runs/$name/ckpt | cut -f1)" || echo "CKPT_UP_FAIL $name"
+  fi
   up /data/out/$name.log runs/$name/train$NSFX.log
 done
 up /data/out/pod.log pod$NSFX.log

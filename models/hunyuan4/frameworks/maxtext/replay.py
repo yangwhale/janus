@@ -12,7 +12,12 @@
 字段：
   inputs = tokens，targets = labels，inputs_position = targets_position = position_ids（int32）；
   inputs_segmentation = 1（整条 4096 是一段，和 GPU 一样不按文档切注意力）；targets_segmentation = (loss_mask != 0)。
+  GPU 开了文档内注意力时 batch 里另有 segment_ids：原样作 inputs_segmentation（要从 1 起），不计 loss 的位置
+  targets_segmentation 记 0。
   只接受 0/1 的 loss_mask（混元 3 的 golden 全是 1）；不是 0/1 就报错——MaxText 只有「算 / 不算」两种权重。
+
+扩展：同目录下文件名是 `replay_ext_*.py` 的模块可以加别的可选字段（`FIELDS`）与它们的换法（`to_maxtext`、
+`from_maxtext`、`zero_segment_ok`）；没有这些字段的 golden 行为不变。
 
 用法：
   python replay.py check <golden 运行目录> [--steps 1:1001]   # 逐条核对 sha256，打印每步全局 batch 的摘要
@@ -28,6 +33,20 @@ from pathlib import Path
 import numpy as np
 
 FIELDS = ("tokens", "labels", "loss_mask", "position_ids")
+
+
+def _load_extensions() -> list:
+    """同目录下的 `replay_ext_*.py`（按文件名顺序导入；只能依赖 numpy）。"""
+    import importlib
+    here = Path(__file__).resolve().parent
+    if str(here) not in sys.path:
+        sys.path.insert(0, str(here))
+    return [importlib.import_module(p.stem) for p in sorted(here.glob("replay_ext_*.py"))]
+
+
+EXTENSIONS = _load_extensions()
+# 可选字段：GPU 开文档内注意力时随 batch 存下的段号；没有它的 golden 照旧整行一段。其后是扩展的字段，有就一起回放
+OPTIONAL = ("segment_ids",) + tuple(f for e in EXTENSIONS for f in e.FIELDS)
 # 混元 4 的 GPU golden（HF 程序）只存 tokens / labels：没有 loss_mask（每个 token 都算 loss）和 position_ids（0…S−1）。
 # 缺的字段按这两条默认补上，指纹只写 golden 里有的字段（与 golden 的 data/rank*.jsonl 同一组键）
 DEFAULTS = {"loss_mask": lambda shape: np.ones(shape, np.float32),
@@ -62,7 +81,7 @@ class GoldenBatches:
                     self.index[(int(rec["step"]), r, int(rec["micro"]))] = rec["fields"]
         self.steps = sorted({s for s, _, _ in self.index})
         first = next(iter(self.index.values()))
-        self.fields = tuple(k for k in FIELDS if k in first)          # golden 里实际存了的字段
+        self.fields = tuple(k for k in FIELDS + OPTIONAL if k in first)   # golden 里实际存了的字段
         if "tokens" not in self.fields or "labels" not in self.fields:
             raise ReplayError(f"golden 的 batches 至少要有 tokens 与 labels，实际 {sorted(first)}")
         self.micro = 1 + max(m for _, _, m in self.index)
@@ -92,10 +111,15 @@ class GoldenBatches:
         return a
 
     def global_batch(self, step: int, verify: bool = True) -> dict[str, np.ndarray]:
-        """{字段: [world·micro, S]}，第 r·M + m 行 = rank r 的 micro m（GPU 原 dtype）。"""
+        """{字段: [world·micro, …]}，第 r·M + m 行 = rank r 的 micro m（GPU 原 dtype）。GPU 存的每个字段是 [1, …]，
+        去掉那个长 1 的维度（一维的 [1, S] 成 [S]，多维的如 [1, P, 768] 保留后面的维度）。"""
         out = {}
         for name in self.fields:
-            rows = [self.field(step, r, m, name, verify).reshape(-1) for r in self.ranks for m in range(self.micro)]
+            rows = []
+            for r in self.ranks:
+                for m in range(self.micro):
+                    x = self.field(step, r, m, name, verify)
+                    rows.append(x.reshape(x.shape[1:]) if x.ndim >= 2 and x.shape[0] == 1 else x.reshape(-1))
             out[name] = np.stack(rows)
         for name in FIELDS:
             if name not in out:
@@ -104,7 +128,7 @@ class GoldenBatches:
 
 
 def to_maxtext(gb: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
-    """GPU 字段 → MaxText 输入字段（int32）。"""
+    """GPU 字段 → MaxText 输入字段（int32；扩展的字段按扩展的换法）。"""
     lm = gb["loss_mask"]
     if not np.all((lm == 0) | (lm == 1)):
         raise ReplayError("loss_mask 不是 0/1，MaxText 的 targets_segmentation 表达不了")
@@ -112,24 +136,42 @@ def to_maxtext(gb: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
         if gb[k].min() < 0 or gb[k].max() >= 2 ** 31:
             raise ReplayError(f"{k} 超出 int32")
     pos = gb["position_ids"].astype(np.int32)
-    return {
+    if "segment_ids" in gb:   # 文档内注意力：段号原样作 inputs_segmentation，不计 loss 的位置 targets_segmentation 记 0
+        seg = gb["segment_ids"].astype(np.int32)
+        if seg.min() < (0 if any(e.zero_segment_ok(gb) for e in EXTENSIONS) else 1):
+            raise ReplayError("segment_ids 要从 1 起（0 在 MaxText 里是填充；扩展说行尾填充是 0 的除外）")
+        tseg = np.where(lm != 0, seg, 0).astype(np.int32)
+    else:
+        seg, tseg = np.ones_like(pos), (lm != 0).astype(np.int32)
+    out = {
         "inputs": gb["tokens"].astype(np.int32),
         "targets": gb["labels"].astype(np.int32),
         "inputs_position": pos,
         "targets_position": pos.copy(),
-        "inputs_segmentation": np.ones_like(pos),
-        "targets_segmentation": (lm != 0).astype(np.int32),
+        "inputs_segmentation": seg,
+        "targets_segmentation": tseg,
     }
+    for e in EXTENSIONS:
+        e.to_maxtext(gb, out, ReplayError)
+    return out
 
 
-def from_maxtext(mt: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
-    """to_maxtext 的逆，用 GPU 的 dtype（int64 / float32）还原，供 TPU 侧写同格式的输入指纹。"""
-    return {
+def from_maxtext(mt: dict[str, np.ndarray], segments: bool | None = None) -> dict[str, np.ndarray]:
+    """to_maxtext 的逆，用 GPU 的 dtype（int64 / float32）还原，供 TPU 侧写同格式的输入指纹。
+    segments：golden 存没存段号（`"segment_ids" in GoldenBatches.fields`）；None = 按段号是不是全 1 猜
+    （文档内注意力开、但这一步每行都只有一个文档时会猜错，所以调用方知道时要传）。"""
+    out = {
         "tokens": np.asarray(mt["inputs"]).astype(np.int64),
         "labels": np.asarray(mt["targets"]).astype(np.int64),
-        "loss_mask": np.asarray(mt["targets_segmentation"]).astype(np.float32),
+        "loss_mask": (np.asarray(mt["targets_segmentation"]) != 0).astype(np.float32),
         "position_ids": np.asarray(mt["inputs_position"]).astype(np.int64),
     }
+    seg = np.asarray(mt["inputs_segmentation"])
+    if segments or (segments is None and not np.all(seg == 1)):   # 只有开了文档内注意力的回放才带段号（同字段名、dtype int64）
+        out["segment_ids"] = seg.astype(np.int64)
+    for e in EXTENSIONS:
+        e.from_maxtext(mt, out, ReplayError)
+    return out
 
 
 def fingerprints(gb: dict[str, np.ndarray], micro: int, step: int, fields=FIELDS) -> dict[int, list[dict]]:
@@ -184,7 +226,7 @@ def main(argv=None):
         nonpad |= set(g["loss_mask"].sum(-1).astype(int).tolist())
         tok_max = max(tok_max, int(g["tokens"].max()), int(g["labels"].max()))
         mt = to_maxtext(g)
-        back = from_maxtext(mt)
+        back = from_maxtext(mt, "segment_ids" in gb.fields)
         for k in gb.fields:
             if not np.array_equal(back[k], g[k]) or back[k].dtype != g[k].dtype:
                 bad.append(f"{s}:{k} MaxText 往返不逐位")

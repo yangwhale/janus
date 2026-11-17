@@ -28,7 +28,11 @@ RoPE：HF 原样代码是拼接式（NeoX），项目定下的读法是交错式
 补丁）。Megatron-Core 的 MLA 一律按 `mla_rotary_interleaved` 先去交错再按拼接式转；索引器用
 `dsa_indexer_rope_interleaved=True` 走同一条路。去交错是对 q、k 同一个置换，q·k 与交错式逐项相同。
 
-只支持 TP = 1、CP = 1、不打包序列，不符合时构造时就报错；数据并行、专家并行、流水线并行可以任意组合。
+只支持 TP = 1、不打包序列，不符合时构造时就报错；数据并行、专家并行、流水线并行可以任意组合；上下文并行要由扩展的
+注意力变体提供（DSA 路径只支持 CP = 1）。
+
+扩展：别的注意力变体、训练开关可以写在 `hy4_ext_*.py` 里，经 `hy4_ext` 的扩展点接进来（config 字段、注意力 spec、
+建模型之后的改写等，见各调用处）；这里不依赖任何扩展模块，没有扩展时行为就是本文件写的。
 
 流水线并行（PP）：层间传的是 n 路流 [s, b, n·H]，比 Megatron-Core 按 hidden_size 算的 P2P 形状宽 n 倍。
 Megatron-Core 自己的 mHC（`enable_mhc_connections`）会在 TransformerBlock 里另做一次展开与收拢，且 GPTModel
@@ -43,6 +47,7 @@ import functools
 import os
 from dataclasses import dataclass, field
 
+import hy4_ext
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -69,6 +74,7 @@ from megatron.core.transformer.transformer_layer import (
     TransformerLayerSubmodules,
     get_transformer_layer_offset,
 )
+from tpu_like_attn import TPULikeSinkAttention, block_from_env, parts_from_env
 
 # ------------------------------------------------------------------ config
 
@@ -93,6 +99,13 @@ class Hy4Fields:
     # "per_head" 每头一个 [v, D]（MaxText 原来的写法）。per_head 用 Megatron-Core 现成的 QKV 拆分：
     # is_qkv=True、qkv_split_shapes=[v]*H（一组、H 段，每段单独正交化与缩放）
     hy4_muon_gate: str = "whole"
+    # QK-Clip 的每头最大 logit：with_sink = max(sink, 缩放后 q·k 的最大值)，同生产 TPU（splash 内核的 running max 从 sink
+    # 起算）；no_sink = 只取 q·k（原版 Megatron-Core 的 TE 注意力），诊断用。项目负责人定 GPU 照生产写，默认 with_sink
+    hy4_qk_clip_max_logit: str = "with_sink"
+
+
+# 扩展登记的字段（hy4_ext 的 config_fields）加在这里：Hy4Config 与 Megatron-Bridge 的 provider 都继承加过字段的这一个
+Hy4Fields = hy4_ext.extend_dataclass(Hy4Fields)
 
 
 @dataclass
@@ -159,13 +172,22 @@ def indexer_loss_coeff_per_layer(maxtext_coeff: float, indexer_types, mtp_num_la
 
 
 def hy4_config_kwargs(hf: dict, num_layers: int | None = None) -> dict:
-    """公开 config.json（dict）→ `Hy4Config` / provider 的字段。截层时三张逐层表一起截。"""
+    """公开 config.json（dict）→ `Hy4Config` / provider 的字段。截层时逐层表一起截。
+
+    注意力默认是 DSA（`use_dsa: true`）。扩展可以认领别的注意力变体（hy4_ext 的 `hf_attention_kwargs`：返回要并进来的
+    字段，这时不设 DSA 的字段、`hy4_indexer_types` 为空）；最后 `hf_config_kwargs` 让扩展补字段。"""
     L = num_layers if num_layers is not None else hf["num_hidden_layers"]
+    attn_kw = hy4_ext.first("hf_attention_kwargs", hf, L)
     mlp_types = list(hf["mlp_layer_types"])[:L]
-    idx_types = list(hf["indexer_types"])[:L]
-    assert len(mlp_types) == L and len(idx_types) == L, "逐层表比层数短"
-    assert set(hf["layer_types"][:L]) == {"deepseek_sparse_attention"}, hf["layer_types"][:L]
-    assert hf.get("use_mla", True) and hf.get("use_dsa", True) and hf.get("gated_mla", True)
+    if attn_kw is None:
+        idx_types = list(hf["indexer_types"])[:L]
+        assert len(mlp_types) == L and len(idx_types) == L, "逐层表比层数短"
+        assert set(hf["layer_types"][:L]) == {"deepseek_sparse_attention"}, hf["layer_types"][:L]
+        assert hf.get("use_dsa", True)
+    else:
+        idx_types = []
+        assert len(mlp_types) == L, "逐层表比层数短"
+    assert hf.get("use_mla", True) and hf.get("gated_mla", True)
     assert hf.get("gating_type", "elementwise") == "elementwise"
     # enable_ihc false 只给结构消融（make_tiny_hf.py --no-ihc，hc_mult 1：普通残差，见 layer_specs）
     assert hf.get("enable_ihc", True) or hf.get("hc_mult") == 1, "enable_ihc false 时 hc_mult 要是 1"
@@ -175,7 +197,7 @@ def hy4_config_kwargs(hf: dict, num_layers: int | None = None) -> dict:
     assert hf["head_dim"] == hf["qk_rope_head_dim"], "RoPE 维数 = head_dim（HF 用它算频率）"
     assert not hf.get("attention_bias", False) and not hf.get("tie_word_embeddings", False)
     assert hf["hidden_act"] == "silu"
-    return dict(
+    kw = dict(
         num_layers=L,
         hidden_size=hf["hidden_size"],
         num_attention_heads=hf["num_attention_heads"],
@@ -209,20 +231,6 @@ def hy4_config_kwargs(hf: dict, num_layers: int | None = None) -> dict:
         mscale_all_dim=0.0,
         rotary_interleaved=False,
         apply_rope_fusion=False,
-        # DSA 索引器
-        experimental_attention_variant="dsa",
-        dsa_indexer_n_heads=hf["index_n_heads"],
-        dsa_indexer_head_dim=hf["index_head_dim"],
-        dsa_indexer_topk=hf["index_topk"],
-        dsa_indexer_loss_coeff=0.0,
-        dsa_indexer_rope_interleaved=True,
-        dsa_indexer_rotate_activation=False,
-        dsa_indexer_scoring_relu=True,
-        dsa_indexer_k_norm_epsilon=1e-6,  # 项目定下的读法：索引器 k_norm 1e-6（HF 原样是 rms_norm_eps）
-        dsa_indexer_k_norm_fp32=True,
-        dsa_indexer_weights_proj_use_quantization=False,
-        dsa_indexer_weights_proj_output_dtype="fp32",
-        dsa_kernel_backend="none",
         # MoE
         num_moe_experts=hf["n_routed_experts"],
         moe_router_topk=hf["num_experts_per_tok"],
@@ -245,6 +253,26 @@ def hy4_config_kwargs(hf: dict, num_layers: int | None = None) -> dict:
         hy4_indexer_types=idx_types,
         hy4_lm_head_fp32=bool(hf.get("enable_lm_head_fp32", True)),
     )
+    if attn_kw is None:  # DSA 索引器
+        kw.update(
+            experimental_attention_variant="dsa",
+            dsa_indexer_n_heads=hf["index_n_heads"],
+            dsa_indexer_head_dim=hf["index_head_dim"],
+            dsa_indexer_topk=hf["index_topk"],
+            dsa_indexer_loss_coeff=0.0,
+            dsa_indexer_rope_interleaved=True,
+            dsa_indexer_rotate_activation=False,
+            dsa_indexer_scoring_relu=True,
+            dsa_indexer_k_norm_epsilon=1e-6,  # 项目定下的读法：索引器 k_norm 1e-6（HF 原样是 rms_norm_eps）
+            dsa_indexer_k_norm_fp32=True,
+            dsa_indexer_weights_proj_use_quantization=False,
+            dsa_indexer_weights_proj_output_dtype="fp32",
+            dsa_kernel_backend="none",
+        )
+    else:
+        kw.update(attn_kw)
+    hy4_ext.call("hf_config_kwargs", hf, kw)
+    return kw
 
 
 def _no_clamp(config):
@@ -254,8 +282,10 @@ def _no_clamp(config):
 
 
 def _check_parallel(config):
-    if config.tensor_model_parallel_size != 1 or config.context_parallel_size != 1:
-        raise NotImplementedError("混元 4 的 Megatron 模型只支持 TP = 1、CP = 1（golden 用 DP + EP）")
+    if config.tensor_model_parallel_size != 1:
+        raise NotImplementedError("混元 4 的 Megatron 模型只支持 TP = 1（golden 用 DP + EP）")
+    if config.context_parallel_size != 1 and not hy4_ext.first("supports_cp", config):
+        raise NotImplementedError("DSA 路径只支持 CP = 1（上下文并行要由扩展的注意力变体提供，hy4_ext 的 supports_cp）")
 
 
 # ------------------------------------------------------------------ iHC
@@ -292,7 +322,12 @@ class Hy4HyperConnection(MegatronModule):
         n = self.n
         with torch.autocast(device_type=x.device.type, enabled=False):
             flat = x.float()
-            mixes = F.linear(flat, self.fn.float()) * torch.rsqrt(flat.square().mean(-1, keepdim=True) + self.norm_eps)
+            fn = self.fn.float()
+            # 扩展可以换掉这个投影的矩阵乘（hy4_ext 的 hc_fn_linear，返回 None 就用 F.linear）
+            proj = hy4_ext.first("hc_fn_linear", self.config, flat, fn)
+            if proj is None:
+                proj = F.linear(flat, fn)
+            mixes = proj * torch.rsqrt(flat.square().mean(-1, keepdim=True) + self.norm_eps)
             pre_b, post_b = self.base.float().split(n, dim=-1)
             pre_s, post_s = self.scale.float().unbind(0)
             pre_l, post_l = mixes.split(n, dim=-1)
@@ -574,13 +609,23 @@ def sparse_sink_attention(
     q = query.permute(1, 2, 0, 3)
     k = key.permute(1, 2, 0, 3)
     v = value.permute(1, 2, 0, 3)
+    tpu_parts = parts_from_env()
+    if tpu_parts:
+        # 诊断（HY4_TPU_LIKE_ATTNK）：照 tokamax splash 内核的舍入写法（见 tpu_like_attn.py），只接 FP32 q·k 的口径
+        assert scores_fp32, "HY4_TPU_LIKE_ATTNK 只在 hy4_attn_scores_fp32 开时用"
+        allowed = causal_sparse_mask(topk, sq, sk).unsqueeze(1)
+        out, max_logit = TPULikeSinkAttention.apply(q, k, v, allowed, sinks, scale, tpu_parts, block_from_env())
+        out = out.permute(2, 0, 1, 3).reshape(sq, b, h * v.shape[-1])
+        return (out, max_logit) if return_max_logit else out
     if scores_fp32:
         scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
     else:
         scores = torch.matmul(q, k.transpose(-1, -2)) * scale
     allowed = causal_sparse_mask(topk, sq, sk).unsqueeze(1)
     scores = scores.masked_fill(~allowed, float("-inf"))
-    max_logit = scores.detach().float().amax(dim=(0, 2, 3)) if return_max_logit else None  # 每头，不含 sink
+    max_logit = (
+        scores.detach().float().amax(dim=(0, 2, 3)) if return_max_logit else None
+    )  # 每头，不含 sink（调用方按开关并入 sink）
     sink = sinks.float().view(1, h, 1, 1).expand(b, h, sq, 1)
     comb = torch.cat([scores.float(), sink], dim=-1)
     comb = comb - comb.max(dim=-1, keepdim=True).values
@@ -781,13 +826,23 @@ class Hy4DSAttention(MegatronModule):
         )
         if not want_max:
             return DSAIndexerLossAutoScaler.apply(out, indexer_loss) if indexer_loss is not None else out
-        # QK-Clip 的统计量：同 Megatron 的 TE 注意力，记每头缩放后 q·k 的最大值（只在选中且因果的位置上，不含 sink），
-        # 跨 microbatch 取最大，由 megatron.core.optimizer.qk_clip.clip_qk 在优化器步后归约、裁剪并清零
+        # QK-Clip 的统计量：每头缩放后 q·k 的最大值（只在选中且因果的位置上），按 hy4_qk_clip_max_logit 含 / 不含 sink
+        # （默认含，同生产 TPU），跨 microbatch 取最大，由 megatron.core.optimizer.qk_clip.clip_qk 在优化器步后归约、裁剪并清零
         out, m = out
+        m = qk_clip_stat(self.config, m, self.sinks)
         self.current_max_attn_logits = (
             m if self.current_max_attn_logits is None else torch.maximum(self.current_max_attn_logits, m)
         )
         return DSAIndexerLossAutoScaler.apply(out, indexer_loss) if indexer_loss is not None else out
+
+
+def qk_clip_stat(config, m, sinks):
+    """QK-Clip 统计量按 `hy4_qk_clip_max_logit` 含 / 不含 sink。m [h]（每头 q·k 最大值，FP32），sinks [h]。"""
+    mode = getattr(config, "hy4_qk_clip_max_logit", "with_sink")
+    assert mode in ("with_sink", "no_sink"), mode
+    if mode == "no_sink" or sinks is None:
+        return m
+    return torch.maximum(m, sinks.detach().float().to(m.device))
 
 
 class Hy4MLASelfAttention(MLASelfAttention):
@@ -816,6 +871,11 @@ class Hy4MLASelfAttention(MLASelfAttention):
             w.qkv_split_shapes = [config.v_head_dim] * config.num_attention_heads
         self._gate_input = None
         self._fan_x32 = None
+        # 扩展（hy4_ext 的 mla_init）可以设这两个函数：_ext_forward(self, super_forward, hidden_states, attention_mask, …)
+        # 代替 forward；_ext_gate(self) 返回输出门的投影（返回 None 走 _run_core_attention 里的写法）
+        self._ext_forward = None
+        self._ext_gate = None
+        hy4_ext.call("mla_init", self, config)
         if _tpu_like("ATTNIN"):
             # 注意力输入（input_layernorm 的输出）有三处要梯度：q / kv 两个下投影与输出门（索引器用的是 detach）。
             # 两个下投影改吃 _fan_x32 的 BF16 副本，梯度照旧由层自己舍成 BF16，但在 FP32 里与输出门的 FP32 梯度相加
@@ -823,6 +883,8 @@ class Hy4MLASelfAttention(MLASelfAttention):
                 _reroute_to_fan(lin, self)
 
     def forward(self, hidden_states, attention_mask, *args, **kwargs):
+        if self._ext_forward is not None:
+            return self._ext_forward(self, super().forward, hidden_states, attention_mask, *args, **kwargs)
         if _tpu_like("ATTNIN"):
             # 诊断：三份梯度在 FP32 里相加、只舍一次 BF16 再进 input_layernorm 的反向（前向的值不变）
             x32 = _ToFloatRoundOnce.apply(hidden_states)
@@ -839,9 +901,10 @@ class Hy4MLASelfAttention(MLASelfAttention):
 
     def _run_core_attention(self, *args, **kwargs):
         out = super()._run_core_attention(*args, **kwargs)
-        if self._fan_x32 is not None:
+        gate = self._ext_gate(self) if self._ext_gate is not None else None
+        if gate is None and self._fan_x32 is not None:
             gate = _GateFP32DGrad.apply(self._fan_x32, self.linear_gate.weight, self.linear_gate)
-        else:
+        elif gate is None:
             gate, _ = self.linear_gate(self._gate_input)
         return out * torch.sigmoid(gate)
 
@@ -929,8 +992,18 @@ class Hy4TransformerLayer(MegatronModule, BaseTransformerLayer):
             if sh is not None:
                 _fp32_out(sh.linear_fc2)
 
+    def _mlp(self, x, padding_mask):
+        """MLP；路由专家层把 padding_mask（GPTModel 给的 [b, s]，True = 填充）转成路由要的 [s, b] 交下去：填充 token 照常路由，
+        只是不进序列级辅助 loss 与专家计数（Megatron-Core 的 padding_mask）。"""
+        from megatron.core.transformer.moe.moe_layer import MoELayer
+
+        if padding_mask is not None and isinstance(self.mlp, MoELayer):
+            return self.mlp(x, padding_mask=padding_mask.transpose(0, 1).contiguous())
+        return self.mlp(x)
+
     def forward(self, hidden_states, attention_mask=None, packed_seq_params=None, position_ids=None, **kwargs):
         assert packed_seq_params is None
+        pmask = kwargs.get("padding_mask")
         n, H = self.config.hc_mult, self.config.hidden_size
         s, b, d = hidden_states.shape
         if d == H:
@@ -947,7 +1020,7 @@ class Hy4TransformerLayer(MegatronModule, BaseTransformerLayer):
             hs = _ToFloatRoundOnce.apply(h)
             post, x = self.ffn_hc(hs.view(s, b, n * H))
             x = self.pre_mlp_layernorm(x.to(dt))
-            mlp_out, mlp_bias = self.mlp(x)
+            mlp_out, mlp_bias = self._mlp(x, pmask)
             assert mlp_bias is None
             h = hc_residual(post, mlp_out, hs).to(dt)
             return h.view(s, b, n * H), None
@@ -959,7 +1032,7 @@ class Hy4TransformerLayer(MegatronModule, BaseTransformerLayer):
         h = hc_residual(post, attn_out, residual)
         post, x = self.ffn_hc(h.view(s, b, n * H))
         x = self.pre_mlp_layernorm(x)
-        mlp_out, mlp_bias = self.mlp(x)
+        mlp_out, mlp_bias = self._mlp(x, pmask)
         assert mlp_bias is None
         h = hc_residual(post, mlp_out, h)
         return h.view(s, b, n * H), None
@@ -1003,6 +1076,9 @@ class DuplicatedLinear(nn.Module):
 
 def attention_spec(config, use_te: bool, force_full: bool = False) -> ModuleSpec:
     be = _backend(use_te)
+    ext = hy4_ext.first("attention_spec", config, use_te, force_full)  # 扩展的注意力变体给自己的 spec
+    if ext is not None:
+        return ext
     indexer = ModuleSpec(
         module=Hy4Indexer,
         submodules=DSAIndexerSubmodules(
@@ -1076,7 +1152,7 @@ def check_pp_split(config) -> list:
     for r in range(config.pipeline_model_parallel_size):
         rg = stage_layers(config, r)
         for i in rg:
-            if types[i] == "shared":
+            if types and types[i] == "shared":
                 src = max(j for j in range(i) if types[j] == "full")
                 if src < rg.start:
                     raise ValueError(
@@ -1225,6 +1301,7 @@ def apply_mlp_semantics(model) -> None:
                 install_tpu_like_ffnin(mod)
             if getattr(mod, "shared_experts", None) is not None:
                 mod.shared_experts.config = _no_clamp(mod.shared_experts.config)
+    hy4_ext.call("after_mlp_semantics", model)  # 扩展的 MoE / MLP 开关
 
 
 def build_model(config, use_te: bool, vocab_size: int, max_seq: int, mtp: bool = False):
@@ -1250,6 +1327,7 @@ def build_model(config, use_te: bool, vocab_size: int, max_seq: int, mtp: bool =
     if model.post_process:
         install_fp32_head(model)
     apply_mlp_semantics(model)
+    hy4_ext.call("after_build_model", model, config, use_te=use_te, pp=pp, mtp=mtp)  # 扩展对建好的模型的改写
     return model
 
 

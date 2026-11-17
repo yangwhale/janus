@@ -22,6 +22,8 @@
 # NAMESPACE、JANUS_SITE_PROFILE）同混元 3。
 # PIP_EXTRA="libtpu==<版本> …" Pod 里先 pip install（--no-deps）再训练，用来换 libtpu / jax 版本。
 # XLA_DUMP=1 训练时另把训练步的优化后 HLO 拷进运行目录 hlo/，指纹记在 meta.json 的 hlo（train_hy4.py --hlo-dir）。
+# 扩展：同目录下的 run_ext_*.sh 在下面的 case 之前读进来（source），可以定义 run_ext_script（认得 $SCRIPT 就设 PYARGS / STEP1、
+# 返回 0）、RUN_EXT_STAGES（追加到 STAGE 选项说明里）、RUN_EXT_HLO_SCRIPTS（空格分隔，XLA_DUMP 时也给 --hlo-dir 的脚本）。
 set -euo pipefail
 RUN=${1:?用法: run.sh <运行名> <步数> [train_hy4.py 参数…]}; STEPS=${2:?缺步数}; shift 2
 PLATFORM=${PLATFORM:-v5p}
@@ -29,7 +31,8 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 # shellcheck source=profile.sh
 . "$HERE/profile.sh"
 IMAGE=${IMAGE:-us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf}
-STAGE=${STAGE:?STAGE=A|B|C|D|D1|4L|mini|mid}
+for f in "$HERE"/run_ext_*.sh; do [ -e "$f" ] && . "$f"; done
+STAGE=${STAGE:?STAGE=A|B|C|D|D1|4L|mini|mid${RUN_EXT_STAGES:-}}
 STG=$(echo "$STAGE" | tr '[:upper:]' '[:lower:]')
 B=${BUCKET:?BUCKET=gs://<POC 桶>}/janus/hunyuan4
 DB=${DATA_BUCKET:-$BUCKET}/janus/hunyuan4
@@ -41,6 +44,9 @@ OUT=${OUT:-$B/tpu}
 HOLD=${HOLD:-3600}
 SCRIPT=${SCRIPT:-train_hy4.py}
 STEP1=""
+if declare -F run_ext_script >/dev/null && run_ext_script; then
+  :   # 扩展认得的脚本，PYARGS / STEP1 由扩展设
+else
 case "$SCRIPT" in
   train_hy4.py) PYARGS="--stage $STAGE --hf-config /data/config.json --hf-manifest /data/tensor_sha256.json --steps $STEPS --janus-run /data/runs/$RUN";;
   op_replay.py) PYARGS="--stage $STAGE --out /data/runs/$RUN/op_replay.json${FP64_NPZ:+ --fp64-npz /data/fp64_ops.npz}"
@@ -54,10 +60,11 @@ case "$SCRIPT" in
         STEP1=":";;   # 运行目录由脚本只在 JAX 进程 0 上建（交结果的 Pod 按「有没有运行目录」认）
   *) echo "SCRIPT 只能是本目录下的 .py（train_hy4.py、op_replay.py 或其余检查脚本）"; exit 1;;
 esac
+fi
 XF="${XLA_FLAGS:-}"
 [ -n "${XLA_DUMP:-}" ] && XF="$XF --xla_dump_to=/data/xla --xla_dump_hlo_as_text --xla_dump_hlo_module_re=.*train_step.*"
 # 训练时把训练步的优化后 HLO 拷进运行目录 hlo/ 并在 meta.json 记指纹（train_hy4.py --hlo-dir），随运行目录一起取回
-[ -n "${XLA_DUMP:-}" ] && [ "$SCRIPT" = train_hy4.py ] && PYARGS="$PYARGS --hlo-dir /data/xla"
+[ -n "${XLA_DUMP:-}" ] && case " train_hy4.py ${RUN_EXT_HLO_SCRIPTS:-} " in *" $SCRIPT "*) true;; *) false;; esac && PYARGS="$PYARGS --hlo-dir /data/xla"
 case "$XF" in *"'"*) echo "XLA_FLAGS 里不能有单引号"; exit 1;; esac
 XLAENV=""
 [ -n "${XF// /}" ] && XLAENV="export XLA_FLAGS='${XF# }'"

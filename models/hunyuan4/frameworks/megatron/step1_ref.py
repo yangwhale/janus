@@ -28,6 +28,10 @@ loss 语义（同 `train_hy4mg.py`，GPU g2 / g3 / T2 的设置）：
 - `choices.safetensors`：每个 microbatch 每个 MoE 层的路由选择与选择分数（sigmoid + 偏置），
   `--detail-rows` 指定的行另存 DSA top-k 与索引器的 q / k / w（翻转定责用）；`--dsa-topk-all` 每一行都存 DSA top-k；
 - `partial.pt`：每个 microbatch 之后的累加梯度与记录（断点续跑，跑完删掉）。
+- `--unscaled`：梯度不除 token 数，写 `grads_unscaled_hf.safetensors`（一行就要几百 GiB 的长序列可以每行一个进程分开跑，
+  再按行号顺序相加、除以全步 token 数，得到与单进程同口径的结果；`loss_fields` 是两边共用的全局量公式）。
+- 梯度文件逐个张量流式写盘（`save_safetensors_stream`，路由专家不 stack），收尾不再多出几份参数大小的拷贝；
+  `--rss-log` 记常驻内存的时间线。
 
 `--inject-l1 <GPU l1 抓数 step_N_fwd.safetensors> --inject-row R`：第 R 行用 GPU 抓到的 DSA top-k 与路由
 （`hf.model.layers.<L>.self_attn.topk`、`.mlp.gate.routing_map`，含 MTP 层）代替本侧的选择，只跑这一行
@@ -44,6 +48,8 @@ loss 语义（同 `train_hy4mg.py`，GPU g2 / g3 / T2 的设置）：
 同一脚本用于 hy4-mini / hy4-mid / T2 截层（层数、MTP 由 HF config 读出；--layers 可截层）。内存：hy4-mini FP64
 峰值约 60 GB、每个 microbatch 约 1 分钟（40 核）。hy4-mid 的注意力分数（64 头 × 4096²）要加 `--recompute`。
 T2 截层（约 121 亿参数）FP64 的参数加梯度约 194 GB，加上激活预计超过单进程 250 GB（估算，没有试）。
+扩展（hy4_ext）的模型变体：开关参数、按 HF config 加的 config 字段、逐行的输入准备、summary 里的记录由扩展点接进来
+（`step1_args`、`step1_config`、`step1_row`、`step1_summary` 等，见调用处）。
 """
 
 from __future__ import annotations
@@ -62,6 +68,7 @@ import torch
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import hy4_ext  # noqa: E402
 
 LOW_FLOATS = (torch.float32, torch.bfloat16, torch.float16)
 
@@ -303,12 +310,11 @@ def build(a, dt):
     hf, _ = H.complete_hf_config(json.load(open(os.path.join(a.hf, "config.json"))))
     L = a.layers or hf["num_hidden_layers"]
     mtp = a.mtp if a.mtp is not None else int(hf.get("num_nextn_predict_layers", 0)) > 0
-    coeff = H.indexer_loss_coeff_per_layer(a.indexer_loss, hf["indexer_types"][:L], int(mtp))
+    has_idx = hf.get("use_dsa", True)  # 没有索引器的变体（扩展认领的 config）不设 KD
+    coeff = H.indexer_loss_coeff_per_layer(a.indexer_loss, hf["indexer_types"][:L], int(mtp)) if has_idx else 0.0
     over = dict(
         params_dtype=dt,
-        hy4_train_indexer=a.indexer_loss > 0,
-        dsa_indexer_loss_coeff=coeff,
-        dsa_indexer_use_sparse_loss=True,
+        hy4_train_indexer=a.indexer_loss > 0 and has_idx,
         calculate_per_token_loss=True,
         hy4_attn_scores_fp32=True,
         hy4_head_chunk=a.head_chunk,
@@ -316,8 +322,22 @@ def build(a, dt):
         gradient_accumulation_fusion=False,
         moe_router_dtype="fp64" if dt == torch.float64 else "fp32",
     )
-    if a.log_max_logit:  # 每层每头缩放后 q·k 的最大值（选中且因果，不含 sink），跨行取最大；QK-Clip 的统计量
+    if has_idx:
+        over.update(dsa_indexer_loss_coeff=coeff, dsa_indexer_use_sparse_loss=True)
+    hy4_ext.call("step1_config", a, hf, over)  # 扩展的开关（同训练入口）
+    if a.rope_theta is not None:  # 同训练入口 --rope-theta
+        over["rotary_base"] = float(a.rope_theta)
+    aux = a.aux_loss
+    if aux is None:  # 默认 0；扩展可以按 HF config 给自己的默认（同训练入口的配方）
+        aux = hy4_ext.first("step1_default_aux_loss", hf)
+        aux = 0.0 if aux is None else aux
+    if aux > 0:  # 序列级辅助 loss（训练入口 --aux-loss）
+        over.update(moe_router_load_balancing_type="seq_aux_loss", moe_aux_loss_coeff=aux)
+    if (
+        a.log_max_logit
+    ):  # 每层每头缩放后 q·k 的最大值（选中且因果），跨行取最大，按 --qk-clip-max-logit 含 / 不含 sink；QK-Clip 的统计量
         over["log_max_attention_logit"] = True
+    over["hy4_qk_clip_max_logit"] = a.qk_clip_max_logit
     if a.expert_store:  # 路由专家直接载成 BF16（HF 原件就是 BF16，逐位不变），不先过一份 FP64：峰值内存少一份专家
         import hy4_weights as W
 
@@ -409,10 +429,12 @@ def hf_name_table(cfg, mtp):
                 out[m] = (tuple(h), "cat")
             else:
                 out[m] = (h, None)
+    hy4_ext.call("step1_hf_names", cfg, out)  # 扩展另有的参数：out[Megatron 名] = (HF 名, 变换)
     return out
 
 
-def to_hf(grads: dict, cfg, mtp) -> dict:
+def to_hf(grads: dict, cfg, mtp, stack: bool = True) -> dict:
+    """Megatron 名 → HF 名。stack=False 时路由专家给一串张量（按专家号），交给 save_safetensors_stream 逐个写，不 stack。"""
     table = hf_name_table(cfg, mtp)
     out, experts = {}, {}
     for name, g in grads.items():
@@ -422,23 +444,161 @@ def to_hf(grads: dict, cfg, mtp) -> dict:
         if tf == "cat":
             half = g.shape[0] // 2
             out[h[0]], out[h[1]] = g[:half], g[half:]
+        elif isinstance(tf, str):  # 扩展的变换：一个 Megatron 张量拆成 h 里那几个 HF 张量（hy4_ext 的 split_hf）
+            for hh, x in zip(h, hy4_ext.first("split_hf", tf, cfg, g), strict=True):
+                out[hh] = x
         elif isinstance(tf, tuple):
             experts.setdefault(h, {})[tf[1]] = g
         else:
             out[h] = g
     for h, by_e in experts.items():
-        out[h] = torch.stack([by_e[e] for e in sorted(by_e)])
+        out[h] = torch.stack([by_e[e] for e in sorted(by_e)]) if stack else [by_e[e] for e in sorted(by_e)]
     return out
+
+
+def load_batches(d: str, step: int) -> list:
+    """janus 的 data/batches（每个 rank 一对 rank<r>.bin / rank<r>.jsonl，训练入口 --save-batches 写的）里第 step 步的全部
+    microbatch，按 (rank, micro) 排；每条是 {字段名: numpy 数组}。"""
+    import glob
+
+    import numpy as np
+
+    out = []
+    for jl in sorted(glob.glob(os.path.join(d, "rank*.jsonl")), key=lambda x: int(os.path.basename(x)[4:-6])):
+        binf = jl[:-6] + ".bin"
+        with open(jl) as f, open(binf, "rb") as fb:
+            for line in f:
+                rec = json.loads(line)
+                if rec["step"] != step:
+                    continue
+                row = {}
+                for k, m in rec["fields"].items():
+                    n = int(np.prod(m["shape"])) * np.dtype(m["dtype"]).itemsize
+                    fb.seek(m["offset"])
+                    buf = fb.read(n)
+                    assert hashlib.sha256(buf).hexdigest() == m["sha256"], (jl, rec["micro"], k)
+                    row[k] = np.frombuffer(buf, dtype=m["dtype"]).reshape(m["shape"])
+                out.append(row)
+    assert out, f"{d} 里没有第 {step} 步的 batch"
+    return out
+
+
+def loss_fields(recs: list, mtp: bool, token_sums: bool, mtp_scale, S: int) -> dict:
+    """summary 里由逐行记录算出的全局量（按行分开跑、再合并多份时用同一个函数）。"""
+    N = sum(x["n_tokens"] for x in recs)
+    n_mb = len(recs)
+    return {
+        "global_tokens": N,
+        "lm_loss": sum(x["loss_sum"] for x in recs) / N,
+        "mtp_loss": (sum(x["mtp_mean"] for x in recs) / n_mb) if mtp else None,
+        # token_sums：逐行记录带 MTP 的 token loss 和（mtp_sum、mtp_tokens，扩展的 MTP loss 记的）时，另给两种按 token 的口径，
+        # 与 GPU metrics 同名：mtp_loss_mt = 系数 × MTP token loss 之和 ÷ MTP 有效 token 数（MaxText 的 learning/mtp_loss）；
+        # mtp_loss_main_norm = 同一和 ÷ 主 loss token 数
+        "mtp_loss_mt": (mtp_scale * sum(x["mtp_sum"] for x in recs) / sum(x["mtp_tokens"] for x in recs))
+        if mtp and token_sums
+        else None,
+        "mtp_loss_main_norm": (mtp_scale * sum(x["mtp_sum"] for x in recs) / N) if mtp and token_sums else None,
+        "indexer_loss": sum(sum(x["kd"].values()) for x in recs) / n_mb / S,
+        "indexer_loss_per_layer": {
+            k: sum(x["kd"].get(k, 0.0) for x in recs) / n_mb / S for k in (recs[0]["kd"] if recs else {})
+        },
+    }
 
 
 def rss_gib():
     return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**20
 
 
-def main():
+_ST_DTYPES = {
+    torch.float64: "F64",
+    torch.float32: "F32",
+    torch.bfloat16: "BF16",
+    torch.float16: "F16",
+    torch.int64: "I64",
+    torch.int32: "I32",
+    torch.int16: "I16",
+    torch.int8: "I8",
+    torch.uint8: "U8",
+    torch.bool: "BOOL",
+}
+
+
+def _st_entry(v):
+    """(dtype, shape, 产出各片的函数)。v 是张量、一串同形状张量（按顺序写 = 沿新的第 0 维 stack），或带
+    `st_meta()` → (dtype, shape) 与 `st_pieces()`（按顺序产出各片）的对象（合并多份时按需相加）。"""
+    if isinstance(v, torch.Tensor):
+        return v.dtype, list(v.shape), lambda: [v]
+    if isinstance(v, (list, tuple)):
+        assert all(t.dtype == v[0].dtype and t.shape == v[0].shape for t in v)
+        return v[0].dtype, [len(v), *v[0].shape], lambda: v
+    dt, shape = v.st_meta()
+    return dt, list(shape), v.st_pieces
+
+
+def save_safetensors_stream(tensors: dict, path: str) -> None:
+    """同 safetensors 的 save_file（按名字排序、头部补空格到 8 字节对齐），但逐个张量直接写盘，不先拼成整份 bytes：
+    32K 满宽的梯度文件 62 GB，save_file 要在内存里多一份。值的三种形式见 `_st_entry`（路由专家给一串张量，省掉 stack）。"""
+    meta, off, order, ents = {}, 0, sorted(tensors), {}
+    for k in order:
+        dt, shape, pieces = ents[k] = _st_entry(tensors[k])
+        n = torch.Size(shape).numel() * torch.empty((), dtype=dt).element_size()
+        meta[k] = {"dtype": _ST_DTYPES[dt], "shape": shape, "data_offsets": [off, off + n]}
+        off += n
+    head = json.dumps(meta, separators=(",", ":")).encode()
+    head += b" " * (-len(head) % 8)
+    with open(path + ".tmp", "wb") as f:
+        f.write(len(head).to_bytes(8, "little"))
+        f.write(head)
+        for k in order:
+            dt, _, pieces = ents[k]
+            start = f.tell()
+            for t in pieces():
+                t = t.detach().contiguous()
+                assert t.dtype == dt, k
+                if t.dtype == torch.bfloat16:
+                    t = t.view(torch.int16)
+                f.write(memoryview(t.numpy()).cast("B"))
+            assert f.tell() - start == meta[k]["data_offsets"][1] - meta[k]["data_offsets"][0], k
+    os.replace(path + ".tmp", path)
+
+
+class RssLog:
+    """后台线程每隔几秒记一次常驻内存（/proc/self/statm）与当前阶段，写 jsonl（估内存用；不碰计算）。"""
+
+    def __init__(self, path, every=5.0):
+        import threading
+
+        self.phase, self.t0, self.f = "build", time.time(), open(path, "a")
+        self.page = os.sysconf("SC_PAGE_SIZE")
+        self.stop = threading.Event()
+        self.th = threading.Thread(target=self._run, args=(every,), daemon=True)
+        self.th.start()
+
+    def _run(self, every):
+        while not self.stop.wait(every):
+            self.mark(None)
+
+    def mark(self, phase):
+        if phase is not None:
+            self.phase = phase
+        rss = int(open("/proc/self/statm").read().split()[1]) * self.page / 2**30
+        self.f.write(
+            json.dumps({"t": round(time.time() - self.t0, 1), "rss_gib": round(rss, 2), "phase": self.phase}) + "\n"
+        )
+        self.f.flush()
+
+    def close(self):
+        self.stop.set()
+        self.th.join()
+        self.mark("end")
+        self.f.close()
+
+
+def make_parser() -> argparse.ArgumentParser:
+    """命令行参数（含扩展的开关）。`layer_ref.py` 也用它取 `build` 要读的各项默认值，两边不各写一份。"""
     p = argparse.ArgumentParser()
     p.add_argument("--hf", required=True)
-    p.add_argument("--tokens", required=True)
+    p.add_argument("--tokens", default="", help="tokens.npy（不给 --batches 时必填）")
     p.add_argument("--out", required=True)
     p.add_argument("--dtype", default="float64", choices=["float64", "float32"])
     p.add_argument("--seq", type=int, default=4096)
@@ -465,6 +625,17 @@ def main():
         help="整批灌 GPU 选择：目录里每行一个 step_<N>_row_<R>.safetensors（同 --inject-l1 的格式），全局批每行都灌",
     )
     p.add_argument("--audit", action="store_true")
+    p.add_argument(
+        "--aux-loss", type=float, default=None, help="序列级辅助 loss 系数；默认 0（扩展可以按 HF config 另给）"
+    )
+    p.add_argument("--rope-theta", type=float, default=None, help="覆盖 HF config 的 RoPE theta（同训练入口）")
+    hy4_ext.call("step1_args", p)  # 扩展的开关参数
+    p.add_argument(
+        "--batches",
+        default="",
+        help="GPU 运行目录的 data/batches（rank<r>.{bin,jsonl}）：全局批取 --step 那一步所有 rank、所有 microbatch 的 "
+        "tokens / labels / loss_mask（有 segment_ids 时也取），代替 --tokens 的行",
+    )
     p.add_argument(
         "--checkpoint-every", type=int, default=1, help="每隔几行写一次断点（partial.pt，参数大小的两倍临时盘）"
     )
@@ -511,7 +682,23 @@ def main():
         action="store_true",
         help="记每层每头的最大注意力 logit（跨行取最大，写进 summary 的 max_logit）",
     )
-    a = p.parse_args()
+    p.add_argument(
+        "--qk-clip-max-logit",
+        default="with_sink",
+        choices=["with_sink", "no_sink"],
+        help="--log-max-logit 记的最大 logit 含不含 sink（同训练入口；默认含，同生产 TPU）",
+    )
+    p.add_argument(
+        "--unscaled",
+        action="store_true",
+        help="梯度不除全局 token 数，写 grads_unscaled_hf.safetensors（每行一个进程分开跑，再按行号顺序相加、除全步 token 数）",
+    )
+    p.add_argument("--rss-log", default="", help="每 5 秒记一次常驻内存与阶段（jsonl），估内存用")
+    return p
+
+
+def main():
+    a = make_parser().parse_args()
     if a.audit and a.emulate_base2 in ("full", "q16"):
         # _unforced 只退出最上面一层 dispatch mode：带 --audit 时退出的是审计，ForceDtype 还在，q 的 BF16 舍入被改回
         # FP64，full 静默退化成 kappa（D3 实测 lm_loss 与 kappa 逐位相同）。两者本来也矛盾：舍入就是要出 BF16
@@ -522,6 +709,7 @@ def main():
     dt = getattr(torch, a.dtype)
     torch.set_default_dtype(dt)
     os.makedirs(a.out, exist_ok=True)
+    rlog = RssLog(a.rss_log) if a.rss_log else None
     force = ForceDtype(dt)
     force.__enter__()  # 建模型、载入、前向反向全程在内
     cpu_megatron_setup()
@@ -592,9 +780,16 @@ def main():
         print("EMULATE_BASE2", a.emulate_base2, sorted(emul_layers), f"kappa={KAPPA_BASE2!r}", flush=True)
     idx_inputs = {}
 
-    toks = np.load(a.tokens, mmap_mode="r")
+    bat = load_batches(a.batches, a.step) if a.batches else None
+    toks = None if bat is not None else np.load(a.tokens, mmap_mode="r")
     base = (a.step - 1) * a.gbs
-    rows = [int(r) for r in a.rows.split(",") if r] if a.rows else list(range(base, base + a.gbs))
+    if bat is not None:
+        rows = list(range(len(bat)))
+        if a.rows:
+            rows = [int(r) for r in a.rows.split(",") if r]
+        a.seq = int(bat[0]["tokens"].shape[-1])
+    else:
+        rows = [int(r) for r in a.rows.split(",") if r] if a.rows else list(range(base, base + a.gbs))
     if a.inject_l1:
         rows = [a.inject_row]
     detail = {int(r) for r in a.detail_rows.split(",") if r}
@@ -609,7 +804,8 @@ def main():
         with safe_open(path, "pt") as f:
             if "input.tokens" in f.keys():
                 tok_gpu = f.get_tensor("input.tokens").reshape(-1)
-                want = torch.from_numpy(np.asarray(toks[row, : a.seq]).astype(np.int64))
+                src = bat[row]["tokens"] if bat is not None else toks[row, : a.seq]  # --batches 时 toks 为 None
+                want = torch.from_numpy(np.asarray(src).reshape(-1).astype(np.int64))
                 assert torch.equal(tok_gpu, want), f"GPU 抓数的输入不是第 {row} 行"
             for name, c in cores:
                 hn = f"hf.model.layers.{name}" if name != "mtp0" else "hf.model.mtp_layers.0"
@@ -653,10 +849,22 @@ def main():
                     c.inject_topk = inject[("topk", name)]
             for name, t in taps.items():
                 t.inject = inject[("route", name)]
-        row = np.asarray(toks[r, : a.seq + 1]).astype(np.int64)
-        ids = torch.from_numpy(row[:-1])[None]
-        labels = torch.from_numpy(row[1:])[None]
-        lm = (ids != eod).to(dt) if a.eod_mask == "on" else torch.ones_like(ids, dtype=dt)
+        seg = None
+        if bat is not None:  # GPU 落盘的 batch 原样（loss_mask、段号照 GPU 那一份）
+            ids = torch.from_numpy(bat[r]["tokens"].astype(np.int64)).reshape(1, -1)
+            labels = torch.from_numpy(bat[r]["labels"].astype(np.int64)).reshape(1, -1)
+            lm = torch.from_numpy(bat[r]["loss_mask"].astype(np.float64)).reshape(1, -1).to(dt)
+            if "segment_ids" in bat[r]:
+                seg = torch.from_numpy(bat[r]["segment_ids"].astype(np.int64)).reshape(1, -1)
+        else:
+            row = np.asarray(toks[r, : a.seq + 1]).astype(np.int64)
+            hy4_ext.call("text_row_check", row, hf)  # 扩展对 token 文件行的检查（同训练入口）
+            ids = torch.from_numpy(row[:-1])[None]
+            labels = torch.from_numpy(row[1:])[None]
+            lm = (ids != eod).to(dt) if a.eod_mask == "on" else torch.ones_like(ids, dtype=dt)
+        # 扩展的逐行输入（同训练入口）：返回 (这一行的位置, 交给模型的关键字参数)；没有扩展时位置 0..S−1、不加参数
+        ext = hy4_ext.first("step1_row", a, None if bat is None else bat[r], ids, seg, pos, eod, dt, _unforced)
+        pos_r, pad_kw = (pos, {}) if ext is None else ext
         if r in detail:  # 记索引器的 q / k / w（forward_before_topk 的输出）
             for name, c in cores:
                 if c.is_full:
@@ -669,18 +877,28 @@ def main():
 
                     c.indexer.forward_before_topk = fbt
         MTPLossAutoScaler.set_loss_scale(torch.tensor(1.0, dtype=dt))
+        from megatron.core.transformer.moe.moe_utils import MoEAuxLossAutoScaler
+
+        MoEAuxLossAutoScaler.set_loss_scale(torch.tensor(1.0, dtype=dt))
+        hy4_ext.call("step1_row_begin")
         DSAIndexerLossAutoScaler.set_loss_scale(torch.tensor(1.0, dtype=dt))
         for _, c in cores:
             c.indexer_loss_accum = None
         if mtp:
             MTPLossLoggingHelper.clean_metrics_in_tracker()
         t1 = time.time()
+        if rlog:
+            rlog.mark(f"row{r}.fwd")
         if audit is not None:
             audit.__enter__()
         with torch.set_grad_enabled(not a.forward_only):
-            out = model(ids, pos, attention_mask=None, labels=labels, loss_mask=lm)  # 逐 token 主 loss [1, S]
+            out = model(
+                ids, pos_r, attention_mask=None, labels=labels, loss_mask=lm, **pad_kw
+            )  # 逐 token 主 loss [1, S]
             s = (out.float() * lm).sum()
         tf = time.time() - t1
+        if rlog:
+            rlog.mark(f"row{r}.bwd")
         if not a.forward_only:
             s.backward()
         if audit is not None:
@@ -688,7 +906,9 @@ def main():
         tb = time.time() - t1 - tf
         n_tok = float(lm.sum())
         rec = {"row": r, "loss_sum": float(s), "n_tokens": n_tok, "fwd_s": round(tf, 1), "bwd_s": round(tb, 1)}
-        if mtp:
+        if mtp and hy4_ext.first("step1_mtp_record", cfg, rec):
+            pass  # 扩展的 MTP loss 自己记（rec 的 mtp_mean，另可有 mtp_sum / mtp_tokens）
+        elif mtp:
             rec["mtp_mean"] = float(MTPLossLoggingHelper.tracker["loss_values"][0])
             MTPLossLoggingHelper.clean_metrics_in_tracker()
         rec["kd"] = {n: float(c.last_indexer_loss) for n, c in cores if c.is_full and c.last_indexer_loss is not None}
@@ -714,6 +934,8 @@ def main():
             for name, c in cores:
                 if c.is_full:
                     choices[f"r{r}.dsa.{name}.topk"] = c.last_topk.to(torch.int16)
+        if rlog:
+            rlog.mark(f"row{r}.after")
         acc = {n: q.grad for n, q in params.items() if q.grad is not None}
         rec["peak_rss_gib"] = round(rss_gib(), 1)
         recs.append(rec)
@@ -736,21 +958,22 @@ def main():
         if len(done) == 1 and (
             a.inject_l1 or a.save_row_grads
         ):  # 第一行单独的梯度（未除 token 数；灌 GPU 选择的灵敏度试验与它比）
-            from safetensors.torch import save_file
-
             tag = "inject" if a.inject_l1 else "self"
-            save_file(
-                {k: v.contiguous() for k, v in to_hf(dict(acc), cfg, mtp).items()},
-                os.path.join(a.out, f"grads_row{r}_{tag}_unscaled_hf.safetensors"),
+            save_safetensors_stream(
+                to_hf(dict(acc), cfg, mtp), os.path.join(a.out, f"grads_row{r}_{tag}_unscaled_hf.safetensors")
             )
 
+    if rlog:
+        rlog.mark("finalize")
     acc = {n: q.grad for n, q in params.items() if q.grad is not None}
     # 归一化：全局有效 token 数（只在跑全局批全部 16 行时有意义）
     N = sum(x["n_tokens"] for x in recs)
     for n, q in params.items():
         if n not in acc and q.requires_grad and not a.forward_only:
             acc[n] = torch.zeros_like(q)
-    grads = {n: g / N for n, g in acc.items()}
+    # 原地除（与 g / N 逐位相同，省一份参数大小的拷贝）；--unscaled 不除，留给合并时跨进程相加
+    D = 1.0 if a.unscaled else N
+    grads = {n: (g if a.unscaled else g.div_(D)) for n, g in acc.items()}
     keep = {int(e) for e in a.keep_experts.split(",") if e}
     expert_sq = {}
     if (
@@ -760,7 +983,9 @@ def main():
         for pname in store.off:
             if not store.wants(pname):
                 continue
-            g = store.get(pname) / N
+            g = store.get(pname)  # 内存存储给的是累加器本身（原地除，不再拷一份），磁盘存储是新读出的
+            if not a.unscaled:
+                g = g.div_(D)
             h, (_, e) = table[pname]
             expert_sq[h] = expert_sq.get(h, 0.0) + float(g.square().sum())
             if not keep or e in keep:
@@ -772,14 +997,14 @@ def main():
             if isinstance(tf, tuple) and tf[1] not in keep:
                 h = table[pname][0]
                 expert_sq[h] = expert_sq.get(h, 0.0) + float(grads.pop(pname).double().square().sum())
-    hfg = to_hf(grads, cfg, mtp)
-    from safetensors.torch import save_file
-
+    # 专家存储路径：路由专家不 stack（逐个写盘），它们的平方和下面用 expert_sq 覆盖，这里只占位、保持键的顺序
+    hfg = to_hf(grads, cfg, mtp, stack=store is None)
     if not a.inject_l1 and not a.forward_only:
-        save_file({k: v.contiguous() for k, v in sorted(hfg.items())}, os.path.join(a.out, "grads_hf.safetensors"))
+        gname = "grads_unscaled_hf.safetensors" if a.unscaled else "grads_hf.safetensors"
+        save_safetensors_stream(hfg, os.path.join(a.out, gname))
     if choices:
-        save_file({k: v.contiguous() for k, v in choices.items()}, os.path.join(a.out, "choices.safetensors"))
-    gsq = {k: float(v.double().square().sum()) for k, v in hfg.items()}
+        save_safetensors_stream(choices, os.path.join(a.out, "choices.safetensors"))
+    gsq = {k: 0.0 if isinstance(v, list) else float(v.double().square().sum()) for k, v in hfg.items()}
     for h, v in expert_sq.items():  # 输出里没留的专家也计入 grad_norm
         if store is not None and h in gsq:
             gsq[h] = v  # 存储路径：expert_sq 已含留下的那几个
@@ -788,7 +1013,6 @@ def main():
     if store is not None:
         store.close()
     S = a.seq
-    n_mb = len(recs)
     summ = {
         "what": "第 1 步整网梯度的 CPU 参照（GPU golden 同一套 Megatron-Core 代码，local 层）",
         "dtype": a.dtype,
@@ -796,7 +1020,7 @@ def main():
         "tensor_sha256_manifest": hashlib.sha256(
             open(os.path.join(a.hf, "tensor_sha256.json"), "rb").read()
         ).hexdigest(),
-        "tokens": os.path.abspath(a.tokens),
+        "tokens": os.path.abspath(a.tokens) if a.tokens else None,
         "rows": rows,
         "inject_l1": a.inject_l1 or None,
         "layers": L,
@@ -810,14 +1034,12 @@ def main():
         },
         "threads": torch.get_num_threads(),
         "build_seconds": round(build_s, 1),
-        "global_tokens": N,
-        "lm_loss": sum(x["loss_sum"] for x in recs) / N,
-        "mtp_loss": (sum(x["mtp_mean"] for x in recs) / n_mb) if mtp else None,
-        "indexer_loss": sum(sum(x["kd"].values()) for x in recs) / n_mb / S,
-        "indexer_loss_per_layer": {
-            k: sum(x["kd"].get(k, 0.0) for x in recs) / n_mb / S for k in (recs[0]["kd"] if recs else {})
-        },
+        **loss_fields(recs, mtp, any("mtp_sum" in x for x in recs), cfg.mtp_loss_scaling_factor, S),
         "grad_norm": sum(gsq.values()) ** 0.5,
+        # True：梯度没除 token 数（grads_unscaled_hf），grad_norm 也是未除的；由合并脚本按行相加
+        "unscaled": bool(a.unscaled),
+        "seq": S,
+        "mtp_loss_scaling_factor": cfg.mtp_loss_scaling_factor if mtp else None,
         "n_tensors": len(hfg),
         "kept_experts": sorted(keep) or "all",
         "expert_store": a.expert_store,
@@ -834,8 +1056,11 @@ def main():
         },
         "micro": recs,
     }
+    hy4_ext.call("step1_summary", a, cfg, summ)  # 扩展的记录
     with open(os.path.join(a.out, "summary.json" if not a.inject_l1 else "summary_inject.json"), "w") as f:
         json.dump(summ, f, ensure_ascii=False, indent=1)
+    if rlog:
+        rlog.close()
     print("DONE", json.dumps({k: summ[k] for k in ("lm_loss", "mtp_loss", "indexer_loss", "grad_norm")}), flush=True)
     if os.path.exists(part_path) and not a.inject_l1 and len(done) == len(rows):
         os.remove(part_path)

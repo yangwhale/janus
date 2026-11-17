@@ -173,6 +173,9 @@ def build_mcore(hf_dir, n_layers, device, use_te, mtp=False, **overrides):
         )
     if mtp:
         extra.update(mtp_num_layers=1, mtp_loss_scaling_factor=float(hf.get("mtp_loss_factor", 0.1)))
+    import hy4_ext
+
+    hy4_ext.call("build_mcore_extra", hf, extra)  # 扩展按 HF config 加的字段（如另外的塔）
     cfg = H.Hy4Config(**{**kw, **extra, **overrides})
     model = H.build_model(cfg, use_te=use_te, vocab_size=hf["vocab_size"], max_seq=1 << 20, mtp=mtp)
     model = model.to(device)
@@ -534,7 +537,7 @@ def indexer_flip_report(hidx, inputs, h_topk, at, sq, hcfg):
 
 def grad_compare(hm, mm, mcfg, hmtp=None):
     """逐参数比梯度。名字对照沿用 hy4_weights 的表（checkpoint 名 → HF 模块名）。"""
-    from hy4_weights import ATTN, GLOBAL, INDEXER, expert_param_name, layer_plan, mtp_names
+    from hy4_weights import ATTN, INDEXER, expert_param_name, global_plan, layer_plan, mtp_names
 
     hp = dict(hm.named_parameters())
     if hmtp is not None:  # HF 一侧的 MTP 模块名前面补上 checkpoint 的前缀，好按同一张表找
@@ -564,7 +567,7 @@ def grad_compare(hm, mm, mcfg, hmtp=None):
         g = hp[name].grad
         return None if g is None else g
 
-    for m, h in GLOBAL:
+    for m, h in global_plan(mcfg.hc_mult):  # 末层只比本 config 有的那种写法（GLOBAL 里两种都列了）
         n = ckpt_to_hf(h)
         cmp(m, lambda n=n: hgrad(n), n)
     del ATTN, INDEXER
