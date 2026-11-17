@@ -31,13 +31,13 @@ TPU 命令：`YML=hy4-t2-b.yml STAGE=B GOLDEN=<gb2-a 运行目录> HF_DIR=<…/h
 
 ## 软件版本
 
-以最近一代判定运行为准（base2 开、早于 M50；现行对齐配置在 B、D1 上没有运行）：TPU `tb5b-a` / `td5b-b` 对 GPU `gb3-a` / `gd3-a`，噪声各是同设置 8 份。和 T1 不同的只有 TPU 一侧的提交与 libtpu 的证据；其余各行同 [T1 的「软件版本」](../01-mini/setup.md#软件版本)。
+以现行判定运行为准：TPU `tbc-a` / `tdc-a`（C 口径）对 GPU `gb3-a` / `gd3-a`，噪声各是同设置 8 份。上一代 `tb5b-a` / `td5b-b`（base2 开、早于 M50）的提交写在表里括号中。和 T1 不同的只有 TPU 一侧的提交与 libtpu 的证据；其余各行同 [T1 的「软件版本」](../01-mini/setup.md#软件版本)。
 
 | 侧 | 组件 | 版本 | 证据出处 |
 |---|---|---|---|
-| TPU | 镜像 | MaxText `tpu_pre_training`，digest `b152355a…`（同 T1） | `tb5b-a`、`td5b-b` 的 `meta.json` 的 `image` |
-| TPU | MaxText | 集成分支 `2c28a4f4` | `meta.json` 的 `code`（[`runs.yaml`](runs.yaml) 原先写「未登记」，现按它补上） |
-| TPU | janus（打进 Pod 的程序） | `9c0f19af` | `meta.json` 的 `code` |
+| TPU | 镜像 | MaxText `tpu_pre_training`，digest `b152355a…`（同 T1） | `tbc-a`、`tdc-a`（及上一代 `tb5b-a`、`td5b-b`）的 `meta.json` 的 `image` |
+| TPU | MaxText | 集成分支 `8d3d7561`（上一代 `2c28a4f4`） | `meta.json` 的 `code`（[`runs.yaml`](runs.yaml)） |
+| TPU | janus（打进 Pod 的程序） | `7314865d`（上一代 `9c0f19af`） | `meta.json` 的 `code` |
 | TPU | jax / jaxlib | 0.11.1 / 0.11.1 | `meta.json` 的 `versions` |
 | TPU | libtpu | 0.0.46（构建 `cl/963683785`） | `meta.json` 只记了构建号，没记 pip 版本号；同一构建（`Built on Aug 12 2026 16:43:34`，`cl/963683785`）在 [`jit-miscompile-probe-v5p.json`](../../results/jit-miscompile-probe-v5p.json) 里读到 pip 版本 0.0.46（`runs[0]`，镜像默认 libtpu；[`jit-miscompile-mof-off-steptime.json`](../../results/jit-miscompile-mof-off-steptime.json) 记同一镜像 digest `b152355a…`） |
 | TPU | tokamax | 0.0.14（镜像自带的包，实测） | `meta.json` 不记；同 T1，读镜像层里的 `tokamax-0.0.14.dist-info` 核过（2026-11-11，[mini 的「软件版本」](../01-mini/setup.md#软件版本)） |
@@ -61,6 +61,7 @@ TPU 命令：`YML=hy4-t2-b.yml STAGE=B GOLDEN=<gb2-a 运行目录> HF_DIR=<…/h
 ## 读这份设置要注意
 
 - 真实权重下 QK-Clip 的最大 logit 比 T1 大得多，仍低于阈值 100、没有触发：GPU golden 全程 B `gb3-a` 11.95–16.34、D1 `gd3-a` 35.42–60.90，被裁的头 0 个（300 步的 `gb2-a`、`gd2-a` 同样；[`t2-max-logit-summary.json`](results/t2-max-logit-summary.json)）。TPU 训练运行不记这一列（`qk_clip_log_per_head` 关），TPU 一侧全程的最大 logit 没有记录；B 的第 1 步诊断 `tb6diag` 逐头最大 14.46、中位数 7.08（同一文件）。真实宽度 D3 的 1000 步 GPU golden 全程最大 76.9，也没触发（[05](../05-gpu-scale/README.md#真实宽度截层)）；裁剪真正生效时两边是否一致，只在 mini 上用低阈值查过。
+- TPU 第 1 步全量抓数（`--dump-steps 1 --full`）的运行目录全写在 JAX 进程 0 那台主机上：B 实测 1.509e11 字节、D1 1.518e11 字节（`tb8s-c-r1`、`td8s-c-r2` 的运行目录）。节点本地盘 100 GB 的切片放不下，写到一半 Pod 被驱逐（`tb8s-c`、`td8s-c` 就是这样没的）；要用本地盘足够大的节点（这两份补跑用的是 600 GB 盘）。
 - B 检查点是 AdamW 时期转换的；已用 MaxText `5eaa12f3`（第一代 `td2-a` 的提交）重做 L0（[`../../model/t2_l0.sh`](../../model/t2_l0.sh)）：60 个张量反向取回逐位、RoPE 12 / 12，这份检查点和现在的参数树对得上。之后各代的提交（`64652880`、`469dbb85`、`3741e818`、`2c28a4f4`）上没有重跑这一步。
 
 ## GPU golden 的作业规格
@@ -88,6 +89,7 @@ C=--ep=4,--optimizer=muon,--opt-kv=muon_scale_mode=shape_scaling,--qk-clip,--qk-
 | B，第 1 步参照 | `gb2s-a:2:1:$C,--dump-steps=1,--full,--save-batches,--side=golden-gb2s-a`，`gb2s-b:2:1:$C,--dump-steps=1,--full,--side=golden-gb2s-b`，`gb2s-c` 同 |
 | D1，L4 | `gd2-a:1:300:--mtp,$C,--qk-clip-mtp=on,--recompute,--save-batches,--side=golden-gd2-a`，`gd2-b … gd2-h` 同（不带 `--save-batches`） |
 | D1，第 1 步参照 | `gd2s-a:1:1:--mtp,$C,--qk-clip-mtp=on,--dump-steps=1,--full,--save-batches,--side=golden-gd2s-a`，`gd2s-b`、`gd2s-c` 同（不带 `--save-batches`） |
+| B / D1，第 1 步参照再三份（PROTOCOL 2026-11-12 前瞻登记） | `gb2s-d`、`gb2s-e`、`gb2s-f` 同 `gb2s-b`；`gd2s-d`、`gd2s-e`、`gd2s-f` 同 `gd2s-b`。代码包用原 3 份那一个 `janus-hy4-27f6d9844c2e`（`hy4_mcore.py` 就是 `4dab75aa…`，原作业 `pod.log` 的 `CODE_GET` 行），不用上文的 `37ccee82` |
 
 - 和 T1 的两处不同：没有 `--dump-all-experts`（256 个专家全抓每份要上百 GB；按 janus 默认每层只留两个专家的全量张量，L3 的路由专家只比这两个）；B 不带 `--mtp`。
 - 一个作业里串几份由 GPU 一侧按截止时间排。参考：AdamW 之后同一程序在真实权重上的冒烟（专家并行 8、q·k 在 BF16 里），B 300 步 589 s、D1 772 s（含启动）。
@@ -106,4 +108,4 @@ C=--ep=4,--optimizer=muon,--opt-kv=muon_scale_mode=shape_scaling,--qk-clip,--qk-
 
 - 跑完放到 `gs://<POC 桶>/janus/hunyuan4/golden-t2/<运行名>/`，写 `DONE`；`gb3-a`、`gd3-a` 必须带 `data/batches/`（TPU 回放）。
 - 时长（推断）：300 步的 B 约 10 分钟、D1 约 13 分钟（冒烟实测，含启动），1000 步约 3.3 倍；每份 B 约 30 分钟、D1 约 40 分钟，8 份各约 4–5.5 小时机时。
-- TPU 一侧对应最近一代 `tb5b-a` / `td5b-b`（加 M42b，目录 `t2b5b-l4` / `t2d15b-l4`），和上一代 `tb5-b`（`tb5-a` 未完成后补跑）/ `td5-a`（目录 `t2b5-l4` / `t2d15-l4`）；都是 1000 步，回放 `gb3-a` / `gd3-a`，窗口第 1–1000 步与第 101–1000 步，噪声 `gb3-*` / `gd3-*` 两两 28 对。
+- TPU 一侧对应现行 C 口径 `tbc-a` / `tdc-a`（目录 `t2bc-l4` / `t2d1c-l4`），之前是 `tb5b-a` / `td5b-b`（加 M42b，目录 `t2b5b-l4` / `t2d15b-l4`），再往前是 `tb5-b`（`tb5-a` 未完成后补跑）/ `td5-a`（目录 `t2b5-l4` / `t2d15-l4`）；都是 1000 步，回放 `gb3-a` / `gd3-a`，窗口第 1–1000 步与第 101–1000 步，噪声 `gb3-*` / `gd3-*` 两两 28 对。

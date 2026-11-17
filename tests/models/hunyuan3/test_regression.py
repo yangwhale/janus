@@ -225,7 +225,44 @@ def test_calibration_yaml_matches_catalogs():
         assert tol and all(c["threshold"] == "calibrated" for c in tol), tier
     r25 = next(c for c in load(REG / "catalogs" / "regression-t1.yaml").checks if c["id"] == "R25.loss_vs_golden")
     assert r25["params"]["noise_from"] == "golden"     # 对 GPU golden 的噪声仍是 golden 两两，不换成 TPU 执行噪声
-    assert r25["params"]["baseline"] == "g1k-a"        # 只对指定的一份 golden 比，其余只组噪声带（docs/reference/judging.md）
+    assert r25["params"]["baseline"] == "rcc-a"        # 只对验收定下的那一份比，其余只组噪声带（docs/reference/judging.md）
+    assert r25.get("hard", True)                         # 2026-11-16 起判，不再只报
+    gold = load(REG / "catalogs" / "regression-t1.yaml").runs["golden"]
+    assert gold == [f"rcc-{c}" for c in "abcdefghij"] == regress.tier_cfg("T1")["golden"]   # 10 份 45 对；档位配置按它取回
+    assert r25["params"]["hard_limit"]["max_step"] == 9.75e-3
+
+
+def _r25_rows(gate: str, hard: bool = True, bitwise: bool = False) -> dict:
+    rows = {r: {"status": "pass" if bitwise else "report"} for r in ("R12", "R13", "R15", "R16")}
+    rows["R25"] = {"status": gate, "checks": [{"id": "R25.loss_vs_golden", "status": gate, "hard": hard,
+                                               "metrics": {"signed_mean_max": 2e-5, "mare_max": 1e-4, "max_step_max": 5e-4}}]}
+    return rows
+
+
+def test_r25_gate_and_not_worse_take_the_worse(tmp_path):
+    """R25：逐位时继承 LKG；不逐位时对齐门本身（hard）与「不变差」取较差。"""
+    sys.path.insert(0, str(REG))
+    import regress
+    lkg = tmp_path / "lkg" / "janus"
+    lkg.mkdir(parents=True)
+    (lkg / "results.json").write_text(json.dumps({"checks": [{"id": "R25.loss_vs_golden", "metrics":
+                                                  {"signed_mean_max": 1e-5, "mare_max": 1e-4, "max_step_max": 5e-4}}]}))
+    upper = {"signed_mean": 4.76e-5, "mare": 1.19e-4, "max_step": 7.16e-4}
+    rows = _r25_rows("fail", bitwise=True)
+    regress.r25_not_worse(rows, lkg.parent, upper)
+    assert rows["R25"]["status"] == "pass"                       # 逐位：继承 LKG
+    rows = _r25_rows("pass")
+    regress.r25_not_worse(rows, lkg.parent, upper)
+    assert rows["R25"]["status"] == "pass"                       # 增量 1e-5 ≤ 上限，对齐门也过
+    rows = _r25_rows("fail")
+    regress.r25_not_worse(rows, lkg.parent, upper)
+    assert rows["R25"]["status"] == "fail"                       # 不变差过了，但对修好的 golden 超 2 倍
+    rows = _r25_rows("fail", hard=False)
+    regress.r25_not_worse(rows, lkg.parent, upper)
+    assert rows["R25"]["status"] == "pass"                       # 只报的对齐门不参与判定
+    rows = _r25_rows("pass")
+    regress.r25_not_worse(rows, None, upper)
+    assert rows["R25"]["status"] == "inconclusive"               # 没给 LKG 结果：不变差判不了
 
 
 def test_calibration_binding_includes_training_yml():

@@ -32,6 +32,7 @@
 #                OUT 仍在 BUCKET 下。不给时 DATA_BUCKET=BUCKET
 #   NAMESPACE    默认 default
 #   PIP_WHEEL    gs://…/x.whl：Pod 里先 pip install --no-deps（镜像自带的包比 MaxText 要求的旧时用，例如 tokamax）
+#   POD_ENV      空格分隔的 K=V，Pod 里训练前 export（例：HY3_YML=<仓库内相对路径> HY3_NAME_MAP=…，换模型配置时用，见 mt_common.py）
 #
 # 站点配置：默认提交到自己的节点池（CONTEXT + NODEPOOL）。集群特有的提交设置（队列标签、节点选择、配额检查等）放在
 # 仓库外的站点配置文件里，通过 JANUS_SITE_PROFILE=<文件路径> 指定（接口见 profile.sh 开头与 README「站点配置」）。
@@ -70,6 +71,12 @@ PIPLINE=""
 # PIP_WHEEL=gs://…/x.whl：Pod 里先 pip install --no-deps 这个 wheel（例如镜像自带的 tokamax 比 MaxText 要求的旧）
 [ -n "${PIP_WHEEL:-}" ] && PIPLINE="gcloud storage cp $PIP_WHEEL /tmp/ && pip install -q --no-deps /tmp/$(basename $PIP_WHEEL)"
 [ -n "${XF// /}" ] && XLAENV="export XLA_FLAGS='${XF# }'"
+PODENV=""
+for kv in ${POD_ENV:-}; do
+  case "$kv" in [A-Za-z_]*=*) ;; *) echo "POD_ENV 每项要是 K=V：$kv"; exit 1;; esac
+  case "$kv" in *"'"*|*'"'*|*'$'*|*'`'*) echo "POD_ENV 里不能有引号、\$ 或反引号：$kv"; exit 1;; esac
+  PODENV="$PODENV export ${kv%%=*}='${kv#*=}';"
+done
 : "${MAXTEXT_PKG:?先 source <(bash stage.sh …)}" "${MAXTEXT_PKG_SHA256:?}" "${MAXTEXT_COMMIT:?}"
 : "${JANUS_PKG:?}" "${JANUS_PKG_SHA256:?}" "${JANUS_COMMIT:?}"
 case "$PLATFORM" in
@@ -158,6 +165,7 @@ $TOLERATIONS
                 gcloud storage cp $HF_MANIFEST /data/tensor_sha256.json
                 $STEP1
                 $XLAENV
+                $PODENV
                 export PYTHONPATH=/janus:/deps/src JAX_PLATFORMS=tpu,cpu TPU_STDERR_LOG_LEVEL=0 TF_CPP_MIN_LOG_LEVEL=0
                 export LIBTPU_INIT_ARGS='${LIBTPU_INIT_ARGS:-}'
                 export MAXTEXT_COMMIT=$MAXTEXT_COMMIT JANUS_COMMIT=$JANUS_COMMIT JANUS_IMAGE=$IMAGE TPU_TOPOLOGY=$TOPO

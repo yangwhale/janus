@@ -718,8 +718,10 @@ class MaxTextDump:
             if ent.buffer:
                 self._pending[f"buffer.{name}"] = arr
             elif full:
-                self._pending[f"param.{name}"] = to_bf16(arr)
-                self._pending[f"main_param.{name}"] = arr
+                if self._kind_wanted("param"):
+                    self._pending[f"param.{name}"] = to_bf16(arr)
+                if self._kind_wanted("main_param"):
+                    self._pending[f"main_param.{name}"] = arr
 
     def capture_after(self, step: int, flat_state: dict, extras: dict | None):
         """抓数步、训练步之后：更新后的 buffer、主权重与 Adam 动量；图内额外输出（激活、梯度、逐 token loss）。"""
@@ -731,10 +733,12 @@ class MaxTextDump:
             name = self.nm.megatron_name(ent)
             if ent.buffer:
                 self._pending[f"buffer_after.{name}"] = arr
-            elif full:
+            elif full and self._kind_wanted("main_param_after"):
                 self._pending[f"main_param_after.{name}"] = arr
         if full:
             for kind, prefix in (("mu", "exp_avg"), ("nu", "exp_avg_sq")):
+                if not self._kind_wanted(prefix):
+                    continue
                 for ent, arr in self._iter_megatron(flat_state, kind, keep, self._only):
                     self._pending[f"{prefix}.{self.nm.megatron_name(ent)}"] = arr
         acts = bool(extras) and (self.acts_steps is None or step in self.acts_steps)
@@ -751,6 +755,13 @@ class MaxTextDump:
 
     def _only(self, name: str) -> bool:
         return self.only is None or bool(self.only.search(name))
+
+    @staticmethod
+    def _kind_wanted(prefix: str) -> bool:
+        """全量抓数只写这几类状态张量（环境变量 JANUS_FULL_KINDS，逗号分隔，如 exp_avg；不给 = 全写）。buffer 类照写。
+        只省盘和取回的时间：读状态不改训练程序（--no-hooks 时零扰动不变）。"""
+        kinds = os.environ.get("JANUS_FULL_KINDS")
+        return not kinds or prefix.startswith("buffer") or prefix in kinds.split(",")
 
     def add_tensors(self, tensors: dict[str, np.ndarray]):
         """本步另外要写的张量（例如独立梯度探针 gp_*），随本步 flush 一起写出。"""

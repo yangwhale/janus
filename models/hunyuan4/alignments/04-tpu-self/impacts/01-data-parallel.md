@@ -83,7 +83,7 @@ golden 用 FSDP 8：每张卡只存八分之一的权重，用到时再从别的
 - 修法③依赖每张卡那次 scatter 的下标数过门槛。0.0.52 上 v5p 列数 128 的表门槛降到 1783，比 0.0.46 更容易过；v7x 上这张表交给 SparseCore 执行，两个版本都排序（HLO 可见，离线编译）。修法③只在 v5p 8 卡上训练过；v7x 上、16 卡以上（每卡列数 1024 ÷ 数据并行份数变小）都没训练过。
 - 生产形状下修法③排序（单算子离线编译，同上那份结果文件；只编了词嵌入反向那一个 scatter，整步训练程序没在生产形状上编过，也没上卡）：数据并行 8 时每卡 6144 ÷ 8 = 768 列，那次 scatter 收齐 8 张卡的下标（序列长 × 每卡微批 × 8，序列 4096、每卡微批 1 时 32768 个）。v5p 上门槛 0.0.46 是 15105、0.0.52 是 10815，都过；v7x 上这张表交给 SparseCore，两个版本都排序。0.0.52 上不排序的是不开修法、整表的纯数据并行（上一条）。
 - 数据并行不是 8 时换算：修法③每卡列数 = 6144 ÷ 数据并行份数，下标数 = 序列长 × 每卡微批 × 数据并行份数；门槛随列数变，只量了 768 列这一格，别的列数在训练镜像里编一次：`JAX_PLATFORMS=cpu python models/hunyuan4/analysis/emb_scatter_sort_probe.py check --vocab 120832 --dim <6144 ÷ 数据并行份数> --n <下标数> --bisect`，看输出的 `"sorted"`（v7x 上标 `"sparsecore"` 的也是排序）。
-- v7x 不累积那一行 0.0.52 的「在噪声内」靠 iHC 豁免：`hc_head` 三个张量离 FP64 0.56–0.62，对照只有 0.014–0.045，按 TPU 自比的 iHC 豁免单列（这是另一条规则：iHC 张量一律不算未定责，没有倍数上限；与 mini 的 D11 条文不同；是否收窄待拍板；[MATRIX V 节](../MATRIX.md#v--libtpu-0052-上重测)）。词嵌入梯度不再变远这一条不受影响。
+- v7x 不累积那一行 0.0.52 原来判「在噪声内」靠 iHC 豁免：`hc_head` 三个张量离 FP64 0.56–0.62，对照只有 0.014–0.045，是[第 07 件](07-hc-head-dgrad.md)；2026-11-12 给 iHC 豁免加倍数上限后这三个记未定责，整次判「超」（[MATRIX V 节](../MATRIX.md#v--libtpu-0052-上重测)）。词嵌入梯度不再变远这一条不受影响。
 
 ## 能不能忍
 
@@ -124,4 +124,5 @@ golden 用 FSDP 8：每张卡只存八分之一的权重，用到时再从别的
 - [尺子](../../../../../docs/guide/ruler.md) 1.7 节（主 loss 与梯度范数的带符号均值）
 - MaxText 代码：`d5c9b113` 的 `layers/embeddings.py`（默认先把表转成 `dtype` 再取行；开关打开时从 FP32 表取行再转）
 - 单算子实验：[`emb-scatter-sort-probe-tpu.json`](../results/emb-scatter-sort-probe-tpu.json)（v5p 上真跑）、[`emb-scatter-sort-aot.json`](../results/emb-scatter-sort-aot.json)（插排序的 pass、门槛、后端指令条数），脚本 [`analysis/emb_scatter_sort_probe.py`](../../../analysis/emb_scatter_sort_probe.py)
+- 逐步序列：梯度范数逐步相对差（纯数据并行与只切词嵌入表两臂对 `ts-g-a`，GPU 同设置另 7 份对 `g2-a`，28 对逐步包络，每 50 步的带符号均值）在 [`ts-dp8-esd-grad-norm-steps.json`](../results/ts-dp8-esd-grad-norm-steps.json)（脚本 `analysis/tpu_self_dp_grad_norm_steps.py`；窗口统计与上面的结果文件一致）。
 - 结果文件：[`ts-dp8-vs-golden.json`](../results/ts-dp8-vs-golden.json)、[`ts-dp8-ga1-vs-golden.json`](../results/ts-dp8-ga1-vs-golden.json)、[`ts-f16-dp16-vs-golden.json`](../results/ts-f16-dp16-vs-golden.json)、[`ts-h-v7-dp8b-vs-ts-h-v7b.json`](../results/ts-h-v7-dp8b-vs-ts-h-v7b.json)、[`ts-fx-dp8-embf32-vs-golden.json`](../results/ts-fx-dp8-embf32-vs-golden.json)、[`ts-ebc-dp8-vs-golden.json`](../results/ts-ebc-dp8-vs-golden.json)、[`ts-esd-dp8-vs-golden.json`](../results/ts-esd-dp8-vs-golden.json)、[`emb-shard-over-data-comm.json`](../results/emb-shard-over-data-comm.json)

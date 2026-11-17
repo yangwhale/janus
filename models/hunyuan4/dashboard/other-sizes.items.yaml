@@ -1,17 +1,17 @@
 # 混元 4 其他尺寸（支线）的总览条目：格式同 items.yaml，列 = mid / B / D1 / tiny；生成 other-sizes.md。
 # <列>_why 同 items.yaml。
 columns:
-  mid: "03 · hy4-mid 最近一代（base2 开、早于 M50；现行对齐配置在 mid 上尚无运行）：L4 是 TPU tm-b 300 步对 GPU gm-a（噪声 gm 两两 28 对）；L3 是 tm2diag；L0 学习率核对用 tm-b，权重转换取 tm-a 一代（同一份检查点）"
-  B: "02 · real-weight 截层 B：L4 是 TPU tb5b-a 1000 步（base2 开、早于 M50；现行对齐配置在 B 上尚无运行）对 GPU gb3-a（噪声 gb3 两两 28 对）；L3 是 tb6diag；L0 学习率核对也用 tb5b-a"
-  D1: "02 · real-weight 截层 D1：L4 是 TPU td5b-b 1000 步（base2 开、早于 M50；现行对齐配置在 D1 上尚无运行）对 GPU gd3-a（噪声 gd3 两两 28 对）；L3 是 td6diag（取回时断流损坏的 5 个 TPU 梯度文件不判）；L0 学习率核对也用 td5b-b"
+  mid: "03 · hy4-mid 现行 C 口径（PROTOCOL 2026-11-12 前瞻登记）：L4 是 TPU tmc-a 300 步对 GPU gm-a（噪声 gm 两两 28 对）；L3 是 tmcs-c（训练步梯度，GPU 第 1 步参照只有 3 份，参照不足）；L0 学习率核对用 tmc-a，权重转换取 tm-a 一代（同一份检查点）；上一代 tm-b / tm2diag 见历代比较"
+  B: "02 · real-weight 截层 B：L4 是现行 C 口径的 TPU tbc-a 1000 步（PROTOCOL 2026-11-12 前瞻登记）对 GPU gb3-a（噪声 gb3 两两 28 对）；L3 是现行 C 口径的 tb8s-c-r1（训练步梯度，GPU 第 1 步参照 6 份，PROTOCOL 2026-11-12 前瞻登记）；L0 学习率核对也用 tbc-a"
+  D1: "02 · real-weight 截层 D1：L4 是现行 C 口径的 TPU tdc-a 1000 步（PROTOCOL 2026-11-12 前瞻登记）对 GPU gd3-a（噪声 gd3 两两 28 对）；L3 是现行 C 口径的 td8s-c-r2（训练步梯度，GPU 第 1 步参照 6 份，PROTOCOL 2026-11-12 前瞻登记）；L0 学习率核对也用 tdc-a"
   tiny: "00 · hy4-tiny：只有 TPU 一侧的 CPU 冒烟（8 个假 CPU 设备，四个阶段整条链路），没有 GPU 对 TPU 的比较"
 groups:
   - name: L0 地基（设置 / 数据 / 权重 / 配置，必须逐位）
     items:
       - name: 设置核对：逐步学习率等于登记的常数 1e-5（两边都要）
-        mid: tmb-l0-settings:L0.settings.lr
-        B: t2b5b-l0-settings:L0.settings.lr
-        D1: t2d15b-l0-settings:L0.settings.lr
+        mid: tmc-l0-settings:L0.settings.lr
+        B: t2bc-l0-settings:L0.settings.lr
+        D1: t2d1c-l0-settings:L0.settings.lr
       - {name: CPU 冒烟各步（生成 HF 目录、转换、往返逐位、RoPE 去交错与负对照、训练、初始权重、数据指纹、学习率）, tiny: hy4-tiny-smoke:*}
       - name: 权重转换 → MaxText 往返逐位（含 dtype 清单）
         mid: hy4-mid-l0-ckpt-convert:*
@@ -31,52 +31,44 @@ groups:
   - name: L3 第 1 步整网
     items:
       - name: 全部参数梯度：对 GPU 第 1 步噪声，超出的对 CPU FP64 定责
-        mid: mid-tm2-step1-grad-vs-fp64:L3.step1.grads.vs_gpu
-        mid_why: 待查：sink 一组是 TPU 一侧 sink 梯度的系统差（[根源一览第 21 行](../ROOT-CAUSES.md#r21)）；iHC 同 hy4-mini（[mini 对齐细节 D11](../alignments/01-mini/DETAILS.md#d11)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-step1)）；梯度文件取回时断流损坏的张量不进判定
-        B: t2b-step1-grad-vs-fp64:L3.step1.grads.vs_gpu
-        B_why: 待查；real-weight 的 L3 只看对 CPU FP64 的 R（报告第 2 节）。RMSNorm 权重大部分是 dγ 多舍一次 BF16（[根源一览第 23 行](../ROOT-CAUSES.md#r23)），sink 见第 21 行，q latent norm 偏小已定位到 splash 的 base2 指数（[根源一览第 24 行](../ROOT-CAUSES.md#r24)），iHC、`hc_head_scale` 待查（[real-weight 报告 D22](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d22)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
-        D1: t2d1-step1-grad-vs-fp64:L3.step1.grads.vs_gpu
-        D1_why: 待查；real-weight 的 L3 只看对 CPU FP64 的 R（报告第 2 节）。sink、RMSNorm 权重、q 的上下投影、hc_head TPU 更远（[根源一览第 21、23 行](../ROOT-CAUSES.md#r21)；[real-weight 报告 D22](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d22)）；判定以 td6diag 的 52 个张量为准；取回时断流损坏的 5 个另用 td7diag 看过，R 都不超 1.2。td7diag 不是同配置重跑（MaxText `2306c7a5`，含已撤下的 M42），sink 不能拿它换
-  - name: L4 多步（B、D1 1000 步；mid 300 步）
+        mid: mid-c-step1-train-grad-vs-fp64:L3.step1.grads.vs_gpu
+        mid_why: 参照不足（GPU 第 1 步参照只有 gms-a … c 三份，2026-11-12 起要 6 份，待补）；现行 C 口径 tmcs-c 不过，未定责 5 个：iHC 4 个（第 3 层 FFN 前 `hc_base` R 13.7 最大；同 hy4-mini 的 [D11](../alignments/01-mini/DETAILS.md#d11)）与第 4 层 sink（R 1.21，[根源一览第 21 行](../ROOT-CAUSES.md#r21)）；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-step1)
+        B: t2b8c-step1-train-grad-vs-fp64-n6:L3.step1.grads.vs_gpu
+        B_why: 前瞻登记（PROTOCOL 2026-11-12，判法看结果之前固定、不用豁免）的判定：不过。未定责的 13 个：RMSNorm 权重 7 个（dγ 多舍一次 BF16，[根源一览第 23 行](../ROOT-CAUSES.md#r23)；开关 `rmsnorm_scale_grad_fp32` 不在对齐配置里）、第 1 层注意力前 iHC 3 个与第 0 层 FFN 前 `hc_scale`、第 1 层 sink（第 21 行）、N = 0 的索引器 `k_norm.bias`；GPU 3 份对照判定相同（[real-weight 报告 D22](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d22)）
+        D1: t2d18c-step1-train-grad-vs-fp64-n6:L3.step1.grads.vs_gpu
+        D1_why: 前瞻登记（PROTOCOL 2026-11-12，判法看结果之前固定、不用豁免）的判定：不过。未定责的 9 个：RMSNorm 权重 4 个（[根源一览第 23 行](../ROOT-CAUSES.md#r23)）、第 0 层与 MTP 层 sink（第 21 行）、`hc_head_scale`、第 0 层 `q_b_proj`、N = 0 的索引器 `k_norm.bias`；落盘核对 57 个张量全部完好；GPU 3 份对照判定相同（[real-weight 报告 D22](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d22)）
+  - name: L4 多步（B、D1 1000 步；mid 300 步；都是现行 C 口径）
     items:
       - name: loss（全程）
-        mid: tmb-l4:L4.loss
-        mid_why: 待查（[mid 报告 D27](../alignments/03-mid/ALIGNMENT-REPORT.md#d27)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-l4)）
-        B: t2b5b-l4:L4.loss
-        B_why: 待查：前 100 步同号衰减，第 1 步前向就差，后段在噪声内（[real-weight 报告 D20](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d20)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
-        D1: t2d15b-l4:L4.loss
-        D1_why: 待查（[real-weight 报告 D19](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d19)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
+        mid: tmc-l4:L4.loss
+        mid_why: 待查：MARE 刚超线（[mid 报告 D27](../alignments/03-mid/ALIGNMENT-REPORT.md#d27)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-l4)）
+        B: t2bc-l4:L4.loss
+        D1: t2d1c-l4:L4.loss
       - name: loss 后段（第 101 步起）
-        mid: tmb-l4:L4.loss.tail
-        mid_why: 待查（[mid 报告 D27](../alignments/03-mid/ALIGNMENT-REPORT.md#d27)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-l4)）
-        B: t2b5b-l4:L4.loss.tail
-        D1: t2d15b-l4:L4.loss.tail
-        D1_why: 待查（[real-weight 报告 D19](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d19)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
+        mid: tmc-l4:L4.loss.tail
+        B: t2bc-l4:L4.loss.tail
+        D1: t2d1c-l4:L4.loss.tail
       - name: MTP loss（全程与后段；B 没有 MTP 层）
-        mid: tmb-l4:L4.mtp_loss*
-        D1: t2d15b-l4:L4.mtp_loss*
-        D1_why: 待查（[real-weight 报告 D19](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d19)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
+        mid: tmc-l4:L4.mtp_loss*
+        mid_why: 待查：TPU 偏高，带符号均值略超（[mid 报告 D27](../alignments/03-mid/ALIGNMENT-REPORT.md#d27)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-l4)）
+        D1: t2d1c-l4:L4.mtp_loss*
       - name: 索引器 KD loss
-        mid: tmb-l4:L4.indexer_loss
-        mid_why: 待查（[mid 报告 D27](../alignments/03-mid/ALIGNMENT-REPORT.md#d27)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-l4)）
-        B: t2b5b-l4:L4.indexer_loss
-        B_why: 待查（[real-weight 报告 D21](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d21)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
-        D1: t2d15b-l4:L4.indexer_loss
-        D1_why: 待查（[real-weight 报告 D21](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d21)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
+        mid: tmc-l4:L4.indexer_loss
+        mid_why: 待查：最大单步刚超线（[mid 报告 D27](../alignments/03-mid/ALIGNMENT-REPORT.md#d27)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-l4)）
+        B: t2bc-l4:L4.indexer_loss
+        B_why: 待查：TPU 偏低，带符号均值略超（[real-weight 报告 D21](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d21)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
+        D1: t2d1c-l4:L4.indexer_loss
+        D1_why: 待查：TPU 偏高、越往后越高，M50 已开仍不过（[real-weight 报告 D21](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d21)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
       - name: grad_norm（裁剪前）
-        mid: tmb-l4:L4.grad_norm
-        B: t2b5b-l4:L4.grad_norm
-        B_why: 待查（[real-weight 报告第 1 节](../alignments/02-real-weight/ALIGNMENT-REPORT.md#1-判定一屏)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
-        D1: t2d15b-l4:L4.grad_norm
+        mid: tmc-l4:L4.grad_norm
+        B: t2bc-l4:L4.grad_norm
+        D1: t2d1c-l4:L4.grad_norm
       - name: param_norm（更新后参数范数，两边比精确值）
-        mid: tmb-l4:L4.param_norm
-        mid_why: 待查（[mid 报告 D27](../alignments/03-mid/ALIGNMENT-REPORT.md#d27)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-l4)）
-        B: t2b5b-l4:L4.param_norm
-        B_why: 待查（[real-weight 报告第 1 节](../alignments/02-real-weight/ALIGNMENT-REPORT.md#1-判定一屏)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
-        D1: t2d15b-l4:L4.param_norm
-        D1_why: 待查（[real-weight 报告第 1 节](../alignments/02-real-weight/ALIGNMENT-REPORT.md#1-判定一屏)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
+        mid: tmc-l4:L4.param_norm
+        B: t2bc-l4:L4.param_norm
+        D1: t2d1c-l4:L4.param_norm
       - name: 路由偏置曲线（每层均值、标准差）
-        mid: tmb-l4:L4.router.*
-        B: t2b5b-l4:L4.router.*
-        D1: t2d15b-l4:L4.router.*
-        D1_why: 待查（[real-weight 报告第 1 节](../alignments/02-real-weight/ALIGNMENT-REPORT.md#1-判定一屏)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
+        mid: tmc-l4:L4.router.*
+        B: t2bc-l4:L4.router.*
+        D1: t2d1c-l4:L4.router.*
+        D1_why: 待查：均值最大单步略超（[real-weight 报告第 1 节](../alignments/02-real-weight/ALIGNMENT-REPORT.md#1-判定一屏)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）

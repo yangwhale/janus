@@ -5,7 +5,7 @@
   "n6": "alignments/01-mini/results/t1zo-step1-train-grad-vs-fp64-n6.json",
   "results": "alignments/04-tpu-self/results"
  },
- "n_files": 215,
+ "n_files": 220,
  "n3_recheck": "3 份复算与各结果文件存的判定逐张量相同",
  "unattributed_changed": [
   {
@@ -136,12 +136,12 @@
    "band": "超",
    "curves_r_max": 342.69904604159234,
    "n_unattributed": [
-    157,
-    158
+    174,
+    177
    ],
    "n_ihc_accepted": [
-    39,
-    39
+    22,
+    20
    ],
    "changed": [
     {
@@ -152,6 +152,24 @@
      "r64_n6": 0.5554548338297911,
      "over_scale_n3": 1.513793619570631,
      "over_scale_n6": 0.9942500102312772
+    },
+    {
+     "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_scale",
+     "n3": "ihc_accepted",
+     "n6": "unattributed",
+     "r64_n3": 3.0401961624345994,
+     "r64_n6": 9.732472221080373,
+     "over_scale_n3": 3.675118076887176,
+     "over_scale_n6": 2.4279374019185758
+    },
+    {
+     "tensor": "model.layers.5.hc_attn_layer.hc_pre.hc_fn",
+     "n3": "ihc_accepted",
+     "n6": "unattributed",
+     "r64_n3": 4.881100291356788,
+     "r64_n6": 5.260651804319059,
+     "over_scale_n3": 12.823409107035163,
+     "over_scale_n6": 12.435458117750427
     },
     {
      "tensor": "model.layers.5.self_attn.learnable_sink_param",
@@ -194,6 +212,285 @@
      "r64_n6": 1.001211723168445,
      "over_scale_n3": 1.0537681482322585,
      "over_scale_n6": 0.9335276494119847
+    }
+   ]
+  },
+  {
+   "file": "ts-ms2-dp2-r2-vs-golden.json",
+   "band": "超",
+   "curves_r_max": 0.9144395125259202,
+   "n_unattributed": [
+    3,
+    4
+   ],
+   "n_ihc_accepted": [
+    12,
+    7
+   ],
+   "changed": [
+    {
+     "tensor": "model.layers.0.hc_attn_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 1.172410042743727,
+     "r64_n6": 1.3007919921128852,
+     "over_scale_n3": 1.4277341316868892,
+     "over_scale_n6": 0.7179263291140359
+    },
+    {
+     "tensor": "model.layers.1.hc_mlp_layer.hc_pre.hc_scale",
+     "n3": "ihc_accepted",
+     "n6": "scale",
+     "r64_n3": 1.5377896863474847,
+     "r64_n6": 1.5377896863474847,
+     "over_scale_n3": 1.534886091249338,
+     "over_scale_n6": 0.8239043960917691
+    },
+    {
+     "tensor": "model.layers.2.hc_mlp_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.04609636578421828,
+     "r64_n6": 0.05313904737142902,
+     "over_scale_n3": 1.5373988952779523,
+     "over_scale_n6": 0.45247729536563386
+    },
+    {
+     "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.6227893558063826,
+     "r64_n6": 0.6227893558063826,
+     "over_scale_n3": 2.584826436268741,
+     "over_scale_n6": 0.8786294891577974
+    },
+    {
+     "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_scale",
+     "n3": "ihc_accepted",
+     "n6": "unattributed",
+     "r64_n3": 1.7948596114016537,
+     "r64_n6": 5.745820458742022,
+     "over_scale_n3": 1.998810615191796,
+     "over_scale_n6": 1.3204982671159557
+    },
+    {
+     "tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_scale",
+     "n3": "ihc_accepted",
+     "n6": "scale",
+     "r64_n3": 1.8393243492827425,
+     "r64_n6": 1.8393243492827425,
+     "over_scale_n3": 1.3361776793769036,
+     "over_scale_n6": 0.9310389601686218
+    },
+    {
+     "tensor": "model.layers.5.hc_attn_layer.hc_pre.hc_scale",
+     "n3": "ihc_accepted",
+     "n6": "scale",
+     "r64_n3": 2.0889342313294876,
+     "r64_n6": 2.044511368415421,
+     "over_scale_n3": 1.8580032954459866,
+     "over_scale_n6": 0.9430585371697902
+    },
+    {
+     "tensor": "model.layers.6.hc_attn_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "ihc_accepted",
+     "r64_n3": 1.1208067506238857,
+     "r64_n6": 1.4151577100126747,
+     "over_scale_n3": 1.9381453281919756,
+     "over_scale_n6": 1.5507097322991288
+    },
+    {
+     "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_base",
+     "n3": "ihc_accepted",
+     "n6": "scale",
+     "r64_n3": 1.3874591696047582,
+     "r64_n6": 1.3874591696047582,
+     "over_scale_n3": 1.8252703211653718,
+     "over_scale_n6": 0.2528899367228397
+    },
+    {
+     "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_fn",
+     "n3": "ihc_accepted",
+     "n6": "scale",
+     "r64_n3": 1.2598677456777267,
+     "r64_n6": 1.0696188299763947,
+     "over_scale_n3": 1.3823722218233814,
+     "over_scale_n6": 0.6406461471747287
+    }
+   ]
+  },
+  {
+   "file": "ts-ms2-dp2-r2-vs-ts-f16-dp2.json",
+   "band": "超",
+   "curves_r_max": 0.9926626558582136,
+   "n_unattributed": [
+    4,
+    5
+   ],
+   "n_ihc_accepted": [
+    5,
+    5
+   ],
+   "changed": [
+    {
+     "tensor": "model.layers.0.self_attn.learnable_sink_param",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.6362814070564445,
+     "r64_n6": 0.6249119983693017,
+     "over_scale_n3": 1.195648939896251,
+     "over_scale_n6": 0.7280482136263922
+    },
+    {
+     "tensor": "model.layers.2.hc_mlp_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.04609636578421828,
+     "r64_n6": 0.05313904737142902,
+     "over_scale_n3": 1.862969961613761,
+     "over_scale_n6": 0.5482972650543064
+    },
+    {
+     "tensor": "model.layers.2.hc_mlp_layer.hc_pre.hc_scale",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.5387292739776792,
+     "r64_n6": 0.546362685463279,
+     "over_scale_n3": 1.0543200368300256,
+     "over_scale_n6": 0.2845598655910133
+    },
+    {
+     "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_fn",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 1.079845706723416,
+     "r64_n6": 1.079845706723416,
+     "over_scale_n3": 1.1803848674836501,
+     "over_scale_n6": 0.995306786233677
+    },
+    {
+     "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_scale",
+     "n3": "ihc_accepted",
+     "n6": "unattributed",
+     "r64_n3": 1.7948596114016537,
+     "r64_n6": 9.845552273755732,
+     "over_scale_n3": 2.4120359915039673,
+     "over_scale_n6": 1.5934923112746624
+    },
+    {
+     "tensor": "model.layers.4.mlp.gate.weight",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.9732438410369447,
+     "r64_n6": 0.9703555235433626,
+     "over_scale_n3": 1.242783187148312,
+     "over_scale_n6": 0.9989098298095851
+    },
+    {
+     "tensor": "model.layers.5.hc_attn_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 1.0142422738383494,
+     "r64_n6": 1.0965481836554711,
+     "over_scale_n3": 2.5922661546213974,
+     "over_scale_n6": 0.8409915091445176
+    },
+    {
+     "tensor": "model.layers.6.hc_attn_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "ihc_accepted",
+     "r64_n3": 1.1208067506238857,
+     "r64_n6": 1.4151577100126747,
+     "over_scale_n3": 2.2603329361127464,
+     "over_scale_n6": 1.8084919800808221
+    },
+    {
+     "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.7870069542979743,
+     "r64_n6": 0.7870069542979743,
+     "over_scale_n3": 1.7428900144208674,
+     "over_scale_n6": 0.24147620237442574
+    },
+    {
+     "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_fn",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.9505282988650209,
+     "r64_n6": 0.9505282988650209,
+     "over_scale_n3": 1.0207070658268473,
+     "over_scale_n6": 0.4730361611675519
+    },
+    {
+     "tensor": "model.layers.6.mlp.gate.weight",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.9227315291449444,
+     "r64_n6": 0.9238275551705082,
+     "over_scale_n3": 1.1320479633010962,
+     "over_scale_n6": 0.9187891358428949
+    },
+    {
+     "tensor": "model.mtp_layers.0.mlp.gate.weight",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 1.0148136844526696,
+     "r64_n6": 1.0148136844526696,
+     "over_scale_n3": 1.025309070022014,
+     "over_scale_n6": 0.9464787627603006
+    }
+   ]
+  },
+  {
+   "file": "ts-s-loss101-vs-golden.json",
+   "band": "超",
+   "curves_r_max": 94.49660300995448,
+   "n_unattributed": [
+    93,
+    92
+   ],
+   "n_ihc_accepted": [
+    23,
+    22
+   ],
+   "changed": [
+    {
+     "tensor": "model.layers.0.hc_mlp_layer.hc_pre.hc_scale",
+     "n3": "unattributed",
+     "n6": "ihc_accepted",
+     "r64_n3": 5.277512922640657,
+     "r64_n6": 1.7106368886607524,
+     "over_scale_n3": 2.490705406433027,
+     "over_scale_n6": 2.0690258976749725
+    },
+    {
+     "tensor": "model.layers.3.self_attn.learnable_sink_param",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.9362457705722571,
+     "r64_n6": 0.953405293090703,
+     "over_scale_n3": 1.087560598378547,
+     "over_scale_n6": 0.9899875601301545
+    },
+    {
+     "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_base",
+     "n3": "ihc_accepted",
+     "n6": "scale",
+     "r64_n3": 1.4014222139478436,
+     "r64_n6": 1.4014222139478436,
+     "over_scale_n3": 1.8648248663786546,
+     "over_scale_n6": 0.25837019152131874
+    },
+    {
+     "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_fn",
+     "n3": "ihc_accepted",
+     "n6": "scale",
+     "r64_n3": 1.2565218689516298,
+     "r64_n6": 1.0667782042350886,
+     "over_scale_n3": 1.0005167039647638,
+     "over_scale_n6": 0.463679146224105
     }
    ]
   }
@@ -387,12 +684,12 @@
    "band": "超",
    "curves_r_max": 0.9427806339029773,
    "n_unattributed": [
-    1,
-    1
+    4,
+    4
    ],
    "n_ihc_accepted": [
-    9,
-    8
+    6,
+    5
    ],
    "changed": [
     {
@@ -1602,15 +1899,15 @@
   },
   {
    "file": "ts-d-einsum-1k-vs-golden.json",
-   "band": "略超",
+   "band": "超",
    "curves_r_max": 1.1017330137775447,
    "n_unattributed": [
-    0,
-    0
+    3,
+    3
    ],
    "n_ihc_accepted": [
-    9,
-    8
+    6,
+    5
    ],
    "changed": [
     {
@@ -1644,15 +1941,15 @@
   },
   {
    "file": "ts-d-einsum-1k-vs-ts-g-a-1000.json",
-   "band": "略超",
+   "band": "超",
    "curves_r_max": 1.3346154591401653,
    "n_unattributed": [
-    0,
-    0
+    3,
+    3
    ],
    "n_ihc_accepted": [
-    9,
-    8
+    6,
+    5
    ],
    "changed": [
     {
@@ -1686,15 +1983,15 @@
   },
   {
    "file": "ts-d-einsum-vs-golden.json",
-   "band": "略超",
+   "band": "超",
    "curves_r_max": 1.1017330137775447,
    "n_unattributed": [
-    0,
-    0
+    3,
+    3
    ],
    "n_ihc_accepted": [
-    9,
-    8
+    6,
+    5
    ],
    "changed": [
     {
@@ -4362,12 +4659,12 @@
    "band": "超",
    "curves_r_max": 342.69904604159234,
    "n_unattributed": [
-    157,
-    158
+    174,
+    177
    ],
    "n_ihc_accepted": [
-    39,
-    39
+    22,
+    20
    ],
    "changed": [
     {
@@ -4378,6 +4675,24 @@
      "r64_n6": 0.5554548338297911,
      "over_scale_n3": 1.513793619570631,
      "over_scale_n6": 0.9942500102312772
+    },
+    {
+     "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_scale",
+     "n3": "ihc_accepted",
+     "n6": "unattributed",
+     "r64_n3": 3.0401961624345994,
+     "r64_n6": 9.732472221080373,
+     "over_scale_n3": 3.675118076887176,
+     "over_scale_n6": 2.4279374019185758
+    },
+    {
+     "tensor": "model.layers.5.hc_attn_layer.hc_pre.hc_fn",
+     "n3": "ihc_accepted",
+     "n6": "unattributed",
+     "r64_n3": 4.881100291356788,
+     "r64_n6": 5.260651804319059,
+     "over_scale_n3": 12.823409107035163,
+     "over_scale_n6": 12.435458117750427
     },
     {
      "tensor": "model.layers.5.self_attn.learnable_sink_param",
@@ -9114,15 +9429,15 @@
   },
   {
    "file": "ts-h-v7-1k3-vs-golden.json",
-   "band": "略超",
+   "band": "超",
    "curves_r_max": 1.0189322798955822,
    "n_unattributed": [
-    0,
-    0
+    3,
+    3
    ],
    "n_ihc_accepted": [
-    12,
-    11
+    9,
+    8
    ],
    "changed": [
     {
@@ -9210,15 +9525,15 @@
   },
   {
    "file": "ts-h-v7-1k3-vs-ts-g-a-1000.json",
-   "band": "在刻度内",
+   "band": "超",
    "curves_r_max": 0.9090378417732545,
    "n_unattributed": [
-    0,
-    0
+    3,
+    3
    ],
    "n_ihc_accepted": [
-    12,
-    11
+    9,
+    8
    ],
    "changed": [
     {
@@ -9468,15 +9783,15 @@
   },
   {
    "file": "ts-h-v7b-vs-golden.json",
-   "band": "略超",
+   "band": "超",
    "curves_r_max": 1.0189322798955822,
    "n_unattributed": [
-    0,
-    0
+    3,
+    3
    ],
    "n_ihc_accepted": [
-    12,
-    11
+    9,
+    8
    ],
    "changed": [
     {
@@ -9901,6 +10216,234 @@
      "r64_n6": 1.1223688300323182,
      "over_scale_n3": 1.168156881415193,
      "over_scale_n6": 0.9346421130104804
+    }
+   ]
+  },
+  {
+   "file": "ts-ms2-dp2-r2-vs-golden.json",
+   "band": "超",
+   "curves_r_max": 0.9144395125259202,
+   "n_unattributed": [
+    3,
+    4
+   ],
+   "n_ihc_accepted": [
+    12,
+    7
+   ],
+   "changed": [
+    {
+     "tensor": "model.layers.0.hc_attn_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 1.172410042743727,
+     "r64_n6": 1.3007919921128852,
+     "over_scale_n3": 1.4277341316868892,
+     "over_scale_n6": 0.7179263291140359
+    },
+    {
+     "tensor": "model.layers.1.hc_mlp_layer.hc_pre.hc_scale",
+     "n3": "ihc_accepted",
+     "n6": "scale",
+     "r64_n3": 1.5377896863474847,
+     "r64_n6": 1.5377896863474847,
+     "over_scale_n3": 1.534886091249338,
+     "over_scale_n6": 0.8239043960917691
+    },
+    {
+     "tensor": "model.layers.2.hc_mlp_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.04609636578421828,
+     "r64_n6": 0.05313904737142902,
+     "over_scale_n3": 1.5373988952779523,
+     "over_scale_n6": 0.45247729536563386
+    },
+    {
+     "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.6227893558063826,
+     "r64_n6": 0.6227893558063826,
+     "over_scale_n3": 2.584826436268741,
+     "over_scale_n6": 0.8786294891577974
+    },
+    {
+     "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_scale",
+     "n3": "ihc_accepted",
+     "n6": "unattributed",
+     "r64_n3": 1.7948596114016537,
+     "r64_n6": 5.745820458742022,
+     "over_scale_n3": 1.998810615191796,
+     "over_scale_n6": 1.3204982671159557
+    },
+    {
+     "tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_scale",
+     "n3": "ihc_accepted",
+     "n6": "scale",
+     "r64_n3": 1.8393243492827425,
+     "r64_n6": 1.8393243492827425,
+     "over_scale_n3": 1.3361776793769036,
+     "over_scale_n6": 0.9310389601686218
+    },
+    {
+     "tensor": "model.layers.5.hc_attn_layer.hc_pre.hc_scale",
+     "n3": "ihc_accepted",
+     "n6": "scale",
+     "r64_n3": 2.0889342313294876,
+     "r64_n6": 2.044511368415421,
+     "over_scale_n3": 1.8580032954459866,
+     "over_scale_n6": 0.9430585371697902
+    },
+    {
+     "tensor": "model.layers.6.hc_attn_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "ihc_accepted",
+     "r64_n3": 1.1208067506238857,
+     "r64_n6": 1.4151577100126747,
+     "over_scale_n3": 1.9381453281919756,
+     "over_scale_n6": 1.5507097322991288
+    },
+    {
+     "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_base",
+     "n3": "ihc_accepted",
+     "n6": "scale",
+     "r64_n3": 1.3874591696047582,
+     "r64_n6": 1.3874591696047582,
+     "over_scale_n3": 1.8252703211653718,
+     "over_scale_n6": 0.2528899367228397
+    },
+    {
+     "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_fn",
+     "n3": "ihc_accepted",
+     "n6": "scale",
+     "r64_n3": 1.2598677456777267,
+     "r64_n6": 1.0696188299763947,
+     "over_scale_n3": 1.3823722218233814,
+     "over_scale_n6": 0.6406461471747287
+    }
+   ]
+  },
+  {
+   "file": "ts-ms2-dp2-r2-vs-ts-f16-dp2.json",
+   "band": "超",
+   "curves_r_max": 0.9926626558582136,
+   "n_unattributed": [
+    4,
+    5
+   ],
+   "n_ihc_accepted": [
+    5,
+    5
+   ],
+   "changed": [
+    {
+     "tensor": "model.layers.0.self_attn.learnable_sink_param",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.6362814070564445,
+     "r64_n6": 0.6249119983693017,
+     "over_scale_n3": 1.195648939896251,
+     "over_scale_n6": 0.7280482136263922
+    },
+    {
+     "tensor": "model.layers.2.hc_mlp_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.04609636578421828,
+     "r64_n6": 0.05313904737142902,
+     "over_scale_n3": 1.862969961613761,
+     "over_scale_n6": 0.5482972650543064
+    },
+    {
+     "tensor": "model.layers.2.hc_mlp_layer.hc_pre.hc_scale",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.5387292739776792,
+     "r64_n6": 0.546362685463279,
+     "over_scale_n3": 1.0543200368300256,
+     "over_scale_n6": 0.2845598655910133
+    },
+    {
+     "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_fn",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 1.079845706723416,
+     "r64_n6": 1.079845706723416,
+     "over_scale_n3": 1.1803848674836501,
+     "over_scale_n6": 0.995306786233677
+    },
+    {
+     "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_scale",
+     "n3": "ihc_accepted",
+     "n6": "unattributed",
+     "r64_n3": 1.7948596114016537,
+     "r64_n6": 9.845552273755732,
+     "over_scale_n3": 2.4120359915039673,
+     "over_scale_n6": 1.5934923112746624
+    },
+    {
+     "tensor": "model.layers.4.mlp.gate.weight",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.9732438410369447,
+     "r64_n6": 0.9703555235433626,
+     "over_scale_n3": 1.242783187148312,
+     "over_scale_n6": 0.9989098298095851
+    },
+    {
+     "tensor": "model.layers.5.hc_attn_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 1.0142422738383494,
+     "r64_n6": 1.0965481836554711,
+     "over_scale_n3": 2.5922661546213974,
+     "over_scale_n6": 0.8409915091445176
+    },
+    {
+     "tensor": "model.layers.6.hc_attn_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "ihc_accepted",
+     "r64_n3": 1.1208067506238857,
+     "r64_n6": 1.4151577100126747,
+     "over_scale_n3": 2.2603329361127464,
+     "over_scale_n6": 1.8084919800808221
+    },
+    {
+     "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.7870069542979743,
+     "r64_n6": 0.7870069542979743,
+     "over_scale_n3": 1.7428900144208674,
+     "over_scale_n6": 0.24147620237442574
+    },
+    {
+     "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_fn",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.9505282988650209,
+     "r64_n6": 0.9505282988650209,
+     "over_scale_n3": 1.0207070658268473,
+     "over_scale_n6": 0.4730361611675519
+    },
+    {
+     "tensor": "model.layers.6.mlp.gate.weight",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.9227315291449444,
+     "r64_n6": 0.9238275551705082,
+     "over_scale_n3": 1.1320479633010962,
+     "over_scale_n6": 0.9187891358428949
+    },
+    {
+     "tensor": "model.mtp_layers.0.mlp.gate.weight",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 1.0148136844526696,
+     "r64_n6": 1.0148136844526696,
+     "over_scale_n3": 1.025309070022014,
+     "over_scale_n6": 0.9464787627603006
     }
    ]
   },
@@ -11457,14 +12000,23 @@
    "band": "超",
    "curves_r_max": 94.49660300995448,
    "n_unattributed": [
-    92,
+    93,
     92
    ],
    "n_ihc_accepted": [
-    24,
+    23,
     22
    ],
    "changed": [
+    {
+     "tensor": "model.layers.0.hc_mlp_layer.hc_pre.hc_scale",
+     "n3": "unattributed",
+     "n6": "ihc_accepted",
+     "r64_n3": 5.277512922640657,
+     "r64_n6": 1.7106368886607524,
+     "over_scale_n3": 2.490705406433027,
+     "over_scale_n6": 2.0690258976749725
+    },
     {
      "tensor": "model.layers.3.self_attn.learnable_sink_param",
      "n3": "attributed",
@@ -13031,6 +13583,312 @@
    ]
   },
   {
+   "file": "ts52-ep-base-vs-ts-g52-a.json",
+   "band": "在噪声内",
+   "curves_r_max": 0.9850056021718795,
+   "n_unattributed": [
+    0,
+    0
+   ],
+   "n_ihc_accepted": [
+    2,
+    1
+   ],
+   "changed": [
+    {
+     "tensor": "model.hc_head.hc_head_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.48620731277294893,
+     "r64_n6": 0.48620731277294893,
+     "over_scale_n3": 1.0479919376040474,
+     "over_scale_n6": 0.6014758743941758
+    },
+    {
+     "tensor": "model.hc_head.hc_head_fn",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.7498298905450601,
+     "r64_n6": 0.6766118932732241,
+     "over_scale_n3": 1.1096557504899107,
+     "over_scale_n6": 0.8028253460377544
+    },
+    {
+     "tensor": "model.layers.0.self_attn.learnable_sink_param",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.7500353443590275,
+     "r64_n6": 0.7366333208750014,
+     "over_scale_n3": 1.2785132046228873,
+     "over_scale_n6": 0.7785054823903547
+    },
+    {
+     "tensor": "model.layers.2.hc_attn_layer.hc_pre.hc_scale",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.679819407005282,
+     "r64_n6": 0.679819407005282,
+     "over_scale_n3": 1.157826106493446,
+     "over_scale_n6": 0.533207518552022
+    },
+    {
+     "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.5055535457471947,
+     "r64_n6": 0.5055535457471947,
+     "over_scale_n3": 2.465282312206836,
+     "over_scale_n6": 0.8379942684781648
+    },
+    {
+     "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_scale",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.5480913743923995,
+     "r64_n6": 2.424451784210004,
+     "over_scale_n3": 1.0104903974578254,
+     "over_scale_n6": 0.6675724096313818
+    },
+    {
+     "tensor": "model.layers.4.hc_mlp_layer.hc_pre.hc_scale",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.3061501050959937,
+     "r64_n6": 0.3101709282372219,
+     "over_scale_n3": 3.1422349973665455,
+     "over_scale_n6": 0.7890353857902827
+    },
+    {
+     "tensor": "model.layers.5.hc_attn_layer.hc_pre.hc_scale",
+     "n3": "ihc_accepted",
+     "n6": "scale",
+     "r64_n3": 1.473324115602959,
+     "r64_n6": 1.473324115602959,
+     "over_scale_n3": 1.2885174654608136,
+     "over_scale_n6": 0.6540071263993759
+    },
+    {
+     "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_fn",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.9949681895948626,
+     "r64_n6": 0.9949681895948626,
+     "over_scale_n3": 1.3452490303288784,
+     "over_scale_n6": 0.6234417869985578
+    }
+   ]
+  },
+  {
+   "file": "ts52-ep4-vs-ts52-ep-base.json",
+   "band": "在噪声内",
+   "curves_r_max": 0.913193906091028,
+   "n_unattributed": [
+    0,
+    0
+   ],
+   "n_ihc_accepted": [
+    0,
+    0
+   ],
+   "changed": [
+    {
+     "tensor": "model.hc_head.hc_head_scale",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 1.0575620118083842,
+     "r64_n6": 1.0575620118083842,
+     "over_scale_n3": 2.0921287620112414,
+     "over_scale_n6": 0.9557418791147009
+    },
+    {
+     "tensor": "model.layers.0.hc_attn_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.7143472017806473,
+     "r64_n6": 0.7143472017806473,
+     "over_scale_n3": 1.2483792917243093,
+     "over_scale_n6": 0.6277389762971397
+    },
+    {
+     "tensor": "model.layers.0.hc_attn_layer.hc_pre.hc_fn",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.9139538679111163,
+     "r64_n6": 0.9132196848261408,
+     "over_scale_n3": 1.0974693319572442,
+     "over_scale_n6": 0.982135207090467
+    },
+    {
+     "tensor": "model.layers.0.post_attention_layernorm.weight",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 1.029870605392679,
+     "r64_n6": 1.0274610483609417,
+     "over_scale_n3": 1.0042584844214992,
+     "over_scale_n6": 0.9896512031412844
+    },
+    {
+     "tensor": "model.layers.2.hc_mlp_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.7596940050707613,
+     "r64_n6": 0.8757613542078158,
+     "over_scale_n3": 2.3290178225180163,
+     "over_scale_n6": 0.6854614559878321
+    },
+    {
+     "tensor": "model.layers.2.input_layernorm.weight",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.9724379429182785,
+     "r64_n6": 0.9757031476232183,
+     "over_scale_n3": 1.0289267021558364,
+     "over_scale_n6": 0.9607052479485977
+    },
+    {
+     "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.6110864182549994,
+     "r64_n6": 0.5360793551656531,
+     "over_scale_n3": 1.0470327696946278,
+     "over_scale_n6": 0.355905469961163
+    },
+    {
+     "tensor": "model.layers.4.hc_mlp_layer.hc_pre.hc_scale",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.13878131366329366,
+     "r64_n6": 0.140603998379905,
+     "over_scale_n3": 3.5002268825931844,
+     "over_scale_n6": 0.8789294470257802
+    },
+    {
+     "tensor": "model.layers.5.input_layernorm.weight",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 1.007056418911794,
+     "r64_n6": 1.0069651594608346,
+     "over_scale_n3": 1.0477460176792843,
+     "over_scale_n6": 0.9818815680225425
+    },
+    {
+     "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.7789463066932335,
+     "r64_n6": 0.7789463066932335,
+     "over_scale_n3": 1.7644594984218074,
+     "over_scale_n6": 0.24446463941900518
+    }
+   ]
+  },
+  {
+   "file": "ts52-ep8-r2-vs-ts52-ep-base.json",
+   "band": "在噪声内",
+   "curves_r_max": 0.9643435709439154,
+   "n_unattributed": [
+    0,
+    0
+   ],
+   "n_ihc_accepted": [
+    0,
+    0
+   ],
+   "changed": [
+    {
+     "tensor": "model.hc_head.hc_head_scale",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 1.0575623783191093,
+     "r64_n6": 1.0575623783191093,
+     "over_scale_n3": 2.0921291346792947,
+     "over_scale_n6": 0.955742049359703
+    },
+    {
+     "tensor": "model.layers.0.hc_attn_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.714320127927406,
+     "r64_n6": 0.714320127927406,
+     "over_scale_n3": 1.2480372131364947,
+     "over_scale_n6": 0.627566964422262
+    },
+    {
+     "tensor": "model.layers.0.hc_attn_layer.hc_pre.hc_fn",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.9139687658615256,
+     "r64_n6": 0.9132345708089623,
+     "over_scale_n3": 1.0974842612694398,
+     "over_scale_n6": 0.9821485674666507
+    },
+    {
+     "tensor": "model.layers.0.post_attention_layernorm.weight",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 1.029871950841342,
+     "r64_n6": 1.0274623906616993,
+     "over_scale_n3": 1.0042624274753775,
+     "over_scale_n6": 0.9896550888421027
+    },
+    {
+     "tensor": "model.layers.2.hc_mlp_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.759704558758323,
+     "r64_n6": 0.8757735203058093,
+     "over_scale_n3": 2.329078013285812,
+     "over_scale_n6": 0.685479170945155
+    },
+    {
+     "tensor": "model.layers.2.input_layernorm.weight",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.972436437691794,
+     "r64_n6": 0.9757016373425578,
+     "over_scale_n3": 1.028932876210505,
+     "over_scale_n6": 0.9607110126417567
+    },
+    {
+     "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.6110839468003253,
+     "r64_n6": 0.5360771870666929,
+     "over_scale_n3": 1.0470390730975243,
+     "over_scale_n6": 0.35590761260238224
+    },
+    {
+     "tensor": "model.layers.4.hc_mlp_layer.hc_pre.hc_scale",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.13877682478839007,
+     "r64_n6": 0.14059945055035208,
+     "over_scale_n3": 3.500310805809908,
+     "over_scale_n6": 0.8789505206844147
+    },
+    {
+     "tensor": "model.layers.5.input_layernorm.weight",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 1.0070539130565046,
+     "r64_n6": 1.0069626538326257,
+     "over_scale_n3": 1.047740758780396,
+     "over_scale_n6": 0.9818766397137735
+    },
+    {
+     "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_base",
+     "n3": "attributed",
+     "n6": "scale",
+     "r64_n3": 0.7789429936504091,
+     "r64_n6": 0.7789429936504091,
+     "over_scale_n3": 1.7644851407760012,
+     "over_scale_n6": 0.24446819214938942
+    }
+   ]
+  },
+  {
    "file": "ts52-esd-dp8-1k-vs-ts-g52-a-1000.json",
    "band": "在噪声内",
    "curves_r_max": 0.9723774239864093,
@@ -13524,15 +14382,15 @@
   },
   {
    "file": "ts52-h-v7-dp8-ga1-r1-vs-ts52-h-v7b-r1.json",
-   "band": "在噪声内",
+   "band": "超",
    "curves_r_max": 0.8921698866093467,
    "n_unattributed": [
-    0,
-    0
+    3,
+    3
    ],
    "n_ihc_accepted": [
-    11,
-    7
+    8,
+    4
    ],
    "changed": [
     {

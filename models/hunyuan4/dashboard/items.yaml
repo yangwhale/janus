@@ -120,10 +120,10 @@ groups:
     mini: t1-qk-clip-tpu:L1.qkclip.formula
     say: QK-Clip（注意力打分过大时缩小相关权重）的裁剪公式，低阈值下强制触发
   - name: 低阈值 QK-Clip（τ 0.1）：第 1 步逐头最大 logit 对 CPU FP64
-    mini: t1zo-qkclip-maxlogit:L1.qkclip.max_logit
-    mini_why: 未定责（C 口径之前、base2 关的 `tz-off-qk01`，C 口径上没重判）：第 4 层 8 个头离 FP64 是 GPU 两份中位数的 1.55 倍，最差一个头相对差 −1.19e-2（约 3 个 BF16 舍入单位）；同一量 base2 开时（`mz-qk-a`）第 4 层 0.94、全部层最差 1.05，过。第 3 层反而从 0.92 降到 0.42。还没有查
+    mini: t1zc-qkclip-maxlogit:L1.qkclip.max_logit
+    mini_why: 已接受（2026-11-12 看过结果后，项目负责人拍板，理由：路由翻转；格子判定照结果文件）（C 口径 `tc-qk01`）：第 4 层 R 1.87，几乎全在第 7 头（TPU 比 FP64 低 1.46e-2）。FP64 里这一头最大的一对 (q, k) 的 key token 在 TPU 上第 1 层 MoE 路由近乎打平而翻转（第 4、5 名相对分差 3.1e-4），又带着第 2、3 层翻转，这一对的打分在 TPU 上变小，TPU 读到的是第二大那一对；FP64 灌 TPU 自选的路由与 DSA top-k 后，第 4 层只差 GPU 中位数的 0.97 倍。C 口径之前 `tz-off-qk01` 是 1.55（[D31](../alignments/01-mini/DETAILS.md#d31)）
     say: 低阈值下第一步每个头的最大注意力打分
-    mini_say: C 口径之前（tz-off-qk01，C 口径上没重判）第 4 层每层 8 个头离精确值：GPU 2.97e-3、TPU 4.61e-3（1.55 倍）；base2 开的上一代是 0.94 倍。其余 7 层 0.35–1.07 倍
+    mini_say: C 口径（tc-qk01）第 4 层 8 个头离精确值：GPU 2.97e-3、TPU 5.55e-3（1.87 倍），差在一个头：那一头最大打分的 key token 在 TPU 上换了专家；把 TPU 的路由与 top-k 灌进 FP64 后只差 0.97 倍
   - name: GPU 算子对 FP64、逐元素函数、极端输入
     gpu: 'todo: 待做（gpu-noise README「计划（待做）」第 6 项）'
     say: GPU 算子对精确值、极端输入
@@ -147,19 +147,19 @@ groups:
   items:
   - name: 全部参数梯度：对 GPU 第 1 步噪声，超出的对 CPU FP64 定责
     mini: t1zc-step1-train-grad-vs-fp64-n6:L3.step1.grads.vs_gpu
-    mini_why: 未定责 1 个、另列 1 个（MTP enorm）：C 口径（s1f-c 第 1 步全量抓数，2026-11-11）训练步梯度对 GPU 第 1 步参照 6 份 15 对，超出 GPU 噪声且离精确值比 GPU 远 1.2 倍以上的只有第 3 层 FFN 前 hc_fn（1.14 N，所以待定不是不过）与 MTP enorm；两个都按 D11 豁免规则单列：hc_fn 计入未定责（base2 开那一代登记接受的 6 个之一，接受理由没有数值门槛、复核不了；是否沿用待拍板），enorm 不计入（D13 的接受理由「两边都小于 u」在 C 口径下复核成立，PROTOCOL 变更记录 2026-11-09）；单列的挡不挡签字：待拍板。C 口径之前（tz-off-rep，6 份尺子）计入未定责的是第 3 层注意力前 hc_scale（1.05 N），C 口径下 0.66 N；那一代 3 份 3 对时这一格是 ❌（5 个未定责，第 6 层 MLP 侧 hc_base 5.09 N），6 份是看过 3 份的判定之后补跑的，见 PROTOCOL 变更记录 2026-11-11（L3 尺子 6 份；C 口径补数）（[mini 对齐细节 D11](../alignments/01-mini/DETAILS.md#d11)；[根源一览「定责、不修」](../ROOT-CAUSES.md#u-mini-step1)）
+    mini_why: 未定责 0 个、另列 2 个（hc_fn、MTP enorm）：C 口径（s1f-c 第 1 步全量抓数，2026-11-11）训练步梯度对 GPU 第 1 步参照 6 份 15 对，超出 GPU 噪声且离精确值比 GPU 远 1.2 倍以上的只有第 3 层 FFN 前 hc_fn（1.14 N）与 MTP enorm；两个都按 D11 豁免规则单列：hc_fn 2026-11-12 看过结果后接受、不计入（项目负责人拍板，理由：路由翻转，对齐细节 D11），enorm 不计入（D13 的接受理由「两边都小于 u」在 C 口径下复核成立，PROTOCOL 变更记录 2026-11-09）；单列的挡不挡签字：待拍板。C 口径之前（tz-off-rep，6 份尺子）计入未定责的是第 3 层注意力前 hc_scale（1.05 N），C 口径下 0.66 N；那一代 3 份 3 对时这一格是 ❌（5 个未定责，第 6 层 MLP 侧 hc_base 5.09 N），6 份是看过 3 份的判定之后补跑的，见 PROTOCOL 变更记录 2026-11-11（L3 尺子 6 份；C 口径补数）（[mini 对齐细节 D11](../alignments/01-mini/DETAILS.md#d11)；[根源一览「定责、不修」](../ROOT-CAUSES.md#u-mini-step1)）
     say: 205 个参数梯度
-    mini_say: C 口径 205 个梯度里 163 个超出 GPU 6 份之间的波动，其中 161 个离精确值不超过 GPU 的 1.2 倍；离精确值的中位数 TPU 6.49e-3、GPU 6.79e-3；未定责的一个（第 3 层 FFN 前 hc_fn）GPU 2.04e-2、TPU 2.90e-2（1.43 倍），超出波动 1.14 倍；MTP enorm 另列（GPU 1.57e-3、TPU 1.89e-3，1.20 倍）；两个都按 D11 豁免规则（对齐细节第 5 节）单列：`hc_fn` 计入未定责（base2 开那一代登记接受的 6 个之一，接受理由没有数值门槛、复核不了；是否沿用待拍板），`enorm` 不计入（D13 的理由「两边都小于 u」复核成立）；单列的挡不挡签字：待拍板。C 口径之前的 tz-off-rep 是 169 个超出、未定责的是第 3 层注意力侧 hc_scale（1.05 倍），GPU 3 份时是 177 个超出、5 个 iHC 未定责；base2 开的上一代（mz-opt2，3 份）是 175 个超出、6 个 iHC 超线（结果文件按未定责计数；这 6 个 2026-11-09 已按 D11 接受，接受不改结果文件的计数）（[历代](history.md)；[细节](../alignments/01-mini/DETAILS.md#d11)）
+    mini_say: C 口径 205 个梯度里 163 个超出 GPU 6 份之间的波动，其中 161 个离精确值不超过 GPU 的 1.2 倍；离精确值的中位数 TPU 6.49e-3、GPU 6.79e-3；第 3 层 FFN 前 hc_fn GPU 2.04e-2、TPU 2.90e-2（1.43 倍），超出波动 1.14 倍，2026-11-12 看过结果后接受（路由翻转）；MTP enorm 另列（GPU 1.57e-3、TPU 1.89e-3，1.20 倍）；两个都按 D11 豁免规则（对齐细节第 5 节）单列：都不计入；单列的挡不挡签字：待拍板。C 口径之前的 tz-off-rep 是 169 个超出、未定责的是第 3 层注意力侧 hc_scale（1.05 倍），GPU 3 份时是 177 个超出、5 个 iHC 未定责；base2 开的上一代（mz-opt2，3 份）是 175 个超出、6 个 iHC 超线（结果文件按未定责计数；这 6 个 2026-11-09 已按 D11 接受，接受不改结果文件的计数）（[历代](history.md)；[细节](../alignments/01-mini/DETAILS.md#d11)）
   - name: 路由一致率（MoE 路由与 DSA top-k，对 CPU FP64；第 1、8、30、100 步）
     mini: t1-route-agree:L3.route_agree.*
     say: 路由和稀疏注意力的选择，不比 GPU 离精确值远
-    mini_say: 判法事后变更：原来对 GPU 三份之间的差判，第一个 MoE 层 GPU 三份完全相同、波动为 0，第 2–5 层 TPU 是 GPU 三份之间差的 2.0–5.7 倍，判不过；改成看谁离精确值远，各层 TPU 翻转率 ÷ GPU 三份最大值为 0.87–1.00（≤ 1.2 算过；第 1 步用 C 口径之前、base2 关的 tw-ra1z，第 8、30、100 步是 base2 开的一代，C 口径上都没重判）；真实权重上做前瞻验证（[细节](../alignments/01-mini/DETAILS.md#判法变更记录)）
+    mini_say: 参照不足：GPU 第 1 步参照只有三份，2026-11-12 起要 6 份，待补（格子照结果文件）。判法事后变更：原来对 GPU 三份之间的差判，第一个 MoE 层 GPU 三份完全相同、波动为 0，第 2–5 层 TPU 是 GPU 三份之间差的 2.0–5.7 倍，判不过；改成看谁离精确值远，各层 TPU 翻转率 ÷ GPU 三份最大值为 0.87–1.00（≤ 1.2 算过；第 1 步用 C 口径之前、base2 关的 tw-ra1z，第 8、30、100 步是 base2 开的一代，C 口径上都没重判）；真实权重上做前瞻验证（[细节](../alignments/01-mini/DETAILS.md#判法变更记录)）
   - name: 优化器一步：更新后参数、Adam 二阶动量（各侧对 FP64 优化器作用在自己的梯度上；格子写较差的一项）
     mini:
     - t1zo-l3-optim-step1:L3.step1.optim_arith.delta
     - t1zo-l3-optim-step1:L3.step1.optim_arith.adam_v
     say: 优化器走一步本身的误差
-    mini_say: 判法事后变更：两边离精确值都小于一次 16 位舍入（2⁻⁸ ≈ 3.9e-3）时直接算过，不要求 GPU 波动为 0；改判时（base2 开的上一代 mz-opt2）不加这条最差一个是 GPU 的 4.55 倍，判不过；C 口径之前的 tz-off-rep（C 口径改了第 1 步梯度，没重判）上，Adam 二阶动量（Adam 优化器记的梯度平方均值）99 个全部低于这条下限，最差一个离精确值 GPU 8.61e-8、TPU 1.38e-7（1.61 倍）；真实权重上做前瞻验证（[细节](../alignments/01-mini/DETAILS.md#判法变更记录)）
+    mini_say: 参照不足：GPU 一侧只有 g2s 三份的梯度，2026-11-12 起要 6 份，待补（格子照结果文件）。判法事后变更：两边离精确值都小于一次 16 位舍入（2⁻⁸ ≈ 3.9e-3）时直接算过，不要求 GPU 波动为 0；改判时（base2 开的上一代 mz-opt2）不加这条最差一个是 GPU 的 4.55 倍，判不过；C 口径之前的 tz-off-rep（C 口径改了第 1 步梯度，没重判）上，Adam 二阶动量（Adam 优化器记的梯度平方均值）99 个全部低于这条下限，最差一个离精确值 GPU 8.61e-8、TPU 1.38e-7（1.61 倍）；真实权重上做前瞻验证（[细节](../alignments/01-mini/DETAILS.md#判法变更记录)）
   - name: GPU 第 1 步参照的逐张量散布
     gpu: 'wip: g1s 中位数 rel_L2 2.7e-3（台账 G15）；g2s 6 份两两 15 对的逐张量散布记在 01 第 1 步比较的结果文件里（gpu_noise_max；两两 rel_L2 中位数 2.48e-3，新旧两批之间没有批次差，gpu-noise/results/g2s6-meta-vs-g2sa.json），没有单独的 GPU 自比检查'
     say: GPU 第一步各份之间的差

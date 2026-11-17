@@ -69,7 +69,7 @@ flowchart LR
   GATE -- 不逐位 --> DECL{"PR 声明了什么"}
   DECL -- 数学不变 --> BAD["PR 退回"]
   DECL -- 会改数值 · 执行级<br/>或升级依赖 --> TOL["容差门：对 TPU 执行噪声"]
-  DECL -- 会改数值 · 数学级 --> ALIGN["对齐门：对 GPU golden 不变差<br/>按需回到迁移验收某一级"]
+  DECL -- 会改数值 · 数学级 --> ALIGN["对齐门：对 GPU golden 判、对 LKG 不变差<br/>按需回到迁移验收某一级"]
 ```
 
 ### PR 声明：三选一
@@ -105,7 +105,7 @@ flowchart LR
 - 怎么判：先要求逐位。不逐位时，照混元 4 升 libtpu 0.0.52 的做法（[`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md)）：
   1. 离线编译比程序指纹判不了：换 libtpu 时后端代码生成一起换了，HLO 相同也不代表机器码相同。
   2. 不能假定「只换了求和顺序」：0.0.46 → 0.0.52，「RMSNorm 多舍一次」从 r 1.06 变成 5.50（主 loss 系统性偏高），词嵌入 scatter 插排序的门槛也变了。变的不是矩阵乘。
-  3. 新版本先建 golden（同一命令只换版本，重跑一次确认逐位），和旧 golden 比；再把已知敏感项在新版本上重测（混元 4 是 TPU 自比的六件），并对新版本训练步的优化后 HLO 跑 `hlo_mof_dus_scan.py`，排除已知的编译器静默算错。
+  3. 新版本先建 golden（同一命令只换版本，重跑一次确认逐位），和旧 golden 比；再把已知敏感项在新版本上重测（混元 4 是 TPU 自比的七件），并对新版本训练步的优化后 HLO 跑 `hlo_mof_dus_scan.py`，排除已知的编译器静默算错。
   4. 这些都没有数学级变化，先在新依赖下重标 TPU 执行噪声（依赖变了，旧参照作废），再用新参照按执行级判，并按 [`reference/regression.md`](../reference/regression.md#九升级-jax--libtpu--kernel-库)「九」归因。结论只对实测过的版本对和配置成立。
 
 ### 数值变了要回到迁移验收的哪一级
@@ -117,14 +117,14 @@ flowchart LR
 | 档 | 混元 3 的配置 | 现状 |
 |---|---|---|
 | T0 冒烟 | 4 层，20 步 | 能手动跑；LKG `reg-t0-fa-a` 已重建并批准 |
-| T1 主力 | 4 层，1000 步（= golden 长度）；另对 GPU golden [`g1k`](../glossary.md#g1k)（第一阶段 GPU golden，不开重算）比「不变差」（见下） | 能手动跑；LKG `reg-t1-fa-a` 已重建并批准 |
+| T1 主力 | 4 层，1000 步（= golden 长度）；另对修好的 golden [`rcc`](../glossary.md#rcc)（两层验收的最终 golden）判对齐门（见下） | 能手动跑；LKG `reg-t1-fa-a` 已重建并批准 |
 | T2 每日 | 4 层，1000 步，第 1 步抓张量，两个并行变体 | 未实施 |
 | T3 生产形状 | 80 层、生产切分与数据管线，100 步 | 待定：生产配置与切片资源未定 |
 | T4 低精度配方 | — | 未启用：混元 3 目前没有 FP8 配方 |
 
 T0 / T1 的 LKG 都是验收时的配置 a238883b 下建的，已确认；仓库现行 yml 已变，跑之前先按 7.4 第 2 步处理。T0 / T1 守的是回归程序（累积 1、不重算），不是正式验收的 `t-rmap-on-1000`（累积 2 + rmap 重算）：T0 / T1 绿了，只说明回归程序没变；给验收程序单独建变体与 LKG 待定（[回归守的不是正式验收的那个程序](../../models/hunyuan3/regression/README.md#回归守的不是正式验收的那个程序)）。
 
-T1 对 [`g1k`](../glossary.md#g1k) 比「不变差」，对的是 `g1k` 的 3 份 `g1k-a/b/c`：R25 只对基线 `g1k-a` 算，`g1k-b/c` 只组噪声带。它对的是不重算的 BF16 golden，不是[两层验收](../glossary.md#two-tier)的最终 golden [`rcc`](../glossary.md#rcc)。以 [`regression/README.md`](../../models/hunyuan3/regression/README.md) 的 R25 行为准。
+T1 的对齐门 R25 对的是[两层验收](../glossary.md#two-tier)的最终 golden [`rcc`](../glossary.md#rcc)（修好的 golden）：只对基线 `rcc-a` 算，`rcc-b..j` 只组噪声带（10 份两两 45 对），与正式迁移验收第一层同一把尺子。它是判定的：数值变了时，对 `rcc-a` 超出噪声要拦，对 LKG 变差也要拦。2026-11-16 之前对的是第一阶段 golden [`g1k`](../glossary.md#g1k)，TPU 对它本来就超，只报不判。以 [`regression/README.md`](../../models/hunyuan3/regression/README.md) 的 R25 行为准。
 
 ### 触发方式与耗时
 

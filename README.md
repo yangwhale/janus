@@ -59,4 +59,5 @@ janus run /tmp/janus-demo/catalog.yaml --out /tmp/janus-demo/out-bad --test t-ba
 ## 其他
 
 - 问题与建议在本仓库开 issue，参与方式见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。文中的 `maxtext` 指我们修改过的 MaxText，公开在 [yangwhale/maxtext](https://github.com/yangwhale/maxtext) 的 `hunyuan`、`hunyuan4` 分支，见[关于公开版](docs/public-edition.md)。
+- 本仓库只管数值对齐；TPU 训练性能调优另有仓库，不在公开版内。
 - 版本：`janus --version` 与 [`CHANGELOG.md`](CHANGELOG.md)。改 janus 本身：[`CONTRIBUTING.md`](CONTRIBUTING.md)。数据与机密：[`SECURITY.md`](SECURITY.md)。许可：Apache License 2.0，见 [`LICENSE`](LICENSE) 与 [`NOTICE`](NOTICE)。

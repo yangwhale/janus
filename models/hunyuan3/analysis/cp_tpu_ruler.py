@@ -6,7 +6,8 @@
 TPU 同程序重跑逐位相同，这几份的差来自换了求和顺序之后在 MoE 路由上被放大的轨迹分叉，比 GPU 重跑的差大得多，
 所以这把尺子回答的是「CP 和换一个编译开关分不分得开」，不是「CP 和 GPU 分不分得开」。
 
-逐步数据是 MaxText 的 metrics 文件（每行 JSON，step 从 0 起，loss 在 learning/loss），或本实践 results/series/<运行>.json。
+逐步数据是 MaxText 的 metrics 文件（每行 JSON，step 从 0 起，loss 在 learning/loss）、train_hy3.py 的 metrics.jsonl（step 从 1 起，
+lm_loss），或本实践 results/series/<运行>.json。
 
   python cp_tpu_ruler.py --ref base=<B.jsonl> --ref vmem64=<...> ... --test ring=<...>[@<另一个基线 jsonl>] --windows 1:3000,100:3000,2000:3000 --out x.json
 """
@@ -33,6 +34,8 @@ def load(p):
             continue
         if "step" in x and "learning/loss" in x:
             d[int(x["step"])] = float(x["learning/loss"])
+        elif "step" in x and "lm_loss" in x:            # train_hy3.py 的 metrics.jsonl（step 从 1 起）
+            d[int(x["step"])] = float(x["lm_loss"])
     return d
 
 

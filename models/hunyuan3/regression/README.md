@@ -24,6 +24,10 @@
   - 基线 + 7 个臂共 8 份运行，两两配对，T0、T1 各 28 对比较。
   - 绑定 yml a238883b（[`calibration.yaml`](calibration.yaml) 最新两条）。
   - R22 步时阈值也按新配置重标。
+- **R25 对齐门换参照（2026-11-16，项目负责人批准）**：从第一阶段 golden `g1k-a`（只报不判）换成修好的 golden `rcc-a`（判）。
+  - 噪声是 `rcc-a..j` 10 份两两 45 对，与正式迁移验收第一层同基线、同尺子；单步硬上限 9.75e-3（注「单步硬上限」）。
+  - 现行 T1 LKG `reg-t1-fa-a` 对 `rcc-a`：带符号均值 / MARE / 最大单步 +1.26e-5 / 1.082e-4 / 4.99e-4，噪声上限 9.47e-5 / 1.377e-4 / 9.75e-4，**pass**（注 R25）。
+  - 只改了检查项目录和档位配置的 golden 列表，数值没变：`reg-t1-fa-a` 在新目录下重新登记（[`lkg.yaml`](lkg.yaml) 末条），T1 噪声标定按新档位配置重新绑定，数值逐位不变（[`calibration.yaml`](calibration.yaml) 末条）。
 - **历史**：旧配置（7704115b）下的标定与 LKG 留作历史。
 - 凡写「待实测」「待标定」的数都还没有。
 
@@ -36,11 +40,11 @@
 | 权重 | 截 4 层的 HF 转成的 MaxText 检查点（FP32）；清单 `tensor_sha256.json` 的 sha256 `183274dbf17e…` | 01 `setup.md`「权重」 |
 | 数据 | 回放 GPU golden `g1k-a`（第一阶段 GPU golden 的第 1 份）的 `data/batches`（注 1） | 01 `setup.md`「数据」 |
 | 镜像 | MaxText 官方 `tpu_pre_training`，按 digest 钉死（注 2） | [`../frameworks/maxtext/run.sh`](../frameworks/maxtext/run.sh) |
-| 对齐门的 golden | `g1k-a` / `g1k-b` / `g1k-c`（[`g1k`](../../../docs/glossary.md#g1k)：B200×8，1000 步，默认设置）（注 3） | 01 [`runs.yaml`](../alignments/01-v5p-acceptance/runs.yaml) |
+| 对齐门的 golden | 修好的 golden `rcc-a..j`（[`rcc`](../../../docs/glossary.md#rcc)：GPU 生产程序只把输出头 dgrad 改成分段 FP32 累加，B200×8，1000 步，10 份）（注 3） | [`../goldens.md`](../goldens.md)、01 [`runs.yaml`](../alignments/01-v5p-acceptance/runs.yaml) |
 
 - 注 1：清单 sha256 `e4db6392d89a…`，`dataset_type: "synthetic"`，不走 MaxText 数据管线。
 - 注 2：首个 LKG 用哪个 digest 建立时写进 [`lkg.yaml`](lkg.yaml)。
-- 注 3：只给 R25 当「不变差」的参照。迁移验收的最终 golden 是 `rcc`（见第四节 R25 行）。
+- 注 3：只给 R25 用，基线 `rcc-a`，与正式迁移验收第一层（01 `phase2-acceptance-rcc-on`）相同。数据相同：TPU 回放的是 `g1k-a` 的批次，它与 `rcc-*` 读的是同一份数据清单（meta 里 `replay_of.manifest_sha256` 与 `rcc-*` 的 `data.manifest_sha256` 都是 `83d5a23b14d3…`）。2026-11-16 之前对的是第一阶段 golden `g1k-a/b/c`，只报不判。
 
 T0–T2、T4 都用回放数据，所以**生产的数据管线不在这几档的覆盖里**（R28 的已知缺口，由 T3 补）。
 
@@ -87,14 +91,14 @@ T0–T2、T4 都用回放数据，所以**生产的数据管线不在这几档�
 | 档 | 混元 3 的配置 | 触发 | 状态 |
 |---|---|---|---|
 | T0 冒烟 | 4 层，主切分，20 步 | 目标：每次合并到 `hunyuan`；现在手动 | 可手动跑：[`tiers/t0.yaml`](tiers/t0.yaml)、[`catalogs/regression-t0.yaml`](catalogs/regression-t0.yaml) |
-| T1 主力 | 4 层，主切分，1000 步；R25 对基线 `g1k-a`（第一阶段 GPU golden 的第 1 份）（注 1） | 目标：每 3 小时，有新提交才跑；现在手动 | 可手动跑：[`tiers/t1.yaml`](tiers/t1.yaml)、[`catalogs/regression-t1.yaml`](catalogs/regression-t1.yaml)；v5p 首个 LKG 已建立 |
+| T1 主力 | 4 层，主切分，1000 步；R25 对基线 `rcc-a`（修好的 golden 的第 1 份）（注 1） | 目标：每 3 小时，有新提交才跑；现在手动 | 可手动跑：[`tiers/t1.yaml`](tiers/t1.yaml)、[`catalogs/regression-t1.yaml`](catalogs/regression-t1.yaml)；v5p 首个 LKG 已建立 |
 | T2 每日 | 4 层，1000 步，第 1 步抓张量；两个并行变体；R27 在第 500 步存档续训（注 2） | 每天一次 | 未实施 |
 | T3 生产形状 | 生产层数（`hunyuan3-295b.yml`，80 层）、生产切分与切片、生产数据管线，100 步 | 每周一次起步 | 未实施（注 3） |
 | T4 低精度配方 | — | — | 未启用：混元 3 目前没有 FP8 配方 |
 | 金丝雀 | T1 配置，libtpu 换每日构建 | 每天一次 | 未实施；换 libtpu 前要做什么，见第七节末「换 libtpu」 |
 | 对照臂 | T0 配置，LKG 的提交 | 每天一次；失败时用失败那档的配置 | 未实施 |
 
-- 注 1：`g1k-b/c` 只组噪声带；窗口 `1:1001`（第 1–1000 步），分母 golden。
+- 注 1：`rcc-b..j` 只组噪声带（10 份两两 45 对）；窗口 `1:1001`（第 1–1000 步），分母 golden。
 - 注 2：并行变体：
   - ① 主切分；
   - ② `per_device_batch_size: 1` + `gradient_accumulation_steps: 2`（同样对得上 GPU 的行分配，[`../frameworks/maxtext/README.md`](../frameworks/maxtext/README.md#数据回放)「数据回放」）。
@@ -126,7 +130,7 @@ T0–T2、T4 都用回放数据，所以**生产的数据管线不在这几档�
 
 只列需要按模型填的行；其余行照标准。长的取值写在表下的注里。
 
-代号：`t-hlo`（v5p 上导出 XLA dump 的 TPU 运行）、`g1k-a`（第一阶段 GPU golden 的第 1 份）。
+代号：`t-hlo`（v5p 上导出 XLA dump 的 TPU 运行）、`rcc-a`（修好的 golden 的第 1 份，验收的比较基线）。
 
 | 行 | 混元 3 的取值 | 出处 |
 |---|---|---|
@@ -136,8 +140,8 @@ T0–T2、T4 都用回放数据，所以**生产的数据管线不在这几档�
 | R16 | MoE 层是第 1、2、3 层（第 0 层稠密）；① 偏置与负载统计，② top-8 翻转数（见注 R16） | [`../config-alignment.md`](../config-alignment.md#模型结构)「模型结构」 |
 | R18 | 规则：读 FP32 状态清单，训练前后各查一遍（见注 R18） | 同上「数值精度」；二阶动量 FP32 与计数器的 dtype 出自 v5p 运行 `t-hlo` 的 `modules.txt` |
 | R20 | 读运行目录 `hlo/train_step.after_optimizations.txt`（见注 R20） | `hy3-4layers.yml`；对照表「数值精度」「并行与确定性」；计数出自 v5p 运行 `t-hlo` 的 XLA dump |
-| R25 | 只对基线 `g1k-a` 算三个量（`params.baseline`），不取各份最差；噪声参照：3 份 golden 两两 3 对（见注 R25） | 见注 R25 |
-| 单步硬上限 | 10 × golden 两两在 `1:1000` 窗口上的最大单步上限；未启用（见注「单步硬上限」） | — |
+| R25 | 只对基线 `rcc-a` 算三个量（`params.baseline`），不取各份最差；噪声参照：10 份 golden 两两 45 对；判（`hard: true`）（见注 R25） | 见注 R25 |
+| 单步硬上限 | 10 × golden 两两在 `1:1001` 窗口上的最大单步上限 = 9.75e-3（见注「单步硬上限」） | — |
 | R28 | 生产配置与 T0–T2 不同的已知项（见注 R28）；由 T3 覆盖，T3 上线前列为已知缺口 | `hy3-4layers.yml` 头注释（与 `hunyuan3-295b.yml` 只差层数）；对照表「MTP」一行 |
 
 ### 表注（四）
@@ -181,17 +185,22 @@ T0–T2、T4 都用回放数据，所以**生产的数据管线不在这几档�
     - 原因：优化后的 HLO 里路由矩阵乘被融进 fusion，还没有可靠的正则。
     - 先由 R21 指纹兜底（变了会报，但不会说是哪一条）。
 - 注 R25
-  - 它对的是 BF16、不重算的 [`g1k`](../../../docs/glossary.md#g1k)。
-  - TPU 生产对它本来就带着 GPU 输出头 dgrad 那份偏差。
-    - 正式验收第一层对最终 golden `rcc` 才在噪声内（01 `phase2-acceptance-rcc-on`）。
-  - 所以只用「不变差」判，不要求 `pass`。
+  - 参照是两层验收的最终 golden [`rcc`](../../../docs/glossary.md#rcc)（修好的 golden：GPU 生产程序只把输出头 dgrad 改成分段 FP32 累加），基线 `rcc-a`，噪声 `rcc-a..j` 10 份两两 45 对。
+    - 与正式迁移验收第一层 01 [`phase2-acceptance-rcc-on`](../alignments/01-v5p-acceptance/catalogs/phase2-acceptance-rcc-on.yaml) 的 `L4.loss` 同基线、同噪声、同窗口、同分母、同参数。
+  - 判法（2026-11-16 起，项目负责人批准）：`hard: true`。
+    - 对齐门本身：被测对 `rcc-a` 的三个量 ≤ 1 倍噪声上限 pass、1–2 倍 inconclusive、> 2 倍 fail（[`docs/reference/judging.md`](../../../docs/reference/judging.md)）。
+    - `regress.py` 再叠「不变差」：新值 − LKG 值 ≤ TPU 执行噪声上限。两者取较差。
+    - 回归门逐位通过时继承 LKG。
+  - 新尺子（`rcc-a..j` 两两 45 对，`1:1001`）：带符号均值 9.47e-5（2 倍标准误下限 4.24e-5，没起作用）、MARE 1.377e-4、最大单步 9.75e-4。
+  - 现行 T1 LKG `reg-t1-fa-a`（同一提交双跑的 `reg-t1-fa-b` 逐位相同）对 `rcc-a`：带符号均值 +1.26e-5、MARE 1.082e-4、最大单步 4.99e-4（第 397 步），分别是上限的 0.13、0.79、0.51 倍，**pass**；落在 10 份 golden 带内的步数 77%。
+    - 对照：正式验收的被测 `t-rmap-on-1000`（累积 2 + rmap 重算）同一检查 3.85e-5 / 1.098e-4 / 5.90e-4，pass（01 `phase2-acceptance-rcc-on` 结果文件，本次离线重判逐位相同）。
+  - 为什么换：原参照 [`g1k`](../../../docs/glossary.md#g1k) 是不重算的第一阶段 BF16 golden，带着 GPU 输出头 dgrad 那份偏差，TPU 对它本来就超：现行 LKG `reg-t1-fa-a` 对 `g1k-a` 带符号均值 / MARE / 最大单步 1.37e-4 / 1.74e-4 / 6.91e-4，判「超过噪声参照两倍」（3 份 golden 两两 3 对；[`results/reg-t1-fa/`](results/reg-t1-fa/report.md)），所以原来只能「不变差」、不能判。`rcc` 修掉了这份偏差，TPU 生产对它在噪声内，可以判。
   - 出处：
     - [`goldens.md`](../goldens.md#比较协议几份-golden-只造噪声带正式比较只对一份)「比较协议」
+    - 离线重判结果：[`results/README.md`](results/README.md)「2026-11-16 R25 换参照」
 - 注「单步硬上限」
-  - 未启用：R25 现在只报不判（`hard: false`），所以这个上限还没有按 `g1k-a/b/c` 算出。
-  - R25 改成判定之前要先算出它。
-  - 参考量级：第一阶段 8 份 GPU 运行两两 28 对、窗口 `1:101` 的上限是 2.34e-4（00 `phase1-full-noise28` 的 `L4.loss`）。
-    - 照此是 2.3e-3（推断，窗口不同，正式值以 `1:1000` 重算为准）。
+  - 9.75e-3 = 10 × `rcc-a..j` 两两 45 对在 `1:1001` 窗口上的最大单步上限 9.750e-4（标准「两条通用规则」），写在 R25 的 `params.hard_limit.max_step`。
+  - 现行 LKG 的最大单步 4.99e-4，离它约 20 倍。
 - 注 R28
   - 层数（80 对 4）。
   - MTP（回归关；模型 yml 里是 1 层，生产开不开以生产配置为准）。
@@ -433,7 +442,7 @@ bash models/hunyuan3/regression/run_regression.sh T0 <名> --declare 数学级 -
 | R22 | `regress.py`：稳定窗口（去掉前 2 步）步时中位数对 LKG，只报；阈值 T0 0.63%、T1 0.57%（注 3） | 峰值 HBM、编译期临时区还没记 |
 | R23 | `regress.py`：每行都出了结论、`expect` 的单元数对得上 | — |
 | R24 | 不在档位运行里；建首个 LKG 的双跑起同样作用 | 例行对照臂随排程上线 |
-| R25 | `multi_golden` 对基线 `g1k-a`（第一阶段 GPU golden 的第 1 份）（只报）；`regress.py`：逐位时继承 LKG，否则「不变差」（注 4） | — |
+| R25 | `multi_golden` 对基线 `rcc-a`（修好的 golden 的第 1 份）（判）；`regress.py`：逐位时继承 LKG，否则对齐门本身与「不变差」取较差（注 4） | — |
 | R10、R11、R16②、R19、R27、R28 | 属 T2 / 每周，未实施 | 全部 |
 
 - 注 1：R05
@@ -443,10 +452,11 @@ bash models/hunyuan3/regression/run_regression.sh T0 <名> --declare 数学级 -
 - 注 2：R17 跳步数：`skip_step_on_spikes` 由 R06 断言为 false，训练循环里没有跳步路径，不另数。
 - 注 3：R22 阈值是现行配置 yml a238883b 下的，取自 [`calibration.yaml`](calibration.yaml) 最新两条的 `step_time_threshold`；旧配置下是 0.83% / 0.73%。
 - 注 4：R25
-  - `multi_golden`：`baseline: g1k-a`，`g1k-b/c` 只组噪声带。
+  - `multi_golden`：`baseline: rcc-a`，`rcc-b..j` 只组噪声带；`hard_limit.max_step: 9.75e-3`。
   - `noise_from: golden`：目录里的 `runs.noise` 是 TPU 执行噪声，这一条不换尺子。
-  - `regress.py`：回归门逐位时继承 LKG，否则「不变差」。
-    - 对 golden 的三个量，新值 − LKG 值 ≤ TPU 执行噪声上限。
+  - `regress.py`：回归门逐位时继承 LKG；否则两样取较差：
+    - 对齐门本身（`hard: true`）：对 `rcc-a` 的三个量对 golden 噪声上限；
+    - 不变差：对 golden 的三个量，新值 − LKG 值 ≤ TPU 执行噪声上限。
 
 ### 编译缓存与试跑结果
 

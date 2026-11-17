@@ -171,7 +171,7 @@ TPU 一侧的配置文件 [`hy3-4layers.yml`](../../models/hunyuan3/frameworks/m
 | microbatch | gbs 16、每卡 2 个 microbatch 分两次前反向再累加 | `per_device_batch_size=1`、`gradient_accumulation_steps=2` |
 | 重算 | 整层重算 + 路由回放（`rc` / `rcc`） | 命令行覆盖，见 3.4「生产配置」 |
 | MTP / dropout | 关 / 0 | `mtp_num_layers=0`（`train_hy3.py` 自动加）/ `dropout_rate=0` |
-| 并行 | DP8 + EP8 | FSDP8：归约顺序不同，列为已知差异。TPU 一侧换切法不一定只换顺序：混元 4 上纯数据并行（词嵌入梯度 BF16 scatter）、上下文并行（sink 梯度在 BF16 里算）都改了精度路径，要开对应开关（[TPU 自比「一页看完」](../../models/hunyuan4/alignments/04-tpu-self/README.md#一页看完六件真有影响的和三条规律)）；生产切法与验收用的切法不同时要重测 |
+| 并行 | DP8 + EP8 | FSDP8：归约顺序不同，列为已知差异。TPU 一侧换切法不一定只换顺序：混元 4 上纯数据并行（词嵌入梯度 BF16 scatter）、上下文并行（sink 梯度在 BF16 里算）都改了精度路径，要开对应开关（[TPU 自比「一页看完」](../../models/hunyuan4/alignments/04-tpu-self/README.md#一页看完七件真有影响的和三条规律)）；生产切法与验收用的切法不同时要重测 |
 
 ### 四个精度开关
 
@@ -269,7 +269,7 @@ source <(bash models/hunyuan3/frameworks/maxtext/stage.sh <maxtext 克隆> [maxt
 
 - 默认提交到你自己的节点池。
 - `run.sh` 提交一个 JobSet，每台主机跑同一条命令，进程 0 写运行目录。
-- 要跨几个切片（走 DCN）跑：混元 3 没测过多切片。多切片（几个切片之间走 DCN）只测过一次：混元 4 TPU 自比 B15，两个 v5p 8 片切片走 DCN 做数据并行 2、切片内 FSDP 8，300 步一份。曲线对单切片在噪声内，但第 1 步 `hc_head` 三个梯度离 FP64 0.51–0.57（单切片 0.02–0.07），对自比 golden 的 R 最大 21.1，靠 iHC 豁免才不算未定责。离线查过是差异清单 A16 同一型：B15 存下的训练步程序里主输出头反向的卷积 kernel 并进了末层 RMSNorm 的行和，单切片 16 片同一切法（B2c）没有、不偏，所以是走 DCN 改了融合切分；LLO 里省没省那次舍入、上卡加 barrier 都没核。上多切片前先用 `models/hunyuan4/analysis/hc_head_dgrad_fusion.py` 查训练步程序里主头 kernel 有没有并进行和；更多切片、DCN 上做 FSDP、1000 步都没测（[环境「TPU 侧」](../reference/environment.md#tpu-侧)）。
+- 要跨几个切片（走 DCN）跑：混元 3 没测过多切片。多切片（几个切片之间走 DCN）只测过一次：混元 4 TPU 自比 B15，两个 v5p 8 片切片走 DCN 做数据并行 2、切片内 FSDP 8，300 步一份。曲线对单切片在噪声内，但第 1 步 `hc_head` 三个梯度离 FP64 0.51–0.57（单切片 0.02–0.07），对自比 golden 的 R 最大 21.1；iHC 豁免没有上限时被单列，2026-11-12 起按上限 5.22 计入未定责，这次判「超」。离线查过是差异清单 A16 同一型：B15 存下的训练步程序里主输出头反向的卷积 kernel 并进了末层 RMSNorm 的行和，单切片 16 片同一切法（B2c）没有、不偏，所以是走 DCN 改了融合切分；LLO 里省没省那次舍入、上卡加 barrier 都没核。上多切片前先用 `models/hunyuan4/analysis/hc_head_dgrad_fusion.py` 查训练步程序里主头 kernel 有没有并进行和；更多切片、DCN 上做 FSDP、1000 步都没测（[环境「TPU 侧」](../reference/environment.md#tpu-侧)）。
 - 提交机等训练结束（Pod 打出 `JANUS_READY`）后：
   - 把运行目录取回本地 `~/janus-runs/`；
   - 再传到 `gs://<POC 桶>/janus/hunyuan3-4l/tpu/<运行名>/`。

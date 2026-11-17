@@ -227,8 +227,18 @@
   "over_scale_max": 1735.8655456755237,
   "within": false,
   "n_attributed": 0,
-  "n_unattributed": 119,
+  "n_unattributed": 162,
   "unattributed": [
+   {
+    "tensor": "model.layers.0.hc_mlp_layer.hc_pre.hc_scale",
+    "d": 0.9525484307869492,
+    "scale": 0.004099527661619727,
+    "over_scale": 232.35565397077877,
+    "test_vs_fp64": 0.9502679941185381,
+    "golden_vs_fp64": 0.001293348729765535,
+    "gpu_vs_fp64": 0.0017176701237288084,
+    "r64": 553.2307868612435
+   },
    {
     "tensor": "lm_head.weight",
     "d": 0.9972969479285935,
@@ -280,69 +290,6 @@
     "r64": 257.27953816649733
    },
    {
-    "tensor": "model.layers.6.self_attn.kv_b_proj.weight",
-    "d": 0.996139505868333,
-    "scale": 0.001183418663894423,
-    "over_scale": 841.7473344473145,
-    "test_vs_fp64": 0.9966114333739924,
-    "golden_vs_fp64": 0.0037233955443079407,
-    "gpu_vs_fp64": 0.003967958020819997,
-    "r64": 251.16481276887043
-   },
-   {
-    "tensor": "model.layers.6.self_attn.o_proj.weight",
-    "d": 0.9947954643885843,
-    "scale": 0.0011632137746956258,
-    "over_scale": 855.2129333654849,
-    "test_vs_fp64": 0.9956331057492143,
-    "golden_vs_fp64": 0.0037266020533216686,
-    "gpu_vs_fp64": 0.0039714594667438815,
-    "r64": 250.69703319054986
-   },
-   {
-    "tensor": "model.layers.0.self_attn.kv_a_proj_with_mqa.weight",
-    "d": 0.9859392635257981,
-    "scale": 0.0021989815791290095,
-    "over_scale": 448.36176568442056,
-    "test_vs_fp64": 0.9860845438129726,
-    "golden_vs_fp64": 0.0036709755823612455,
-    "gpu_vs_fp64": 0.003944090209697339,
-    "r64": 250.01571753822603
-   },
-   {
-    "tensor": "model.layers.6.self_attn.kv_a_proj_with_mqa.weight",
-    "d": 0.987186324607405,
-    "scale": 0.0011241458163921433,
-    "over_scale": 878.1657238877613,
-    "test_vs_fp64": 0.9879151893798713,
-    "golden_vs_fp64": 0.0037077593161081008,
-    "gpu_vs_fp64": 0.00395773916091623,
-    "r64": 249.61604320360658
-   },
-   {
-    "tensor": "model.layers.5.self_attn.kv_b_proj.weight",
-    "d": 0.9946480667158467,
-    "scale": 0.0013598927022674416,
-    "over_scale": 731.4165779825146,
-    "test_vs_fp64": 0.9949161399332543,
-    "golden_vs_fp64": 0.0038108667020330046,
-    "gpu_vs_fp64": 0.00399236245877461,
-    "r64": 249.20486308716258
-   }
-  ],
-  "n_ihc_accepted": 45,
-  "ihc_accepted": [
-   {
-    "tensor": "model.layers.0.hc_mlp_layer.hc_pre.hc_scale",
-    "d": 0.9525484307869492,
-    "scale": 0.004099527661619727,
-    "over_scale": 232.35565397077877,
-    "test_vs_fp64": 0.9502679941185381,
-    "golden_vs_fp64": 0.001293348729765535,
-    "gpu_vs_fp64": 0.0017176701237288084,
-    "r64": 553.2307868612435
-   },
-   {
     "tensor": "model.layers.4.hc_mlp_layer.hc_pre.hc_base",
     "d": 0.9686960091735047,
     "scale": 0.0006252643543649363,
@@ -363,74 +310,47 @@
     "r64": 252.0536607224796
    },
    {
-    "tensor": "model.layers.3.hc_attn_layer.hc_pre.hc_scale",
-    "d": 1.1639628918762797,
-    "scale": 0.0032060573719355505,
-    "over_scale": 363.05117371420454,
-    "test_vs_fp64": 1.1532128813089064,
-    "golden_vs_fp64": 0.004967915615127383,
-    "gpu_vs_fp64": 0.0010718875587587616,
-    "r64": 232.13213964370786
+    "tensor": "model.layers.6.self_attn.kv_b_proj.weight",
+    "d": 0.996139505868333,
+    "scale": 0.001183418663894423,
+    "over_scale": 841.7473344473145,
+    "test_vs_fp64": 0.9966114333739924,
+    "golden_vs_fp64": 0.0037233955443079407,
+    "gpu_vs_fp64": 0.003967958020819997,
+    "r64": 251.16481276887043
    },
    {
-    "tensor": "model.layers.0.hc_attn_layer.hc_pre.hc_base",
-    "d": 1.0972935064153095,
-    "scale": 0.0022785327087040913,
-    "over_scale": 481.5790013562684,
-    "test_vs_fp64": 1.0898024323673587,
-    "golden_vs_fp64": 0.003827543630478394,
-    "gpu_vs_fp64": 0.005656899080417847,
-    "r64": 192.65014575562492
+    "tensor": "model.layers.6.self_attn.o_proj.weight",
+    "d": 0.9947954643885843,
+    "scale": 0.0011632137746956258,
+    "over_scale": 855.2129333654849,
+    "test_vs_fp64": 0.9956331057492143,
+    "golden_vs_fp64": 0.0037266020533216686,
+    "gpu_vs_fp64": 0.0039714594667438815,
+    "r64": 250.69703319054986
+   }
+  ],
+  "n_ihc_accepted": 2,
+  "ihc_accepted": [
+   {
+    "tensor": "model.layers.1.hc_attn_layer.hc_pre.hc_scale",
+    "d": 0.584809536098879,
+    "scale": 0.09938743335154661,
+    "over_scale": 5.884139637959355,
+    "test_vs_fp64": 0.4829839670546724,
+    "golden_vs_fp64": 0.07095882068653925,
+    "gpu_vs_fp64": 0.10330583952957952,
+    "r64": 4.675282338868945
    },
    {
-    "tensor": "model.layers.6.hc_attn_layer.hc_pre.hc_base",
-    "d": 0.9661489499436415,
-    "scale": 0.0015939547051796487,
-    "over_scale": 606.1332525975074,
-    "test_vs_fp64": 0.9715782860573035,
-    "golden_vs_fp64": 0.002780166648488485,
-    "gpu_vs_fp64": 0.005212922237842473,
-    "r64": 186.37881819994706
-   },
-   {
-    "tensor": "model.layers.5.hc_attn_layer.hc_pre.hc_base",
-    "d": 0.9635795809371365,
-    "scale": 0.000555100355173046,
-    "over_scale": 1735.8655456755237,
-    "test_vs_fp64": 0.9707931872730654,
-    "golden_vs_fp64": 0.003704654390205407,
-    "gpu_vs_fp64": 0.005434800029573822,
-    "r64": 178.62537388504276
-   },
-   {
-    "tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_base",
-    "d": 1.157756222618027,
-    "scale": 0.002806776300410046,
-    "over_scale": 412.48610459226427,
-    "test_vs_fp64": 1.1744520772557854,
-    "golden_vs_fp64": 0.007755983710250169,
-    "gpu_vs_fp64": 0.0027288317954527277,
-    "r64": 151.42528931612512
-   },
-   {
-    "tensor": "model.layers.2.hc_mlp_layer.hc_pre.hc_base",
-    "d": 1.0540013743396748,
-    "scale": 0.001236631659978681,
-    "over_scale": 852.3163432172239,
-    "test_vs_fp64": 1.0580995431332723,
-    "golden_vs_fp64": 0.0020103980930258544,
-    "gpu_vs_fp64": 0.00702786620689801,
-    "r64": 150.55772434807076
-   },
-   {
-    "tensor": "model.layers.1.hc_mlp_layer.hc_pre.hc_base",
-    "d": 1.0766169172534148,
-    "scale": 0.0032896709402891445,
-    "over_scale": 327.271917706999,
-    "test_vs_fp64": 1.0820403412491433,
-    "golden_vs_fp64": 0.0026568556377509407,
-    "gpu_vs_fp64": 0.007422638463567724,
-    "r64": 145.77570314923514
+    "tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_scale",
+    "d": 5.761997959529662,
+    "scale": 1.2826394164557735,
+    "over_scale": 4.492297590114127,
+    "test_vs_fp64": 5.712185683586913,
+    "golden_vs_fp64": 1.4944032489505885,
+    "gpu_vs_fp64": 0.2863955487502917,
+    "r64": 3.822385750029765
    }
   ],
   "fp64": {
@@ -440,7 +360,8 @@
    "test_closer": 28,
    "golden_closer": 177,
    "ratio_median": 97.75839126846165
-  }
+  },
+  "ihc_rule": "iHC 张量超出尺子且 R > 1.2 时：R ≤ 5.22 单列 ihc_accepted、不计入未定责；R > 5.22 记 unattributed（PROTOCOL 变更记录 2026-11-12，上限 = 01-mini D11 登记接受过的最大 R 5.218）"
  },
  "curves": {
   "janus_rc": 1,
@@ -564,10 +485,16 @@
  },
  "verdict": {
   "tier": 3,
-  "label": "超出刻度",
+  "label": "超出噪声上限",
   "band": "超",
   "curves_r_max": 9676.748245497232,
-  "why": "超出刻度：第 1 步梯度 119 个张量超出刻度且离 FP64 远 1.2 倍以上（最远 lm_head.weight，268 倍）；C.loss r 191；C.loss.tail r 177；C.mtp_loss r 443；C.indexer_loss r 9.06；C.grad_norm r 9.68e+03；C.param_norm r 143；C.router.bias_std r 5.46"
+  "why": "超出噪声上限：第 1 步梯度 162 个张量超出噪声上限且离 FP64 远 1.2 倍以上（最远 model.layers.0.hc_mlp_layer.hc_pre.hc_scale，553 倍）；C.loss r 191；C.loss.tail r 177；C.mtp_loss r 443；C.indexer_loss r 9.06；C.grad_norm r 9.68e+03；C.param_norm r 143；C.router.bias_std r 5.46",
+  "before_ihc_cap": {
+   "tier": 3,
+   "label": "超出刻度",
+   "band": "超",
+   "why": "超出刻度：第 1 步梯度 119 个张量超出刻度且离 FP64 远 1.2 倍以上（最远 lm_head.weight，268 倍）；C.loss r 191；C.loss.tail r 177；C.mtp_loss r 443；C.indexer_loss r 9.06；C.grad_norm r 9.68e+03；C.param_norm r 143；C.router.bias_std r 5.46"
+  }
  },
  "step1_rows": [
   {
@@ -610,7 +537,7 @@
    "golden_vs_fp64": 0.061266744134495565,
    "gpu_vs_fp64": 0.0323212523423918,
    "r64": 16.129384095940207,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.hc_head.hc_head_fn",
@@ -624,7 +551,7 @@
    "golden_vs_fp64": 0.07046040410057014,
    "gpu_vs_fp64": 0.06572466270482988,
    "r64": 13.948158376086772,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.hc_head.hc_head_scale",
@@ -638,7 +565,7 @@
    "golden_vs_fp64": 0.027122338136993888,
    "gpu_vs_fp64": 0.013242708253953713,
    "r64": 39.65423442335742,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.0.hc_attn_layer.hc_pre.hc_base",
@@ -652,7 +579,7 @@
    "golden_vs_fp64": 0.003827543630478394,
    "gpu_vs_fp64": 0.005656899080417847,
    "r64": 192.65014575562492,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.0.hc_attn_layer.hc_pre.hc_fn",
@@ -666,7 +593,7 @@
    "golden_vs_fp64": 0.0077250022788346254,
    "gpu_vs_fp64": 0.007592422344500278,
    "r64": 130.47504551192716,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.0.hc_attn_layer.hc_pre.hc_scale",
@@ -680,7 +607,7 @@
    "golden_vs_fp64": 0.009586857069326818,
    "gpu_vs_fp64": 0.005930559219724417,
    "r64": 114.11854742947395,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.0.hc_mlp_layer.hc_pre.hc_base",
@@ -694,7 +621,7 @@
    "golden_vs_fp64": 0.0015616024407202223,
    "gpu_vs_fp64": 0.008534368447034138,
    "r64": 120.23757599125496,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.0.hc_mlp_layer.hc_pre.hc_fn",
@@ -708,7 +635,7 @@
    "golden_vs_fp64": 0.006390796157148714,
    "gpu_vs_fp64": 0.007451053996203659,
    "r64": 131.45499499139908,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.0.hc_mlp_layer.hc_pre.hc_scale",
@@ -722,7 +649,7 @@
    "golden_vs_fp64": 0.001293348729765535,
    "gpu_vs_fp64": 0.0017176701237288084,
    "r64": 553.2307868612435,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.0.input_layernorm.weight",
@@ -1002,7 +929,7 @@
    "golden_vs_fp64": 0.005968433942430589,
    "gpu_vs_fp64": 0.0101202273005866,
    "r64": 94.27307561502795,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.1.hc_attn_layer.hc_pre.hc_fn",
@@ -1016,7 +943,7 @@
    "golden_vs_fp64": 0.011277084155087876,
    "gpu_vs_fp64": 0.012961344109230527,
    "r64": 75.0816886164717,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.1.hc_attn_layer.hc_pre.hc_scale",
@@ -1044,7 +971,7 @@
    "golden_vs_fp64": 0.0026568556377509407,
    "gpu_vs_fp64": 0.007422638463567724,
    "r64": 145.77570314923514,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.1.hc_mlp_layer.hc_pre.hc_fn",
@@ -1058,7 +985,7 @@
    "golden_vs_fp64": 0.009216659175615803,
    "gpu_vs_fp64": 0.012125682671624456,
    "r64": 86.103749709245,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.1.hc_mlp_layer.hc_pre.hc_scale",
@@ -1072,7 +999,7 @@
    "golden_vs_fp64": 0.008358612133847055,
    "gpu_vs_fp64": 0.0073214944042253585,
    "r64": 121.89267670756921,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.1.input_layernorm.weight",
@@ -1394,7 +1321,7 @@
    "golden_vs_fp64": 0.013873790869426101,
    "gpu_vs_fp64": 0.017311957305713294,
    "r64": 54.05838093407532,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.2.hc_attn_layer.hc_pre.hc_fn",
@@ -1408,7 +1335,7 @@
    "golden_vs_fp64": 0.014656391011326564,
    "gpu_vs_fp64": 0.017676808296978777,
    "r64": 53.54499380681404,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.2.hc_attn_layer.hc_pre.hc_scale",
@@ -1422,7 +1349,7 @@
    "golden_vs_fp64": 0.007095376158942924,
    "gpu_vs_fp64": 0.002153071338999314,
    "r64": 145.33875205069344,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.2.hc_mlp_layer.hc_pre.hc_base",
@@ -1436,7 +1363,7 @@
    "golden_vs_fp64": 0.0020103980930258544,
    "gpu_vs_fp64": 0.00702786620689801,
    "r64": 150.55772434807076,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.2.hc_mlp_layer.hc_pre.hc_fn",
@@ -1450,7 +1377,7 @@
    "golden_vs_fp64": 0.008356472013529579,
    "gpu_vs_fp64": 0.00879795806397796,
    "r64": 119.10439300823212,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.2.hc_mlp_layer.hc_pre.hc_scale",
@@ -1464,7 +1391,7 @@
    "golden_vs_fp64": 0.09672798150788467,
    "gpu_vs_fp64": 0.11482776939049487,
    "r64": 9.20084119838281,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.2.input_layernorm.weight",
@@ -1716,7 +1643,7 @@
    "golden_vs_fp64": 0.09877292143824302,
    "gpu_vs_fp64": 0.09932009725214373,
    "r64": 19.340377469829825,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.3.hc_attn_layer.hc_pre.hc_fn",
@@ -1730,7 +1657,7 @@
    "golden_vs_fp64": 0.026733421910409318,
    "gpu_vs_fp64": 0.026541153342491325,
    "r64": 40.28024201451149,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.3.hc_attn_layer.hc_pre.hc_scale",
@@ -1744,7 +1671,7 @@
    "golden_vs_fp64": 0.004967915615127383,
    "gpu_vs_fp64": 0.0010718875587587616,
    "r64": 232.13213964370786,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_base",
@@ -1758,7 +1685,7 @@
    "golden_vs_fp64": 0.08336852704461756,
    "gpu_vs_fp64": 0.030376209230638128,
    "r64": 15.620223711329402,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_fn",
@@ -1772,7 +1699,7 @@
    "golden_vs_fp64": 0.031120161010436072,
    "gpu_vs_fp64": 0.01984616561843466,
    "r64": 33.882592385868584,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_scale",
@@ -1786,7 +1713,7 @@
    "golden_vs_fp64": 0.01047810151295654,
    "gpu_vs_fp64": 0.033543174997907224,
    "r64": 31.713584067100413,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.3.input_layernorm.weight",
@@ -2038,7 +1965,7 @@
    "golden_vs_fp64": 0.007755983710250169,
    "gpu_vs_fp64": 0.0027288317954527277,
    "r64": 151.42528931612512,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_fn",
@@ -2052,7 +1979,7 @@
    "golden_vs_fp64": 0.009441039834260504,
    "gpu_vs_fp64": 0.007952260211095493,
    "r64": 116.59422418346564,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.4.hc_attn_layer.hc_pre.hc_scale",
@@ -2080,7 +2007,7 @@
    "golden_vs_fp64": 0.003134736321082421,
    "gpu_vs_fp64": 0.003844800582983076,
    "r64": 253.55086418537536,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.4.hc_mlp_layer.hc_pre.hc_fn",
@@ -2094,7 +2021,7 @@
    "golden_vs_fp64": 0.00777602123107882,
    "gpu_vs_fp64": 0.007225123721450834,
    "r64": 125.08792820191779,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.4.hc_mlp_layer.hc_pre.hc_scale",
@@ -2108,7 +2035,7 @@
    "golden_vs_fp64": 0.0016459321593503603,
    "gpu_vs_fp64": 0.01650770329420145,
    "r64": 58.657099942481025,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.4.input_layernorm.weight",
@@ -2360,7 +2287,7 @@
    "golden_vs_fp64": 0.003704654390205407,
    "gpu_vs_fp64": 0.005434800029573822,
    "r64": 178.62537388504276,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.5.hc_attn_layer.hc_pre.hc_fn",
@@ -2374,7 +2301,7 @@
    "golden_vs_fp64": 0.006019552289544849,
    "gpu_vs_fp64": 0.007692224538971391,
    "r64": 127.81749179914077,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.5.hc_attn_layer.hc_pre.hc_scale",
@@ -2388,7 +2315,7 @@
    "golden_vs_fp64": 0.0038121517463210295,
    "gpu_vs_fp64": 0.004020529873841911,
    "r64": 252.0536607224796,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.5.hc_mlp_layer.hc_pre.hc_base",
@@ -2402,7 +2329,7 @@
    "golden_vs_fp64": 0.013817904284158012,
    "gpu_vs_fp64": 0.01001172586902349,
    "r64": 64.25806689199497,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.5.hc_mlp_layer.hc_pre.hc_fn",
@@ -2416,7 +2343,7 @@
    "golden_vs_fp64": 0.02524665078036036,
    "gpu_vs_fp64": 0.01896419161850215,
    "r64": 36.98673704350855,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.5.hc_mlp_layer.hc_pre.hc_scale",
@@ -2430,7 +2357,7 @@
    "golden_vs_fp64": 0.004708768158029056,
    "gpu_vs_fp64": 0.011742990458290909,
    "r64": 84.60620296558461,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.5.input_layernorm.weight",
@@ -2752,7 +2679,7 @@
    "golden_vs_fp64": 0.002780166648488485,
    "gpu_vs_fp64": 0.005212922237842473,
    "r64": 186.37881819994706,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.6.hc_attn_layer.hc_pre.hc_fn",
@@ -2766,7 +2693,7 @@
    "golden_vs_fp64": 0.006416716988139543,
    "gpu_vs_fp64": 0.007120937738065093,
    "r64": 135.9570154970911,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.6.hc_attn_layer.hc_pre.hc_scale",
@@ -2780,7 +2707,7 @@
    "golden_vs_fp64": 0.00267771915767737,
    "gpu_vs_fp64": 0.0066375070568380655,
    "r64": 136.0572801198047,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_base",
@@ -2794,7 +2721,7 @@
    "golden_vs_fp64": 0.013393466081290217,
    "gpu_vs_fp64": 0.012745438982682008,
    "r64": 71.03502230682774,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_fn",
@@ -2808,7 +2735,7 @@
    "golden_vs_fp64": 0.013741052270934237,
    "gpu_vs_fp64": 0.014417949154653071,
    "r64": 66.8313014104793,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_scale",
@@ -2822,7 +2749,7 @@
    "golden_vs_fp64": 0.008984887084835236,
    "gpu_vs_fp64": 0.010146604213649164,
    "r64": 92.47663194792295,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.6.input_layernorm.weight",

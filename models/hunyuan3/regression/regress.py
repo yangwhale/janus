@@ -244,17 +244,24 @@ def r23_coverage(tier: str, rows: dict, catalog, results: dict) -> dict:
 
 
 def r25_not_worse(rows: dict, lkg_results: Path | None, upper: dict | None = None) -> None:
-    """R25「不变差」：回归门逐位通过时继承 LKG；否则新值 − LKG 值 ≤ TPU 执行噪声上限，噪声待标定时 inconclusive。"""
+    """R25：回归门逐位通过时继承 LKG；否则两样取较差（标准第三节）——
+    ① 对齐门本身（目录里 hard: true 时）：被测对 golden 基线的三个量对 golden 噪声上限的判定；
+    ② 不变差：新值 − LKG 值 ≤ TPU 执行噪声上限，噪声待标定或没给 LKG 结果时 inconclusive。"""
     if "R25" not in rows:
         return
     bitwise = all(rows.get(r, {}).get("status") == "pass" for r in ("R12", "R13", "R15", "R16"))
     ent = rows["R25"]
-    test_m = next((c["metrics"] for c in ent["checks"]), {})
+    chk = next(iter(ent["checks"]), {})
+    test_m = chk.get("metrics", {})
+    gate = chk.get("status") if chk.get("hard", True) else None     # 对齐门本身的判定（只报时为 None）
     keys = ("signed_mean_max", "mare_max", "max_step_max")
     ent["metrics"] = {f"test_{k}": test_m.get(k) for k in keys}
+    if gate is not None:
+        ent["metrics"]["gate_status"] = gate
     if bitwise:
         ent["status"], ent["note"] = "pass", "回归门逐位通过：数值与 LKG 相同，对齐门结论继承 LKG（标准第二节）"
         return
+    gate_note = "" if gate is None else f"对齐门本身（对 golden 基线、golden 噪声）{gate}；"
     lkg_m = None
     if lkg_results and (lkg_results / "janus" / "results.json").is_file():
         lr = json.loads((lkg_results / "janus" / "results.json").read_text())
@@ -267,14 +274,17 @@ def r25_not_worse(rows: dict, lkg_results: Path | None, upper: dict | None = Non
         worse = {k: ent["metrics"][f"delta_{k}"] for k in keys
                  if ent["metrics"].get(f"delta_{k}") is not None and ent["metrics"][f"delta_{k}"] > upper[k.removesuffix("_max")]}
         ent["metrics"]["tpu_noise_upper"] = {k: upper[k.removesuffix("_max")] for k in keys}
-        ent["status"] = "fail" if worse else "pass"
-        ent["note"] = (f"变差：{sorted(worse)} 的增量超过 TPU 执行噪声上限" if worse
-                       else "不变差：对 GPU golden 的三个量，新值 − LKG 值都不大于 TPU 执行噪声上限（标准第三节）")
-        return
-    ent["status"] = "inconclusive"
-    ent["note"] = ("数值变了：「不变差」要 TPU 执行噪声当尺子" + ("，还没标定或已作废" if not upper else "")
+        nw = "fail" if worse else "pass"
+        nw_note = (f"变差：{sorted(worse)} 的增量超过 TPU 执行噪声上限" if worse
+                   else "不变差：对 GPU golden 的三个量，新值 − LKG 值都不大于 TPU 执行噪声上限（标准第三节）")
+    else:
+        nw = "inconclusive"
+        nw_note = ("数值变了：「不变差」要 TPU 执行噪声当尺子" + ("，还没标定或已作废" if not upper else "")
                    + "，只报新值与 LKG 值的差（标准第三节）"
                    + ("" if lkg_m else "；没给 LKG 的回归结果（--lkg-results），只报被测值"))
+    sts = [nw] + ([gate] if gate is not None else [])
+    ent["status"] = next(s for s in ("error", "fail", "inconclusive", "pass") if s in sts)
+    ent["note"] = gate_note + nw_note
 
 
 def classify(rows: dict) -> tuple[str, str | None]:

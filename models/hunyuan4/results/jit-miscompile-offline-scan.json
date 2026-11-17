@@ -1,7 +1,7 @@
 {
  "tool": "models/hunyuan4/analysis/jit_miscompile_offline_scan.py",
  "scanner": "models/hunyuan4/analysis/hlo_mof_dus_scan.py",
- "note": "CPU 上按运行的 meta.json 重编训练步（hlo_screen.compile_spec），扫 #71 特征；calib 是存了 HLO 的运行，cpu_vs_tpu_program_equal = CPU 重编的程序与 TPU 上存下的规范化后逐行相同；2026-11-12 追加 C 口径 tc-a … tc-e（MaxText 8d3d7561，同镜像、同 libtpu 构建 cl/963683785）。8d3d7561 没有存了 TPU 上 HLO 的运行，校准只能用 ts-g-a（b87a55aa），所以这 5 份「离线程序 = 上卡程序」比 tz-off-rep / x5-prod 少一条依据（MaxText 提交不同）",
+ "note": "CPU 上按运行的 meta.json 重编训练步（hlo_screen.compile_spec），扫案例 16 特征；calib 是存了 HLO 的运行，cpu_vs_tpu_program_equal = CPU 重编的程序与 TPU 上存下的规范化后逐行相同；2026-11-12 追加 C 口径 tc-a … tc-e（MaxText 8d3d7561，同镜像、同 libtpu 构建 cl/963683785）。8d3d7561 没有存了 TPU 上 HLO 的运行，校准只能用 ts-g-a（b87a55aa），所以这 5 份「离线程序 = 上卡程序」比 tz-off-rep / x5-prod 少一条依据（MaxText 提交不同）",
  "calib": [
   {
    "spec_hash": "c3f164da66498b62",

@@ -1,0 +1,58 @@
+{
+ "what": "USP 2×2 第 1 步：正式开关 qkv_proj_wgrad_fp32（maxtext c9f5ccdf）对诊断补丁（1a45e2c6）与基底（8ac1d175）的逐位核对，以及对 FP64 的 R（脚本 models/hunyuan3/analysis/cp_step1_fp64.py，基线 i10-st-b2）",
+ "runs": {
+  "i10-st-usp4-sw": "c9f5ccdf，qkv_proj_wgrad_fp32=True",
+  "i10-st-usp4-swoff": "c9f5ccdf，开关关",
+  "i10-st-usp4-qkvf32": "1a45e2c6 诊断补丁",
+  "i10-st-usp4": "8ac1d175"
+ },
+ "bitwise": {
+  "i10-st-usp4-sw vs i10-st-usp4-qkvf32": {
+   "tensors": 51,
+   "bitwise_equal": 51,
+   "metric_values_differing": 0,
+   "steps": 2,
+   "note": "metrics.jsonl 逐项比，step_time 除外"
+  },
+  "i10-st-usp4-swoff vs i10-st-usp4": {
+   "tensors": 51,
+   "bitwise_equal": 51,
+   "metric_values_differing": 0,
+   "steps": 2,
+   "note": "metrics.jsonl 逐项比，step_time 除外"
+  }
+ },
+ "vs_fp64": {
+  "usp4": {
+   "R_pooled": 1.1025362203913016,
+   "R_attn_qkv": 2.8918500093616983,
+   "R_max_tensor": 3.037463621213395,
+   "loss1": 11.465856552124023,
+   "loss1_minus_fp64": -4.502608683587539e-05
+  },
+  "usp4-sw": {
+   "R_pooled": 1.0154880579306547,
+   "R_attn_qkv": 1.0864998629214693,
+   "R_max_tensor": 1.610461097137412,
+   "loss1": 11.465856552124023,
+   "loss1_minus_fp64": -4.502608683587539e-05
+  },
+  "usp4-swoff": {
+   "R_pooled": 1.1025362203913016,
+   "R_attn_qkv": 2.8918500093616983,
+   "R_max_tensor": 3.037463621213395,
+   "loss1": 11.465856552124023,
+   "loss1_minus_fp64": -4.502608683587539e-05
+  },
+  "usp4-qkvf32": {
+   "R_pooled": 1.0154880579306547,
+   "R_attn_qkv": 1.0864998629214693,
+   "R_max_tensor": 1.610461097137412,
+   "loss1": 11.465856552124023,
+   "loss1_minus_fp64": -4.502608683587539e-05
+  }
+ },
+ "base": "i10-st-b2",
+ "base_pooled_rel_l2": 0.0009075971835571722,
+ "cmd": "python models/hunyuan3/analysis/cp_step1_fp64.py --fp64 <fp64_step 输出> --base <运行根>/i10-st-b2 --arm usp4=<运行根>/i10-st-usp4 --arm usp4-sw=<运行根>/i10-st-usp4-sw --arm usp4-swoff=<运行根>/i10-st-usp4-swoff --arm usp4-qkvf32=<运行根>/i10-st-usp4-qkvf32"
+}

@@ -1,0 +1,50 @@
+{
+ "what": "meta.json 逐字段对参照（只比 meta 记下的字段；运行名替换成占位符）",
+ "reference": "p1g-a",
+ "compared": [
+  "config",
+  "code",
+  "image",
+  "parallelism",
+  "versions",
+  "data",
+  "model",
+  "steps",
+  "（config.load_check 除外）"
+ ],
+ "meta_sha256": {
+  "p1g-a": "934513911f98db9af0e69837e9103bbee72d721d4ebd15ae175189df15b03c1f",
+  "p1g-b": "fb448c89d5d7a073537d96f697cb6faf96339c9c2858245c55842aa71ac3fd37",
+  "p1g-c": "f0f53e099b9018c876355c220b9b0035ff3815ca331eea58b3a2a45b50f10161",
+  "p1g-d": "dd524a06b15dde4507ba600c1c681b4c45a3cf1ce309f4ce559696581512b647",
+  "p1g-e": "314756e5b5031c4f7a3820d0ce8119b85b7f9d38b5e77b1d11fd0f2fab9ab63e",
+  "p1g-f": "6480e344da68b725a6e6ec19689ecb2a9033f67a485cd01fa31c5922bc33e96d",
+  "p1g-g": "703b9c9ff5be97f99f30ca73a7760540213e20d12495bfde81fcf5714fb487c6",
+  "p1g-h": "45f88f318453f003d14160e93a0567e97aa6795b176a33bf6c22a805e0c48cf0",
+  "p1g-i": "e5ef10ed1abc9cb292aab10cc9e2cfc03741e3693b9e7d8b318d68a6d532369e",
+  "p1g-j": "916bac68d8967261005d63f5d6df2e2e7a4b0ed692e2f4711017ffa01ea37d07",
+  "p1g-k": "098f5a72346d3f9cc6d439e443a3665ee295d8496561f6999947a954c62b692e",
+  "p1g-l": "f0f844844025d8a1acc3d140334e074a3dcd9b08910a89fb715683c7ee2f54db",
+  "p1g-m": "05ffe97ad5640fafb5be4ac92476318707685cbc62921974ce61edcfb231340e",
+  "p1g-n": "4328cbd9790335ea5a4131a788fb30385524a10bd7b0eac508de39fd759a9eaf",
+  "p1g-o": "12789e9b6fa720622e141a7cd017349b2a7782bbe3c974e0abe501a4b41e1de9",
+  "p1g-p": "169829e9511958e98ad4f7fd282e7f868b260fcf40bbd0f5f835e111a1a5de16"
+ },
+ "differences": {
+  "p1g-b": [],
+  "p1g-c": [],
+  "p1g-d": [],
+  "p1g-e": [],
+  "p1g-f": [],
+  "p1g-g": [],
+  "p1g-h": [],
+  "p1g-i": [],
+  "p1g-j": [],
+  "p1g-k": [],
+  "p1g-l": [],
+  "p1g-m": [],
+  "p1g-n": [],
+  "p1g-o": [],
+  "p1g-p": []
+ }
+}

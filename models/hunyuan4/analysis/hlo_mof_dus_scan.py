@@ -1,4 +1,4 @@
-"""在 TPU 优化后 HLO 里找 一次实际排查 的特征（案例 16）。
+"""在 TPU 优化后 HLO 里找案例 16 的特征。
 
 特征：一颗多输出 fusion（根是 tuple）里有 dynamic-update-slice，而且 DUS 原地写的那块缓冲（DUS 的第 0 个操作数）
 在同一颗 fusion 里还被别的指令读。libtpu 0.0.46、0.0.48、0.0.51、0.0.52（实测；0.0.47、0.0.49 没测）会把「含 DUS 的 loop fusion」和读同一缓冲的兄弟算子
@@ -9,7 +9,7 @@
 
   python hlo_mof_dus_scan.py <after_optimizations.txt> … [--json 输出.json]
 
-输出：每个文件一行「多输出 fusion 含 DUS 的个数 / 其中带 #71 特征的个数」；带特征的逐个列出 fusion 名、DUS 目标与
+输出：每个文件一行「多输出 fusion 含 DUS 的个数 / 其中带案例 16 特征的个数」；带特征的逐个列出 fusion 名、DUS 目标与
 更新的形状和分块、读目标缓冲的指令。特征数为 0 不等于证明没问题（触发条件没有完全查清，见案例 16「拿不准的」）。
 """
 

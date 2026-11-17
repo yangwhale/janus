@@ -4,7 +4,7 @@
 
 **一句话：** 代码里写了「这里舍成 BF16」，TPU 的编译器有时会把这次舍入省掉。省掉一处，每步差一点点，1000 步就攒成一条看得见的尾巴。我们先一处一处找到了主因（iHC 的流梯度），然后换了个办法：把整个训练步离线编译出来，在编译产物里一次扫出**所有**被省掉的舍入。
 
-> **状态：主因已定位，两头都验证过；还有残余在查。** 现在的对齐配置（代号「C 口径」，定义见[下文](#c-口径反转三处全照-gpu-改后段反而没好)）主 loss 刚好判过，但后段的尾巴还看得出来。全图扫描列出了残余的候选；优先级最高的 ①、② 两类拆成三处在 GPU 上验证过，都没坐实（权重梯度排除；两处梯度合流单开有一点、合开消失，推断是偶然）。下一步在 TPU 上补注意力输入那一处，在跑。
+> **状态（2026-11-12 定）：主因已定位（iHC 流梯度舍入写法，两头验证）；C 口径下后段残余约 +7e-6 **未定责**；已排除：全局清单前向 / 反向各类（两头）、注意力内核四处（GPU）；未查：累加顺序。这条线暂停，资源转到另一项内部实践（不在公开版内）。** 现在的对齐配置（代号「C 口径」，定义见[下文](#c-口径反转三处全照-gpu-改后段反而没好)）主 loss 刚好判过，但后段的尾巴还看得出来。全图扫描列出了残余的候选；优先级最高的 ①、② 两类拆成三处在 GPU 上验证过，都没坐实（权重梯度排除；两处梯度合流单开有一点、合开消失，推断是偶然）。TPU 那一头也补了（C 口径之上照 GPU 顺序补注意力输入、再加 MoE 输入，各 4 份），后段与 C 口径分不开：梯度合流不是残余的来源。前向那几类也在 TPU 上补了（4 份），后段照样分不开。扫描看不到的注意力内核四处在 GPU 上照 TPU 的写法改了，主 loss 的尾巴复现不出来（四处全开 +2.0e-6，TPU +6.95e-6）；MTP loss 一侧的线索事前登记再跑 8 份，没站稳。
 >
 > **只想拿方法的，直接跳到[「先编译、再扫描」](#先编译再扫描)。** 它不依赖混元 4，任何「TPU 和 GPU 舍入位置对不齐」的问题都能用；工具是 [`analysis/elided_rounding_scan.py`](../analysis/elided_rounding_scan.py)。
 
@@ -34,7 +34,7 @@ flowchart LR
 - TPU 编译器默认开着 **excess precision**（允许中间结果多留精度）。上面那对来回如果落在同一颗融合里，编译器直接用 FP32 的值，**这次舍入就没了**。（这是实测出来的规律，见下文[「为什么能扫」](#为什么能扫)。）
 - 另一种写法 `jax.lax.reduce_precision(x, 8, 7)`：值还是 FP32，但尾数截到 BF16 的 7 位。编译器把它当成一次真的运算，**不会省**。
 
-为什么不干脆把 excess precision 整个关掉？试过，离 GPU 更远。全局关掉，所有融合里的中间值都要舍一次，很可能比 GPU 舍得还多（推断）。所以只能逐处补：哪一处要「照 GPU 一定舍」，就把那里的 `astype` 换成 `reduce_precision`。本案例的三处改动都是这么做的。
+为什么不干脆把 excess precision 整个关掉？试过，离 GPU 更远。全局关掉，所有融合里的中间值都要舍一次，比 GPU 舍得还多：另一项内部实践（不在公开版内）上实测，全局关后 TPU 第 1 步梯度离 FP64 比 GPU 远 12–13%（1000 步曲线上反而更好，效果随模型变）。所以只能逐处补：哪一处要「照 GPU 一定舍」，就把那里的 `astype` 换成 `reduce_precision`。本案例的三处改动都是这么做的。
 
 ## 现象：前段一个小鼓包，后段一条尾巴
 
@@ -249,9 +249,9 @@ M52 开着时，再补 M58 全套或任一半都测不出作用（[`mini-factori
 
 这一节回答：为什么「更像 GPU」的 C 口径，后段反而比「不像 GPU」的只开 M58 差。
 
-先把 hc_head 这一段编出来看（v5p 离线编译，读 HLO 和 LLO，，[`hc-head-llo-probe.json`](../alignments/01-mini/results/hc-head-llo-probe.json)）：C 口径和只开 M58 在这一段**只差一处**：hc_head 反向那次梯度舍入（传回 hc_head 收拢处的梯度舍不舍 BF16）。C 舍，和 GPU 一样；只开 M58 留 FP32。
+先把 hc_head 这一段编出来看（v5p 离线编译，读 HLO 和 LLO，[`hc-head-llo-probe.json`](../alignments/01-mini/results/hc-head-llo-probe.json)）：C 口径和只开 M58 在这一段**只差一处**：hc_head 反向那次梯度舍入（传回 hc_head 收拢处的梯度舍不舍 BF16）。C 舍，和 GPU 一样；只开 M58 留 FP32。
 
-那就在 GPU 上把这一次舍入拿掉，看 GPU 往哪边走（GPU 开关 `HY4_TPU_LIKE_HEADCOT`，，4 份）：
+那就在 GPU 上把这一次舍入拿掉，看 GPU 往哪边走（GPU 开关 `HY4_TPU_LIKE_HEADCOT`，4 份）：
 
 ![两个偏差抵消：TPU 与 GPU 拿掉同一次舍入后的方向](../alignments/01-mini/figures/case17-cancel.png)
 
@@ -287,7 +287,7 @@ M52 开着时，再补 M58 全套或任一半都测不出作用（[`mini-factori
 <details>
 <summary>CPU 逐位对照的细节</summary>
 
-，[`hc-head-order-probe.json`](../alignments/01-mini/results/hc-head-order-probe.json)：GPU 写法、MaxText 关省舍入、MaxText 开省舍入三方各算一遍 hc_head 加末层 norm 的反向。唯一实质不同是 MaxText 给 MTP 另做一次末层 norm，两路各做一次 norm 反向再相加；GPU 先把两路梯度加起来，只做一次。不开它时流梯度 dx 逐位相同 63.9%；C 口径再开 `mtp_input_shared_final_norm`（台账 M53）后 dx 差 2.1e-5，逐位相同 99.993%。上卡结果见 D30。 #455。
+，[`hc-head-order-probe.json`](../alignments/01-mini/results/hc-head-order-probe.json)：GPU 写法、MaxText 关省舍入、MaxText 开省舍入三方各算一遍 hc_head 加末层 norm 的反向。唯一实质不同是 MaxText 给 MTP 另做一次末层 norm，两路各做一次 norm 反向再相加；GPU 先把两路梯度加起来，只做一次。不开它时流梯度 dx 逐位相同 63.9%；C 口径再开 `mtp_input_shared_final_norm`（台账 M53）后 dx 差 2.1e-5，逐位相同 99.993%。上卡结果见 D30。
 
 </details>
 
@@ -437,10 +437,12 @@ C 口径训练步（`hy4-mini-t1.yml`，v5p-16，libtpu 0.0.46，jax 0.11.1）�
 - **两处梯度合流没坐实。** ATTNIN 单开 +3.0e-6（4 份都正，p 0.021），像是有一点；但和 FFNIN 一起开，反而回到 +0.2e-6（p 0.87）。同一类舍入，合起来应该叠加（推断），这里对不上。四格一起看，0.021 按格数校正（× 4）是 0.084，很可能是 4 份样本里的偶然（推断）。ATTNIN 还把 MTP loss 推高了 +2.1e-5，方向和 TPU 上 MTP 偏低相反。
 - 所以 C 口径的残余，**在 ①、② 两类里没找到**。
 
-接下来：
+接下来（**暂停，资源转到另一项内部实践**，下面是暂停前做完的）：
 
-- 在 TPU 上补 ATTNIN 那一处（C 口径之上，4 份），看另一头：**在跑**。
-- 剩下的候选：清单里前向那几类（输出门、fc1 输出、路由专家 act×up），以及扫描找不到的差（代码没写舍入、GPU 却舍了的地方；累加顺序）。
+- TPU 那一头（MaxText 开关 `branch_input_grad_gpu_order`，台账 M63）：C 口径之上把分支输入的梯度照 GPU autograd 的顺序逐份舍 BF16、每加一次舍一次，各 4 份，执行方式扰动同 `tc-a … d`，对 C 口径 6 份（第 551–1000 步 +6.9e-6）：只补注意力输入 +6.1e-6（4 份尾部都在，p 0.67），注意力加 MoE 输入 +5.3e-6（4 份尾部都在，p 0.37）；前段第 51–100 步都不变（p 0.53、0.23）；9 项判档 8 份里 4 份全过、4 份各有 1–2 项待定，没有不过（[`mini-factorial-c-branch-input-fanin.json`](../alignments/01-mini/results/mini-factorial-c-branch-input-fanin.json)、[`mini-c-branch-input-fanin-l4.json`](../alignments/01-mini/results/mini-c-branch-input-fanin-l4.json)）。两头都不成立：**梯度合流不是残余的来源**。
+- 前向那几类（MaxText 开关 `forward_bf16_rounding`，台账 M64）：C 口径之上把输出门、fc1 输出、路由专家 act×up 三处一起补上 reduce_precision，4 份，第 551–1000 步 +5.5e-6（4 份尾部都在），对 C 口径 p 0.42；9 项判档 4 份全过（[`mini-factorial-c-forward-rounding.json`](../alignments/01-mini/results/mini-factorial-c-forward-rounding.json)）。也不是残余的来源。
+- 扫描找不到的差（代码没写舍入、GPU 却舍了的地方）：读代码列出的四处都在注意力内核里（反向 dP、softmax 反向修正项、dS 进 dq / dk，前向 P 进 PV）。前向 PV 的写法先用 TPU 实跑的输出核过：splash 把没归一化、按 512 一块的 exp 舍 BF16 再乘 V，与这个写法逐元素相同 99.80%–99.97%（GPU 的写法 89.3%–97.6%；[`splash-pv-rounding-check.json`](../alignments/01-mini/results/splash-pv-rounding-check.json)）。GPU 上照这个写法改（诊断开关 `HY4_TPU_LIKE_ATTNK`，台账 G39），对 GPU 16 份留一法，第 551–1000 步主 loss：四处全开 8 份 +2.0e-6（p 0.037；前 4 份 +2.5e-6、补的 4 份 +1.5e-6），单开四格 −0.6e-6 到 +1.4e-6（p 0.31–0.93）；TPU C 口径同判法 +6.95e-6。主 loss 的尾巴 GPU 上复现不出来。MTP loss 一侧：只开前向 PV 8 份 −1.6e-5（p 0.017），TPU C 口径 −1.82e-5（p 0.032），同号同量级，当时记为线索；事前登记的确认实验再跑 8 份，只用新的判：−0.8e-6（p 0.89），不成立（[`mini-gpu-tpulike-attnk-pv-confirm-mtp.json`](../alignments/01-mini/results/mini-gpu-tpulike-attnk-pv-confirm-mtp.json)；[`mini-gpu-tpulike-attnk.json`](../alignments/01-mini/results/mini-gpu-tpulike-attnk.json)、[`-mtp`](../alignments/01-mini/results/mini-gpu-tpulike-attnk-mtp.json)；TPU 一头改 splash 的代价见[知识库「扫描看不到的差」](../knowledge.md#扫描看不到的差代码没写舍入gpu-却舍的地方)）。
+- 还剩累加顺序没查（暂停，未排期）。
 
 更细的对照（逐处 TPU 怎么省、GPU 怎么舍）见[知识库「整个训练步：被省掉的舍入全局清单」](../knowledge.md#整个训练步被省掉的舍入全局清单)。
 
@@ -508,7 +510,11 @@ python models/hunyuan4/analysis/elided_rounding_scan.py \
 | 全图 272 处被省掉的舍入、三类候选 | 实测（HLO 匹配） |
 | 残余不来自 ② 每微批 dW | 实测（GPU WGRAD −0.4e-6，p 0.73） |
 | 残余不来自 ① 两处梯度合流 | 数字是实测（单开 +3.0e-6、p 0.021；合开 +0.2e-6、p 0.87）；判为偶然是推断 |
-| 残余来自哪里 | **在查**（TPU 补注意力输入合流在跑；前向几类与扫描外的差待查） |
+| 残余不来自 ① 两处梯度合流（TPU 一头） | 实测（TPU 补上后 +6.1e-6 / +5.3e-6，对 C 口径 p 0.67 / 0.37） |
+| 残余不来自前向三类（TPU 一头） | 实测（补上后 +5.5e-6，对 C 口径 p 0.42） |
+| 主 loss 残余不来自注意力内核的四处舍法（GPU 一头） | 实测（GPU 照 splash 写法四处全开 +2.0e-6，TPU +6.95e-6；单开都分不出来） |
+| MTP loss 的偏差不来自前向 PV 的舍法（GPU 一头） | 实测（前 8 份 −1.6e-5 p 0.017 是挑出来的；事前登记的确认 8 份 −0.8e-6，p 0.89） |
+| 残余来自哪里 | **未定责**（C 口径下后段约 +7e-6；未查累加顺序；暂停，资源转到另一项内部实践） |
 
 ## 出处与工具
 

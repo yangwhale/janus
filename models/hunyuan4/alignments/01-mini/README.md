@@ -33,9 +33,9 @@ hy4-mini 保留混元 4 的全部结构与每头维度，只缩宽度与个数�
 
 | mini 挡签字的项 | 状态 |
 |---|---|
-| 第 1 步 163 个超出噪声 | C 口径（2026-11-11 重判）对 GPU 6 份 15 对：超出噪声且比 GPU 远的是第 3 层 FFN 前 `hc_fn`（1.14 N）与 MTP enorm，按 [D11 豁免规则](DETAILS.md#d11-rule) 单列：`hc_fn` 计入未定责，`enorm` 不计入（挡不挡签字待拍板）；C 口径之前是 169 个超出、第 3 层注意力前 `hc_scale` 计入未定责；仍缺 2b |
+| 第 1 步 163 个超出噪声 | C 口径（2026-11-11 重判）对 GPU 6 份 15 对：超出噪声且比 GPU 远的是第 3 层 FFN 前 `hc_fn`（1.14 N）与 MTP enorm，按 [D11 豁免规则](DETAILS.md#d11-rule) 单列、都不计入：`hc_fn` 2026-11-12 看过结果后接受（路由翻转），`enorm` 理由复核成立；判档由待定变为过（单列的挡不挡签字待拍板）；C 口径之前是 169 个超出、第 3 层注意力前 `hc_scale` 计入未定责；仍缺 2b |
 | 训练曲线待定（2a） | 以现行比较 tc-a 为准：1000 步路由偏置均值待定（r 1.31，C 口径另 5 份过）；前 300 步 grad_norm 待定（r 1.01，C 口径另 4 份 `tc-b … tc-e` 0.81–0.92（`tc-f` 前 300 步 0.90，[`mini-config-c-vs-m58.json`](results/mini-config-c-vs-m58.json)）、都过）；主 loss 现已刚好过线（MARE 0.98；C 口径另 `tc-b` 主 loss 1.14 待定；后段没修掉，见 D30）；1000 步 grad_norm `tc-a` 过，C 口径 `tc-f` 最大单步 1.04 待定（MARE 0.95 过）。QK-Clip 全局最大 logit 1000 步与前 300 步待定（1.09、1.05）是 C 口径之前另一份运行（`tz-off-qkq`，配置与 `tc-a` 不同）的读数，C 口径上没重判；它与 grad_norm 在 base2 开时已接受，是否沿用尚未决定（[D2](DETAILS.md#d2)、[D29](DETAILS.md#d29)） |
-| 低阈值 QK-Clip 第 1 步第 4 层（3a） | C 口径之前、关 base2 后 R 1.55，未定责；C 口径上要重测（[D31](DETAILS.md#d31)） |
+| 低阈值 QK-Clip 第 1 步第 4 层（3a） | C 口径 `tc-qk01` R 1.87（之前 1.55）；那一头最大打分的 key token 在 TPU 上 MoE 路由翻转；2026-11-12 看过结果后接受（[D31](DETAILS.md#d31)） |
 | golden 对 GPU 生产程序 | 没比 |
 | 三条事后判法的前瞻验证 | 已在 PROTOCOL 事先登记，用真实权重截层下一批运行验证 |
 

@@ -1,15 +1,15 @@
 # 混元 3 · 日常回归 · T1 主力：4 层，主切分，1000 步（= golden 长度），不抓张量。
 # T0 的全部行（regression-common.yaml，步数与窗口换成 1000 步）+ R12、R13、R16①、R25（标准第六节）。
-# R25 要 golden g1k-a / g1k-b / g1k-c 的 meta.json 与 metrics.jsonl（run_regression.sh 取回）。
+# R25 要修好的 golden rcc-a..rcc-j 的 meta.json 与 metrics.jsonl（run_regression.sh 取回）。
 schema_version: 1
 model: hunyuan3-4l
 stage: regression-t1
-description: T1 主力（1000 步）对 LKG，R25 对 GPU golden
+description: T1 主力（1000 步）对 LKG，R25 对修好的 golden rcc-a（噪声 rcc-a..j 45 对）
 runs:
   root: /data/janus-runs
   test: TEST_RUN
   lkg: LKG_RUN
-  golden: [g1k-a, g1k-b, g1k-c]
+  golden: [rcc-a, rcc-b, rcc-c, rcc-d, rcc-e, rcc-f, rcc-g, rcc-h, rcc-i, rcc-j]
   # 容差门（role: tolerance）的噪声参照：TPU 执行噪声，基线 + 过了三关的扰动臂两两成对（28 对，正式；README 第五节）。
   # 必须和 ../calibration.yaml 里 v5p / T1 最新一条的 pairs 相同（tests 核）；运行目录由 run_regression.sh 按那里的位置取回
   noise:
@@ -76,19 +76,21 @@ checks:
     threshold: exact
     params: {denominator: golden}
 
-  # ---------------------------------------------------------------- R25 对齐门：对 GPU golden（只报，不变差由 regress.py 判）
-  # 对齐现状本身还没过（01 phase2-t-loss30 的 L4.loss 判 fail），所以这里不要求 pass：hard: false，regress.py 拿它的三个量
-  # 与 LKG 同一条检查的三个量比「不变差」；回归门逐位通过时继承 LKG，不看这一条。
+  # ---------------------------------------------------------------- R25 对齐门：对修好的 golden rcc（判）
+  # 参照是两层验收的最终 golden rcc（GPU 生产程序只把输出头 dgrad 改成分段 FP32 累加；models/hunyuan3/goldens.md），
+  # 与迁移验收 01 phase2-acceptance-rcc-on.yaml 的 L4.loss 同基线、同噪声、同窗口、同分母、同参数。2026-11-16 起由「对 g1k-a 只报」改为判
+  # （hard: true）：被测对 rcc-a 的三个量 ≤ 1 倍噪声上限 pass、1–2 倍 inconclusive、> 2 倍 fail；
+  # regress.py 再叠「不变差」（新值 − LKG 值 ≤ TPU 执行噪声上限），两者取较差。回归门逐位通过时继承 LKG，不看这一条。
+  # baseline: rcc-a —— 只对验收事先定下的这一份算三个量，rcc-b..j 只组噪声带，不取平均、不取各份里最差（docs/reference/judging.md）
+  # noise_from: golden —— runs.noise 是 TPU 执行噪声（给容差门用）；对 GPU golden 的噪声取 golden 两两（10 份 45 对），不换尺子
+  # hard_limit.max_step —— 单步硬上限 = 10 × rcc 两两 45 对在 1:1001 窗口的最大单步上限 9.750e-4（标准「两条通用规则」）
   - id: R25.loss_vs_golden
     row: R25
     type: multi_golden
     level: regress
-    hard: false
     select: {kind: metrics, field: lm_loss, window: "1:1001"}
     threshold: calibrated
-    # baseline: g1k-a —— 只对指定的这一份 golden 算三个量，g1k-b / g1k-c 只组噪声带，不取平均、不取各份里最差（docs/reference/judging.md「golden 怎么用：几份只造噪声带，比较只对一份」）
-    # noise_from: golden —— runs.noise 是 TPU 执行噪声（给容差门用）；对 GPU golden 的噪声仍取 golden 两两，不换尺子
-    params: {signed_mean_se_k: 2, noise_from: golden, baseline: g1k-a}   # 与迁移验收 01 phase2-tpu.yaml 的 L4.loss 同窗口、同分母、同参数
+    params: {signed_mean_se_k: 2, noise_from: golden, baseline: rcc-a, hard_limit: {max_step: 9.75e-3}}
 
   # ---------------------------------------------------------------- 容差门（role: tolerance，见 regression-common.yaml 末尾；噪声参照见上面 runs.noise）
   - id: R12.loss_tolerance

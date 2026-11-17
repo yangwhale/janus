@@ -13,9 +13,13 @@ from __future__ import annotations
 import argparse
 import json
 import statistics as st
+import sys
 from pathlib import Path
 
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from route_flip_rule import route_flip_check  # noqa: E402
 
 
 def load(p):
@@ -34,6 +38,12 @@ def main():
     p.add_argument("--fp64-from", required=True)
     p.add_argument("--tau", type=float, default=0.1)
     p.add_argument("--stage", default="t1-qkclip-maxlogit", help="结果文件的 stage 名（换代时另起，不覆盖旧结果）")
+    p.add_argument(
+        "--fp64-tpu-choices",
+        default=None,
+        help="step1_ref.py --forward-only --log-max-logit --inject-dir 灌 TPU 自己选择的 summary.json：按路由翻转定责"
+        "（route_flip_rule.py，PROTOCOL 2026-11-12）另算每层 R_flip，满足的层记已定责：路由翻转",
+    )
     p.add_argument("--out", required=True)
     a = p.parse_args()
     tn, tf = a.tpu.split("=")
@@ -42,6 +52,7 @@ def main():
     G = {x.split("=")[0]: load(x.split("=")[1]) for x in a.gpu}
     gn = sorted(G)
     ref = json.loads(Path(a.fp64_from).read_text())["max_logit_step1"]
+    inj = json.loads(Path(a.fp64_tpu_choices).read_text())["max_logit"] if a.fp64_tpu_choices else None
     rows = []
     for r in ref:
         L, f = r["layer"], np.array(r["fp64"], np.float64)
@@ -50,6 +61,11 @@ def main():
         t = rl(T[1][k], f)
         row = {"layer": L, "fp64": f.tolist(), "tpu": T[1][k], "rel_l2_tpu": t, "rel_l2_gpu": dict(zip(gn, g)),
                "gpu_median": st.median(g), "R": t / st.median(g), "gpu_pair_rel_l2": rl(G[gn[0]][1][k], np.array(G[gn[1]][1][k]))}
+        if inj is not None:
+            ti = rl(T[1][k], np.array(inj[L], np.float64))
+            rf = route_flip_check(t, ti, st.median(g))
+            row.update(rel_l2_tpu_vs_fp64_tpu_choices=ti, R_flip=rf["R_flip"], route_flip_closer=rf["closer"],
+                       route_flip_attributed=rf["attributed"])
         if O:
             row["old_rel_l2_tpu"] = rl(O[1][k], f)
             row["old_R"] = row["old_rel_l2_tpu"] / st.median(g)
@@ -69,6 +85,9 @@ def main():
         return float(np.mean([abs(x[s]["lm_loss"] - y[s]["lm_loss"]) / abs(y[s]["lm_loss"]) for s in steps]))
 
     status = "pass" if w["R"] <= 1.2 else "fail"
+    flip = [r["layer"] for r in rows if r.get("route_flip_attributed")]
+    if inj is not None and status == "fail" and all(r["R"] <= 1.2 or r.get("route_flip_attributed") for r in rows):
+        status = "pass"  # 超线的层都按路由翻转定责（PROTOCOL 2026-11-12 事前登记）
     chk = {"id": "L1.qkclip.max_logit", "type": "op_replay", "level": "L1", "status": status,
            "threshold": {"kind": "numeric", "values": {"r_ratio": 1.2}, "source": "PROTOCOL.md 第 5 节：对 FP64 参照（CPU 上算，与 TPU 不同源）的 R 比 ≤ 1.2 过"},
            "metrics": {"r_ratio": w["R"], "rel_l2_gpu_vs_ref": w["gpu_median"], "rel_l2_tpu_vs_ref": w["rel_l2_tpu"], "worst_layer": w["layer"],
@@ -76,6 +95,9 @@ def main():
            "message": f"每层 8 个头的最大 logit 对 CPU FP64：最差 {w['layer']} 层 GPU {w['gpu_median']:.3g}、TPU {w['rel_l2_tpu']:.3g} → R {w['R']:.3f}；"
                       f"第 3 层 GPU {rows[layers.index('3')]['gpu_median']:.3g}、TPU {rows[layers.index('3')]['rel_l2_tpu']:.3g} → R {rows[layers.index('3')]['R']:.3f}",
            "details_inline": {"rows": rows}}
+    if inj is not None:
+        chk["metrics"]["route_flip_attributed_layers"] = flip
+        chk["message"] += f"；路由翻转定责（灌 TPU 自己的选择）：{('已定责的层 ' + '、'.join(flip)) if flip else '没有层满足'}"
     info = {"id": "L1.qkclip.clipped_heads_30", "type": "op_replay", "level": "L1", "status": "inconclusive", "threshold": {},
             "metrics": {"steps": len(steps), "set_diff_tpu_vs_gpu_a": diff_t, "set_diff_gpu_b_vs_gpu_a": diff_g,
                         "lm_loss_mare_tpu_vs_gpu_a": mare(T, G[gn[0]]), "lm_loss_mare_gpu_b_vs_gpu_a": mare(G[gn[1]], G[gn[0]])},

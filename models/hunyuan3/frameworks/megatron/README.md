@@ -361,6 +361,7 @@ done
 | `--ep` `--tp` `--cp` `--mbs` `--recompute` | 并行方式、microbatch 大小、整层激活重算 |
 | `--routing-replay` | 路由回放（要求 `--recompute`），见注 2 |
 | `--save` `--save-interval` `--resume` | 存档、续训 |
+| `--set <段>.<字段>=<值>` | 直接改 Megatron-Bridge 配置的任一字段（可重复，最后生效，值按 Python 字面量解析；字段不存在直接报错）。例：`--set checkpoint.dist_ckpt_optim_fully_reshardable=True` 存逻辑形状的优化器状态，`--set model.mtp_num_layers=1` 带 MTP。注意 `mixed_precision` 在这一步还是字符串，改不了它的字段；`optimizer.fp8_recipe` 会被它覆盖 |
 | `--save-batches` | 每 rank 每步的原始输入整批存下（另一侧回放同一批数据用） |
 | `--fault <种类>` | 故障注入（只用于验证检查会报警，种类见上表与脚本） |
 | `--observe attn,moe,expw,gemm` | 可选观测点（默认不开），见注 3 |

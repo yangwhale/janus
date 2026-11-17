@@ -10,11 +10,22 @@ REPO = HERE.parents[3]
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
-HY3_YML = HERE / "hy3-4layers.yml"
-NAME_MAP = HERE.parents[1] / "model" / "name_map.yaml"
 
-# 模型 yml（hunyuan3-smoke.yml）里也有、必须在命令行覆盖才生效的键（MaxText 合并顺序：base → 模型 yml → 命令行）
-FORCED = ["mtp_num_layers=0"]
+def _path_env(var: str, default: Path) -> Path:
+    """环境变量给的路径（相对路径按仓库根解析），没给用默认。换模型配置时用（例：实践 04 阶梯实验的 16 层随机初始化配置）。"""
+    v = os.environ.get(var)
+    if not v:
+        return default
+    p = Path(v)
+    return p if p.is_absolute() else REPO / p
+
+
+HY3_YML = _path_env("HY3_YML", HERE / "hy3-4layers.yml")
+NAME_MAP = _path_env("HY3_NAME_MAP", HERE.parents[1] / "model" / "name_map.yaml")
+
+# 模型 yml（hunyuan3-smoke.yml）里也有、必须在命令行覆盖才生效的键（MaxText 合并顺序：base → 模型 yml → 命令行）。
+# 环境变量 HY3_FORCED（逗号分隔的 key=value）追加在后面：换模型尺寸时用（例：实践 04 阶梯实验的 16 层，见那里的 setup.md）
+FORCED = ["mtp_num_layers=0", *(kv for kv in os.environ.get("HY3_FORCED", "").split(",") if kv)]
 
 
 def make_config(extra: list[str] | None = None, yml: str | os.PathLike = HY3_YML):

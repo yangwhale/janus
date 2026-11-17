@@ -1,4 +1,4 @@
-"""没存 HLO 的运行：按它的 meta.json 在 CPU 上为同一 TPU 拓扑重编训练步，再用 hlo_mof_dus_scan.py 找 #71 的特征（案例 16）。
+"""没存 HLO 的运行：按它的 meta.json 在 CPU 上为同一 TPU 拓扑重编训练步，再用 hlo_mof_dus_scan.py 找案例 16 的特征。
 
 编译走 TPU 自比离线筛选的同一条路径（alignments/04-tpu-self/hlo_screen.py 的 spec_from_meta + compile_spec：同一镜像、
 同一 MaxText 提交、同一 yml（按 sha256 核对）、同一组覆盖参数与 LIBTPU_INIT_ARGS，frameworks/maxtext/aot_hlo.py 编一次，0 张卡）。
@@ -69,7 +69,7 @@ def main(argv=None) -> int:
     out = {
         "tool": "models/hunyuan4/analysis/jit_miscompile_offline_scan.py",
         "scanner": "models/hunyuan4/analysis/hlo_mof_dus_scan.py",
-        "note": "CPU 上按运行的 meta.json 重编训练步（hlo_screen.compile_spec），扫 #71 特征；calib 是存了 HLO 的运行，"
+        "note": "CPU 上按运行的 meta.json 重编训练步（hlo_screen.compile_spec），扫案例 16 特征；calib 是存了 HLO 的运行，"
         "cpu_vs_tpu_program_equal = CPU 重编的程序与 TPU 上存下的规范化后逐行相同",
         "calib": [],
         "runs": [],
@@ -108,7 +108,7 @@ def main(argv=None) -> int:
         out["runs"].append(rec)
         s = rec.get("scan") or {}
         print(
-            f"[offline_scan] {r}: 多输出 fusion 含 DUS {s.get('mof_with_dus')}，#71 特征 {s.get('with_71_signature')}"
+            f"[offline_scan] {r}: 多输出 fusion 含 DUS {s.get('mof_with_dus')}，案例 16 特征 {s.get('with_71_signature')}"
             f"{'（编不出来：' + rec['error'][:200] + '）' if rec.get('error') else ''}",
             flush=True,
         )

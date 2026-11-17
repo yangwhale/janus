@@ -375,7 +375,8 @@
    "test_closer": 93,
    "golden_closer": 112,
    "ratio_median": 1.0092577441268473
-  }
+  },
+  "ihc_rule": "iHC 张量超出尺子且 R > 1.2 时：R ≤ 5.22 单列 ihc_accepted、不计入未定责；R > 5.22 记 unattributed（PROTOCOL 变更记录 2026-11-12，上限 = 01-mini D11 登记接受过的最大 R 5.218）"
  },
  "curves": {
   "janus_rc": 0,

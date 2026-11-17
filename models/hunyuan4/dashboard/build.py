@@ -220,12 +220,15 @@ def _below_floor(r):
 
 def _step1_judge(rows):
     """→ (状态, 超 2N 未定责, 1–2N 未定责, N = 0 且 R > 1.2（低于分辨率的不算）, 超 2N 的, 超 N 的)。"""
-    zero = [r for r in rows if r["gpu_noise_max"] == 0 and not _below_floor(r)]
+    # 路由翻转定责（PROTOCOL 2026-11-12 事前登记，analysis/route_flip_rule.py）记为已定责，不进未定责
+    att = [r for r in rows if not r.get("route_flip_attributed")]
+    zero = [r for r in att if r["gpu_noise_max"] == 0 and not _below_floor(r)]
     pos = [(r, r["tpu_vs_gpu_min"] / r["gpu_noise_max"]) for r in rows if r["gpu_noise_max"] > 0]
+    pos_att = [(r, x) for r, x in pos if not r.get("route_flip_attributed")]
     over2 = [r for r, x in pos if x > 2]
     over1 = [r for r, x in pos if x > 1]
-    un2 = [r for r in over2 if r["R_vs_ref"] > R_LIMIT]
-    un1 = [r for r, x in pos if 1 < x <= 2 and r["R_vs_ref"] > R_LIMIT]
+    un2 = [r for r, x in pos_att if x > 2 and r["R_vs_ref"] > R_LIMIT]
+    un1 = [r for r, x in pos_att if 1 < x <= 2 and r["R_vs_ref"] > R_LIMIT]
     zbad = [r for r in zero if r["R_vs_ref"] > R_LIMIT]
     st = "fail" if un2 or zbad else ("inconclusive" if un1 else "pass")
     return st, un2, un1, zbad, over2, over1
@@ -256,6 +259,11 @@ def _names(rs):
 # 单列的张量挡不挡签字待拍板，所以消息不写「已接受」。
 STEP1_ACCEPTED = {
     "model.mtp_layers.0.enorm.weight": "接受理由见对齐细节 D13、PROTOCOL 变更记录 2026-11-09",
+}
+# C 口径（s1f-c）另加的接受：看过结果后接受，只用于 C 口径这一代的结果文件（项目负责人 2026-11-12 拍板）
+STEP1_ACCEPTED_C = {
+    **STEP1_ACCEPTED,
+    "model.layers.3.hc_mlp_layer.hc_pre.hc_fn": "路由翻转，看过结果后接受，见对齐细节 D11、PROTOCOL 变更记录 2026-11-12",
 }
 
 
@@ -809,7 +817,7 @@ def virtual():
                 "t1zc-step1-train-grad-vs-fp64-n6.json",
                 "s1f-c（C 口径，训练步梯度）",
                 "g2s-a … g2s-f（6 份）",
-                accepted=STEP1_ACCEPTED,
+                accepted=STEP1_ACCEPTED_C,
             ),
         ),
         "t1zg-step1-grad-vs-fp64": (
@@ -842,6 +850,22 @@ def virtual():
             if (ALIGN / "03-mid" / "results" / "mid-tm2-step1-grad-vs-fp64.json").exists()
             else {}
         ),
+        # 现行 C 口径的第 1 步（PROTOCOL 2026-11-12 前瞻登记；GPU 只有 3 份，参照不足；不用任何豁免）
+        **(
+            {
+                "mid-c-step1-train-grad-vs-fp64": (
+                    ALIGN / "03-mid" / "results" / "mid-c-step1-train-grad-vs-fp64.json",
+                    step1_vs_ref(
+                        "mid-c-step1-train-grad-vs-fp64.json",
+                        "tmcs-c（训练步梯度）",
+                        "gms-a/b/c",
+                        ALIGN / "03-mid" / "results",
+                    ),
+                )
+            }
+            if (ALIGN / "03-mid" / "results" / "mid-c-step1-train-grad-vs-fp64.json").exists()
+            else {}
+        ),
         **{
             n: (
                 ALIGN / "02-real-weight" / "results" / f"{n}.json",
@@ -850,6 +874,11 @@ def virtual():
             for n, t, g in (
                 ("t2b-step1-grad-vs-fp64", "tb6diag", "gb2s-a/b/c"),
                 ("t2d1-step1-grad-vs-fp64", "td6diag", "gd2s-a/b/c"),
+                # 现行 C 口径的第 1 步（PROTOCOL 2026-11-12 前瞻登记；6 份是登记的判定，3 份只作对照；不用任何豁免）
+                ("t2b8c-step1-train-grad-vs-fp64-n6", "tb8s-c-r1（训练步梯度）", "gb2s-a … f"),
+                ("t2b8c-step1-train-grad-vs-fp64-n3", "tb8s-c-r1（训练步梯度）", "gb2s-a/b/c"),
+                ("t2d18c-step1-train-grad-vs-fp64-n6", "td8s-c-r2（训练步梯度）", "gd2s-a … f"),
+                ("t2d18c-step1-train-grad-vs-fp64-n3", "td8s-c-r2（训练步梯度）", "gd2s-a/b/c"),
             )
             if (ALIGN / "02-real-weight" / "results" / f"{n}.json").exists()
         },
@@ -1039,7 +1068,8 @@ HISTORY = [
             ("t2d1z-l4", "td3-a", "第二代，300 步（t1z 的开关、M25 暂关）"),
             ("t2d14-l4*", "td4-a", "第三代，300 步（t1zr 再加 M34、M37，M25 重新打开）"),
             ("t2d15-l4*", "td5-a", "1000 步（当时 T2 配置的全部开关，含 M39–M41，不含 M42b）"),
-            ("t2d15b-l4", "td5b-b", "最近一代，1000 步（含 M42b；base2 开、早于 M50，现行对齐配置在 D1 上尚无运行）"),
+            ("t2d15b-l4", "td5b-b", "上一代，1000 步（含 M42b；base2 开、早于 M50）"),
+            ("t2d1c-l4", "tdc-a", "**现行**：C 口径（M36、M52、M58 都开，base2 关，含 M50），1000 步"),
         ],
     ),
     (
@@ -1049,7 +1079,8 @@ HISTORY = [
             ("t2bz-l4", "tb3-b", "第二代，300 步（同 td3-a 的设置）"),
             ("t2b4-l4*", "tb4-a", "第三代，300 步（同 td4-a 的设置）"),
             ("t2b5-l4*", "tb5-b", "1000 步（同 td5-a 的设置）"),
-            ("t2b5b-l4", "tb5b-a", "最近一代，1000 步（含 M42b；base2 开、早于 M50，现行对齐配置在 B 上尚无运行）"),
+            ("t2b5b-l4", "tb5b-a", "上一代，1000 步（含 M42b；base2 开、早于 M50）"),
+            ("t2bc-l4", "tbc-a", "**现行**：C 口径（M36、M52、M58 都开，base2 关，含 M50），1000 步"),
         ],
     ),
     (
@@ -1057,7 +1088,8 @@ HISTORY = [
         "tm-a 与 tm-b 差不止一个开关，不能当 A/B。",
         [
             ("tm-l4", "tm-a", "fd796f6 时的配置（没有 M39–M41、M42b）"),
-            ("tmb-l4", "tm-b", "最近一代（含 M39–M41 与 M42b；base2 开、早于 M50，现行对齐配置在 mid 上尚无运行）"),
+            ("tmb-l4", "tm-b", "上一代（含 M39–M41 与 M42b；base2 开、早于 M50）"),
+            ("tmc-l4", "tmc-a", "**现行**：C 口径（M36、M52、M58 都开，base2 关，含 M50）"),
         ],
     ),
 ]
@@ -1177,7 +1209,7 @@ HEAD_L4, HEAD_L4_300, HEAD_QK, HEAD_STEP1, HEAD_STEP1_N3, HEAD_QK_L1 = (
     "t1zo-l4-qkclip",
     "t1zc-step1-train-grad-vs-fp64-n6",
     "t1zo-step1-train-grad-vs-fp64",
-    "t1zo-qkclip-maxlogit",
+    "t1zc-qkclip-maxlogit",
 )
 FACTORIAL = "mini-factorial-tpu-6"  # 主 loss 第 551–1000 步的单因素交叉（C 口径 6 份）
 REPEATS_C = "t1zc-repeats-6"  # C 口径 6 份各自对 g3-a 的 L4 r（16 份尺子）
@@ -1232,8 +1264,8 @@ def plain_legend(v):
     rows = [r for r in json.loads((RES / f"{HEAD_STEP1}.json").read_text())["rows"] if not r.get("tpu_file_corrupt")]
     over = [r for r in rows if r["gpu_noise_max"] > 0 and r["tpu_vs_gpu_min"] / r["gpu_noise_max"] > 1]
     far = [r for r in over if r["R_vs_ref"] > R_LIMIT]
-    un = [r for r in far if r["tensor"] not in STEP1_ACCEPTED]
-    acc = [r for r in far if r["tensor"] in STEP1_ACCEPTED]
+    un = [r for r in far if r["tensor"] not in STEP1_ACCEPTED_C]
+    acc = [r for r in far if r["tensor"] in STEP1_ACCEPTED_C]
     if s1["metrics"]["n_unattributed_over_n"] != len(un):
         raise SystemExit("头条的 L3 未定责计数和结果对不上")
 
@@ -1289,18 +1321,17 @@ def plain_legend(v):
         "base2 开的上一代已接受，关 base2 后没有重做同一状态的证据，是否沿用尚未决定；C 口径上没测）。挡签字的还有："
         f"第一步整网（C 口径）{len(rows)} 个梯度里 {len(over)} 个超出 GPU {n_fen}之间的波动"
         f"（{len(over) - len(far)} 个离精确值不超过 GPU 的 1.2 倍、算已查明来源；另 {len(far)} 个比 GPU 远："
-        + "、".join(one(r) for r in un)
-        + f"，计 {len(un)} 个未定责"
+        + ("、".join(one(r) for r in un) + f"，计 {len(un)} 个未定责" if un else "没有未定责的")
         + (
             "（超出波动都不到 2 倍，所以这一项是略超不是没对上）；"
-            if not s1["metrics"]["n_unattributed_over_2n"]
+            if un and not s1["metrics"]["n_unattributed_over_2n"]
             else "；"
         )
         + "、".join(one(r) for r in acc)
-        + "，另列（按 D11 豁免规则：比 GPU 远的张量都单列，enorm 的接受理由「两边离精确值都不到一次 BF16 舍入」复核成立、不计入，超连接小参数 hc_fn 是 base2 开那一代登记接受的 6 个之一，但接受理由没有数值门槛、复核不了，计入（是否沿用待拍板）；单列的挡不挡签字待拍板）。"
-        f"GPU 第一步参照 2026-11-11 从 3 份补到 6 份（看过 3 份的判定之后补跑，6 份能否作正式判定待拍板），C 口径之前那一代 3 份时是 {s3['metrics']['n_over_n']} 个超出、{s3['metrics']['n_unattributed_over_n']} 个未定责），"
-        f"低阈值下（C 口径之前的配置）第一步第 {qm['worst_layer']} 层每头最大注意力打分离精确值 GPU {_e(qm['rel_l2_gpu_vs_ref'], False)}、TPU {_e(qm['rel_l2_tpu_vs_ref'], False)}，"
-        f"{qm['r_ratio']:.2f} 倍（未定责），"
+        + "，另列（按 D11 豁免规则：比 GPU 远的张量都单列，enorm 的接受理由「两边离精确值都不到一次 BF16 舍入」复核成立、不计入；超连接小参数 hc_fn 是路由翻转，2026-11-12 看过结果后接受、不计入；单列的挡不挡签字待拍板）。"
+        f"GPU 第一步参照 2026-11-11 从 3 份补到 6 份（看过 3 份的判定之后补跑，项目负责人 2026-11-12 接受为 mini 的尺子），C 口径之前那一代 3 份时是 {s3['metrics']['n_over_n']} 个超出、{s3['metrics']['n_unattributed_over_n']} 个未定责），"
+        f"低阈值下（C 口径）第一步第 {qm['worst_layer']} 层每头最大注意力打分离精确值 GPU {_e(qm['rel_l2_gpu_vs_ref'], False)}、TPU {_e(qm['rel_l2_tpu_vs_ref'], False)}，"
+        f"{qm['r_ratio']:.2f} 倍（路由翻转，2026-11-12 看过结果后接受，格子仍记不过），"
         "参照答案（GPU 上同设置的标准训练）没和 GPU 生产程序比过，三条事后改的判法要在真实权重上做前瞻验证（判法事先固定，再看新结果）。",
         "",
         "为什么、生产怎么配、还差什么，见[对齐报告](../alignments/01-mini/ALIGNMENT-REPORT.md)。",

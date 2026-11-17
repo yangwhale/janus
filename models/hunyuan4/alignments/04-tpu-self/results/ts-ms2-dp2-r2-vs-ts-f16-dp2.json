@@ -252,12 +252,10 @@
   "n_over_scale": 187,
   "over_scale_median": 1.569424659024477,
   "over_scale_max": 4795.753732353002,
-  "within": true,
+  "within": false,
   "n_attributed": 178,
-  "n_unattributed": 0,
-  "unattributed": [],
-  "n_ihc_accepted": 9,
-  "ihc_accepted": [
+  "n_unattributed": 4,
+  "unattributed": [
    {
     "tensor": "model.hc_head.hc_head_base",
     "d": 0.5239186276839005,
@@ -297,7 +295,10 @@
     "golden_vs_fp64": 0.04974535944870117,
     "gpu_vs_fp64": 0.06572466270482988,
     "r64": 8.03564542223591
-   },
+   }
+  ],
+  "n_ihc_accepted": 5,
+  "ihc_accepted": [
    {
     "tensor": "model.layers.5.hc_mlp_layer.hc_pre.hc_base",
     "d": 0.06893565353218324,
@@ -356,7 +357,8 @@
    "test_closer": 106,
    "golden_closer": 99,
    "ratio_median": 0.9967185374943495
-  }
+  },
+  "ihc_rule": "iHC 张量超出尺子且 R > 1.2 时：R ≤ 5.22 单列 ihc_accepted、不计入未定责；R > 5.22 记 unattributed（PROTOCOL 变更记录 2026-11-12，上限 = 01-mini D11 登记接受过的最大 R 5.218）"
  },
  "curves": {
   "janus_rc": 0,
@@ -479,11 +481,17 @@
   "r_max": 0.9926626558582136
  },
  "verdict": {
-  "tier": 2,
-  "label": "在噪声内",
-  "band": "在噪声内",
+  "tier": 3,
+  "label": "超出噪声上限",
+  "band": "超",
   "curves_r_max": 0.9926626558582136,
-  "why": "不逐位；第 1 步梯度没有未定责的张量，曲线 r ≤ 1"
+  "why": "超出噪声上限：第 1 步梯度 4 个张量超出噪声上限且离 FP64 远 1.2 倍以上（最远 model.hc_head.hc_head_base，15.9 倍）",
+  "before_ihc_cap": {
+   "tier": 2,
+   "label": "在噪声内",
+   "band": "在噪声内",
+   "why": "不逐位；第 1 步梯度没有未定责的张量，曲线 r ≤ 1"
+  }
  },
  "step1_rows": [
   {
@@ -526,7 +534,7 @@
    "golden_vs_fp64": 0.024380507027587997,
    "gpu_vs_fp64": 0.0323212523423918,
    "r64": 15.903010588184523,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.hc_head.hc_head_fn",
@@ -540,7 +548,7 @@
    "golden_vs_fp64": 0.04974535944870117,
    "gpu_vs_fp64": 0.06572466270482988,
    "r64": 8.03564542223591,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.hc_head.hc_head_scale",
@@ -554,7 +562,7 @@
    "golden_vs_fp64": 0.047555144199906293,
    "gpu_vs_fp64": 0.013242708253953713,
    "r64": 12.048537245382501,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.0.hc_attn_layer.hc_pre.hc_base",
@@ -1982,7 +1990,7 @@
    "golden_vs_fp64": 0.28423394617641373,
    "gpu_vs_fp64": 0.2863955487502917,
    "r64": 9.597538423471248,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.4.hc_mlp_layer.hc_pre.hc_base",

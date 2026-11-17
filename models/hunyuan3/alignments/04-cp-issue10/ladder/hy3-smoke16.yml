@@ -1,0 +1,32 @@
+# 实践 04 阶梯实验：16 层随机初始化混元 3（hunyuan3-smoke 覆盖成 16 层，同 原问题 10-29 的缩层版），
+# 精度相关一律取上游默认（阶梯 L0）；各级在命令行上每次只加一项（setup.md「阶梯」）。
+# 初始权重不用 MaxText 自己初始化：所有臂载入同一份检查点（tools/make_random_hf.py 生成 HF 随机权重 → convert_hf_to_maxtext.py），
+# CPU FP64 参照读同一份 HF 权重。数据由 train_hy3.py 按回放目录原样喂（tools/make_replay_data.py）。
+# 用法：HY3_YML=<本文件> HY3_NAME_MAP=<同目录 name_map_smoke16.yaml>（mt_common.py）。
+base_config: "base.yml"
+model_name: "hunyuan3-smoke"                # MaxText 的 MoE 按 model_name 前缀选路由语义（sigmoid + 偏置等），必须写
+override_model_config: true
+# 尺寸（层数 4 → 16、隐藏维 4096 → 1024、稠密前馈 13312 → 4096、查询头 / 键值头 64 / 8 → 16 / 4、专家前馈 1536 → 256）
+# 写在这里不生效（合并顺序 base → 模型 yml → 命令行，会被 hunyuan3-smoke.yml 盖掉），由环境变量 HY3_FORCED 放到命令行：
+#   HY3_FORCED=base_num_decoder_layers=16,base_emb_dim=1024,base_mlp_dim=4096,base_num_query_heads=16,base_num_kv_heads=4,base_moe_mlp_dim=256
+# 精度：dtype / weight_dtype / grad_dtype / matmul_precision / 注意力 / 优化器都用 base.yml 默认；只开 tokamax splash（base2 默认开）
+attention: "flash"
+use_tokamax_splash: true
+# 恒定学习率（WSD 不预热、不衰减时只剩 optax.constant_schedule(lr)）
+learning_rate: 3.0e-4
+lr_schedule_type: "wsd"
+warmup_steps_fraction: 0.0
+wsd_decay_steps_fraction: 0.0
+learning_rate_final_fraction: 1.0
+max_target_length: 4096
+per_device_batch_size: 1
+gradient_accumulation_steps: 1
+# 并行：默认纯数据并行（ici_data_parallelism 自动补满）；CP 臂在命令行加 ici_context_parallelism 等，FSDP 参照加 ici_fsdp_parallelism=8
+ici_fsdp_parallelism: 1
+ici_data_parallelism: -1
+ici_tensor_parallelism: 1
+ici_expert_parallelism: 1
+dcn_data_parallelism: 1
+enable_checkpointing: false
+dataset_type: "synthetic"               # 不用 MaxText 的数据管线：train_hy3.py 按回放目录原样喂
+log_period: 1

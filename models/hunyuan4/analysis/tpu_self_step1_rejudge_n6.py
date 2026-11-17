@@ -4,7 +4,8 @@
 01-mini 的 6 份结果（results/t1zo-step1-train-grad-vs-fp64-n6.json 的 rows）逐张量存了 6 份 GPU 两两差的最大值（分母 ‖GPU‖，
 gpu_noise_max）与 6 份 GPU 离 FP64 的中位数（gpu_vs_ref）。GPU 一侧与 TPU 无关，换掉这两样就能按 tpu_self_compare.py 的同一判法重判：
 - 尺子：d ≤ max(GPU 两两最大差, 2^-20) 记在噪声内；
-- 定责：超出尺子的，R = 被测离 FP64 ÷ max(golden 离 FP64, GPU 离 FP64 的中位数) ≤ 1.2 记换了顺序，否则 iHC 单列、其余未定责。
+- 定责：超出尺子的，R = 被测离 FP64 ÷ max(golden 离 FP64, GPU 离 FP64 的中位数) ≤ 1.2 记换了顺序，否则 iHC 且 R ≤ 5.22 的单列、其余未定责
+  （iHC 豁免的倍数上限 2026-11-12 起，见 tpu_self_compare.IHC_R64_CAP）。
 先用 3 份的数复算一遍，和结果文件里存的判定逐张量对上，再出 6 份的判定。只报判定有变化的张量；判档、曲线不重算。
 
     python models/hunyuan4/analysis/tpu_self_step1_rejudge_n6.py \
@@ -16,15 +17,16 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 N6 = ROOT / "alignments/01-mini/results/t1zo-step1-train-grad-vs-fp64-n6.json"
 RESULTS = ROOT / "alignments/04-tpu-self/results"
 FLOOR = 2.0**-20
-R64_LIMIT = 1.2
-IHC = re.compile(r"\.hc_(attn|mlp)_layer\.|^model\.hc_head\.")
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from tpu_self_compare import IHC, IHC_R64_CAP, R64_LIMIT  # noqa: E402  同一套规则（含 2026-11-12 起的 iHC 豁免上限）
+
 STORED = {"scale": "scale", "attributed": "attributed", "ihc_accepted": "ihc_accepted", "unattributed": "unattributed"}
 
 
@@ -37,7 +39,7 @@ def judge(row, scale, med):
     elif r64 <= R64_LIMIT:
         v = "attributed"
     else:
-        v = "ihc_accepted" if IHC.search(row["tensor"]) else "unattributed"
+        v = "ihc_accepted" if IHC.search(row["tensor"]) and r64 <= IHC_R64_CAP else "unattributed"
     return v, r64, over
 
 

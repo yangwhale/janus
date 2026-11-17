@@ -17,7 +17,7 @@
 | 7 | [`alignments/01-v5p-acceptance/`](alignments/01-v5p-acceptance/README.md) | TPU v5p 迁移验收，L0 到 L4；[案例 01](alignments/01-v5p-acceptance/cases/01-loss-offset-param-norm.md) 是「GPU 参照自己有偏」的完整证据 |
 | 8 | [`alignments/02-v7x-acceptance/`](alignments/02-v7x-acceptance/README.md) | 同一套验收在 TPU v7x 上 |
 | 9 | [`regression/`](regression/README.md) | 验收通过以后的日常回归：TPU 对上一次验证过的 TPU 运行（LKG） |
-| 10 | [`alignments/04-cp-issue10/`](alignments/04-cp-issue10/README.md) | 上下文并行（All-Gather / Ring / Ulysses / USP）的 loss 偏移：三段形态在什么条件下复现、每种 CP 第 1 步对 FP64、USP 多一次 BF16 舍入的根因 |
+| 10 | [`alignments/04-cp-issue10/`](alignments/04-cp-issue10/README.md) | 上下文并行（All-Gather / Ring / Ulysses / USP）的 loss 偏移：从原始默认一级一级加修复的阶梯实验（纯数据并行基线的词嵌入梯度 BF16 累加、各级第 1 步对 FP64、只改编译开关的尺子），之前的排查在 `history.md` |
 
 全部检查一张表：[总览 `dashboard/dashboard.md`](dashboard/dashboard.md)（怎么读见指南[第 5 章](../../docs/guide/05-reading-results.md)）。离签字还差什么：[签字清单](../../docs/guide/05-reading-results.md#56-签字清单现在离签字还差什么)。
 

@@ -11,7 +11,7 @@ HLO 文本；本脚本把每一份改写成 CPU 能编的形式，用同一组�
   - `copy-start` / `copy-done`（HBM 与片上内存之间的异步拷贝）改成 `copy`；
   - fusion 内联成普通指令（含嵌套），`%x#k` 的元组分量写法换成对应指令。
 限制：
-  - 去掉布局后，改变物理布局的 `bitcast` 会被当成同形状重解释；遇到「转置式」bitcast 的程序结果不可信（#71 里没有）；
+  - 去掉布局后，改变物理布局的 `bitcast` 会被当成同形状重解释；遇到「转置式」bitcast 的程序结果不可信（案例 16 里没有）；
   - 含集合通信、custom call、自定义 kernel 的程序跑不了（报 ERR）；
   - 单进程会被 XLA 的 CHECK 直接杀掉，所以每份 HLO 在子进程里跑。
 
@@ -185,7 +185,7 @@ def main():
   ap.add_argument("--dump")
   ap.add_argument("--module", help="dump 目录里模块文件名的前缀（可带通配），如 'module_0000.jit_f.cl_*'")
   ap.add_argument("--inputs", help="npz，键 arg0、arg1…")
-  ap.add_argument("--issue71", action="store_true", help="用 #71 最小复现的输入")
+  ap.add_argument("--issue71", action="store_true", help="用案例 16 最小复现的输入")
   ap.add_argument("--out")
   ap.add_argument("--one", help=argparse.SUPPRESS)
   a = ap.parse_args()

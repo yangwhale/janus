@@ -10,7 +10,8 @@ LLO 核对：只含「省掉」、不含「舍了」的融合，期望那颗 ker
 
 源码位置取 HLO 栈帧表里最内层的 MaxText 文件与行号。栈帧表是截短的，看不全调用链，所以位置先按 op_name 里
 `while/body` 的层数分区：2 层 = 外层微批循环里的解码层 scan（iHC 各层）、1 层 = scan 之外（MTP 块、hc_head、嵌入、loss）、
-0 层 = 优化器；栈里直接出现 multi_token_prediction.py 的记 MTP。op_name 里有 `transpose(` 记反向。
+0 层 = 优化器（不做梯度累积的程序没有外层微批循环，给 --layer-scan-depth 1：1 层 = 解码层 scan，0 层里 op_name 带 jvp
+的记 scan 之外、不带的记优化器）；栈里直接出现 multi_token_prediction.py 的记 MTP。op_name 里有 `transpose(` 记反向。
 
     python elided_rounding_scan.py --hlo <train_step.after_optimizations.txt> --jf <LLO dump 目录> --out <json> [--positions]
 
@@ -28,7 +29,7 @@ import json
 import re
 from pathlib import Path
 
-PACK = re.compile(r"\bvpack\.[a-z]+\.bf16\b")
+PACK = re.compile(r"\bvpack(?:\.[a-z0-9]+)*\.bf16\b")  # v5p vpack.i.bf16；v7x vpack.c.f32.bf16 / vpack.i.f32.bf16
 DEF = re.compile(r"^\s*(?:ROOT )?%([\w.\-]+) = (\w+)\[")
 
 
@@ -72,6 +73,9 @@ def stack_resolver(lines):
 MODULE_OF = (
     ("multi_token_prediction.py", "mtp"),
     ("mhc.py", "ihc"),
+    ("ihc.py", "ihc"),  # 另一种写法的 iHC 在 layers/ihc.py
+    ("hunyuan4_vision.py", "vit"),
+    ("hunyuan4_multimodal.py", "vit"),
     ("moe.py", "moe"),
     ("attention_mla.py", "attention"),
     ("attention_op.py", "attention"),
@@ -155,7 +159,9 @@ def classify_position(site: str, bwd: bool, shape: str) -> str:
     return "other"
 
 
-def scan(hlo_path: Path, jf: Path | None, positions: bool = False):
+def scan(
+    hlo_path: Path, jf: Path | None, positions: bool = False, layer_scan_depth: int = 2, watch: tuple[str, ...] = ()
+):
     lines = hlo_path.read_text().splitlines()
     chain = stack_resolver(lines)
     comps, cur, order = collections.defaultdict(list), None, []
@@ -211,6 +217,19 @@ def scan(hlo_path: Path, jf: Path | None, positions: bool = False):
     )
     kern = collections.defaultdict(lambda: {"elided": 0, "kept": 0, "covered": 0, "rp": 0})
     exact = [0]
+    watched = {
+        w: {
+            "converts": 0,
+            "exact_converts": 0,
+            "elided_uses": 0,
+            "kept_uses": 0,
+            "covered_uses": 0,
+            "forward": 0,
+            "backward": 0,
+            "elided_kernels": set(),
+        }
+        for w in watch
+    }
     classes = collections.defaultdict(collections.Counter)
     pos = []
     for c in order:
@@ -237,6 +256,11 @@ def scan(hlo_path: Path, jf: Path | None, positions: bool = False):
                 continue
             name = m.group(1)
             src = defs.get(m.group(3), "")
+            hits = []
+            if watch:
+                sf = re.search(r"stack_frame_id=(\d+)", ln)
+                fr = chain(int(sf.group(1))) if sf else []
+                hits = [w for w in watch if w in fr]
             if (
                 re.search(r"reduce-precision\(.*exponent_bits=8, mantissa_bits=7", src)
                 or re.search(r"= f32\[[^ ]* convert\(%([\w.\-]+)\)", src)
@@ -245,22 +269,36 @@ def scan(hlo_path: Path, jf: Path | None, positions: bool = False):
                 exact[0] += (
                     1  # 输入已经在 BF16 网格上（reduce_precision 舍过，或刚从 BF16 转上来）：来回 convert 是精确的
                 )
+                for w in hits:
+                    watched[w]["exact_converts"] += 1
                 continue
             is_root = ln.lstrip().startswith("ROOT")
             el, kp, cov = _uses(name, users, body_set_root)
             if is_root:
                 kp += 1
+            for w in hits:
+                ww = watched[w]
+                ww["converts"] += 1
+                ww["elided_uses"] += el
+                ww["kept_uses"] += kp
+                ww["covered_uses"] += cov
+                ww["backward" if "transpose(" in ln.split("op_name=")[-1][:400] else "forward"] += 1
+                if el:
+                    ww["elided_kernels"].add(kernel_of(c) or c)
             s = re.search(r"stack_frame_id=(\d+)", ln)
             mod, site = classify(chain(int(s.group(1)))) if s else ("other", "?")
             op = re.search(r'op_name="([^"]*)"', ln)
             op = op.group(1) if op else ""
             depth = op.count("while/body")
             if not mod.startswith("mtp/"):
-                region = (
-                    {2: "decoder", 1: "outside_scan", 0: "optimizer"}.get(depth, f"while{depth}")
-                    if op
-                    else "no_metadata"
-                )
+                if not op:
+                    region = "no_metadata"
+                elif layer_scan_depth == 2:
+                    region = {2: "decoder", 1: "outside_scan", 0: "optimizer"}.get(depth, f"while{depth}")
+                elif depth >= 1:
+                    region = "decoder" if depth == 1 else f"while{depth}"
+                else:  # 没有微批循环：scan 之外的前向 / 反向与优化器同在第 0 层，按 op_name 里有没有 jvp 分
+                    region = "outside_scan" if "jvp(" in op else "optimizer"
                 mod = f"{region}/{mod}"
             bwd = "transpose(" in op
             k = kernel_of(c) or c
@@ -306,6 +344,53 @@ def scan(hlo_path: Path, jf: Path | None, positions: bool = False):
                     else "other"
                 )
                 classes[cls][region] += el
+    # 另一种写法的往返：矩阵乘 / 卷积直接以 BF16 输出（f32→bf16 的 convert 被并进了卷积），同一颗融合里又 convert 回 f32
+    # 使用。HLO 里没有单独的 f32→bf16 convert，上面的匹配看不到；后端可能直接拿 FP32 累加结果用（A16 主输出头 dgrad 即此型），
+    # 省没省只能对照关 excess precision 的 LLO 看。这里只列出来，不计进 elided_uses。
+    mm_rt = collections.defaultdict(lambda: {"uses": 0, "kernels": set()})
+    view = re.compile(
+        r"^\s*(?:ROOT )?%([\w.\-]+) = bf16\[[^ ]* (?:bitcast|reshape|copy|transpose|slice)\(%([\w.\-]+)\)"
+    )
+    for c in order:
+        if c not in caller:
+            continue
+        body = comps[c]
+        mms = {}
+        for ln in body:
+            m = re.match(r"^\s*(?:ROOT )?%([\w.\-]+) = bf16\[([^\]]*)\][^ ]* (?:convolution|dot)\(", ln)
+            if m:
+                mms[m.group(1)] = (m.group(2), ln)
+        if not mms:
+            continue
+        root = {k: k for k in mms}
+        for ln in body:  # HLO 按定义顺序排，一遍就能穿过只搬数据的视图
+            m = view.match(ln)
+            if m and m.group(2) in root:
+                root[m.group(1)] = root[m.group(2)]
+        for ln in body:
+            m = re.match(r"^\s*(?:ROOT )?%[\w.\-]+ = f32\[[^ ]* convert\(%([\w.\-]+)\)", ln)
+            if not m or m.group(1) not in root:
+                continue
+            shape, mln = mms[root[m.group(1)]]
+            sf = re.search(r"stack_frame_id=(\d+)", mln)
+            mod, site = classify(chain(int(sf.group(1)))) if sf else ("other", "?")
+            op = re.search(r'op_name="([^"]*)"', mln)
+            op = op.group(1) if op else ""
+            key = (mod, site, "backward" if "transpose(" in op else "forward", shape)
+            mm_rt[key]["uses"] += 1
+            mm_rt[key]["kernels"].add(kernel_of(c) or c)
+    matmul_out_roundtrips = [
+        {
+            "module": k[0],
+            "site": k[1],
+            "direction": k[2],
+            "shape": k[3],
+            "uses": v["uses"],
+            "kernels": sorted(v["kernels"]),
+            "kernel_packs": [llo.get(x) for x in sorted(v["kernels"])],
+        }
+        for k, v in sorted(mm_rt.items(), key=lambda kv: -kv[1]["uses"])
+    ]
     # LLO 核对：只有省掉、没有舍了的 kernel
     # 只含往返的 kernel：没有真舍入的使用，也没有 reduce_precision（它会产生打包指令）
     only_el = [
@@ -353,9 +438,16 @@ def scan(hlo_path: Path, jf: Path | None, positions: bool = False):
         "sites": rows,
         "n_llo_kernels": len(llo),
         "skipped_exact_converts": exact[0],
+        "matmul_out_roundtrips": matmul_out_roundtrips,
     }
     if positions:
         res["positions"] = pos
+    if watch:
+        for ww in watched.values():
+            ks = sorted(ww.pop("elided_kernels"))
+            ww["elided_kernels"] = ks
+            ww["elided_kernel_packs"] = [llo.get(k) for k in ks]
+        res["watched_sites"] = watched
     return res
 
 
@@ -365,8 +457,22 @@ def main():
     p.add_argument("--jf", type=Path, help="LLO dump 目录（--xla_jf_dump_to 的目录，里面是 *-final_bundles.txt）")
     p.add_argument("--out", type=Path, help="结果 JSON；不给就只打印")
     p.add_argument("--positions", action="store_true", help="JSON 里另给逐处清单 positions")
+    p.add_argument(
+        "--site",
+        action="append",
+        default=[],
+        help="文件:行号（如 ihc.py:199），可重复：栈帧链里任一帧是它的 f32→bf16 convert 单独计数，输出在 watched_sites；"
+        "按整条链匹配，不受「最内层 MaxText 帧」归类的影响",
+    )
+    p.add_argument(
+        "--layer-scan-depth",
+        type=int,
+        choices=(1, 2),
+        default=2,
+        help="解码层 scan 在 op_name 里的 while/body 层数：2 = 有外层微批循环（对齐配置）；1 = 不做梯度累积（如生产配方）",
+    )
     a = p.parse_args()
-    res = scan(a.hlo, a.jf, positions=a.positions)
+    res = scan(a.hlo, a.jf, positions=a.positions, layer_scan_depth=a.layer_scan_depth, watch=tuple(a.site))
     if a.out:
         a.out.write_text(json.dumps(res, ensure_ascii=False, indent=1) + "\n")
     print(json.dumps(res["llo_check"], ensure_ascii=False))
@@ -387,6 +493,12 @@ def main():
             r["backward"],
             r["shapes"],
         )
+    for w, ww in res.get("watched_sites", {}).items():
+        packs = [x for x in ww["elided_kernel_packs"] if x is not None]
+        brief = {k: v for k, v in ww.items() if k not in ("elided_kernels", "elided_kernel_packs")}
+        brief["elided_kernels"] = len(ww["elided_kernels"])
+        brief["elided_kernels_zero_packs"] = f"{packs.count(0)}/{len(packs)}（有 LLO 的）"
+        print("site", w, json.dumps(brief, ensure_ascii=False))
 
 
 if __name__ == "__main__":

@@ -19,9 +19,9 @@
 
 | 列 | 含义 |
 |---|---|
-| mid | 03 · hy4-mid 最近一代（base2 开、早于 M50；现行对齐配置在 mid 上尚无运行）：L4 是 TPU tm-b 300 步对 GPU gm-a（噪声 gm 两两 28 对）；L3 是 tm2diag；L0 学习率核对用 tm-b，权重转换取 tm-a 一代（同一份检查点） |
-| B | 02 · real-weight 截层 B：L4 是 TPU tb5b-a 1000 步（base2 开、早于 M50；现行对齐配置在 B 上尚无运行）对 GPU gb3-a（噪声 gb3 两两 28 对）；L3 是 tb6diag；L0 学习率核对也用 tb5b-a |
-| D1 | 02 · real-weight 截层 D1：L4 是 TPU td5b-b 1000 步（base2 开、早于 M50；现行对齐配置在 D1 上尚无运行）对 GPU gd3-a（噪声 gd3 两两 28 对）；L3 是 td6diag（取回时断流损坏的 5 个 TPU 梯度文件不判）；L0 学习率核对也用 td5b-b |
+| mid | 03 · hy4-mid 现行 C 口径（PROTOCOL 2026-11-12 前瞻登记）：L4 是 TPU tmc-a 300 步对 GPU gm-a（噪声 gm 两两 28 对）；L3 是 tmcs-c（训练步梯度，GPU 第 1 步参照只有 3 份，参照不足）；L0 学习率核对用 tmc-a，权重转换取 tm-a 一代（同一份检查点）；上一代 tm-b / tm2diag 见历代比较 |
+| B | 02 · real-weight 截层 B：L4 是现行 C 口径的 TPU tbc-a 1000 步（PROTOCOL 2026-11-12 前瞻登记）对 GPU gb3-a（噪声 gb3 两两 28 对）；L3 是现行 C 口径的 tb8s-c-r1（训练步梯度，GPU 第 1 步参照 6 份，PROTOCOL 2026-11-12 前瞻登记）；L0 学习率核对也用 tbc-a |
+| D1 | 02 · real-weight 截层 D1：L4 是现行 C 口径的 TPU tdc-a 1000 步（PROTOCOL 2026-11-12 前瞻登记）对 GPU gd3-a（噪声 gd3 两两 28 对）；L3 是现行 C 口径的 td8s-c-r2（训练步梯度，GPU 第 1 步参照 6 份，PROTOCOL 2026-11-12 前瞻登记）；L0 学习率核对也用 tdc-a |
 | tiny | 00 · hy4-tiny：只有 TPU 一侧的 CPU 冒烟（8 个假 CPU 设备，四个阶段整条链路），没有 GPU 对 TPU 的比较 |
 
 ## L0 地基（设置 / 数据 / 权重 / 配置，必须逐位）
@@ -62,43 +62,33 @@
 
 | 检查项 | 指标 | 门槛（严格｜参考） | mid | B | D1 | tiny |
 |---|---|---|---|---|---|---|
-| 全部参数梯度：对 GPU 第 1 步噪声，超出的对 CPU FP64 定责 | 超出 N（或 N = 0 且不低于分辨率下限）而未定责的张量数 | 严格：超出 N（或 N = 0 且不低于分辨率下限）而未定责的张量数 ≤ 0｜参考：无 | 7 ❌ | 16 ❌ | 11 ❌ | — |
+| 全部参数梯度：对 GPU 第 1 步噪声，超出的对 CPU FP64 定责 | 超出 N（或 N = 0 且不低于分辨率下限）而未定责的张量数 | 严格：超出 N（或 N = 0 且不低于分辨率下限）而未定责的张量数 ≤ 0｜参考：无 | 5 ❌ | 13 ❌ | 9 ❌ | — |
 
 <details><summary>说明（非 ✅ 格子，以及参考档不过或无法判的格子）</summary>
 
-- **全部参数梯度：对 GPU 第 1 步噪声，超出的对 CPU FP64 定责 · mid**：实测 7（超出 N（或 N = 0 且不低于分辨率下限）而未定责的张量数）｜严格档 ≤ 0 → 不过｜参考档 无对应门槛｜待查：sink 一组是 TPU 一侧 sink 梯度的系统差（[根源一览第 21 行](../ROOT-CAUSES.md#r21)）；iHC 同 hy4-mini（[mini 对齐细节 D11](../alignments/01-mini/DETAILS.md#d11)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-step1)）；梯度文件取回时断流损坏的张量不进判定
-- **全部参数梯度：对 GPU 第 1 步噪声，超出的对 CPU FP64 定责 · B**：实测 16（超出 N（或 N = 0 且不低于分辨率下限）而未定责的张量数）｜严格档 ≤ 0 → 不过｜参考档 无对应门槛｜待查；real-weight 的 L3 只看对 CPU FP64 的 R（报告第 2 节）。RMSNorm 权重大部分是 dγ 多舍一次 BF16（[根源一览第 23 行](../ROOT-CAUSES.md#r23)），sink 见第 21 行，q latent norm 偏小已定位到 splash 的 base2 指数（[根源一览第 24 行](../ROOT-CAUSES.md#r24)），iHC、`hc_head_scale` 待查（[real-weight 报告 D22](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d22)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
-- **全部参数梯度：对 GPU 第 1 步噪声，超出的对 CPU FP64 定责 · D1**：实测 11（超出 N（或 N = 0 且不低于分辨率下限）而未定责的张量数）｜严格档 ≤ 0 → 不过｜参考档 无对应门槛｜待查；real-weight 的 L3 只看对 CPU FP64 的 R（报告第 2 节）。sink、RMSNorm 权重、q 的上下投影、hc_head TPU 更远（[根源一览第 21、23 行](../ROOT-CAUSES.md#r21)；[real-weight 报告 D22](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d22)）；判定以 td6diag 的 52 个张量为准；取回时断流损坏的 5 个另用 td7diag 看过，R 都不超 1.2。td7diag 不是同配置重跑（MaxText `2306c7a5`，含已撤下的 M42），sink 不能拿它换
+- **全部参数梯度：对 GPU 第 1 步噪声，超出的对 CPU FP64 定责 · mid**：实测 5（超出 N（或 N = 0 且不低于分辨率下限）而未定责的张量数）｜严格档 ≤ 0 → 不过｜参考档 无对应门槛｜参照不足（GPU 第 1 步参照只有 gms-a … c 三份，2026-11-12 起要 6 份，待补）；现行 C 口径 tmcs-c 不过，未定责 5 个：iHC 4 个（第 3 层 FFN 前 `hc_base` R 13.7 最大；同 hy4-mini 的 [D11](../alignments/01-mini/DETAILS.md#d11)）与第 4 层 sink（R 1.21，[根源一览第 21 行](../ROOT-CAUSES.md#r21)）；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-step1)
+- **全部参数梯度：对 GPU 第 1 步噪声，超出的对 CPU FP64 定责 · B**：实测 13（超出 N（或 N = 0 且不低于分辨率下限）而未定责的张量数）｜严格档 ≤ 0 → 不过｜参考档 无对应门槛｜前瞻登记（PROTOCOL 2026-11-12，判法看结果之前固定、不用豁免）的判定：不过。未定责的 13 个：RMSNorm 权重 7 个（dγ 多舍一次 BF16，[根源一览第 23 行](../ROOT-CAUSES.md#r23)；开关 `rmsnorm_scale_grad_fp32` 不在对齐配置里）、第 1 层注意力前 iHC 3 个与第 0 层 FFN 前 `hc_scale`、第 1 层 sink（第 21 行）、N = 0 的索引器 `k_norm.bias`；GPU 3 份对照判定相同（[real-weight 报告 D22](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d22)）
+- **全部参数梯度：对 GPU 第 1 步噪声，超出的对 CPU FP64 定责 · D1**：实测 9（超出 N（或 N = 0 且不低于分辨率下限）而未定责的张量数）｜严格档 ≤ 0 → 不过｜参考档 无对应门槛｜前瞻登记（PROTOCOL 2026-11-12，判法看结果之前固定、不用豁免）的判定：不过。未定责的 9 个：RMSNorm 权重 4 个（[根源一览第 23 行](../ROOT-CAUSES.md#r23)）、第 0 层与 MTP 层 sink（第 21 行）、`hc_head_scale`、第 0 层 `q_b_proj`、N = 0 的索引器 `k_norm.bias`；落盘核对 57 个张量全部完好；GPU 3 份对照判定相同（[real-weight 报告 D22](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d22)）
 
 </details>
 
-## L4 多步（B、D1 1000 步；mid 300 步）
+## L4 多步（B、D1 1000 步；mid 300 步；都是现行 C 口径）
 
 | 检查项 | 指标 | 门槛（严格｜参考） | mid | B | D1 | tiny |
 |---|---|---|---|---|---|---|
-| loss（全程） | 带符号均值 | 严格：≤ N=4.66e-6 过，> 2N 不过｜参考：首步差 ≤ 2e-4、带符号均值 ≤ 2e-4、无 NaN / Inf | 6.41e-6（1.38×N） 🟡｜参✅ | 1.36e-4（最大单步，1.15×N，N=1.18e-4） 🟡｜参✅ | 2.76e-5（MARE，1.25×N，N=2.21e-5） 🟡｜参✅ | — |
-| loss 后段（第 101 步起） | 带符号均值 | 严格：≤ N=4.91e-6 过，> 2N 不过｜参考：首步差 ≤ 2e-4、带符号均值 ≤ 2e-4、无 NaN / Inf | 4.95e-6（1.007×N） 🟡｜参✅ | 9.74e-5（最大单步，0.824×N，N=1.18e-4） ✅｜参✅ | 2.52e-5（MARE，1.055×N，N=2.38e-5） 🟡｜参✅ | — |
-| MTP loss（全程与后段；B 没有 MTP 层） | MARE | 严格：≤ N=2.22e-5 过，> 2N 不过｜参考：无 | 2.12e-5（0.956×N） ✅ | — | 7.89e-5（1.35×N，N=5.83e-5） 🟡 | — |
-| 索引器 KD loss | MARE | 严格：≤ N=3.57e-4 过，> 2N 不过｜参考：无 | 3.99e-4（1.12×N） 🟡 | 9.25e-4（0.9692×N，N=9.55e-4） ✅ | 2.01e-3（带符号均值，2.32×N，N=8.67e-4） ❌ | — |
-| grad_norm（裁剪前） | MARE | 严格：≤ N=7.28e-4 过，> 2N 不过｜参考：无 | 6.77e-4（0.9307×N） ✅ | 9.65e-3（1.13×N，N=8.55e-3） 🟡 | 1.14e-3（带符号均值，0.9805×N，N=1.17e-3） ✅ | — |
-| param_norm（更新后参数范数，两边比精确值） | 带符号均值 | 严格：≤ N=8.94e-8 过，> 2N 不过｜参考：带符号均值 ≤ 5e-6、最大单步 ≤ 1.25e-5 | −1.60e-7（1.79×N） 🟡｜参✅ | 1.92e-7（最大单步，1.028×N，N=1.87e-7） 🟡｜参✅ | 9.50e-8（MARE，1.021×N，N=9.30e-8） 🟡｜参✅ | — |
-| 路由偏置曲线（每层均值、标准差） | MARE | 严格：≤ N=2.98e-3 过，> 2N 不过｜参考：无 | 2.03e-3（0.681×N） ✅ | 6.05e-3（最大单步，0.831×N，N=7.28e-3） ✅ | 1.20e-2（最大单步，1.68×N，N=7.16e-3） 🟡 | — |
+| loss（全程） | MARE | 严格：≤ N=1.62e-5 过，> 2N 不过｜参考：首步差 ≤ 2e-4、带符号均值 ≤ 2e-4、无 NaN / Inf | 1.64e-5（1.01×N） 🟡｜参✅ | 2.85e-5（0.9216×N，N=3.09e-5） ✅｜参✅ | 1.78e-5（0.807×N，N=2.21e-5） ✅｜参✅ | — |
+| MTP loss（全程与后段；B 没有 MTP 层） | 带符号均值 | 严格：≤ N=1.82e-5 过，> 2N 不过｜参考：无 | 2.28e-5（1.25×N） 🟡 | — | 5.58e-5（MARE，0.9574×N，N=5.83e-5） ✅ | — |
+| 索引器 KD loss | 最大单步 | 严格：≤ N=1.27e-3 过，> 2N 不过｜参考：无 | 1.27e-3（1.003×N） 🟡 | −7.97e-4（带符号均值，1.4×N，N=5.69e-4） 🟡 | 1.66e-2（2.3×N，N=7.24e-3） ❌ | — |
+| 路由偏置曲线（每层均值、标准差） | MARE | 严格：≤ N=2.98e-3 过，> 2N 不过｜参考：无 | 2.02e-3（0.677×N） ✅ | 0.153（最大单步，0.709×N，N=0.215） ✅ | 9.01e-3（最大单步，1.26×N，N=7.16e-3） 🟡 | — |
 
 <details><summary>说明（非 ✅ 格子，以及参考档不过或无法判的格子）</summary>
 
-- **loss（全程） · mid**：实测 6.41e-6（带符号均值）｜严格档 N=4.66e-6（28 对）→ 1.38×N，待定｜参考档 首步差 ≤ 2e-4：1.52e-5（0.0758×）；带符号均值 ≤ 2e-4：6.41e-6（0.032×）；无 NaN / Inf，过｜待查（[mid 报告 D27](../alignments/03-mid/ALIGNMENT-REPORT.md#d27)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-l4)）
-- **loss（全程） · B**：实测 1.36e-4（最大单步）｜严格档 N=1.18e-4（28 对）→ 1.15×N，待定｜参考档 首步差 ≤ 2e-4：1.45e-4（0.725×）；带符号均值 ≤ 2e-4：8.02e-6（0.0401×）；无 NaN / Inf，过｜待查：前 100 步同号衰减，第 1 步前向就差，后段在噪声内（[real-weight 报告 D20](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d20)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
-- **loss（全程） · D1**：实测 2.76e-5（MARE）｜严格档 N=2.21e-5（28 对）→ 1.25×N，待定｜参考档 首步差 ≤ 2e-4：8.45e-5（0.422×）；带符号均值 ≤ 2e-4：9.22e-6（0.0461×）；无 NaN / Inf，过｜待查（[real-weight 报告 D19](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d19)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
-- **loss 后段（第 101 步起） · mid**：实测 4.95e-6（带符号均值）｜严格档 N=4.91e-6（28 对）→ 1.007×N，待定｜参考档 首步差 ≤ 2e-4：1.52e-5（0.0758×）；带符号均值 ≤ 2e-4：4.95e-6（0.0247×）；无 NaN / Inf，过｜待查（[mid 报告 D27](../alignments/03-mid/ALIGNMENT-REPORT.md#d27)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-l4)）
-- **loss 后段（第 101 步起） · D1**：实测 2.52e-5（MARE）｜严格档 N=2.38e-5（28 对）→ 1.055×N，待定｜参考档 首步差 ≤ 2e-4：8.45e-5（0.422×）；带符号均值 ≤ 2e-4：1.57e-5（0.0784×）；无 NaN / Inf，过｜待查（[real-weight 报告 D19](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d19)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
-- **MTP loss（全程与后段；B 没有 MTP 层） · D1**：2 条取最差 `L4.mtp_loss`：实测 7.89e-5（MARE）｜严格档 N=5.83e-5（28 对）→ 1.35×N，待定｜参考档 无对应门槛｜待查（[real-weight 报告 D19](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d19)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
-- **索引器 KD loss · mid**：实测 3.99e-4（MARE）｜严格档 N=3.57e-4（28 对）→ 1.12×N，待定｜参考档 无对应门槛｜待查（[mid 报告 D27](../alignments/03-mid/ALIGNMENT-REPORT.md#d27)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-l4)）
-- **索引器 KD loss · D1**：实测 2.01e-3（带符号均值）｜严格档 N=8.67e-4（28 对）→ 2.32×N，不过｜参考档 无对应门槛｜待查（[real-weight 报告 D21](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d21)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
-- **grad_norm（裁剪前） · B**：实测 9.65e-3（MARE）｜严格档 N=8.55e-3（28 对）→ 1.13×N，待定｜参考档 无对应门槛｜待查（[real-weight 报告第 1 节](../alignments/02-real-weight/ALIGNMENT-REPORT.md#1-判定一屏)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
-- **param_norm（更新后参数范数，两边比精确值） · mid**：实测 −1.60e-7（带符号均值）｜严格档 N=8.94e-8（28 对）→ 1.79×N，待定｜参考档 带符号均值 ≤ 5e-6：1.60e-7（0.0321×）；最大单步 ≤ 1.25e-5：3.27e-7（0.0262×），过｜待查（[mid 报告 D27](../alignments/03-mid/ALIGNMENT-REPORT.md#d27)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-l4)）
-- **param_norm（更新后参数范数，两边比精确值） · B**：实测 1.92e-7（最大单步）｜严格档 N=1.87e-7（28 对）→ 1.028×N，待定｜参考档 带符号均值 ≤ 5e-6：6.00e-8（0.012×）；最大单步 ≤ 1.25e-5：1.92e-7（0.0154×），过｜待查（[real-weight 报告第 1 节](../alignments/02-real-weight/ALIGNMENT-REPORT.md#1-判定一屏)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
-- **param_norm（更新后参数范数，两边比精确值） · D1**：实测 9.50e-8（MARE）｜严格档 N=9.30e-8（28 对）→ 1.021×N，待定｜参考档 带符号均值 ≤ 5e-6：9.14e-8（0.0183×）；最大单步 ≤ 1.25e-5：2.71e-7（0.0217×），过｜待查（[real-weight 报告第 1 节](../alignments/02-real-weight/ALIGNMENT-REPORT.md#1-判定一屏)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
-- **路由偏置曲线（每层均值、标准差） · D1**：2 条取最差 `L4.router.bias_mean`：实测 1.20e-2（最大单步）｜严格档 N=7.16e-3（28 对）→ 1.68×N，待定｜参考档 无对应门槛｜待查（[real-weight 报告第 1 节](../alignments/02-real-weight/ALIGNMENT-REPORT.md#1-判定一屏)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
+- **loss（全程） · mid**：实测 1.64e-5（MARE）｜严格档 N=1.62e-5（28 对）→ 1.01×N，待定｜参考档 首步差 ≤ 2e-4：2.19e-5（0.109×）；带符号均值 ≤ 2e-4：1.24e-6（0.0062×）；无 NaN / Inf，过｜待查：MARE 刚超线（[mid 报告 D27](../alignments/03-mid/ALIGNMENT-REPORT.md#d27)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-l4)）
+- **MTP loss（全程与后段；B 没有 MTP 层） · mid**：2 条取最差 `L4.mtp_loss`：实测 2.28e-5（带符号均值）｜严格档 N=1.82e-5（28 对）→ 1.25×N，待定｜参考档 无对应门槛｜待查：TPU 偏高，带符号均值略超（[mid 报告 D27](../alignments/03-mid/ALIGNMENT-REPORT.md#d27)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-l4)）
+- **索引器 KD loss · mid**：实测 1.27e-3（最大单步）｜严格档 N=1.27e-3（28 对）→ 1.003×N，待定｜参考档 无对应门槛｜待查：最大单步刚超线（[mid 报告 D27](../alignments/03-mid/ALIGNMENT-REPORT.md#d27)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-mid-l4)）
+- **索引器 KD loss · B**：实测 −7.97e-4（带符号均值）｜严格档 N=5.69e-4（28 对）→ 1.4×N，待定｜参考档 无对应门槛｜待查：TPU 偏低，带符号均值略超（[real-weight 报告 D21](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d21)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
+- **索引器 KD loss · D1**：实测 1.66e-2（最大单步）｜严格档 N=7.24e-3（28 对）→ 2.3×N，不过｜参考档 无对应门槛｜待查：TPU 偏高、越往后越高，M50 已开仍不过（[real-weight 报告 D21](../alignments/02-real-weight/ALIGNMENT-REPORT.md#d21)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
+- **路由偏置曲线（每层均值、标准差） · D1**：2 条取最差 `L4.router.bias_mean`：实测 9.01e-3（最大单步）｜严格档 N=7.16e-3（28 对）→ 1.26×N，待定｜参考档 无对应门槛｜待查：均值最大单步略超（[real-weight 报告第 1 节](../alignments/02-real-weight/ALIGNMENT-REPORT.md#1-判定一屏)；[根源一览「还没查明」](../ROOT-CAUSES.md#u-real-weight)）
 
 </details>
 
@@ -108,7 +98,7 @@
 
 | 列 | 严格档 ✅ | 🟡 | ❌ | ⬜ | 参考档 ✅ | ☑️ | ❌ | ❔ |
 |---|---|---|---|---|---|---|---|---|
-| mid | 6 | 4 | 1 | 3 | 3 | 0 | 0 | 0 |
-| B | 6 | 3 | 1 | 3 | 3 | 0 | 0 | 0 |
-| D1 | 4 | 5 | 2 | 3 | 3 | 0 | 0 | 0 |
+| mid | 7 | 3 | 1 | 3 | 3 | 0 | 0 | 0 |
+| B | 8 | 1 | 1 | 3 | 3 | 0 | 0 | 0 |
+| D1 | 8 | 1 | 2 | 3 | 3 | 0 | 0 | 0 |
 | tiny | 2 | 0 | 0 | 1 | 0 | 0 | 0 | 0 |

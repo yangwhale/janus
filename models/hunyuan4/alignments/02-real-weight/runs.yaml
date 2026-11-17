@@ -13,9 +13,11 @@ golden:   # GPU（已跑完）
   - {name: gb2-a, stage: B, steps: 300, role: "B 的基线；--save-batches 写下全部 batch", results: [t2bz-l4, t2b4-l4, t2b-l0-settings, t2b4-l0-settings], location: "gs://<POC 桶>/janus/hunyuan4/golden-t2/gb2-a/"}
   - {name: gb2-b..gb2-h, stage: B, steps: 300, role: "同设置重跑：与 gb2-a 两两 28 对是 B 各代 L4（t2bz-l4、t2b4-l4）的噪声尺子", location: "gs://<POC 桶>/janus/hunyuan4/golden-t2/gb2-*/"}
   - {name: gb2s-a..gb2s-c, stage: B, steps: 1, role: "第 1 步全量抓数参照（不重算）；L3 噪声", location: "gs://<POC 桶>/janus/hunyuan4/golden-t2/gb2s-*/"}
+  - {name: gb2s-d..gb2s-f, stage: B, steps: 1, role: "第 1 步全量抓数参照再三份（PROTOCOL 2026-11-12 前瞻登记，登记合入后 2026-11-12 提交）：与 gb2s-a..gb2s-c 同一代码包 janus-hy4-27f6d9844c2e、镜像与附加参数，一个作业串三份；6 份两两 15 对是 tb8s-c-r1 的 L3 尺子", results: [t2b8c-step1-train-grad-vs-fp64-n6], location: "gs://<POC 桶>/janus/hunyuan4/megatron/<作业>/runs/gb2s-*/"}
   - {name: gd2-a, stage: D1, steps: 300, role: "D1 的基线；--save-batches 写下全部 batch", results: [t2d1-l4, t2d1z-l4, t2d14-l4, t2d1-l0-settings, t2d14-l0-settings], location: "gs://<POC 桶>/janus/hunyuan4/golden-t2/gd2-a/"}
   - {name: gd2-b..gd2-h, stage: D1, steps: 300, role: "同设置重跑：D1 各代 L4（t2d1-l4、t2d1z-l4、t2d14-l4）的噪声尺子", location: "gs://<POC 桶>/janus/hunyuan4/golden-t2/gd2-*/"}
   - {name: gd2s-a..gd2s-c, stage: D1, steps: 1, role: "第 1 步全量抓数参照（不重算）；L3 噪声", location: "gs://<POC 桶>/janus/hunyuan4/golden-t2/gd2s-*/"}
+  - {name: gd2s-d..gd2s-f, stage: D1, steps: 1, role: "第 1 步全量抓数参照再三份（PROTOCOL 2026-11-12 前瞻登记，登记合入后 2026-11-12 提交）：与 gd2s-a..gd2s-c 同一代码包 janus-hy4-27f6d9844c2e、镜像与附加参数，一个作业串三份；6 份两两 15 对是 td8s-c-r2 的 L3 尺子", results: [t2d18c-step1-train-grad-vs-fp64-n6], location: "gs://<POC 桶>/janus/hunyuan4/megatron/<作业>/runs/gd2s-*/"}
   - {name: gb3-a, stage: B, steps: 1000, role: "B 1000 步的基线；--save-batches 写下全部 batch；第 1–300 步数据与 gb2-* 逐条相同", results: [t2b5-l4, t2b5-l0-settings], location: "gs://<POC 桶>/janus/hunyuan4/golden-t2/gb3-a/"}
   - {name: gb3-b..gb3-h, stage: B, steps: 1000, role: "同设置重跑：与 gb3-a 两两 28 对是 B 1000 步（t2b5-l4）的噪声尺子", location: "gs://<POC 桶>/janus/hunyuan4/golden-t2/gb3-*/"}
   - {name: gd3-a, stage: D1, steps: 1000, role: "D1 1000 步的基线；--save-batches 写下全部 batch", results: [t2d15-l4, t2d15-l0-settings], location: "gs://<POC 桶>/janus/hunyuan4/golden-t2/gd3-a/"}
@@ -49,7 +51,16 @@ test:     # TPU：第一代 tb2-a（NaN）/ td2-a；第二代 tb3-b / td3-a 已�
   - {name: tnorm-base, stage: B, steps: 1, role: "D22 对照的基线：T2 B yml（MaxText 2306c7a5、janus effa41e），只存 norm 权重梯度", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb2s-a, results: [t2b-step1-norm-scale-grad-fp32]}
   - {name: tnorm-sg, stage: B, steps: 1, role: "同 tnorm-base，再开 rmsnorm_scale_grad_fp32（只改反向）；base2 开。D20 只关 base2 对照的开臂", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb2s-a, results: [t2b-step1-norm-scale-grad-fp32, ../06-rw3/results/step1-base2-observed]}
   - {name: tqa-nb2, stage: B, steps: 1, role: "同 tnorm-sg，只差 sa_use_base2_exp 关（MaxText 2306c7a5）。D20 的关臂、D22 q latent norm 的对照", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb2s-a, results: [t2b-step1-qpath-base2-exp, ../06-rw3/results/step1-base2-observed]}
+  # 现行对齐配置（C 口径）的第 1 步：PROTOCOL 2026-11-12 前瞻登记，判法与运行名事先定死
+  - {name: tb8s-c, stage: B, steps: 1, role: "前瞻登记的运行：写全量抓数时节点盘（100 GB）满、Pod 被驱逐，没有运行目录（基础设施失败）", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb2s-a}
+  - {name: tb8s-c-r1, stage: B, steps: 1, role: "tb8s-c 的基础设施补跑（同登记的配置与参数；改用 600 GB 盘的 spot 池）：现行 C 口径 yml（sha256 939db6c7…），MaxText 8d3d7561、janus 2acd0a57，--dump-steps 1 --full；动量反推训练步梯度做 L3，对 gb2s-a..f 6 份与 CPU FP64", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb2s-a, results: [t2b8c-step1-train-grad-vs-fp64-n6, t2b8c-step1-train-grad-vs-fp64-n3, t2b8c-step1-train-grad-file-check], location: "gs://<POC 桶>/janus/hunyuan4/tpu/tb8s-c-r1/"}
+  - {name: td8s-c, stage: D1, steps: 1, role: "前瞻登记的运行：写全量抓数时节点盘（100 GB）满、Pod 被驱逐，没有运行目录（基础设施失败）", config: frameworks/maxtext/hy4-t2-d1.yml, golden: gd2s-a}
+  - {name: td8s-c-r1, stage: D1, steps: 1, role: "td8s-c 的基础设施补跑：spot 节点被收回，没有运行目录（基础设施失败）", config: frameworks/maxtext/hy4-t2-d1.yml, golden: gd2s-a}
+  - {name: td8s-c-r2, stage: D1, steps: 1, role: "td8s-c 的第二次基础设施补跑（同登记的配置与参数；600 GB 盘的 spot 池）：现行 C 口径 yml（sha256 8f02c245…），MaxText 8d3d7561、janus 2acd0a57，--dump-steps 1 --full；动量反推训练步梯度做 L3，对 gd2s-a..f 6 份与 CPU FP64", config: frameworks/maxtext/hy4-t2-d1.yml, golden: gd2s-a, results: [t2d18c-step1-train-grad-vs-fp64-n6, t2d18c-step1-train-grad-vs-fp64-n3, t2d18c-step1-train-grad-file-check], location: "gs://<POC 桶>/janus/hunyuan4/tpu/td8s-c-r2/"}
   - {name: tqa-dot / tnorm-f32, stage: B, steps: 1, role: "诊断：注意力换 dot_product（不走 splash）/ dtype float32 + matmul_precision highest；只记第 1 步 loss（06 的 step1-base2-observed）", golden: gb2s-a, results: [../06-rw3/results/step1-base2-observed]}
+  # C 口径（现行对齐配置）各尺寸的第一批：PROTOCOL 2026-11-12「C 口径在 mini 以外各尺寸」前瞻登记，判法与运行名事先定死
+  - {name: tbc-a, stage: B, steps: 1000, role: "现行被测（前瞻登记，PROTOCOL 2026-11-12）：现行 C 口径 yml，MaxText 8d3d7561、janus 7314865d，--dump-steps none，回放 gb3-a；已判 t2bc-l4（过 6、不过 0、待定 1）", config: frameworks/maxtext/hy4-t2-b.yml, golden: gb3-a, results: [t2bc-l4, t2bc-l0-settings]}
+  - {name: tdc-a, stage: D1, steps: 1000, role: "现行被测（前瞻登记，PROTOCOL 2026-11-12）：现行 C 口径 yml，MaxText 8d3d7561、janus 7314865d，--dump-steps none，回放 gd3-a；已判 t2d1c-l4（过 7、不过 1：索引器 KD、待定 1）", config: frameworks/maxtext/hy4-t2-d1.yml, golden: gd3-a, results: [t2d1c-l4, t2d1c-l0-settings]}
 offline:  # CPU
   - {name: hy4-t2-aot-memory, role: "v5p 2x2x2 编译期显存（B、D1 与候选 hy4-mid）＋ B200 每卡显存估算", results: results/hy4-t2-aot-memory.json}
   - {name: step1-loss-from-metrics, role: "第 1 步主 loss 对 CPU FP64：各运行 metrics.jsonl 第 1 步的 lm_loss 对 L3 结果文件里的参照（analysis/step1_metrics_vs_ref.py）", results: [t2b-step1-loss-vs-fp64, t2d1-step1-loss-vs-fp64]}

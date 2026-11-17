@@ -7,7 +7,7 @@
 
 每步（rank 0 写 metrics.jsonl）：loss 各项、lr、grad_norm、param_norm、num_zeros、每层路由偏置均值 / 标准差、
 每层专家负载（rank 0 本地）的变异系数与最大 / 最小计数。
-每步（每个 rank 写 data/rank<r>.jsonl）：每个 microbatch 的 tokens / labels / loss_mask / position_ids 的 sha256 与非 padding 数。
+每步（每个 rank 写 data/rank<r>.jsonl）：每个 microbatch 的 tokens / labels / loss_mask / position_ids（有时还有 segment_ids）的 sha256 与非 padding 数。
 训练前后（每个 rank 写 params_sha/rank<r>.<init|final>.json）：本 rank 持有的每个参数的 sha256（全量，不抽样）。
 dump_steps 里的步（rank 0、第一个 microbatch）：
 - 前向：逐层各子模块输出（规范名见 names.py）、路由 logits / 选中专家 / 概率 / 专家计数、逐 token loss、输入 token；
@@ -113,6 +113,10 @@ def wrap_forward_step(forward_step, dump: JanusDump):
     return janus_forward_step
 
 
+# 每个 microbatch 记指纹、整批落盘的字段（有哪个存哪个）。后 8 个是图文行的字段：
+# 3 轴 mrope 位置、样本类型、ViT 块（uint8 原值）及其图号 / 位置、每张图的网格 / 序列区间 / 视频标记
+BATCH_FIELDS = ("tokens", "labels", "loss_mask", "position_ids", "segment_ids", "mrope_position_ids", "sample_type_ids",
+                "vit_patches_u8", "vit_patch_image", "vit_patch_pos", "vit_image_grid", "vit_image_span", "vit_image_video")
 FULL_KINDS = ("grad", "param", "main_param", "main_param_after", "exp_avg", "exp_avg_sq", "momentum_buffer")
 _EXPERT_RE = re.compile(r"^(.*\.experts\.linear_fc[12]\.weight)(\d+)$")
 
@@ -185,6 +189,11 @@ class JanusDump:
     def on_train_start(self, context):
         self.rank = _rank()
         self.rank0 = self.rank == 0
+        # 输入指纹与落盘 batch 的文件编号（data/rank<r>.jsonl、data/batches/rank<r>.*）；没设就 = 全局 rank。
+        # 上下文并行时只由每个 DP 组的 CP rank 0 记整行，训练入口在 on_train_start 之前把它设成 DP rank，
+        # 让文件编号连续、与回放的 rank 一一对应
+        if getattr(self, "data_rank", None) is None:
+            self.data_rank = self.rank
         self.context = context
         if self.rank0:
             if isinstance(self.meta.get("tf32"), dict):
@@ -364,7 +373,7 @@ class JanusDump:
     def _write_batches(self, step):
         if not self.batches:
             return
-        with open(os.path.join(self.out_dir, "data", f"rank{self.rank}.jsonl"), "a") as f:
+        with open(os.path.join(self.out_dir, "data", f"rank{self.data_rank}.jsonl"), "a") as f:
             for i, b in enumerate(self.batches):
                 f.write(json.dumps({"step": step, "micro": i, **b}) + "\n")
 
@@ -498,7 +507,7 @@ class JanusDump:
     # ---- 钩子
     def _record_batch(self, batch):
         rec = {}
-        for k in ("tokens", "labels", "loss_mask", "position_ids"):
+        for k in BATCH_FIELDS:
             t = batch.get(k) if isinstance(batch, dict) else None
             if isinstance(t, torch.Tensor):
                 if self.fault.get("kind") == "data_shift" and k == "tokens" and self.rank == 0 \
@@ -518,10 +527,10 @@ class JanusDump:
         if self._bfile is None:
             d = os.path.join(self.out_dir, "data", "batches")
             os.makedirs(d, exist_ok=True)
-            self._bfile = open(os.path.join(d, f"rank{self.rank}.bin"), "ab")
-            self._bindex = open(os.path.join(d, f"rank{self.rank}.jsonl"), "a")
+            self._bfile = open(os.path.join(d, f"rank{self.data_rank}.bin"), "ab")
+            self._bindex = open(os.path.join(d, f"rank{self.data_rank}.jsonl"), "a")
         rec = {"step": self.step, "micro": len(self.batches), "fields": {}}
-        for k in ("tokens", "labels", "loss_mask", "position_ids"):
+        for k in BATCH_FIELDS:  # segment_ids 只在文档内注意力开时有，mrope / sample_type / vit_* 只在图文行时有
             t = batch.get(k)
             if isinstance(t, torch.Tensor):
                 a = t.detach().cpu().numpy()

@@ -22,7 +22,8 @@ T1（hy4-mini）的 golden、噪声与各次主比较的运行是怎么来的、
 | `t1zo-l4`（上一代，C 口径之前：M52、M58 不开，base2 关） | 1000 | `tz-off-rep` | `g3-a` | `g3-a … g3-p` 16 份两两 120 对 | 过 7、不过 0、待定 2 |
 | `t1zp-l4`（推荐生产组合整体跑，不进签字） | 1000 | `x5-prod` | `g3-a` | `g3-a … g3-p` 16 份两两 120 对 | 过 8、待定 1（索引器 KD） |
 | `t1zp300-l4`（同上，前 300 步） | 300 | `x5-prod` | `g2-a` | `g2-a … g2-h` 两两 28 对 | 过 6、待定 2、不过 1（索引器 KD） |
-| `t1pr-l4-gpu8`（生产配方臂 P1，诊断，不进签字） | 1000 | `p1t-a` | `p1g-a` | 同配方 `p1g-a … p1g-h` 8 份两两 28 对（事后选的尺子） | 过 9 |
+| `t1pr-l4-gpu16`（生产配方臂 P1 现行读数，判法与份数 2026-11-12 事前登记；进不进签字待拍板） | 1000 | `p1t-a` | `p1g-a` | 同配方 `p1g-a … p1g-p` 16 份两两 120 对 | 过 9 |
+| `t1pr-l4-gpu8`（生产配方臂 P1 上一代，诊断，不进签字） | 1000 | `p1t-a` | `p1g-a` | 同配方 `p1g-a … p1g-h` 8 份两两 28 对（事后选的尺子） | 过 9 |
 | `t1zo300-l4`（上一代，同一运行前 300 步） | 300 | `tz-off-rep` | `g2-a` | `g2-a … g2-h` 两两 28 对 | 过 7、不过 0、待定 2 |
 | `t1zga-l4`（上一代，t1zw-a + M50，base2 开） | 1000 | `t1zg-a` | `g3-a` | `g3-a … g3-h` 两两 28 对 | 过 7、不过 0、待定 2 |
 | `t1zga300-l4`（上一代，同一运行前 300 步） | 300 | `t1zg-a` | `g2-a` | `g2-a … g2-h` 两两 28 对 | 过 8、不过 0、待定 1 |
@@ -159,6 +160,7 @@ TPU 训练程序的诊断模式（`train_hy4.py --diag-step1`，台账 J5）：�
 | `t1vdiag` | t1v 设置（t1t + `ihc_stream_sum_unrolled`） | 第 1 步逐张量梯度对 `g2s-*` | [`t1v-step1-grad-vs-fp64.json`](results/t1v-step1-grad-vs-fp64.json) |
 | `t1zdiag2` | t1z 设置 | 第 1 步逐张量梯度对 `g2s-*`；L3 的上一代 | [`t1z-step1-grad-vs-fp64.json`](results/t1z-step1-grad-vs-fp64.json) |
 | `tz-off-qk01` | C 口径之前的配置（base2 关）τ 0.1 低阈值 QK-Clip 30 步，记逐头最大 logit（GOLDEN `g6-qk-a`） | L1 低阈值 QK-Clip 第 1 步逐头最大 logit（C 口径上没重判） | [`t1zo-qkclip-maxlogit`](results/t1zo-qkclip-maxlogit.results.json) |
+| `tc-qk01` | C 口径（现行 yml）τ 0.1 低阈值 QK-Clip 30 步，记逐头最大 logit（GOLDEN `g6-qk-a`；PROTOCOL 2026-11-12 前瞻登记） | L1 低阈值 QK-Clip 第 1 步逐头最大 logit；定责证据（灌 `tc-cap1` 的选择进 CPU FP64） | [`t1zc-qkclip-maxlogit`](results/t1zc-qkclip-maxlogit.results.json)、[`t1zc-qkclip-flip-blame.json`](results/t1zc-qkclip-flip-blame.json) |
 | `mz-diag1`、`mz-opt2` | base2 开的上一代配置（MaxText `fd30fbfb`） | 上一代 L3：`mz-opt2` 的第 1 步动量反推训练步梯度，`mz-diag1` 是诊断程序梯度（旁证）；优化器一步上一代用 `mz-opt2`（[`t1-l3-optim-step1`](results/t1-l3-optim-step1.results.json)），C 口径之前改用 `tz-off-rep` 的第 1 步全量抓数在 CPU 上离线重算（[`t1zo-l3-optim-step1`](results/t1zo-l3-optim-step1.results.json)；C 口径上没重判） | [`t1zg-step1-train-grad-vs-fp64.json`](results/t1zg-step1-train-grad-vs-fp64.json)、[`t1zg-step1-grad-vs-fp64.json`](results/t1zg-step1-grad-vs-fp64.json) |
 | `mz-g1`、`mz-g1q` | base2 开的上一代配置 1000 步（MaxText `fd30fbfb`；`mz-g1q` 多记全局最大 logit） | L4 健康信号、QK-Clip 曲线、同设置重跑（对 `t1zg-b`） | [`t1mz-health`](results/t1mz-health.results.json)、[`t1mz-l4-qkclip`](results/t1mz-l4-qkclip.report.md)、[`t1mz-determinism`](results/t1mz-determinism.report.md) |
 | `mz-dump30` | base2 开的上一代配置 30 步，第 1、30 步全量抓数（MaxText `fd30fbfb`） | 抓数不改数值（对 `t1zg-b`） | [`t1mz-dump-determinism`](results/t1mz-dump-determinism.report.md) |
@@ -170,6 +172,8 @@ TPU 训练程序的诊断模式（`train_hy4.py --diag-step1`，台账 J5）：�
 | `t1v-fp32` | t1v 的设置改成 dtype float32、HIGHEST、MoE 稠密实现，回放同一批数据 30 步 | TPU FP32 版的 grad_norm 轨迹（不作判定；不进 L4） | [`t1-early-grad-norm-vs-fp32.json`](results/t1-early-grad-norm-vs-fp32.json) |
 | `tw-opmini-a` | hy4-mini 逐算子隔离回放（`op_replay_mini.py`）：吃 GPU `g7-l1-a` 第 1 步抓到的每个算子的输入 | L1 逐算子（不进 L4） | [`t1-l1-op-tpu.json`](results/t1-l1-op-tpu.json) |
 | `mz-l2pg2` | base2 开的上一代配置单层回放（`layer_replay.py --param-grads`，MaxText `fd30fbfb`）：第 2、3、4 层吃 GPU `g7-l1-c` 的同一份层输入与余切，对 CPU FP64 单层重算比参数梯度 | L3 iHC 定位（[D11](DETAILS.md#d11)） | [`t1zg-l2-param-grads.json`](results/t1zg-l2-param-grads.json) |
+| `tc-l2pg` | C 口径单层回放（`layer_replay.py --param-grads`，MaxText `8d3d7561`）：第 2、3、4 层吃 GPU `g7-l1-c` 的同一份层输入与余切，对 CPU FP64 单层重算比参数梯度（前瞻登记，诊断） | L3 第 3 层 FFN 前 `hc_fn` 定责（[D11](DETAILS.md#d11-hcfn-c)） | [`t1zc-l2-param-grads.json`](results/t1zc-l2-param-grads.json)、[`t1zc-l2-hcfn-post-sources.json`](results/t1zc-l2-hcfn-post-sources.json) |
+| `tc-diag1`、`tc-fri1`、`tc-cap1`、`tc-fri2` | C 口径第 1 步诊断程序梯度：自选；灌 GPU `g8-chg-a` 的路由与索引器 top-k；抓 TPU 自选的选择（GOLDEN `g6-qk-a`，第 1 步数据相同）；灌 `tc-cap1` 抓到的选择 | 同上：离散选择与连续舍入两部分拆开（诊断，不进判档） | [`t1zc-hcfn-flip-cont-split.json`](results/t1zc-hcfn-flip-cont-split.json) |
 | `tw-opmini-c` | 同 `tw-opmini-a`，开关全开（M33 + M37） | L1 逐算子（不进 L4） | [`t1-l1-op-tpu-r2.json`](results/t1-l1-op-tpu-r2.json) |
 | `tw-opmini-d` | 同 `tw-opmini-c`，再开 M40 | L1 逐算子（不进 L4） | [`t1-l1-op-tpu-r3.json`](results/t1-l1-op-tpu-r3.json) |
 | `tw-optim8` | MaxText 的优化器单独跑：吃 GPU `g2o-a` 第 1–8 步的梯度与主权重 | 优化器连续 8 步回放（不进 L4） | [`t1-optim-replay-tpu.json`](results/t1-optim-replay-tpu.json) |

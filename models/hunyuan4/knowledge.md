@@ -169,7 +169,7 @@
 
 > 排查全过程（从现象、隔离、结构消融、两头验证，到 C 口径的残余与整步「先编译、再扫描」的全局清单）按时间顺序写在[案例 17](cases/17-late-drift-elided-rounding.md)；这一节是逐条的要点与出处。
 
-问题（[D30](alignments/01-mini/DETAILS.md#d30)、[根源一览「还没查明」](ROOT-CAUSES.md#u-mini-tpu-high)）：C 口径之前的现行比较主 loss 带符号均值 r 1.55，开、关 base2 各 4 份 TPU 主 loss 都比 GPU 16 份均值高，平均 +4.3e-6。**结论：前段鼓包是 hc_head 输出没舍 BF16（M52），后段主因是 iHC 流梯度的舍入写法（TPU、GPU 两头验证：GPU 只改流梯度就出现尾部；TPU 在不开 M52 时补 M58，尾部就下去）。M52 开着时 M58 测不出作用，C 口径（三处都按 GPU 写法舍）的后段与不修时分不开（按 1000 步全程主 loss 的 r，6 份里 3 份高于 GPU 留一法的全部 15 份；按第 101 步起只有 2 份，`tc-a` 0.97 在 GPU 范围内），机制待查。C 口径下主 loss 判档刚好过线，不等于后段修好了。**（与 [`mini-factorial-tpu-6.json`](alignments/01-mini/results/mini-factorial-tpu-6.json) 对照：C 口径 6 份第 551–1000 步 +6.9e-6、6 份里 5 份尾部在，和只开 M36 的对照 4 份 +9.4e-6 分不开，p 0.32；尾部下去只在只开 M36 + M58 那一格测到：均值 +1.9e-6，5 份里 2 份仍超阈值） 下面每条都是实测；推出来的写「推断」。
+问题（[D30](alignments/01-mini/DETAILS.md#d30)、[根源一览「还没查明」](ROOT-CAUSES.md#u-mini-tpu-high)）：C 口径之前的现行比较主 loss 带符号均值 r 1.55，开、关 base2 各 4 份 TPU 主 loss 都比 GPU 16 份均值高，平均 +4.3e-6。**结论（2026-11-12 定）：主因已定位（iHC 流梯度舍入写法，两头验证）；C 口径下后段残余约 +7e-6 **未定责**；已排除：全局清单前向 / 反向各类（两头）、注意力内核四处（GPU）；未查：累加顺序。下一步：暂停，资源转到另一项内部实践（不在公开版内）。****结论：前段鼓包是 hc_head 输出没舍 BF16（M52），后段主因是 iHC 流梯度的舍入写法（TPU、GPU 两头验证：GPU 只改流梯度就出现尾部；TPU 在不开 M52 时补 M58，尾部就下去）。M52 开着时 M58 测不出作用，C 口径（三处都按 GPU 写法舍）的后段与不修时分不开（按 1000 步全程主 loss 的 r，6 份里 3 份高于 GPU 留一法的全部 15 份；按第 101 步起只有 2 份，`tc-a` 0.97 在 GPU 范围内），机制待查。C 口径下主 loss 判档刚好过线，不等于后段修好了。**（与 [`mini-factorial-tpu-6.json`](alignments/01-mini/results/mini-factorial-tpu-6.json) 对照：C 口径 6 份第 551–1000 步 +6.9e-6、6 份里 5 份尾部在，和只开 M36 的对照 4 份 +9.4e-6 分不开，p 0.32；尾部下去只在只开 M36 + M58 那一格测到：均值 +1.9e-6，5 份里 2 份仍超阈值） 下面每条都是实测；推出来的写「推断」。
 
 | 要点 | 出处 |
 |---|---|
@@ -321,13 +321,85 @@ XLA 分两种跑：关省舍入（`--xla_allow_excess_precision=false`，即 Max
 结论（实测是上表的数字；解读是推断）：
 - **权重梯度排除**：GPU 不舍它，后段不动。
 - **分支输入合流没有复现出 C 口径剩下的约 +7e-6**。ATTNIN 单开 +3.0e-6，4 份都正，但两处一起改反而回到 +0.2e-6。照「两处都是同一类舍入、效应应该叠加」的想法，这对不上。四格一起看，ATTNIN 那个 p 0.021 很可能是 4 份样本里的偶然：按格数做 Bonferroni 是 0.084。ATTNIN 的 MTP 也被推高，和 TPU 上 MTP 偏低方向相反。
+- **TPU 一头也不成立**：C 口径之上照 GPU autograd 顺序补分支输入的梯度合流（MaxText `branch_input_grad_gpu_order`，台账 M63），各 4 份，对 C 口径 6 份（+6.9e-6）：只补注意力输入 +6.1e-6（4 份尾部都在，p 0.67），注意力加 MoE 输入 +5.3e-6（4 份尾部都在，p 0.37），前段第 51–100 步不变（[`mini-factorial-c-branch-input-fanin.json`](alignments/01-mini/results/mini-factorial-c-branch-input-fanin.json)；9 项判档 8 份里 4 份全过、4 份各有 1–2 项待定、没有不过，[`mini-c-branch-input-fanin-l4.json`](alignments/01-mini/results/mini-c-branch-input-fanin-l4.json)）。两头都不成立，梯度合流不是残余的来源。
 - 所以 C 口径的残余在清单前三处里没找到。剩下的候选是前向那几类（输出门、fc1 输出、路由专家 act×up），以及不在这个扫描模式里的差（代码没写舍入、GPU 却舍了的地方；累加顺序）。
+
+**前向几类，TPU 一头**（MaxText `forward_bf16_rounding`，台账 M64）：C 口径之上把输出门（投影输出与 sigmoid 输出）、稠密与共享专家的 fc1 输出、路由专家 act×up 三处一起补上 reduce_precision。离线编译里这三类的往返全部消失（fc1 一类 51 → 19，剩下的不在 fc1 上）。各 4 份 1000 步，对 C 口径 6 份（第 551–1000 步 +6.9e-6）：
+
+| 指标 | 补前向三处 | C 口径 | 置换 p |
+|---|---|---|---|
+| 第 551–1000 步主 loss | +5.5e-6（+5.9 / +2.3 / +6.8 / +6.8），4 份尾部都在 | +6.9e-6 | 0.42 |
+| 第 51–100 步主 loss | −1.1e-6 | −0.3e-6 | 0.19 |
+| 9 项判档 | 4 份全过 | | |
+
+出处：[`mini-factorial-c-forward-rounding.json`](alignments/01-mini/results/mini-factorial-c-forward-rounding.json)、[`mini-c-forward-rounding-l4.json`](alignments/01-mini/results/mini-c-forward-rounding-l4.json)。
+
+后段没动，所以没再拆单项。到这里，全局清单里排得上号的几类，前向、反向、两头都排除了。
+
+### 扫描看不到的差：代码没写舍入、GPU 却舍的地方
+
+全局清单只找得到「代码写了舍入、编译器省掉」的位置。还有一类是 TPU 一侧的代码根本没写那次舍入，GPU 却舍了：GPU 那里是 BF16 张量，TPU 一路 FP32；或者两边舍的位置不同。读两边的代码列出来的四处（GPU 上的验证见下文）：
+
+| 位置 | GPU（`hy4_mcore.py` 的稀疏 sink 注意力，`--attn-scores-fp32`） | TPU（tokamax splash 内核，读源码） | 在反向梯度路径上 | 优先级 |
+|---|---|---|---|---|
+| 注意力反向 dP = dO·Vᵀ | BF16 矩阵乘的输出，舍 BF16，再转 FP32 进 softmax 反向 | 内核里 FP32，不舍 | 是（每层每头） | 高 |
+| 注意力反向 softmax 的修正项 | Σ bf16(dP)·P，P 是 FP32 | di = Σ dO·O，O 是 BF16 的注意力输出（M42b 只改了 sink 那一路） | 是 | 高 |
+| 注意力反向 dS 进 dq、dk 的矩阵乘 | dS 留 FP32，乘 FP32 的 q / k（scores 在 FP32 里算），dq、dk 最后舍一次 | dS 舍 BF16 再乘 BF16 的 q / k | 是（这里 TPU 舍得更多） | 高 |
+| 注意力前向 P 进 PV | softmax 归一化后的概率舍 BF16，再乘 V | 用分块的当前最大值算的、没归一化的 exp 进 PV 点积，最后乘 1/l。这次点积是 FP32 的 exp 乘 BF16 的 V、不指定精度，实测等于 exp 先舍 BF16（对 TPU 实跑输出逐元素相同 99.80%–99.97%，见下文）。最初读源码时写的是「FP32、不舍」，实测更正 | 前向 | 中 |
+
+已经核过、两边一致的（不列为候选）：
+- iHC 内部、路由打分、输出头：两边都写明 FP32。
+- 末层与 latent norm：两边都是 FP32 里算、输出舍一次。
+- dv = Pᵀ·dO：两边 P 都是 BF16。
+
+这几处都在 Pallas 内核里，HLO 里只是一个 custom-call，所以全局扫描看不到它们。
+
+**前向 PV 到底怎么舍，用 TPU 实跑的输出判**：sink 探针 `tw-sinkprobe2`（v5p，训练镜像，GPU 第 1 步第 1、2、4、6 层与 MTP 的注意力输入，块大小 512，因果掩码）存下的 TPU splash 输出，对 CPU 上四种写法重算的输出逐元素比：
+
+| 写法 | 与 TPU 输出逐元素相同 | 对 TPU 的相对 L2 |
+|---|---|---|
+| splash 的在线 softmax：每块 exp(s − 当前最大) 舍 BF16 进 PV，最后乘 1/l | 99.80%–99.97% | 5.4e-5–9.9e-5 |
+| 不分块：exp(s − 整行最大) 舍 BF16，最后乘 1/l | 96.3%–99.8% | 1.5e-4–4.7e-4 |
+| 概率不舍（FP32） | 93.0%–98.5% | 4.1e-4–7.7e-4 |
+| GPU：归一化后的概率舍 BF16 | 89.3%–97.6% | 5.5e-4–1.0e-3 |
+
+出处：[`splash-pv-rounding-check.json`](alignments/01-mini/results/splash-pv-rounding-check.json)（`analysis/splash_pv_rounding_check.py`）。剩下那 0.03%–0.2% 是 FP32 求和顺序。
+
+**GPU 一头的验证**（GPU 诊断开关 `HY4_TPU_LIKE_ATTNK`，台账 G39；四处可以单开，`pv` 照上表第一行按块重算）：每格 1000 步，对 GPU 16 份留一法判第 551–1000 步主 loss。TPU C 口径 6 份用同一判法作参照：主 loss +6.95e-6（6 份里 5 份在尾部，p < 0.001），MTP loss −1.82e-5（p 0.032）。
+
+| 格 | 份数 | 主 loss | 置换 p | 尾部 | MTP loss | 置换 p |
+|---|---|---|---|---|---|---|
+| 四处全开（all） | 8 | +2.0e-6 | 0.037 | 3 / 8 | −8.6e-6 | 0.19 |
+| 只开 dP 不舍 | 4 | +0.1e-6 | 0.93 | 1 / 4 | −1.1e-5 | 0.19 |
+| 只开修正项 Σ O·dO | 4 | −0.6e-6 | 0.64 | 1 / 4 | −1.05e-5 | 0.24 |
+| 只开 dS 舍 BF16 | 4 | +1.4e-6 | 0.31 | 1 / 4 | −5.3e-6 | 0.59 |
+| 只开前向 PV（按块） | 8 | +0.9e-6 | 0.45 | 3 / 8 | −1.6e-5 | 0.017 |
+| 对照：概率不舍（不是 TPU 的写法） | 4 | +4.5e-6 | 0.001 | 4 / 4 | −9.2e-6 | 0.30 |
+
+出处：[`mini-gpu-tpulike-attnk.json`](alignments/01-mini/results/mini-gpu-tpulike-attnk.json)、[`mini-gpu-tpulike-attnk-mtp.json`](alignments/01-mini/results/mini-gpu-tpulike-attnk-mtp.json)。
+
+怎么读：
+- **主 loss 的尾巴没复现出来。** 四处全开只有 +2.0e-6，约为 TPU 的三成；p 0.037 是 8 份合起来的，前 4 份 +2.5e-6（p 0.033），补的 4 份 +1.5e-6（p 0.25），没站稳。单开的四格都分不出来。
+- **概率不舍那格动静最大（+4.5e-6，4 份都在尾部），但那不是 TPU 的写法。** 它说明 PV 这次舍入的写法能推动后段；照 TPU 实际的写法（按块舍）单开就没了。
+- **MTP loss 一侧的线索没站稳。** 只开前向 PV（按块）前 8 份的 MTP 是 −1.6e-5（p 0.017），与 TPU C 口径的 −1.82e-5 同号同量级；但这是 14 个比较里挑出来的。事前登记的确认实验再跑 8 份只用新的判：−0.8e-6（p 0.89），不成立（[`mini-gpu-tpulike-attnk-pv-confirm-mtp.json`](alignments/01-mini/results/mini-gpu-tpulike-attnk-pv-confirm-mtp.json)）。
+- 照旧的模式：单开显著、合开不显著，在 D30 里已经出现过几次（注意力输入梯度合流、这次的四处全开）。8 份以下的格，p 0.02–0.04 只当线索。
+
+**从 TPU 一头改 splash 的代价**（照 GPU 写法；MaxText 用的是 pip 包 tokamax 0.0.14 里的内核，树里的副本不在这条路上）：
+
+| 位置 | 要改什么 | 改法与代价 |
+|---|---|---|
+| softmax 反向修正项 | 在内核外算 Σ_j p_j·bf16(dP_j)，代替 Σ O·dO 喂给 dq / dkv 内核 | 低：M47 已经在内核外按 query 分块算了同一个量（给 sink 梯度用）。换掉 splash 的 custom_vjp 反向（M42 / M47 都是这样换的），不动内核体；步时约同 M47（+3.9%，可共用那次重算） |
+| 反向 dP 舍 BF16 | dq、dkv 两个内核里 dp 算完舍一次 BF16 | 中：要动内核体（各一行），得把两个内核函数复制进 MaxText、换掉模块里的引用；Mosaic 里这次往返会不会被省掉，要看 LLO 确认 |
+| dS 留 FP32 进 dq / dk | ds 不转 BF16，与 FP32 的 k / q 相乘 | 中到高：同上要动内核体；FP32 矩阵乘在 MXU 上要多遍（JAX 的 HIGHEST），反向注意力的两次矩阵乘相应变慢 |
+| 前向概率归一化后再舍 | PV 之前就要知道整行的 l | 高：在线 softmax 拿不到最终的 l。要么改成两遍（先算 lse，再用 exp(s − lse) 舍 BF16 进 PV，结构同 dq 内核，前向多一遍 q·k 与 exp）；要么只作诊断，在内核外按 query 分块用普通 JAX 照 GPU 写法重算输出（同 M47 的做法，概率的 BF16 舍入要用 reduce_precision） |
+
+MaxText 的 dot_product 注意力也不是 GPU 的写法（同样是没归一化的 exp 进 PV、最后再除），不能拿来当不改代码的对照。主 loss 一侧 GPU 复现不出来，MTP 那条线索确认实验没站稳，所以不在 TPU 上改内核，第 4 行的诊断版也不做。
 
 ## 生产配方臂与 QK-Clip 梯度累积：要点与出处
 
 | 要点 | 出处 |
 |---|---|
-| **P1 生产配方臂：用同配方 GPU 8 份当尺子，TPU 9 项全部对上；同配方下 GPU 自己的波动比现行尺子大，不能借现行尺子。** mini 对齐配置（C 口径之前，base2 关；生产配方在 C 口径上没跑）只改三项（学习率峰值 2e-5、cosine、warmup 200；YaRN factor 8；路由偏置零均值，GPU 一侧开关见台账 G35），GPU 8 份（`p1g-a` … `p1g-h`）、TPU 1 份各 1000 步，两边逐步学习率最大相对差 1.0e-6。同配方 GPU 8 份两两 28 对当尺子：TPU 9 项全过，最差是索引器蒸馏 loss r 0.996（压线、TPU 单份）、MTP loss 0.93、梯度范数 0.91，主 loss 全程、后段都是 0.76。这是诊断，不进签字：8 份尺子是看过借现行尺子的判档之后才定的（事后选尺），份数少于现行 1000 步尺子的 16 份 120 对（PROTOCOL 第 0 节「噪声 N」与第 3 节；判法见第 0 节「生产配方臂」）。同配方尺子比现行尺子（g3 16 份）宽：主 loss 带符号均值 4.8 倍、平均绝对相对误差 2.7 倍、单步最大 1.3 倍，梯度范数 1.5–2.7 倍，其余各项 0.86–1.42 倍（路由偏置均值例外：零均值开时几乎不动，尺子窄到现行的 6.6e-8–1.1e-5 倍）。所以借现行尺子时主 loss 全程、后段 r 2.97、3.02 与梯度范数 2.45 的超、索引器蒸馏 loss 1.04 的待定，按推断主要是尺子不适用。但 TPU 主 loss 带符号均值 +1.38e-5（后段 +1.52e-5），和同一基底配置的 `tz-off-rep`（C 口径之前）的 +7.21e-6 同号、约为它的 1.9 倍（现行 `tc-a` 是 +3.53e-6，见 [`t1zc-repeats-6.json`](alignments/01-mini/results/t1zc-repeats-6.json)（5 份时 [`t1zc-repeats.json`](alignments/01-mini/results/t1zc-repeats.json)） 的 `loss_signed_mean`；[mini 主 loss 共同偏高](#mini-主-loss-共同偏高要点与出处)那件事，已在查）；TPU 只 1 份，分不出是轨迹偶然还是生产配方下这个偏高更大，「不是跨侧差」要等 TPU 补份数再下。三项一起改，不知道是哪一项放宽了 GPU 的波动；TPU 只有 1 份 | [`t1pr-l4-gpu8`](alignments/01-mini/results/t1pr-l4-gpu8.results.json)、[`t1pr-ruler-compare`](alignments/01-mini/results/t1pr-ruler-compare.json)、[`t1pr-l4`](alignments/01-mini/results/t1pr-l4.results.json)、[`t1pr-gpu-self`](alignments/01-mini/results/t1pr-gpu-self.results.json)、[`t1pr-settings`](alignments/01-mini/results/t1pr-settings.json)；`p1g-a … h`、`p1t-a` |
+| **P1 生产配方臂：同配方 GPU 补到 16 份（事前登记）当尺子，TPU 9 项全部对上（[`t1pr-l4-gpu16`](alignments/01-mini/results/t1pr-l4-gpu16.results.json)：最差索引器蒸馏 loss r 0.996，主 loss 0.65）；下面是 8 份时的读数。用同配方 GPU 8 份当尺子，TPU 9 项全部对上；同配方下 GPU 自己的波动比现行尺子大，不能借现行尺子。** mini 对齐配置（C 口径之前，base2 关；生产配方在 C 口径上没跑）只改三项（学习率峰值 2e-5、cosine、warmup 200；YaRN factor 8；路由偏置零均值，GPU 一侧开关见台账 G35），GPU 8 份（`p1g-a` … `p1g-h`）、TPU 1 份各 1000 步，两边逐步学习率最大相对差 1.0e-6。同配方 GPU 8 份两两 28 对当尺子：TPU 9 项全过，最差是索引器蒸馏 loss r 0.996（压线、TPU 单份）、MTP loss 0.93、梯度范数 0.91，主 loss 全程、后段都是 0.76。这是诊断，不进签字：8 份尺子是看过借现行尺子的判档之后才定的（事后选尺），份数少于现行 1000 步尺子的 16 份 120 对（PROTOCOL 第 0 节「噪声 N」与第 3 节；判法见第 0 节「生产配方臂」）。同配方尺子比现行尺子（g3 16 份）宽：主 loss 带符号均值 4.8 倍、平均绝对相对误差 2.7 倍、单步最大 1.3 倍，梯度范数 1.5–2.7 倍，其余各项 0.86–1.42 倍（路由偏置均值例外：零均值开时几乎不动，尺子窄到现行的 6.6e-8–1.1e-5 倍）。所以借现行尺子时主 loss 全程、后段 r 2.97、3.02 与梯度范数 2.45 的超、索引器蒸馏 loss 1.04 的待定，按推断主要是尺子不适用。但 TPU 主 loss 带符号均值 +1.38e-5（后段 +1.52e-5），和同一基底配置的 `tz-off-rep`（C 口径之前）的 +7.21e-6 同号、约为它的 1.9 倍（现行 `tc-a` 是 +3.53e-6，见 [`t1zc-repeats-6.json`](alignments/01-mini/results/t1zc-repeats-6.json)（5 份时 [`t1zc-repeats.json`](alignments/01-mini/results/t1zc-repeats.json)） 的 `loss_signed_mean`；[mini 主 loss 共同偏高](#mini-主-loss-共同偏高要点与出处)那件事，已在查）；TPU 只 1 份，分不出是轨迹偶然还是生产配方下这个偏高更大，「不是跨侧差」要等 TPU 补份数再下。三项一起改，不知道是哪一项放宽了 GPU 的波动；TPU 只有 1 份 | [`t1pr-l4-gpu8`](alignments/01-mini/results/t1pr-l4-gpu8.results.json)、[`t1pr-ruler-compare`](alignments/01-mini/results/t1pr-ruler-compare.json)、[`t1pr-l4`](alignments/01-mini/results/t1pr-l4.results.json)、[`t1pr-gpu-self`](alignments/01-mini/results/t1pr-gpu-self.results.json)、[`t1pr-settings`](alignments/01-mini/results/t1pr-settings.json)；`p1g-a … h`、`p1t-a` |
 | **P2 QK-Clip 在梯度累积下：累积 2 和累积 1 只差求和顺序（M19 在 TPU 上实测过）。** 阈值调到 0.1 让 QK-Clip 真触发，全局批 16 不变，回放同一份 GPU batch 各 100 步：第 1 步 64 个头的最大 logit 比值 0.997–1.003（35 个逐位相同；修前的「各微批求和」会接近 2）；前 30 步两者之差与 GPU 两份重跑同一量级（逐头最大 logit 相对 L2 中位数 6.8e-3 对 6.6e-3）。阈值 0.05 结论相同。附带：低阈值第 4 层的 R（D31）累积 1 是 1.83、累积 2 是 1.55，D31 不是累积带来的 | [`t1zo-qkclip-accum-tau01.json`](alignments/01-mini/results/t1zo-qkclip-accum-tau01.json)、[`t1zo-qkclip-accum-tau005.json`](alignments/01-mini/results/t1zo-qkclip-accum-tau005.json)、[案例 07](cases/07-qk-clip-bugs.md) |
 
 ## 真实宽度三层：要点与出处

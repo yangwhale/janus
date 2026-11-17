@@ -6,7 +6,7 @@
   - 第 1 步训练梯度：每个张量 rel(被测, golden) ≤ 这个张量上 GPU 三份第 1 步两两 rel_L2 的最大值（尺子；
     不低于分辨率下限 2^-20，见 SCALE_FLOOR）；超出噪声上限的张量按 GPU↔TPU 第 1 步的办法对 CPU FP64 定责：
     被测离 FP64 的距离 ÷ max(golden 离 FP64, GPU 三份离 FP64 的中位数) ≤ 1.2 记「换了顺序」（已定责，不挡），否则记未定责；
-    iHC 小参数定不了责的单列（同 01-mini D11 已接受），不挡；
+    iHC 小参数定不了责、且 R ≤ IHC_R64_CAP 的单列（ihc_accepted），不挡；R 超过上限的记未定责（PROTOCOL 变更记录 2026-11-12）；
   - 曲线：目录 `vs-golden.yaml` 的每一条曲线检查，三个判定量（带符号均值、MARE、最大单步）÷ GPU 同设置 8 份
     两两 28 对的上限都 ≤ 1。
   尺子 = GPU 自己重跑的波动上限，只当尺子，不是 TPU 的门槛。
@@ -50,8 +50,14 @@ KEYS = ("signed_mean", "mare", "max_step")
 SCALE_FLOOR = 2.0**-20
 R64_LIMIT = 1.2   # 定责上限：同 GPU↔TPU 第 1 步（PROTOCOL 第 5 节）的 R ≤ 1.2
 # iHC 的小参数（hc_base / hc_fn / hc_scale、hc_head）病态，GPU↔TPU 第 1 步里已按 01-mini 对齐细节 D11 接受；
-# 这里超出噪声上限又定不了责的 iHC 张量单列（ihc_accepted），不挡判档
+# 这里超出噪声上限又定不了责的 iHC 张量，R ≤ IHC_R64_CAP 的单列（ihc_accepted），不挡判档；超过上限的记未定责
 IHC = re.compile(r"\.hc_(attn|mlp)_layer\.|^model\.hc_head\.")
+# iHC 豁免的倍数上限（PROTOCOL 变更记录 2026-11-12）：01-mini D11 实际登记接受过的最大 R。base2 开那一代（与自比 golden 同一代）
+# GPU↔TPU 第 1 步接受的 6 个 iHC 张量 R 1.57–5.218（results/t1zg-step1-train-grad-vs-fp64.json），向上取两位。超过它的
+# 偏差 D11 从没接受过，不再单列（输出头反向省舍入让 hc_head 偏 8–46 倍，就是被无上限的豁免盖住的）
+IHC_R64_CAP = 5.22
+IHC_RULE = (f"iHC 张量超出尺子且 R > {R64_LIMIT} 时：R ≤ {IHC_R64_CAP} 单列 ihc_accepted、不计入未定责；R > {IHC_R64_CAP} 记 unattributed"
+            "（PROTOCOL 变更记录 2026-11-12，上限 = 01-mini D11 登记接受过的最大 R 5.218）")
 SKIP_FIELDS = {"step", "step_time"}
 RENAMES = ((".self_attn.gate_proj.", ".self_attn.linear_gate."), (".attn_hc.", ".hc_attn_layer.hc_pre.hc_"),
            (".ffn_hc.", ".hc_mlp_layer.hc_pre.hc_"), ("model.hc_head.hc_", "model.hc_head.hc_head_"),
@@ -204,19 +210,19 @@ def step1_grads(test_dir, golden_dir, gn_t, gn_g, gpu_specs, fp64_dir):
                     "within": all(r["over_scale"] <= 1 for r in rows)})
     if gpus and F is not None:
         # 定责（同 GPU↔TPU 第 1 步的判法）：超出噪声上限的张量，被测离 FP64 的距离 ÷ max(golden 离 FP64, GPU 三份离 FP64 的中位数)
-        # ≤ 1.2 → 记「换了顺序」（已定责）；否则记「丢了精度」（未定责；iHC 小参数单列，见 IHC）
+        # ≤ 1.2 → 记「换了顺序」（已定责）；否则记「丢了精度」（未定责；iHC 小参数 R ≤ IHC_R64_CAP 的单列，见 IHC）
         for r in rows:
             ref = max(r["golden_vs_fp64"], r["gpu_vs_fp64"])
             r["r64"] = r["test_vs_fp64"] / ref if ref else (1.0 if r["test_vs_fp64"] == 0 else math.inf)
             r["verdict"] = ("scale" if r["over_scale"] <= 1 else "attributed" if r["r64"] <= R64_LIMIT
-                            else "ihc_accepted" if IHC.search(r["tensor"]) else "unattributed")
+                            else "ihc_accepted" if IHC.search(r["tensor"]) and r["r64"] <= IHC_R64_CAP else "unattributed")
         keys = ("tensor", "d", "scale", "over_scale", "test_vs_fp64", "golden_vs_fp64", "gpu_vs_fp64", "r64")
         un = sorted((r for r in rows if r["verdict"] == "unattributed"), key=lambda r: -r["r64"])
         ih = sorted((r for r in rows if r["verdict"] == "ihc_accepted"), key=lambda r: -r["r64"])
         out.update({"n_attributed": sum(r["verdict"] == "attributed" for r in rows), "n_unattributed": len(un),
                     "unattributed": [{k: r[k] for k in keys} for r in un[:10]],
                     "n_ihc_accepted": len(ih), "ihc_accepted": [{k: r[k] for k in keys} for r in ih[:10]],
-                    "within": not un})
+                    "within": not un, "ihc_rule": IHC_RULE})
     if F is not None:
         moved = [r for r in rows if r["d"] > 0]
         out["fp64"] = {"test_vs_fp64_median": stt.median(r["test_vs_fp64"] for r in rows),

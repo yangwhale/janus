@@ -1,0 +1,5005 @@
+{
+ "what": "16 层随机初始化混元 3（ladder/hy3-smoke16.yml），CPU 上按 v5p-16 拓扑离线编译训练步（frameworks/maxtext/aot_hlo.py，2 步），tools/hlo_audit.py 读优化后 HLO",
+ "image": "tpu_pre_training@sha256:b152355a…（jax 0.11.1、libtpu 0.0.46）+ tokamax 0.0.16",
+ "maxtext": "hunyuan@5d1b0e95（MaxText 上的一处修改 合入后；编译时用的是同一内容的分支提交 fac41a16 工作树）",
+ "keys": "<级>-<臂>；级与臂的参数见 setup.md「阶梯实验」；emb_scatter = 词嵌入反向那次 scatter（n_indices 每卡下标数、sorted 是否带 indices_are_sorted）；bf16_reductions = BF16 的 all-reduce / reduce-scatter 按结果形状计数；fp = 程序指纹",
+ "runs": {
+  "L0-ag2": {
+   "fp": "945ba354ccd83ae8abfdc606e6c775e4ecb468d1c6e58ff51ca83b8bdb4a8cc3",
+   "extra": [
+    "ici_context_parallelism=2",
+    "context_parallel_strategy=all_gather"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 4,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 24121632896,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      512
+     ],
+     "indices": "s32[4,2048]",
+     "n_indices": 8192,
+     "sorted": false
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,512]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[2,4,4096,128]": 4,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce bf16[120832,512]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[16,2048,512]": 1,
+    "all-gather bf16[2,4096,4,128]": 6,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,2048,1024]": 1,
+    "all-gather s32[2,4096]": 2,
+    "all-gather s32[4,2048,1]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[120832,512]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[2,4,4096,128]": 4,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce f32[1,512,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 2,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[2,2,2048,512]": 1,
+    "all-to-all bf16[8,2048,2,512]": 1
+   }
+  },
+  "L0-ag4": {
+   "fp": "d8d344acab7dbf52cdd3bdd6d46582877959d431f0ae359866abe3edd5e12e66",
+   "extra": [
+    "ici_context_parallelism=4",
+    "context_parallel_strategy=all_gather"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 4,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 12670270080,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      256
+     ],
+     "indices": "s32[8,2048]",
+     "n_indices": 16384,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,256]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[4,4,4096,128]": 4,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[120832,256]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[4,4096,4,128]": 6,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,1024,1024]": 1,
+    "all-gather bf16[8,4096,256]": 1,
+    "all-gather s32[16,1024,1]": 2,
+    "all-gather s32[4,4096]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[120832,256]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4,4,4096,128]": 4,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 2,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[4,4,1024,256]": 1,
+    "all-to-all bf16[8,1024,4,256]": 1
+   }
+  },
+  "L0-dp8": {
+   "fp": "8c7dbe7cdff55539551cc0cf5d1aeeebec1555bf6ccbbd23ff39f2da85a70ec2",
+   "extra": [],
+   "mesh": {
+    "diloco": 1,
+    "data": 8,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 47005414016,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      1024
+     ],
+     "indices": "s32[4096]",
+     "n_indices": 4096,
+     "sorted": false
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,1024]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[120832,1024]": 1
+   },
+   "collectives": {
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[120832,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 1,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce f32[1,1024,192]": 1,
+    "all-reduce f32[]": 2,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1
+   }
+  },
+  "L0-fsdp8": {
+   "fp": "b73192556c9c819ad1c2ec50597f97ede6359cde2a5ef222d6cc0ef717e11dcd",
+   "extra": [
+    "ici_fsdp_parallelism=8",
+    "ici_data_parallelism=1"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 1,
+    "stage": 1,
+    "fsdp": 8,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 7106356864,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 2,
+    "all-gather bf16[1,1024,192]": 2,
+    "all-gather bf16[1,1024,256]": 2,
+    "all-gather bf16[1,1024,4,128]": 4,
+    "all-gather bf16[1,16,128,1024]": 2,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather s32[8,1,4096]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[1,4096,8,128]": 1,
+    "all-to-all bf16[8,1,4096,128]": 1
+   }
+  },
+  "L0-rg2": {
+   "fp": "c5687b551c735aa85614cb1d12f4b6e792f0f76123d41477d0b08293874723fd",
+   "extra": [
+    "ici_context_parallelism=2",
+    "context_parallel_strategy=ring"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 4,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 25238289408,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      512
+     ],
+     "indices": "s32[4,2048]",
+     "n_indices": 8192,
+     "sorted": false
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,512]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce bf16[120832,512]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[16,2048,512]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,2048,1024]": 1,
+    "all-gather s32[4,2048,1]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[120832,512]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce f32[1,512,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 2,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[2,2,2048,512]": 1,
+    "all-to-all bf16[8,2048,2,512]": 1
+   }
+  },
+  "L0-rg4": {
+   "fp": "ac2da731891a374c1a20368b2e5250fe6245175ccf93eaf872d288002d57bc67",
+   "extra": [
+    "ici_context_parallelism=4",
+    "context_parallel_strategy=ring"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 4,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 13512769536,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      256
+     ],
+     "indices": "s32[8,2048]",
+     "n_indices": 16384,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,256]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[120832,256]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,1024,1024]": 1,
+    "all-gather bf16[8,4096,256]": 1,
+    "all-gather s32[16,1024,1]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[120832,256]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 2,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[4,4,1024,256]": 1,
+    "all-to-all bf16[8,1024,4,256]": 1
+   }
+  },
+  "L0-ul2": {
+   "fp": "c52386f6957193aa6b8f8d6bf3e12ca61209cdc78ef64d059efa85110ee03b7a",
+   "extra": [
+    "ici_context_parallelism=2",
+    "context_parallel_strategy=ulysses",
+    "context_parallel_load_balance=False"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 4,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 24083561600,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      512
+     ],
+     "indices": "s32[4,2048]",
+     "n_indices": 8192,
+     "sorted": false
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,512]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce bf16[120832,512]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[16,2048,512]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,2048,1024]": 1,
+    "all-gather s32[2,4096]": 2,
+    "all-gather s32[4,2048,1]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[120832,512]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce f32[1,512,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 2,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[2,16,2048,128]": 5,
+    "all-to-all bf16[2,2,2048,512]": 1,
+    "all-to-all bf16[2,2,4096,128]": 4,
+    "all-to-all bf16[2,4,2048,128]": 6,
+    "all-to-all bf16[2,8,4096,128]": 5,
+    "all-to-all bf16[8,2048,2,512]": 1
+   }
+  },
+  "L0-ul4": {
+   "fp": "ff3ae1e618e71b0e76922fec80649c8e176cb0b8b4267db650d7f5f8687af325",
+   "extra": [
+    "ici_context_parallelism=4",
+    "context_parallel_strategy=ulysses",
+    "context_parallel_load_balance=False"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 4,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 12616224384,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      256
+     ],
+     "indices": "s32[8,2048]",
+     "n_indices": 16384,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,256]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[120832,256]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,1024,1024]": 1,
+    "all-gather bf16[8,4096,256]": 1,
+    "all-gather s32[16,1024,1]": 2,
+    "all-gather s32[4,4096]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[120832,256]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 2,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[4,1,4096,128]": 4,
+    "all-to-all bf16[4,16,1024,128]": 5,
+    "all-to-all bf16[4,4,1024,128]": 6,
+    "all-to-all bf16[4,4,1024,256]": 1,
+    "all-to-all bf16[4,4,4096,128]": 5,
+    "all-to-all bf16[8,1024,4,256]": 1
+   }
+  },
+  "L0-usp4": {
+   "fp": "66feec3ee646fcb3e90b2ac41e5d7538155d6faae63158bf0b4760500698eebc",
+   "extra": [
+    "ici_context_parallelism=2",
+    "ici_context_usp_ulysses_parallelism=2",
+    "context_parallel_strategy=usp"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 2,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 13502752768,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      256
+     ],
+     "indices": "s32[8,2048]",
+     "n_indices": 16384,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,256]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[120832,256]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 2,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[4,2048,1024]": 6,
+    "all-gather bf16[4,2048,16,128]": 2,
+    "all-gather bf16[4,4096,16,128]": 2,
+    "all-gather bf16[4,4096,4,128]": 4,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,1024,1024]": 1,
+    "all-gather bf16[8,4096,256]": 1,
+    "all-gather s32[16,1024,1]": 2,
+    "all-gather s32[4,2048]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[120832,256]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 2,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[4,16,1024,128]": 6,
+    "all-to-all bf16[4,2,2048,128]": 4,
+    "all-to-all bf16[4,2048,1,2,256]": 2,
+    "all-to-all bf16[4,4,1024,128]": 8,
+    "all-to-all bf16[4,4,1024,256]": 1,
+    "all-to-all bf16[4,8,2048,128]": 6,
+    "all-to-all bf16[8,1024,4,256]": 1
+   }
+  },
+  "L0p-ag2": {
+   "fp": "5ef3d5eaebed051a46ed9d768e005fbcb35f459a2f4ee7e9519d4a499f457271",
+   "extra": [
+    "ici_context_parallelism=2",
+    "context_parallel_strategy=all_gather"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 4,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 24121780352,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      512
+     ],
+     "indices": "s32[4,2048]",
+     "n_indices": 8192,
+     "sorted": false
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,512]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[2,4,4096,128]": 4,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce bf16[120832,512]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[16,2048,512]": 1,
+    "all-gather bf16[2,4096,4,128]": 6,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,2048,1024]": 1,
+    "all-gather s32[2,4096]": 2,
+    "all-gather s32[4,2048,1]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[1024]": 2,
+    "all-reduce bf16[120832,512]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[2,4,4096,128]": 4,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce f32[1,512,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[2,2,2048,512]": 1,
+    "all-to-all bf16[8,2048,2,512]": 1
+   }
+  },
+  "L0p-ag4": {
+   "fp": "ba716922c3a2c242a8c83a798b67c246e16362cdb5d9046a5f9460f13166985c",
+   "extra": [
+    "ici_context_parallelism=4",
+    "context_parallel_strategy=all_gather"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 4,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 12670384768,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      256
+     ],
+     "indices": "s32[8,2048]",
+     "n_indices": 16384,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,256]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[4,4,4096,128]": 4,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[120832,256]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[4,4096,4,128]": 6,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,1024,1024]": 1,
+    "all-gather bf16[8,4096,256]": 1,
+    "all-gather s32[16,1024,1]": 2,
+    "all-gather s32[4,4096]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[120832,256]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4,4,4096,128]": 4,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[4,4,1024,256]": 1,
+    "all-to-all bf16[8,1024,4,256]": 1
+   }
+  },
+  "L0p-dp8": {
+   "fp": "369d39801e4e38bf7f1d4b72e51c8f893281eae82b834fba14b32a4f2a983bd3",
+   "extra": [],
+   "mesh": {
+    "diloco": 1,
+    "data": 8,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 47005463168,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      1024
+     ],
+     "indices": "s32[4096]",
+     "n_indices": 4096,
+     "sorted": false
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,1024]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[1024]": 2,
+    "all-reduce bf16[192,1024,256]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[120832,1024]": 1
+   },
+   "collectives": {
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024]": 2,
+    "all-reduce bf16[120832,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 1,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce f32[1,1024,192]": 1,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1
+   }
+  },
+  "L0p-fsdp8": {
+   "fp": "1eaaba126fda696d96d72859394c09cd035dcddb1b006ead915b1689028a8619",
+   "extra": [
+    "ici_fsdp_parallelism=8",
+    "ici_data_parallelism=1"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 1,
+    "stage": 1,
+    "fsdp": 8,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 7760619136,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 2,
+    "all-gather bf16[1,1024,192]": 2,
+    "all-gather bf16[1,1024,256]": 2,
+    "all-gather bf16[1,1024,4,128]": 4,
+    "all-gather bf16[1,16,128,1024]": 2,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather s32[8,1,4096]": 2,
+    "all-reduce bf16[1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[1,4096,8,128]": 1,
+    "all-to-all bf16[8,1,4096,128]": 1
+   }
+  },
+  "L0p-rg2": {
+   "fp": "edbf69d41991f81694804005af352fa6d3dca5f1aefec33fd1c8ea10d4f306c0",
+   "extra": [
+    "ici_context_parallelism=2",
+    "context_parallel_strategy=ring"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 4,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 25237994496,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      512
+     ],
+     "indices": "s32[4,2048]",
+     "n_indices": 8192,
+     "sorted": false
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,512]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1024]": 2,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce bf16[120832,512]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[16,2048,512]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,2048,1024]": 1,
+    "all-gather s32[4,2048,1]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[1024]": 2,
+    "all-reduce bf16[120832,512]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce f32[1,512,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[2,2,2048,512]": 1,
+    "all-to-all bf16[8,2048,2,512]": 1
+   }
+  },
+  "L0p-rg4": {
+   "fp": "2d9e0ba200efe5fbd720d60eb22b9ba16e87c092000363112bc57b5ccf1ff3db",
+   "extra": [
+    "ici_context_parallelism=4",
+    "context_parallel_strategy=ring"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 4,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 13512769536,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      256
+     ],
+     "indices": "s32[8,2048]",
+     "n_indices": 16384,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,256]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[120832,256]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,1024,1024]": 1,
+    "all-gather bf16[8,4096,256]": 1,
+    "all-gather s32[16,1024,1]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[120832,256]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[4,4,1024,256]": 1,
+    "all-to-all bf16[8,1024,4,256]": 1
+   }
+  },
+  "L0p-ul2": {
+   "fp": "1e00d3384eee586703a0fb9b547928ba8aa881cc4b7fa0468bc11fa573a1b111",
+   "extra": [
+    "ici_context_parallelism=2",
+    "context_parallel_strategy=ulysses",
+    "context_parallel_load_balance=False"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 4,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 24083643520,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      512
+     ],
+     "indices": "s32[4,2048]",
+     "n_indices": 8192,
+     "sorted": false
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,512]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce bf16[120832,512]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[16,2048,512]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,2048,1024]": 1,
+    "all-gather s32[2,4096]": 2,
+    "all-gather s32[4,2048,1]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[1024]": 2,
+    "all-reduce bf16[120832,512]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce f32[1,512,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[2,16,2048,128]": 5,
+    "all-to-all bf16[2,2,2048,512]": 1,
+    "all-to-all bf16[2,2,4096,128]": 4,
+    "all-to-all bf16[2,4,2048,128]": 6,
+    "all-to-all bf16[2,8,4096,128]": 5,
+    "all-to-all bf16[8,2048,2,512]": 1
+   }
+  },
+  "L0p-ul4": {
+   "fp": "b0a590ccb5e47956c7839f9a3b34c131094b872f5546930894d81b3e6933a4be",
+   "extra": [
+    "ici_context_parallelism=4",
+    "context_parallel_strategy=ulysses",
+    "context_parallel_load_balance=False"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 4,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 12616240768,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      256
+     ],
+     "indices": "s32[8,2048]",
+     "n_indices": 16384,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,256]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[120832,256]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,1024,1024]": 1,
+    "all-gather bf16[8,4096,256]": 1,
+    "all-gather s32[16,1024,1]": 2,
+    "all-gather s32[4,4096]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[120832,256]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[4,1,4096,128]": 4,
+    "all-to-all bf16[4,16,1024,128]": 5,
+    "all-to-all bf16[4,4,1024,128]": 6,
+    "all-to-all bf16[4,4,1024,256]": 1,
+    "all-to-all bf16[4,4,4096,128]": 5,
+    "all-to-all bf16[8,1024,4,256]": 1
+   }
+  },
+  "L0p-usp4": {
+   "fp": "660a613c2f31453bb5e0474e67905d82006a109dc6ce0ee8dc027d9e1d6581ce",
+   "extra": [
+    "ici_context_parallelism=2",
+    "ici_context_usp_ulysses_parallelism=2",
+    "context_parallel_strategy=usp"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 2,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 13502670848,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      256
+     ],
+     "indices": "s32[8,2048]",
+     "n_indices": 16384,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,256]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[120832,256]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 2,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[4,2048,1024]": 6,
+    "all-gather bf16[4,2048,16,128]": 2,
+    "all-gather bf16[4,4096,16,128]": 2,
+    "all-gather bf16[4,4096,4,128]": 4,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,1024,1024]": 1,
+    "all-gather bf16[8,4096,256]": 1,
+    "all-gather s32[16,1024,1]": 2,
+    "all-gather s32[4,2048]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[120832,256]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[4,16,1024,128]": 6,
+    "all-to-all bf16[4,2,2048,128]": 4,
+    "all-to-all bf16[4,2048,1,2,256]": 2,
+    "all-to-all bf16[4,4,1024,128]": 8,
+    "all-to-all bf16[4,4,1024,256]": 1,
+    "all-to-all bf16[4,8,2048,128]": 6,
+    "all-to-all bf16[8,1024,4,256]": 1
+   }
+  },
+  "L1-ag2": {
+   "fp": "74d24dd0fd9c3b6f57fbaf4064811e826b5f916fc5ff8710a96bb83899ace839",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "ici_context_parallelism=2",
+    "context_parallel_strategy=all_gather"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 4,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 24121632896,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      512
+     ],
+     "indices": "s32[4,2048]",
+     "n_indices": 8192,
+     "sorted": false
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,512]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[2,4,4096,128]": 4,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce bf16[120832,512]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[16,2048,512]": 1,
+    "all-gather bf16[2,4096,4,128]": 6,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,2048,1024]": 1,
+    "all-gather s32[2,4096]": 2,
+    "all-gather s32[4,2048,1]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[120832,512]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[2,4,4096,128]": 4,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce f32[1,512,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 2,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[2,2,2048,512]": 1,
+    "all-to-all bf16[8,2048,2,512]": 1
+   }
+  },
+  "L1-ag4": {
+   "fp": "9f054a883673b6139b8d502b68c4992fa358b77b41e8b50264f8ef75a2e94992",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "ici_context_parallelism=4",
+    "context_parallel_strategy=all_gather"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 4,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 12670270080,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      256
+     ],
+     "indices": "s32[8,2048]",
+     "n_indices": 16384,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,256]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[4,4,4096,128]": 4,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[120832,256]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[4,4096,4,128]": 6,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,1024,1024]": 1,
+    "all-gather bf16[8,4096,256]": 1,
+    "all-gather s32[16,1024,1]": 2,
+    "all-gather s32[4,4096]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[120832,256]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4,4,4096,128]": 4,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 2,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[4,4,1024,256]": 1,
+    "all-to-all bf16[8,1024,4,256]": 1
+   }
+  },
+  "L1-dp8": {
+   "fp": "5897bc1f826bb06146fc8d115bea6dd5de05efe9528110c35eb6f90c0e711aed",
+   "extra": [
+    "sa_use_base2_exp=False"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 8,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 47005414016,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      1024
+     ],
+     "indices": "s32[4096]",
+     "n_indices": 4096,
+     "sorted": false
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,1024]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[120832,1024]": 1
+   },
+   "collectives": {
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[120832,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 1,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce f32[1,1024,192]": 1,
+    "all-reduce f32[]": 2,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1
+   }
+  },
+  "L1-fsdp8": {
+   "fp": "c5e50d25f9749edb61b235d3e65985c0904f9bfa18238d703e2f76c3fcc5cd53",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "ici_fsdp_parallelism=8",
+    "ici_data_parallelism=1"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 1,
+    "stage": 1,
+    "fsdp": 8,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 7106356864,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 2,
+    "all-gather bf16[1,1024,192]": 2,
+    "all-gather bf16[1,1024,256]": 2,
+    "all-gather bf16[1,1024,4,128]": 4,
+    "all-gather bf16[1,16,128,1024]": 2,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather s32[8,1,4096]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[1,4096,8,128]": 1,
+    "all-to-all bf16[8,1,4096,128]": 1
+   }
+  },
+  "L1-rg2": {
+   "fp": "c5687b551c735aa85614cb1d12f4b6e792f0f76123d41477d0b08293874723fd",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "ici_context_parallelism=2",
+    "context_parallel_strategy=ring"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 4,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 25238289408,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      512
+     ],
+     "indices": "s32[4,2048]",
+     "n_indices": 8192,
+     "sorted": false
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,512]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce bf16[120832,512]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[16,2048,512]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,2048,1024]": 1,
+    "all-gather s32[4,2048,1]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[120832,512]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce f32[1,512,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 2,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[2,2,2048,512]": 1,
+    "all-to-all bf16[8,2048,2,512]": 1
+   }
+  },
+  "L1-rg4": {
+   "fp": "ac2da731891a374c1a20368b2e5250fe6245175ccf93eaf872d288002d57bc67",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "ici_context_parallelism=4",
+    "context_parallel_strategy=ring"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 4,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 13512769536,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      256
+     ],
+     "indices": "s32[8,2048]",
+     "n_indices": 16384,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,256]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[120832,256]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,1024,1024]": 1,
+    "all-gather bf16[8,4096,256]": 1,
+    "all-gather s32[16,1024,1]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[120832,256]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 2,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[4,4,1024,256]": 1,
+    "all-to-all bf16[8,1024,4,256]": 1
+   }
+  },
+  "L1-ul2": {
+   "fp": "477b1e6851e119be2ee674f0c21ff5da7809f68e011a4276d723785b5388e914",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "ici_context_parallelism=2",
+    "context_parallel_strategy=ulysses",
+    "context_parallel_load_balance=False"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 4,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 24083561600,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      512
+     ],
+     "indices": "s32[4,2048]",
+     "n_indices": 8192,
+     "sorted": false
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,512]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce bf16[120832,512]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[16,2048,512]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,2048,1024]": 1,
+    "all-gather s32[2,4096]": 2,
+    "all-gather s32[4,2048,1]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[120832,512]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce f32[1,512,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 2,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[2,16,2048,128]": 5,
+    "all-to-all bf16[2,2,2048,512]": 1,
+    "all-to-all bf16[2,2,4096,128]": 4,
+    "all-to-all bf16[2,4,2048,128]": 6,
+    "all-to-all bf16[2,8,4096,128]": 5,
+    "all-to-all bf16[8,2048,2,512]": 1
+   }
+  },
+  "L1-ul4": {
+   "fp": "89d2d31e2e5b8f3ac9fe672309dca09c4ee02b82b3f2410347485f43904d8b51",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "ici_context_parallelism=4",
+    "context_parallel_strategy=ulysses",
+    "context_parallel_load_balance=False"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 4,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 12616224384,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      256
+     ],
+     "indices": "s32[8,2048]",
+     "n_indices": 16384,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,256]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[120832,256]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,1024,1024]": 1,
+    "all-gather bf16[8,4096,256]": 1,
+    "all-gather s32[16,1024,1]": 2,
+    "all-gather s32[4,4096]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[120832,256]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 2,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[4,1,4096,128]": 4,
+    "all-to-all bf16[4,16,1024,128]": 5,
+    "all-to-all bf16[4,4,1024,128]": 6,
+    "all-to-all bf16[4,4,1024,256]": 1,
+    "all-to-all bf16[4,4,4096,128]": 5,
+    "all-to-all bf16[8,1024,4,256]": 1
+   }
+  },
+  "L1-usp4": {
+   "fp": "66feec3ee646fcb3e90b2ac41e5d7538155d6faae63158bf0b4760500698eebc",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "ici_context_parallelism=2",
+    "ici_context_usp_ulysses_parallelism=2",
+    "context_parallel_strategy=usp"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 2,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 13502752768,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      256
+     ],
+     "indices": "s32[8,2048]",
+     "n_indices": 16384,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {
+    "all-reduce bf16[120832,256]": 1
+   },
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[120832,256]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 2,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[4,2048,1024]": 6,
+    "all-gather bf16[4,2048,16,128]": 2,
+    "all-gather bf16[4,4096,16,128]": 2,
+    "all-gather bf16[4,4096,4,128]": 4,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,1024,1024]": 1,
+    "all-gather bf16[8,4096,256]": 1,
+    "all-gather s32[16,1024,1]": 2,
+    "all-gather s32[4,2048]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[120832,256]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 2,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[4,16,1024,128]": 6,
+    "all-to-all bf16[4,2,2048,128]": 4,
+    "all-to-all bf16[4,2048,1,2,256]": 2,
+    "all-to-all bf16[4,4,1024,128]": 8,
+    "all-to-all bf16[4,4,1024,256]": 1,
+    "all-to-all bf16[4,8,2048,128]": 6,
+    "all-to-all bf16[8,1024,4,256]": 1
+   }
+  },
+  "L2-ag2": {
+   "fp": "ab984f67885380c44603b6acfc2cac45434f1e667a2ab179d8e10780a1535177",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "ici_context_parallelism=2",
+    "context_parallel_strategy=all_gather"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 4,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 23648463488,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[2,4,4096,128]": 4,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[512,120832]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[16,2048,1024]": 1,
+    "all-gather bf16[2,4096,4,128]": 6,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[2,4096]": 2,
+    "all-gather s32[8,2,2048]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[2,4,4096,128]": 4,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce f32[1,512,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 5,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1
+   }
+  },
+  "L2-ag4": {
+   "fp": "819dcf4d219bc34b1fdd9c2792ad76929da1ef2447b2735138914ba4ee8cca7f",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "ici_context_parallelism=4",
+    "context_parallel_strategy=all_gather"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 4,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 12539246720,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[4,4,4096,128]": 4,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[32,1024,1024]": 1,
+    "all-gather bf16[4,4096,4,128]": 6,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[4,4096]": 2,
+    "all-gather s32[8,4,1024]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4,4,4096,128]": 4,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 5,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1
+   }
+  },
+  "L2-dp8": {
+   "fp": "4775e28f6e8bd91fe7182372c29724e08bc0a9a6a80c8a67db6ef4047a9a1f62",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 8,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 45706671744,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 1,
+    "all-reduce bf16[1024,120832]": 1
+   },
+   "collectives": {
+    "all-gather s32[8,1,4096]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[192,1024,256]": 1,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce f32[1,1024,192]": 1,
+    "all-reduce f32[]": 5,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[1,4096,8,128]": 1,
+    "all-to-all bf16[8,1,4096,128]": 1
+   }
+  },
+  "L2-fsdp8": {
+   "fp": "c5e50d25f9749edb61b235d3e65985c0904f9bfa18238d703e2f76c3fcc5cd53",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "ici_fsdp_parallelism=8",
+    "ici_data_parallelism=1"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 1,
+    "stage": 1,
+    "fsdp": 8,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 7106356864,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 2,
+    "all-gather bf16[1,1024,192]": 2,
+    "all-gather bf16[1,1024,256]": 2,
+    "all-gather bf16[1,1024,4,128]": 4,
+    "all-gather bf16[1,16,128,1024]": 2,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather s32[8,1,4096]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[1,4096,8,128]": 1,
+    "all-to-all bf16[8,1,4096,128]": 1
+   }
+  },
+  "L2-rg2": {
+   "fp": "bd763a9c05e42f99a54cf05a3f902eea0e16a1b946fdfe045b41a79c34816010",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "ici_context_parallelism=2",
+    "context_parallel_strategy=ring"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 4,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 24836832768,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[512,120832]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[16,2048,1024]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[8,2,2048]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce f32[1,512,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 5,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1
+   }
+  },
+  "L2-rg4": {
+   "fp": "421c7d999e2da5c482906c0a8bb2448855c26738e0dc91db8873d855d8c35088",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "ici_context_parallelism=4",
+    "context_parallel_strategy=ring"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 4,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 13385940480,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[32,1024,1024]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[8,4,1024]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 5,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1
+   }
+  },
+  "L2-ul2": {
+   "fp": "1e5ce2fdd8d08e9f7fa4741bc58295fb1b09c881763bc70769c32a7f749c154f",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "ici_context_parallelism=2",
+    "context_parallel_strategy=ulysses",
+    "context_parallel_load_balance=False"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 4,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 23594761856,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[512,120832]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[16,2048,1024]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[2,4096]": 2,
+    "all-gather s32[8,2,2048]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce f32[1,512,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 5,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[2,16,2048,128]": 5,
+    "all-to-all bf16[2,2,4096,128]": 4,
+    "all-to-all bf16[2,4,2048,128]": 6,
+    "all-to-all bf16[2,8,4096,128]": 5
+   }
+  },
+  "L2-ul4": {
+   "fp": "58578319948a193830c0d3b9ddd9d4fe2ffdf2541165bc93f36690bb2c0adec7",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "ici_context_parallelism=4",
+    "context_parallel_strategy=ulysses",
+    "context_parallel_load_balance=False"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 4,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 12489395328,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[32,1024,1024]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[4,4096]": 2,
+    "all-gather s32[8,4,1024]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,16,128]": 2,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4,128]": 4,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 5,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[4,1,4096,128]": 4,
+    "all-to-all bf16[4,16,1024,128]": 5,
+    "all-to-all bf16[4,4,1024,128]": 6,
+    "all-to-all bf16[4,4,4096,128]": 5
+   }
+  },
+  "L2-usp4": {
+   "fp": "e7ef4769734c10241b9b85a32b70f93ea831ad8c60ca4bb68c41862878e99d5c",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "ici_context_parallelism=2",
+    "ici_context_usp_ulysses_parallelism=2",
+    "context_parallel_strategy=usp"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 2,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 13381412864,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 2,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[32,1024,1024]": 1,
+    "all-gather bf16[4,2048,1024]": 6,
+    "all-gather bf16[4,2048,16,128]": 2,
+    "all-gather bf16[4,4096,16,128]": 2,
+    "all-gather bf16[4,4096,4,128]": 4,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[4,2048]": 2,
+    "all-gather s32[8,4,1024]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 5,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[4,16,1024,128]": 6,
+    "all-to-all bf16[4,2,2048,128]": 4,
+    "all-to-all bf16[4,2048,1,2,256]": 2,
+    "all-to-all bf16[4,4,1024,128]": 8,
+    "all-to-all bf16[4,8,2048,128]": 6
+   }
+  },
+  "L3-ag2": {
+   "fp": "591da5c3469603b5ecc45b267eb1d5fec4937358a652d3e812c70113c45e24fa",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "qkv_proj_wgrad_fp32=True",
+    "ici_context_parallelism=2",
+    "context_parallel_strategy=all_gather"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 4,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 23696142464,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[2,4,4096,128]": 4,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1,512,256]": 2,
+    "all-reduce bf16[1,256,512]": 1,
+    "all-reduce bf16[1,16,128,512]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce bf16[1,512,4096]": 2,
+    "all-reduce bf16[1,4096,512]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[16,2048,1024]": 1,
+    "all-gather bf16[2,4096,4,128]": 6,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[2,4096]": 2,
+    "all-gather s32[8,2,2048]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1,16,128,512]": 2,
+    "all-reduce bf16[1,256,512]": 1,
+    "all-reduce bf16[1,4096,512]": 1,
+    "all-reduce bf16[1,512,256]": 2,
+    "all-reduce bf16[1,512,4096]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[2,4,4096,128]": 4,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce f32[1,512,16,128]": 2,
+    "all-reduce f32[1,512,192]": 1,
+    "all-reduce f32[1,512,4,128]": 4,
+    "all-reduce f32[1024,16,128]": 2,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[1024,4,128]": 4,
+    "all-reduce f32[]": 5,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1
+   }
+  },
+  "L3-ag4": {
+   "fp": "0845d9d10a0fedee7d7e5d36a32c53776a0dde1b51a8c67b6ddf562b188c7b6c",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "qkv_proj_wgrad_fp32=True",
+    "ici_context_parallelism=4",
+    "context_parallel_strategy=all_gather"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 4,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 12563252352,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[4,4,4096,128]": 4,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1,256,256]": 3,
+    "all-reduce bf16[1,16,128,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1,256,4096]": 2,
+    "all-reduce bf16[1,4096,256]": 1,
+    "all-reduce bf16[256,120832]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[32,1024,1024]": 1,
+    "all-gather bf16[4,4096,4,128]": 6,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[4,4096]": 2,
+    "all-gather s32[8,4,1024]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1,16,128,256]": 2,
+    "all-reduce bf16[1,256,256]": 3,
+    "all-reduce bf16[1,256,4096]": 2,
+    "all-reduce bf16[1,4096,256]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[256,120832]": 1,
+    "all-reduce bf16[4,4,4096,128]": 4,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,16,128]": 2,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1,256,4,128]": 4,
+    "all-reduce f32[1024,16,128]": 2,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[1024,4,128]": 4,
+    "all-reduce f32[]": 5,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1
+   }
+  },
+  "L3-dp8": {
+   "fp": "03772a9bc6e82003b6b123911ea51f6308a1cace7937a4bfc9e13b7a13b86f39",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "qkv_proj_wgrad_fp32=True"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 8,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 45800142464,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 1,
+    "all-reduce bf16[1024,120832]": 1
+   },
+   "collectives": {
+    "all-gather s32[8,1,4096]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[192,1024,256]": 1,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce f32[1,1024,16,128]": 2,
+    "all-reduce f32[1,1024,192]": 1,
+    "all-reduce f32[1,1024,4,128]": 4,
+    "all-reduce f32[]": 5,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[1,4096,8,128]": 1,
+    "all-to-all bf16[8,1,4096,128]": 1
+   }
+  },
+  "L3-fsdp8": {
+   "fp": "b79fb7623bb3314684747fbe21a1b2e3873784f5ce6d6d64a7629f5113293921",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "qkv_proj_wgrad_fp32=True",
+    "ici_fsdp_parallelism=8",
+    "ici_data_parallelism=1"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 1,
+    "stage": 1,
+    "fsdp": 8,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 7106602624,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 2,
+    "all-gather bf16[1,1024,192]": 2,
+    "all-gather bf16[1,1024,256]": 2,
+    "all-gather bf16[1,1024,4,128]": 4,
+    "all-gather bf16[1,16,128,1024]": 2,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather s32[8,1,4096]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[1,4096,8,128]": 1,
+    "all-to-all bf16[8,1,4096,128]": 1
+   }
+  },
+  "L3-rg2": {
+   "fp": "be5ab34f35b4833c243df89dc040d8db9fa9b87c729a34f2f07eb58f360967dc",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "qkv_proj_wgrad_fp32=True",
+    "ici_context_parallelism=2",
+    "context_parallel_strategy=ring"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 4,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 24883430400,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1,512,256]": 2,
+    "all-reduce bf16[1,256,512]": 1,
+    "all-reduce bf16[1,16,128,512]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce bf16[1,512,4096]": 2,
+    "all-reduce bf16[1,4096,512]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[16,2048,1024]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[8,2,2048]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1,16,128,512]": 2,
+    "all-reduce bf16[1,256,512]": 1,
+    "all-reduce bf16[1,4096,512]": 1,
+    "all-reduce bf16[1,512,256]": 2,
+    "all-reduce bf16[1,512,4096]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce f32[1,512,16,128]": 2,
+    "all-reduce f32[1,512,192]": 1,
+    "all-reduce f32[1,512,4,128]": 4,
+    "all-reduce f32[1024,16,128]": 2,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[1024,4,128]": 4,
+    "all-reduce f32[]": 5,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1
+   }
+  },
+  "L3-rg4": {
+   "fp": "4fef4634fbaab9509ca2940b90d596a3fb73fe9f70a9f7a99396118bc6e772eb",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "qkv_proj_wgrad_fp32=True",
+    "ici_context_parallelism=4",
+    "context_parallel_strategy=ring"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 4,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 13409143296,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1,256,256]": 3,
+    "all-reduce bf16[1,16,128,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1,256,4096]": 2,
+    "all-reduce bf16[1,4096,256]": 1,
+    "all-reduce bf16[256,120832]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[32,1024,1024]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[8,4,1024]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1,16,128,256]": 2,
+    "all-reduce bf16[1,256,256]": 3,
+    "all-reduce bf16[1,256,4096]": 2,
+    "all-reduce bf16[1,4096,256]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[256,120832]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,16,128]": 2,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1,256,4,128]": 4,
+    "all-reduce f32[1024,16,128]": 2,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[1024,4,128]": 4,
+    "all-reduce f32[]": 5,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1
+   }
+  },
+  "L3-ul2": {
+   "fp": "acd1e5a85afe6b36c3e2c2ede30fcdb214dcda205c8589feafa75109786a9aa8",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "qkv_proj_wgrad_fp32=True",
+    "ici_context_parallelism=2",
+    "context_parallel_strategy=ulysses",
+    "context_parallel_load_balance=False"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 4,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 23642195072,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1,512,256]": 2,
+    "all-reduce bf16[1,256,512]": 1,
+    "all-reduce bf16[1,16,128,512]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce bf16[1,512,4096]": 2,
+    "all-reduce bf16[1,4096,512]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[16,2048,1024]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[2,4096]": 2,
+    "all-gather s32[8,2,2048]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1,16,128,512]": 2,
+    "all-reduce bf16[1,256,512]": 1,
+    "all-reduce bf16[1,4096,512]": 1,
+    "all-reduce bf16[1,512,256]": 2,
+    "all-reduce bf16[1,512,4096]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1024,4096]": 2,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce f32[1,512,16,128]": 2,
+    "all-reduce f32[1,512,192]": 1,
+    "all-reduce f32[1,512,4,128]": 4,
+    "all-reduce f32[1024,16,128]": 2,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[1024,4,128]": 4,
+    "all-reduce f32[]": 5,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[2,16,2048,128]": 5,
+    "all-to-all bf16[2,2,4096,128]": 4,
+    "all-to-all bf16[2,4,2048,128]": 6,
+    "all-to-all bf16[2,8,4096,128]": 5
+   }
+  },
+  "L3-ul4": {
+   "fp": "523667145bf24fadd268bc249e4a6ec4441e6d2c002ab8673d953b604e541f3b",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "qkv_proj_wgrad_fp32=True",
+    "ici_context_parallelism=4",
+    "context_parallel_strategy=ulysses",
+    "context_parallel_load_balance=False"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 4,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 12513204352,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1,256,256]": 3,
+    "all-reduce bf16[1,16,128,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1,256,4096]": 2,
+    "all-reduce bf16[1,4096,256]": 1,
+    "all-reduce bf16[256,120832]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[32,1024,1024]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[4,4096]": 2,
+    "all-gather s32[8,4,1024]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1,16,128,256]": 2,
+    "all-reduce bf16[1,256,256]": 3,
+    "all-reduce bf16[1,256,4096]": 2,
+    "all-reduce bf16[1,4096,256]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[256,120832]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,16,128]": 2,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1,256,4,128]": 4,
+    "all-reduce f32[1024,16,128]": 2,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[1024,4,128]": 4,
+    "all-reduce f32[]": 5,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[4,1,4096,128]": 4,
+    "all-to-all bf16[4,16,1024,128]": 5,
+    "all-to-all bf16[4,4,1024,128]": 6,
+    "all-to-all bf16[4,4,4096,128]": 5
+   }
+  },
+  "L3-usp4": {
+   "fp": "d8f331dd004a739edeb91f8020cd4ae849ac8d8254e2dd4d38de905e3b1250ae",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "qkv_proj_wgrad_fp32=True",
+    "ici_context_parallelism=2",
+    "ici_context_usp_ulysses_parallelism=2",
+    "context_parallel_strategy=usp"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 2,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 13404696064,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[1,256,256]": 3,
+    "all-reduce bf16[1,16,128,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1,256,4096]": 2,
+    "all-reduce bf16[1,4096,256]": 1,
+    "all-reduce bf16[256,120832]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 2,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[32,1024,1024]": 1,
+    "all-gather bf16[4,2048,1024]": 8,
+    "all-gather bf16[4,4096,16,128]": 2,
+    "all-gather bf16[4,4096,4,128]": 4,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[4,2048]": 2,
+    "all-gather s32[8,4,1024]": 2,
+    "all-reduce bf16[1,1024]": 2,
+    "all-reduce bf16[1,16,128,256]": 2,
+    "all-reduce bf16[1,256,256]": 3,
+    "all-reduce bf16[1,256,4096]": 2,
+    "all-reduce bf16[1,4096,256]": 1,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[1024,256]": 2,
+    "all-reduce bf16[1056,4096]": 2,
+    "all-reduce bf16[16,128,1024]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,1024]": 1,
+    "all-reduce bf16[256,120832]": 1,
+    "all-reduce bf16[4096,1024]": 1,
+    "all-reduce f32[1,256,16,128]": 2,
+    "all-reduce f32[1,256,192]": 1,
+    "all-reduce f32[1,256,4,128]": 4,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[]": 5,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[4,16,1024,128]": 6,
+    "all-to-all bf16[4,2,2048,128]": 4,
+    "all-to-all bf16[4,2048,1,2,256]": 2,
+    "all-to-all bf16[4,4,1024,128]": 8,
+    "all-to-all bf16[4,8,2048,128]": 6
+   }
+  },
+  "L4-ag2": {
+   "fp": "189f111303dcc76ddaeb10fe9c027a58340fb79cf215d5642eaa78309b534e75",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "qkv_proj_wgrad_fp32=True",
+    "routed_gate_bf16_rounding=True",
+    "rmsnorm_single_rounding=True",
+    "mlp_activation_round_per_op=True",
+    "dense_fp32_accumulation=True",
+    "ici_context_parallelism=2",
+    "context_parallel_strategy=all_gather"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 4,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 23682356352,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[2,4,4096,128]": 4,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[512,120832]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 2,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[16,2048,1024]": 1,
+    "all-gather bf16[2,4096,4,128]": 6,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[2,4096]": 2,
+    "all-gather s32[8,2,2048]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[2,4,4096,128]": 4,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce f32[1024,16,128]": 2,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[1024,256]": 2,
+    "all-reduce f32[1024,4,128]": 4,
+    "all-reduce f32[1024,4096]": 2,
+    "all-reduce f32[1024]": 2,
+    "all-reduce f32[128]": 2,
+    "all-reduce f32[16,128,1024]": 2,
+    "all-reduce f32[256,1024]": 1,
+    "all-reduce f32[4096,1024]": 1,
+    "all-reduce f32[]": 4,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1
+   }
+  },
+  "L4-ag4": {
+   "fp": "b93b71a4aa035c2e41ba753aa487d7934502dceac4a7af80f67f7aad37d78b3c",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "qkv_proj_wgrad_fp32=True",
+    "routed_gate_bf16_rounding=True",
+    "rmsnorm_single_rounding=True",
+    "mlp_activation_round_per_op=True",
+    "dense_fp32_accumulation=True",
+    "ici_context_parallelism=4",
+    "context_parallel_strategy=all_gather"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 4,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 12565738624,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[4,4,4096,128]": 4,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[256,120832]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 2,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[32,1024,1024]": 1,
+    "all-gather bf16[4,4096,4,128]": 6,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[4,4096]": 2,
+    "all-gather s32[8,4,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,120832]": 1,
+    "all-reduce bf16[4,4,4096,128]": 4,
+    "all-reduce f32[1024,16,128]": 2,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[1024,256]": 2,
+    "all-reduce f32[1024,4,128]": 4,
+    "all-reduce f32[1024]": 2,
+    "all-reduce f32[1056,4096]": 2,
+    "all-reduce f32[128]": 2,
+    "all-reduce f32[16,128,1024]": 2,
+    "all-reduce f32[256,1024]": 1,
+    "all-reduce f32[4096,1024]": 1,
+    "all-reduce f32[]": 4,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1
+   }
+  },
+  "L4-dp8": {
+   "fp": "74e0495f17c3a93f534b6df3a33426f21a1ef1d2e64f624a073656b3fac8f5ac",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "qkv_proj_wgrad_fp32=True",
+    "routed_gate_bf16_rounding=True",
+    "rmsnorm_single_rounding=True",
+    "mlp_activation_round_per_op=True",
+    "dense_fp32_accumulation=True"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 8,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 45808017536,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1024,120832]": 1
+   },
+   "collectives": {
+    "all-gather s32[8,1,4096]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce f32[]": 4,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[1,4096,8,128]": 1,
+    "all-to-all bf16[8,1,4096,128]": 1
+   }
+  },
+  "L4-fsdp8": {
+   "fp": "33b72928484a3dfaa4217cca2f2765c40121d591465d24ee4d1bf1eb774c6a04",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "qkv_proj_wgrad_fp32=True",
+    "routed_gate_bf16_rounding=True",
+    "rmsnorm_single_rounding=True",
+    "mlp_activation_round_per_op=True",
+    "dense_fp32_accumulation=True",
+    "ici_fsdp_parallelism=8",
+    "ici_data_parallelism=1"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 1,
+    "stage": 1,
+    "fsdp": 8,
+    "fsdp_transpose": 1,
+    "context": 1,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 7743460480,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 2,
+    "all-gather bf16[1,1024,192]": 2,
+    "all-gather bf16[1,1024,256]": 2,
+    "all-gather bf16[1,1024,4,128]": 4,
+    "all-gather bf16[1,16,128,1024]": 2,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 2,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather s32[8,1,4096]": 2,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce f32[1024]": 2,
+    "all-reduce f32[128]": 2,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[1,4096,8,128]": 1,
+    "all-to-all bf16[8,1,4096,128]": 1
+   }
+  },
+  "L4-rg2": {
+   "fp": "bb0869523afeae4f6a74bf416280c9aa7bbcc266359e4be9d8318dd47239cb7c",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "qkv_proj_wgrad_fp32=True",
+    "routed_gate_bf16_rounding=True",
+    "rmsnorm_single_rounding=True",
+    "mlp_activation_round_per_op=True",
+    "dense_fp32_accumulation=True",
+    "ici_context_parallelism=2",
+    "context_parallel_strategy=ring"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 4,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 24880048128,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[512,120832]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[16,2048,1024]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[8,2,2048]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce f32[1024,16,128]": 2,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[1024,256]": 2,
+    "all-reduce f32[1024,4,128]": 4,
+    "all-reduce f32[1024,4096]": 2,
+    "all-reduce f32[1024]": 2,
+    "all-reduce f32[128]": 2,
+    "all-reduce f32[16,128,1024]": 2,
+    "all-reduce f32[256,1024]": 1,
+    "all-reduce f32[4096,1024]": 1,
+    "all-reduce f32[]": 4,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1
+   }
+  },
+  "L4-rg4": {
+   "fp": "8f174a1033365dd11cdbc9d22d884d0d30a16b6f8886a41cd9e86048f21fdad7",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "qkv_proj_wgrad_fp32=True",
+    "routed_gate_bf16_rounding=True",
+    "rmsnorm_single_rounding=True",
+    "mlp_activation_round_per_op=True",
+    "dense_fp32_accumulation=True",
+    "ici_context_parallelism=4",
+    "context_parallel_strategy=ring"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 4,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 13407418880,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[256,120832]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 1,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[32,1024,1024]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[8,4,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,120832]": 1,
+    "all-reduce f32[1024,16,128]": 2,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[1024,256]": 2,
+    "all-reduce f32[1024,4,128]": 4,
+    "all-reduce f32[1024]": 2,
+    "all-reduce f32[1056,4096]": 2,
+    "all-reduce f32[128]": 2,
+    "all-reduce f32[16,128,1024]": 2,
+    "all-reduce f32[256,1024]": 1,
+    "all-reduce f32[4096,1024]": 1,
+    "all-reduce f32[]": 4,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1
+   }
+  },
+  "L4-ul2": {
+   "fp": "c8d36b7a83cf1893afd236c9289d8df822744ae352731dfb60ac001ae66087e4",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "qkv_proj_wgrad_fp32=True",
+    "routed_gate_bf16_rounding=True",
+    "rmsnorm_single_rounding=True",
+    "mlp_activation_round_per_op=True",
+    "dense_fp32_accumulation=True",
+    "ici_context_parallelism=2",
+    "context_parallel_strategy=ulysses",
+    "context_parallel_load_balance=False"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 4,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 23638304896,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[512,120832]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 2,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[16,2048,1024]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[2,4096]": 2,
+    "all-gather s32[8,2,2048]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[512,120832]": 1,
+    "all-reduce f32[1024,16,128]": 2,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[1024,256]": 2,
+    "all-reduce f32[1024,4,128]": 4,
+    "all-reduce f32[1024,4096]": 2,
+    "all-reduce f32[1024]": 2,
+    "all-reduce f32[128]": 2,
+    "all-reduce f32[16,128,1024]": 2,
+    "all-reduce f32[256,1024]": 1,
+    "all-reduce f32[4096,1024]": 1,
+    "all-reduce f32[]": 4,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[2,16,2048,128]": 5,
+    "all-to-all bf16[2,2,4096,128]": 4,
+    "all-to-all bf16[2,4,2048,128]": 6,
+    "all-to-all bf16[2,8,4096,128]": 5
+   }
+  },
+  "L4-ul4": {
+   "fp": "d972ff0d78198aa1b0c156ea31482bf2eb5ac22bce7395f7efbfe426c7af738a",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "qkv_proj_wgrad_fp32=True",
+    "routed_gate_bf16_rounding=True",
+    "rmsnorm_single_rounding=True",
+    "mlp_activation_round_per_op=True",
+    "dense_fp32_accumulation=True",
+    "ici_context_parallelism=4",
+    "context_parallel_strategy=ulysses",
+    "context_parallel_load_balance=False"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 4,
+    "context_usp_ulysses": 1,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 12507269248,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[256,120832]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 2,
+    "all-gather bf16[1024,1,4,128]": 2,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[32,1024,1024]": 1,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[4,4096]": 2,
+    "all-gather s32[8,4,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,120832]": 1,
+    "all-reduce f32[1024,16,128]": 2,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[1024,256]": 2,
+    "all-reduce f32[1024,4,128]": 4,
+    "all-reduce f32[1024]": 2,
+    "all-reduce f32[1056,4096]": 2,
+    "all-reduce f32[128]": 2,
+    "all-reduce f32[16,128,1024]": 2,
+    "all-reduce f32[256,1024]": 1,
+    "all-reduce f32[4096,1024]": 1,
+    "all-reduce f32[]": 4,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[4,1,4096,128]": 4,
+    "all-to-all bf16[4,16,1024,128]": 5,
+    "all-to-all bf16[4,4,1024,128]": 6,
+    "all-to-all bf16[4,4,4096,128]": 5
+   }
+  },
+  "L4-usp4": {
+   "fp": "21915cc5472552f3b4c6e317f4cfdf7c7cc2eb7b54a3f48685b383fed7edf9f5",
+   "extra": [
+    "sa_use_base2_exp=False",
+    "embedding_shard_over_data=True",
+    "qkv_proj_wgrad_fp32=True",
+    "routed_gate_bf16_rounding=True",
+    "rmsnorm_single_rounding=True",
+    "mlp_activation_round_per_op=True",
+    "dense_fp32_accumulation=True",
+    "ici_context_parallelism=2",
+    "ici_context_usp_ulysses_parallelism=2",
+    "context_parallel_strategy=usp"
+   ],
+   "mesh": {
+    "diloco": 1,
+    "data": 2,
+    "stage": 1,
+    "fsdp": 1,
+    "fsdp_transpose": 1,
+    "context": 2,
+    "context_usp_ulysses": 2,
+    "context_autoregressive": 1,
+    "tensor": 1,
+    "tensor_sequence": 1,
+    "expert": 1,
+    "autoregressive": 1
+   },
+   "hbm_bytes": 13360499712,
+   "versions": {
+    "jax": "0.11.1",
+    "jaxlib": "0.11.1",
+    "libtpu": "0.0.46",
+    "flax": "0.12.9",
+    "optax": "0.2.8"
+   },
+   "emb_scatter": [
+    {
+     "dtype": "bf16",
+     "shape": [
+      120832,
+      128
+     ],
+     "indices": "s32[8,4096]",
+     "n_indices": 32768,
+     "sorted": true
+    }
+   ],
+   "vocab_table_reductions": {},
+   "bf16_reductions": {
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[256,120832]": 1
+   },
+   "collectives": {
+    "all-gather bf16[1,1024,16,128]": 3,
+    "all-gather bf16[1,1024,192]": 3,
+    "all-gather bf16[1,1024,256]": 4,
+    "all-gather bf16[1,1024,4,128]": 6,
+    "all-gather bf16[1,16,128,1024]": 3,
+    "all-gather bf16[1,192,1024,256]": 4,
+    "all-gather bf16[1,192,256,1024]": 2,
+    "all-gather bf16[1,256,1024]": 2,
+    "all-gather bf16[1024,1,16,128]": 2,
+    "all-gather bf16[1024,1,4,128]": 3,
+    "all-gather bf16[1024,1,4096]": 2,
+    "all-gather bf16[1024,120832]": 1,
+    "all-gather bf16[16,1,128,1024]": 1,
+    "all-gather bf16[32,1024,1024]": 1,
+    "all-gather bf16[4,2048,1024]": 7,
+    "all-gather bf16[4,4096,16,128]": 2,
+    "all-gather bf16[4,4096,4,128]": 4,
+    "all-gather bf16[4096,1,1024]": 1,
+    "all-gather bf16[8,4096,1024]": 1,
+    "all-gather s32[4,2048]": 2,
+    "all-gather s32[8,4,1024]": 2,
+    "all-reduce bf16[1024,120832]": 1,
+    "all-reduce bf16[192,1024,256]": 2,
+    "all-reduce bf16[192,256,1024]": 1,
+    "all-reduce bf16[256,120832]": 1,
+    "all-reduce f32[1024,192]": 1,
+    "all-reduce f32[1024,256]": 2,
+    "all-reduce f32[1024]": 2,
+    "all-reduce f32[1056,4096]": 2,
+    "all-reduce f32[128]": 2,
+    "all-reduce f32[16,128,1024]": 2,
+    "all-reduce f32[256,1024]": 1,
+    "all-reduce f32[4096,1024]": 1,
+    "all-reduce f32[]": 4,
+    "all-reduce s32[192]": 1,
+    "all-reduce s32[]": 1,
+    "all-to-all bf16[4,16,1024,128]": 5,
+    "all-to-all bf16[4,2,2048,128]": 4,
+    "all-to-all bf16[4,2048,1,2,256]": 2,
+    "all-to-all bf16[4,4,1024,128]": 6,
+    "all-to-all bf16[4,8,2048,128]": 6
+   }
+  }
+ }
+}

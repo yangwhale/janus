@@ -1,4 +1,4 @@
-"""analysis/hlo_mof_dus_scan.py：认出 一次实际排查 的特征（案例 16），不误报只是同在一颗多输出 fusion 里的 DUS。"""
+"""analysis/hlo_mof_dus_scan.py：认出案例 16 的特征，不误报只是同在一颗多输出 fusion 里的 DUS。"""
 
 import sys
 from pathlib import Path
@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "models" / "hunyuan
 
 import hlo_mof_dus_scan as s  # noqa: E402
 
-# libtpu 0.0.46 上 #71 最小复现的那颗 fusion（删去与判断无关的成员）：DUS 原地写 param_0，同一颗 fusion 里 slice 又读 param_0
+# libtpu 0.0.46 上案例 16 最小复现的那颗 fusion（删去与判断无关的成员）：DUS 原地写 param_0，同一颗 fusion 里 slice 又读 param_0
 BAD = """\
 HloModule jit_f, is_scheduled=true
 

@@ -1,0 +1,96 @@
+{
+ "what": "混元 3 截 4 层对齐配置，CPU 上按 v5p-16 拓扑离线编译训练步（janus models/hunyuan3/frameworks/maxtext/aot_hlo.py，2 步），比优化后 HLO（hlo_screen.py compare）",
+ "image": "tpu_pre_training@sha256:b152355a…（jax 0.11.1、libtpu 0.0.46）+ tokamax 0.0.16",
+ "common_args": "use_tokamax_splash=True sa_use_base2_exp=False 重算覆盖同 setup.md 第 1 步命令；USP = ici_context_parallelism=2 ici_context_usp_ulysses_parallelism=2 context_parallel_strategy=usp",
+ "maxtext": {
+  "base": "hunyuan@8ac1d175",
+  "switch": "c9f5ccdf（合入 hunyuan 为 60273c73）",
+  "diag": "1a45e2c6（诊断补丁，运行名含 qkvf32）"
+ },
+ "programs": {
+  "FSDP 8：开关关 vs 基底": {
+   "program_equal": true,
+   "file_sha256_equal": false,
+   "program_fp": {
+    "test": "bd8fda078ad27030355e0f81407120790d22d2a694927f86740c009fdbd7944a",
+    "base": "bd8fda078ad27030355e0f81407120790d22d2a694927f86740c009fdbd7944a"
+   }
+  },
+  "USP：开关关 vs 基底": {
+   "program_equal": true,
+   "file_sha256_equal": false,
+   "program_fp": {
+    "test": "247f2d769e2f326991c2c9413227871474bc6e77fd1aa153e81560e9c6ac0a23",
+    "base": "247f2d769e2f326991c2c9413227871474bc6e77fd1aa153e81560e9c6ac0a23"
+   }
+  },
+  "USP：开关开 vs 诊断补丁": {
+   "program_equal": true,
+   "file_sha256_equal": true,
+   "program_fp": {
+    "test": "bddf8b1d8945194886c31550c0ae2ee44ec2139823dea2ce664451ddc15780da",
+    "base": "bddf8b1d8945194886c31550c0ae2ee44ec2139823dea2ce664451ddc15780da"
+   }
+  },
+  "USP：开关开 vs 基底": {
+   "program_equal": false,
+   "file_sha256_equal": false,
+   "program_fp": {
+    "test": "bddf8b1d8945194886c31550c0ae2ee44ec2139823dea2ce664451ddc15780da",
+    "base": "247f2d769e2f326991c2c9413227871474bc6e77fd1aa153e81560e9c6ac0a23"
+   },
+   "summary_diff": {
+    "dot": {
+     "convolution bf16": {
+      "test": 28,
+      "base": 15
+     },
+     "convolution f32": {
+      "test": 51,
+      "base": 64
+     }
+    },
+    "convert": {
+     "bf16→f32": {
+      "test": 353,
+      "base": 359
+     },
+     "f32→bf16": {
+      "test": 214,
+      "base": 227
+     }
+    },
+    "collectives": {
+     "all-reduce bf16": {
+      "test": 3,
+      "base": 5
+     },
+     "all-reduce f32": {
+      "test": 8,
+      "base": 4
+     }
+    },
+    "other": {
+     "fusion": {
+      "test": 848,
+      "base": 847
+     },
+     "reduce-precision": {
+      "test": 52,
+      "base": 43
+     }
+    }
+   }
+  }
+ },
+ "qkv_wgrad_all_reduce": {
+  "USP 基底（= 开关关）": {
+   "bf16[4096,8,128]": 4,
+   "bf16[4096,64,128]": 2
+  },
+  "USP 开关开": {
+   "f32[4096,8,128]": 4,
+   "f32[4096,64,128]": 2
+  }
+ }
+}

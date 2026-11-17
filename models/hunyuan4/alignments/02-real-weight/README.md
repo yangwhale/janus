@@ -13,8 +13,8 @@
 
 ## 现状
 
-- 1000 步最近一代（`tb5b-a`、`td5b-b`）：B 没有不过（过 4、待定 3）；D1 索引器 KD 不过，其余过 1、待定 7。这两份 base2 开、早于 M50；2026-11-11 起的现行对齐配置（关 base2、含 M50、C 口径）在 B、D1 上尚无运行。
-- 第 1 步逐张量梯度对 CPU FP64：两种截层都不过（R > 1.2 的 B 16 个、D1 11 个）；RMSNorm 权重梯度与 q latent norm 两类机制已查明（[根源一览第 23、24 行](../../ROOT-CAUSES.md#r23)），照结果仍记未定责：RMSNorm 权重梯度的开关（`rmsnorm_scale_grad_fp32`）不在对齐配置里；q latent norm 的开关（关 base2）2026-11-11 起已在对齐配置里，但 B、D1 还没用现行配置重跑。
+- 1000 步现行 C 口径（`tbc-a`、`tdc-a`，按 PROTOCOL 2026-11-12 的前瞻登记判）：B 没有不过（过 6、待定 1：索引器 KD 带符号均值 r 1.40）；D1 索引器 KD 不过（最大单步 r 2.30，[D21](ALIGNMENT-REPORT.md#d21)），其余过 7、待定 1（路由偏置均值 r 1.26）。主 loss、MTP loss 两种截层都过（上一代 base2 开的 `tb5b-a`、`td5b-b` 主 loss 待定 r 1.15 / 1.25，MTP r 1.35）。
+- 第 1 步逐张量梯度（现行 C 口径，GPU 参照 6 份，按 PROTOCOL 2026-11-12 的前瞻登记判，不用豁免）：两种截层都不过。B（`tb8s-c-r1`）59 个张量里未定责 13 个，D1（`td8s-c-r2`）57 个里 9 个；按 GPU 3 份判，结论相同。剩下的主要是 RMSNorm 权重梯度（B 7 个、D1 4 个；机制已查明，见[根源一览第 23 行](../../ROOT-CAUSES.md#r23)，开关 `rmsnorm_scale_grad_fp32` 不在对齐配置里）、sink 与 iHC / `hc_head_scale`（[对齐报告 D22](ALIGNMENT-REPORT.md#d22)）。上一代（`tb6diag`、`td6diag`，base2 开、3 份）的 R > 1.2 是 B 16 个、D1 11 个；关 base2 以后，B 第 1 层的 `q_a_layernorm` 与两层 `q_a_proj` 不再超线。
 - L1 只有阶段 A 第 0 层前向 10 个算子；截层 B、D1 的逐算子与逐层没做。
 
 适用范围：只在 v5p 8 个设备上、只用 FSDP，截层最多 2 层，最长 1000 步（[对齐报告第 5 节](ALIGNMENT-REPORT.md#5-适用范围)）。

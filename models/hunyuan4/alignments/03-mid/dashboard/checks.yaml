@@ -1,5 +1,6 @@
 # 混元 4 · 03 · mid 的检查清单骨架（生成 alignments/03-mid/CHECKS.md），格式同 01-mini/dashboard/checks.yaml。
 columns:
+  tmc: hy4-mid · tmc-a（300 步，现行 C 口径）；L3 tmcs-c
   tmb: hy4-mid · tm-b（300 步，base2 开、早于 M50）
   mid: hy4-mid · L0 取 tm-a 一代（同一份检查点）；L3 tm2diag
 
@@ -11,7 +12,7 @@ header:
   - "这一页回答：hy4-mid 比了哪些量、用什么门槛判、现在各是什么结果。页面由 `models/hunyuan4/dashboard/build.py` 按 [`dashboard/checks.yaml`](dashboard/checks.yaml) 从结果文件生成，数字和判定都不手写。"
   - ""
   - "- 判定同 T1（[mini 的检查清单](../01-mini/CHECKS.md)「怎么读」）：L4 每条序列算带符号均值、MARE、最大单步，各自对 GPU 8 份两两 28 对的噪声上限 N 判，≤ N 过、> 2N 不过；格子写最差那个判定量的 TPU 实测与倍数。r 只量两边差多大，不定责（[总览细节「读法」](../../dashboard/detail.md#读法)）。"
-  - "- TPU 配置与 hy4-mini 的 T1 配置除 `model_name` 外逐键相同（[`config-alignment.md`](config-alignment.md)）。L4 的 `tm-b` 是 base2 开、早于 M50 的运行；2026-11-11 起的现行对齐配置在 mid 上尚无运行。"
+  - "- TPU 配置与 hy4-mini 的 T1 配置除 `model_name` 外逐键相同（[`config-alignment.md`](config-alignment.md)）。第一列是现行 C 口径（L4 `tmc-a`、L3 `tmcs-c`，PROTOCOL 2026-11-12 前瞻登记）；`tm-b` 是 base2 开、早于 M50 的上一代。"
   - ""
 
 summary_lead:
@@ -23,9 +24,11 @@ how_to_read: []
 evidence_sources:
   - {match: "tm-l0-settings", source: "生产程序（逐步记录）"}
   - {match: "tmb-l0-settings", source: "生产程序（逐步记录）"}
+  - {match: "tmc-l0-settings", source: "生产程序（逐步记录）"}
   - {match: "tm*-l4", source: "生产程序（逐步记录）"}
   - {match: "hy4-mid-l0-*", source: "离线核对（CPU，检查点文件，MaxText 469dbb85）"}
   - {match: "mid-tm2-step1-grad-vs-fp64", source: "第 1 步诊断（TPU tm2diag 对 GPU 三份第 1 步参照 gms）＋CPU FP64 整网重算"}
+  - {match: "mid-c-step1-train-grad-vs-fp64", source: "训练第 1 步全量抓数的动量反推（TPU 现行 C 口径 tmcs-c）对 GPU 三份第 1 步参照 gms（参照不足）＋CPU FP64 整网重算"}
 
 levels:
   - id: L0
@@ -38,7 +41,7 @@ levels:
           - name: 设置核对：逐步学习率
             what: 两边每一步记下的学习率都等于登记的常数 1e-5
             objects: 300 步
-            src: {tmb: "tmb-l0-settings:L0.settings.lr", mid: "tm-l0-settings:L0.settings.lr"}
+            src: {tmc: "tmc-l0-settings:L0.settings.lr", tmb: "tmb-l0-settings:L0.settings.lr", mid: "tm-l0-settings:L0.settings.lr"}
           - name: 权重转换往返与 dtype 清单
             what: TPU 检查点反向取回逐张量对 HF 清单逐位，dtype 清单全符合
             objects: 212 个张量
@@ -54,6 +57,13 @@ levels:
       - "L3 共 {rows} 项检查。"
     tables:
       - rows:
+          - name: 第 1 步逐张量梯度（现行 C 口径；GPU 3 份，参照不足）
+            what: "TPU `tmcs-c`（现行 C 口径 yml：M36、M52、M58 都开，base2 关，含 M50；MaxText `8d3d7561`）训练第 1 步实际用的梯度（全量抓数的动量反推，落盘核对 728 个 sha256 全对）对 GPU 第 1 步参照 `gms-a … c` 三份；超出 GPU 噪声的对 CPU FP64 整网重算定责（规则同 T1；PROTOCOL 2026-11-12 前瞻登记，不用豁免）"
+            objects: 205 个张量（HF 名字；路由专家只比 GPU 全量抓数里有的 rank 0 本地 0–3 号）
+            agg: 逐张量算 r 与 R；有超 2N 而 R > 1.2 的判不过，只有 1–2N 的判待定
+            src: {tmc: "mid-c-step1-train-grad-vs-fp64:L3.step1.grads.vs_gpu"}
+            why: >-
+              参照不足（GPU 只有 3 份，2026-11-12 起 6 份起步，待补）。未定责 5 个：iHC 4 个（第 3 层 FFN 前 `hc_base` R 13.7、7.12 N 最大）与第 4 层 sink（R 1.21）；8 个 sink 都超 2N 但 R 0.97–1.21（M42b 进对齐配置后）。上一代 `tm2diag` 是 7 个（sink 4 个、iHC 3 个），见下一行。
           - name: 第 1 步逐张量梯度
             what: "TPU `tm2diag`（MaxText `3741e818`，当时的开关，含 M39–M41，没有 M42b、M50，base2 开）对 GPU 第 1 步参照 `gms-*` 三份；超出 GPU 噪声的张量对 CPU FP64 整网重算定责（规则同 T1，PROTOCOL 第 5 节）"
             objects: 205 个张量（HF 名字；路由专家只比 GPU 全量抓数里有的 rank 0 本地 0–3 号：全量抓数只由 rank 0 写盘，专家并行 4 时它本地是 16 个里的 0–3 号；`--dump-all-experts` 只去掉「本地专家只留前两个（weight0、weight1）」的筛选，要收齐其余 12 个得加 `--gather-experts`，`gms-*` 没加（读 `train_hy4mg.py` 与 `janus/dump/megatron.py`，没核抓数文件清单））
@@ -73,35 +83,36 @@ levels:
           - name: 主 loss
             what: 全程逐步主 loss 的相对差
             objects: "`lm_loss`，第 1–300 步"
-            src: {tmb: "tmb-l4:L4.loss"}
-            why: 带符号均值刚超线（TPU 偏高），待查；上一代 tm-a 见[历代比较](../../dashboard/history.md)。
+            src: {tmc: "tmc-l4:L4.loss", tmb: "tmb-l4:L4.loss"}
+            why: 上一代 `tm-b` 带符号均值刚超线（TPU 偏高），待查；上一代 tm-a 见[历代比较](../../dashboard/history.md)。 现行 C 口径 `tmc-a`：MARE 刚超线（N 1.62e-5、TPU 1.64e-5，r 1.01），待查。
           - name: 主 loss 后段
             what: 第 101 步起
             objects: "`lm_loss`，第 101–300 步"
-            src: {tmb: "tmb-l4:L4.loss.tail"}
-            why: 带符号均值刚超线，待查。
+            src: {tmc: "tmc-l4:L4.loss.tail", tmb: "tmb-l4:L4.loss.tail"}
+            why: 上一代 `tm-b` 带符号均值刚超线，待查。 现行 C 口径 `tmc-a` 过（r 0.96）。
           - name: MTP loss
             what: 逐步 MTP loss（MaxText 口径 `mtp_loss_mt`），全程与后段
             objects: "`mtp_loss_mt`，全程与第 101 步起"
-            src: {tmb: "tmb-l4:L4.mtp_loss*"}
+            src: {tmc: "tmc-l4:L4.mtp_loss*", tmb: "tmb-l4:L4.mtp_loss*"}
+            why: 现行 C 口径 `tmc-a` 全程、后段带符号均值略超（N 1.82e-5、TPU +2.28e-5，r 1.25；后段 r 1.15，TPU 偏高），待查；上一代 `tm-b` 过。
           - name: 索引器 KD loss
             what: 逐步索引器 KD loss
             objects: "`indexer_loss`，全程"
-            src: {tmb: "tmb-l4:L4.indexer_loss"}
-            why: MARE 略超线，待查。
+            src: {tmc: "tmc-l4:L4.indexer_loss", tmb: "tmb-l4:L4.indexer_loss"}
+            why: 上一代 `tm-b` MARE 略超线，待查。 现行 C 口径 `tmc-a`：最大单步刚超线（N 1.269e-3、TPU 1.272e-3，r 1.003）。
           - name: grad_norm
             what: 逐步裁剪前全局梯度范数；分母用参照（2026-11-10 起，原为两边均值）
             objects: "`grad_norm`，全程"
-            src: {tmb: "tmb-l4:L4.grad_norm"}
+            src: {tmc: "tmc-l4:L4.grad_norm", tmb: "tmb-l4:L4.grad_norm"}
           - name: param_norm
             what: 逐步更新后参数范数，两边比精确值
             objects: "`param_norm_fp64` 对 `param_norm_exact`，全程"
-            src: {tmb: "tmb-l4:L4.param_norm"}
-            why: 带符号均值超线（TPU 偏低），待查。
+            src: {tmc: "tmc-l4:L4.param_norm", tmb: "tmb-l4:L4.param_norm"}
+            why: 上一代 `tm-b` 带符号均值超线（TPU 偏低），待查。 现行 C 口径 `tmc-a` 过（r 0.73）。
           - name: 路由偏置曲线
             what: 逐步每层路由偏置的均值、标准差
             objects: 第 1–6 层与 MTP 层
-            src: {tmb: "tmb-l4:L4.router.*"}
+            src: {tmc: "tmc-l4:L4.router.*", tmb: "tmb-l4:L4.router.*"}
 
 unlisted_reasons:
   mid-l4-vs-8gpu: 诊断：tm-b 对 8 份 GPU（gm-a…h）的 r 与 GPU 28 对留一 r；L4 判定只对单一 golden gm-a，文件里的 rules 是未采用的候选。grad_norm 一行早于 2026-11-10 的分母改动，已过时（没有重算）

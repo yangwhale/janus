@@ -7,7 +7,7 @@ S 不在卷积 kernel 里，两处读的都是显存里同一份 BF16 dy。HLO �
 
 做法（只读优化后 HLO，CPU 即可）：
   1. 找输出头 dgrad 卷积：fusion 计算里的 convolution，操作数里有词表维（--vocab），输出里没有；
-  2. 分主头与 MTP 头：fusion 在外层的直接输入或直接消费者里有来自 mhc.py 的 kernel（hc_head 的输出 / 余切）记主头；
+  2. 分主头与 MTP 头：fusion 在外层的直接输入或直接消费者里有来自 mhc.py（另一种写法是 ihc.py）的 kernel（hc_head 的输出 / 余切）记主头；
   3. 主头那颗 fusion 里，找输出是「每 token」形状（把特征维 --hidden 规约掉，元素数 = 卷积输出元素数 ÷ hidden）、且依赖卷积结果的 reduce：有就是「S 并进卷积 kernel」。
 
   python models/hunyuan4/analysis/hc_head_dgrad_fusion.py --root <运行目录根> --out <json> <运行>…
@@ -136,7 +136,8 @@ def analyse(text: str, vocab: int = 120832, hidden: int = 1024) -> dict:
             {
                 "fusion": inst,
                 "computation": fname,
-                "main_head": "mhc.py" in nb["inputs"] or "mhc.py" in nb["consumers"],
+                # iHC 代码在 mhc.py（对齐分支）或 ihc.py（另一种写法）
+                "main_head": any(f in nb["inputs"] or f in nb["consumers"] for f in ("mhc.py", "ihc.py")),
                 "n_instructions": len(lines),
                 "conv_out": parsed[conv][2],
                 "per_token_reduce_on_conv": per_token,

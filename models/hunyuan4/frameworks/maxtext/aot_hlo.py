@@ -13,6 +13,12 @@
   LIBTPU_INIT_ARGS="<被测的 libtpu 开关>" \
     python aot_hlo.py --stage mini --topology v5p-16 --steps 1000 --out <目录> [MaxText key=value …]
 
+不走对齐 yml 的代码，用 --recipe 直接给 MaxText 配方 yml（不经 mt_common，不加对齐 yml 与阶段覆盖；
+--stage 只作标签，--steps 不给就用配方里的步数与学习率表）：
+
+  JAX_PLATFORMS=cpu ALLOW_MULTIPLE_LIBTPU_LOAD=1 TPU_SKIP_MDS_QUERY=1 XLA_FLAGS="…" \
+    python aot_hlo.py --recipe <maxtext>/src/maxtext/configs/pre_train/<配方>.yml --topology tpu7x-128 --out <目录>
+
 输出 <目录>/aot.json（版本、配置、编译秒数、memory_analysis、进程峰值内存）；HLO 在 <目录>/xla/（XLA 自己 dump 的）。
 编译器拒绝（例如 HBM 放不下）时 aot.json 记 error，退出码 2。
 """
@@ -42,17 +48,22 @@ FIELDS = (
 
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--stage", required=True)
+    p.add_argument("--stage", help="对齐阶段（mt_common）；给了 --recipe 时只作标签")
+    p.add_argument("--recipe", help="MaxText 配方 yml 路径：直接 pyconfig.initialize(配方 + 覆盖)，不经 mt_common")
     p.add_argument(
         "--topology",
         required=True,
         help="MaxText compile_topology，如 v5p-16（8 片 v5p = 8 个设备）、v5p-32（16 个设备）",
     )
     p.add_argument("--num-slices", type=int, default=1)
-    p.add_argument("--steps", type=int, default=1000, help="与 TPU 运行相同（学习率表按它建）")
+    p.add_argument("--steps", type=int, help="与 TPU 运行相同（学习率表按它建）；默认 1000，--recipe 时默认用配方的")
     p.add_argument("--out", required=True)
     p.add_argument("maxtext_args", nargs="*")
     a = p.parse_args(argv)
+    if not a.recipe and not a.stage:
+        p.error("--stage 与 --recipe 至少给一个")
+    if a.steps is None and not a.recipe:
+        a.steps = 1000
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     rec: dict = {
@@ -61,7 +72,8 @@ def main(argv=None) -> int:
         "num_slices": a.num_slices,
         "steps": a.steps,
         "maxtext_args": a.maxtext_args,
-        "yml": os.environ.get("HY4_YML"),
+        "recipe": a.recipe,
+        "yml": None if a.recipe else os.environ.get("HY4_YML"),
         "env": {k: os.environ.get(k) for k in ("XLA_FLAGS", "LIBTPU_INIT_ARGS", "JAX_PLATFORMS")},
     }
     t0 = time.time()
@@ -78,15 +90,20 @@ def main(argv=None) -> int:
         except Exception as e:  # noqa: BLE001 — 只是记录
             rec["versions"] = {"error": repr(e)}
         overrides = [
-            f"run_name=aot-{a.stage}",
+            f"run_name=aot-{a.stage or Path(a.recipe).stem}",
             "base_output_directory=/tmp/aot-hlo",
-            f"steps={a.steps}",
-            f"learning_rate_schedule_steps={a.steps}",
             f"compile_topology={a.topology}",
             f"compile_topology_num_slices={a.num_slices}",
         ]
-        config = mt_common.make_config(a.stage, overrides + list(a.maxtext_args))
-        rec["config_mismatch_vs_yml"] = [list(map(str, x)) for x in mt_common.effective_mismatch(config)]
+        if a.steps is not None:
+            overrides += [f"steps={a.steps}", f"learning_rate_schedule_steps={a.steps}"]
+        if a.recipe:
+            from maxtext.configs import pyconfig
+
+            config = pyconfig.initialize(["train", a.recipe, *overrides, *a.maxtext_args])
+        else:
+            config = mt_common.make_config(a.stage, overrides + list(a.maxtext_args))
+            rec["config_mismatch_vs_yml"] = [list(map(str, x)) for x in mt_common.effective_mismatch(config)]
         mesh = train_compile.get_topology_mesh(config)
         rec["devices"] = int(mesh.devices.size)
         rec["device_kind"] = mesh.devices.flat[0].device_kind

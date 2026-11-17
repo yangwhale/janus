@@ -159,3 +159,56 @@ def test_no_stack_tables(tmp_path):
     assert site["site"] != "linears.py:203"
     assert site["elided_uses"] == 1
     assert r["llo_check"]["kernels_only_elided"] == 0  # 没给 LLO
+
+
+def test_layer_scan_depth_1_regions(tmp_path):
+    """不做梯度累积的程序（生产配方）没有外层微批循环：一层 while/body 是解码层 scan，第 0 层带 jvp 的是 scan 之外。"""
+    one = ELIDED.replace(
+        OP_BWD, 'op_name="jit(train_step)/transpose(jvp())/while/body/eval_jaxpr/convert_element_type"'
+    )
+    hlo, _ = _write(tmp_path, one)
+    assert s.scan(hlo, None)["sites"][0]["module"] == "outside_scan/mlp"  # 默认按两层算
+    assert s.scan(hlo, None, layer_scan_depth=1)["sites"][0]["module"] == "decoder/mlp"
+    zero = ELIDED.replace(OP_BWD, 'op_name="jit(train_step)/transpose(jvp())/convert_element_type"')
+    hlo, _ = _write(tmp_path, zero)
+    assert s.scan(hlo, None, layer_scan_depth=1)["sites"][0]["module"] == "outside_scan/mlp"
+    opt = ELIDED.replace(OP_BWD, 'op_name="jit(train_step)/convert_element_type"')
+    hlo, _ = _write(tmp_path, opt)
+    assert s.scan(hlo, None, layer_scan_depth=1)["sites"][0]["module"] == "optimizer/mlp"
+
+
+def test_watched_site_counts_by_whole_chain(tmp_path):
+    hlo, jf = _write(tmp_path, TUPLE, packs=2)
+    r = s.scan(hlo, jf, watch=("linears.py:203", "ihc.py:192"))
+    w = r["watched_sites"]["linears.py:203"]
+    assert (w["converts"], w["elided_uses"], w["kept_uses"], w["backward"]) == (1, 1, 1, 1)
+    assert w["elided_kernels"] == ["fusion.1"] and w["elided_kernel_packs"] == [2]
+    assert r["watched_sites"]["ihc.py:192"]["converts"] == 0
+
+
+# 矩阵乘直接以 BF16 输出、同一颗融合里又转回 f32：不在 elided_uses 里，单列在 matmul_out_roundtrips
+MATMUL = _hlo(f"""\
+%fused_computation.1 (param_0.1: f32[8,128]) -> f32[8,128] {{
+  %param_0.1 = f32[8,128]{{1,0}} parameter(0)
+  %convert.0 = bf16[8,128]{{1,0}} convert(%param_0.1)
+  %convolution.1 = bf16[8,128]{{1,0}} convolution(%convert.0, %convert.0), dim_labels=bf_io->bf, metadata={{{OP_BWD} stack_frame_id=1}}
+  %bitcast.1 = bf16[8,128]{{1,0}} bitcast(%convolution.1)
+  %convert.2 = f32[8,128]{{1,0}} convert(%bitcast.1)
+  ROOT %add.1 = f32[8,128]{{1,0}} add(%convert.2, %param_0.1)
+}}""")
+
+
+def test_matmul_bf16_output_read_back_in_fusion(tmp_path):
+    hlo, jf = _write(tmp_path, MATMUL, packs=0)
+    r = s.scan(hlo, jf)
+    (m,) = r["matmul_out_roundtrips"]
+    assert (m["site"], m["direction"], m["shape"], m["uses"]) == ("linears.py:203", "backward", "8,128", 1)
+    assert m["kernels"] == ["fusion.1"] and m["kernel_packs"] == [0]
+
+
+def test_pack_mnemonics_both_generations():
+    assert s.PACK.findall("vpack.i.bf16 a; vpack.c.f32.bf16 b; vpack.i.f32.bf16 c; vunpack.c.u.bf16.f32 d") == [
+        "vpack.i.bf16",
+        "vpack.c.f32.bf16",
+        "vpack.i.f32.bf16",
+    ]

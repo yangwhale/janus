@@ -25,15 +25,20 @@ import itertools
 import json
 import os
 import re
+import sys
 
 import numpy as np
 import torch
 from safetensors import safe_open
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from route_flip_rule import route_flip_check  # noqa: E402
+
 R_LIMIT = 1.2
 RES_FLOOR = 2.0**-8
 FILE_SQ_TOL = 1e-10  # TPU 梯度文件对设备平方和的相对差上限（干净的实测 1e-14 量级，落盘置零的 ≥ 1e-7）
 MODULES = [  # (模块, 正则)；按顺序取第一个匹配
+    ("视觉塔", r"^vit\."),
     ("iHC", r"\.hc_(attn|mlp)_layer\.|^model\.hc_head\."),
     ("索引器", r"\.self_attn\.indexer\."),
     (
@@ -81,11 +86,14 @@ def judge(rows, key_r="R_vs_ref", key_g="gpu_vs_ref", key_t="tpu_vs_ref"):
         return r["gpu_noise_max"] == 0 and r[key_t] < RES_FLOOR and r[key_g] < RES_FLOOR
 
     bad = [r["tensor"] for r in rows if r.get("tpu_file_corrupt")]
-    rows = [r for r in rows if not r.get("tpu_file_corrupt")]
-    zero = [r for r in rows if r["gpu_noise_max"] == 0 and not below(r)]
+    rows = [r for r in rows if not r.get("tpu_file_corrupt") and not r.get("excluded")]
+    # 路由翻转定责（PROTOCOL 2026-11-12 事前登记，route_flip_rule.py）：给了 --ref-tpu-choices 才有这一栏
+    flip = [r["tensor"] for r in rows if r.get("route_flip_attributed")]
+    zero = [r for r in rows if r["gpu_noise_max"] == 0 and not below(r) and not r.get("route_flip_attributed")]
     pos = [(r, r["tpu_vs_gpu_min"] / r["gpu_noise_max"]) for r in rows if r["gpu_noise_max"] > 0]
-    un2 = [r["tensor"] for r, x in pos if x > 2 and r[key_r] > R_LIMIT]
-    un1 = [r["tensor"] for r, x in pos if 1 < x <= 2 and r[key_r] > R_LIMIT]
+    pos_att = [(r, x) for r, x in pos if not r.get("route_flip_attributed")]
+    un2 = [r["tensor"] for r, x in pos_att if x > 2 and r[key_r] > R_LIMIT]
+    un1 = [r["tensor"] for r, x in pos_att if 1 < x <= 2 and r[key_r] > R_LIMIT]
     zbad = [r["tensor"] for r in zero if r[key_r] > R_LIMIT]
     st = "fail" if un2 or zbad else ("inconclusive" if un1 or bad else "pass")
     return {
@@ -97,6 +105,7 @@ def judge(rows, key_r="R_vs_ref", key_g="gpu_vs_ref", key_t="tpu_vs_ref"):
         "n_over_N": sum(x > 1 for _, x in pos),
         "n_over_2N": sum(x > 2 for _, x in pos),
         "n_below_resolution_floor": sum(below(r) for r in rows),
+        **({"route_flip_attributed": flip} if flip else {}),
     }
 
 
@@ -255,6 +264,22 @@ def main():
         default="",
         help="step1_train_grad_file_check.py 的结果 json（TPU 梯度由全量抓数反推、没有 diag_step1.json 时用它核落盘）",
     )
+    p.add_argument(
+        "--tpu-subset",
+        action="store_true",
+        help="TPU 梯度只抓了部分张量（如 --full-only 不抓路由专家）：GPU 有、TPU 没有的张量跳过，名字记进 skipped_not_in_tpu",
+    )
+    p.add_argument(
+        "--ref-tpu-choices",
+        default="",
+        help="step1_ref.py --inject-dir 灌 TPU 自己的选择（choices_to_inject.py）的 FP64 输出目录：按路由翻转定责（route_flip_rule.py）"
+        "另算 R_flip，满足的张量记已定责：路由翻转（PROTOCOL 2026-11-12）",
+    )
+    p.add_argument(
+        "--exclude",
+        default="",
+        help="正则：匹配的张量事前登记为不进判定（如梯度数学上为 0 的 ViT k_proj 偏置），照常算、单列在 excluded 里",
+    )
     p.add_argument("--note", default="")
     p.add_argument("--out", required=True)
     a = p.parse_args()
@@ -274,7 +299,9 @@ def main():
     if not a.tpu:
         return gpu_only(a, ref, refsum, gnames, gfiles, gexp)
     tname, tpath = a.tpu.split("=", 1)
-    tpu = load(tpath)[0]
+    tpu, tkeys = load(tpath)
+    inj = load(os.path.join(a.ref_tpu_choices, "grads_hf.safetensors"))[0] if a.ref_tpu_choices else None
+    skipped = sorted(h for h in gfiles[0].keys() if h not in tkeys) if a.tpu_subset else []
     old = load(a.old_ref.split("=", 1)[1])[0] if a.old_ref else None
     oname = a.old_ref.split("=", 1)[0] if a.old_ref else None
     c32 = load(os.path.join(a.cpu32, "grads_hf.safetensors"))[0] if a.cpu32 else None
@@ -287,6 +314,8 @@ def main():
         raise SystemExit("--tpu-diag 与 --tpu-file-check 只给一个")
     rows = []
     for h in sorted(gfiles[0].keys()):
+        if h in skipped:
+            continue
         gs = [f.get_tensor(h) for f in gfiles]
         shape = tuple(gs[0].shape)
         fr = ref.get_tensor(h)
@@ -327,6 +356,14 @@ def main():
         # 余弦定理核对：(g² + t² − d²) / (2gt)，GPU 第 1 份
         g0, t0, d0 = r["gpu_vs_ref_each"][0], r["tpu_vs_ref"], r["gpu_vs_tpu_each"][0]
         r["cos_law_check_a"] = (g0**2 + t0**2 - d0**2) / (2 * g0 * t0) if g0 * t0 > 0 else float("nan")
+        if inj is not None:
+            fi = inj.get_tensor(h)
+            if tuple(fi.shape) != shape:
+                fi = fi[sl]
+            rf = route_flip_check(r["tpu_vs_ref"], rel(t, fi.to(torch.float64), den), r["gpu_vs_ref"])
+            r["tpu_vs_ref_tpu_choices"] = rel(t, fi.to(torch.float64), den)
+            r["R_flip"], r["route_flip_closer"] = rf["R_flip"], rf["closer"]
+            r["route_flip_attributed"] = rf["attributed"]
         if h in dev_sq:
             fs = float(tpu.get_tensor(h).to(torch.float64).pow(2).sum())  # 整个张量（不只比的那几个专家）
             r["tpu_file_sq_rel"] = (fs - dev_sq[h]["sq"]) / dev_sq[h]["sq"] if dev_sq[h]["sq"] else 0.0
@@ -344,12 +381,14 @@ def main():
             c = t64(c32, h, sl)
             r["cpu32_vs_fp64"] = rel(c, f64, den)
             r["gpu_vs_cpu32"] = float(np.median([rel(x, c, den) for x in g]))
+        if a.exclude and re.search(a.exclude, h):
+            r["excluded"] = True
         rows.append(r)
         del g, gs, eg, et, f64, t
 
     # 落盘损坏的张量（见上）留在 rows 里备查，但不进任何统计与判定
     corrupt = [(r["tensor"], r.get("tpu_file_sq_rel")) for r in rows if r.get("tpu_file_corrupt")]
-    allrows, rows = rows, [r for r in rows if not r.get("tpu_file_corrupt")]
+    allrows, rows = rows, [r for r in rows if not r.get("tpu_file_corrupt") and not r.get("excluded")]
     R = [r["R_vs_ref"] for r in rows]
     new = judge(allrows)
     out = {
@@ -373,7 +412,19 @@ def main():
             "judge": "同 dashboard/build.py 的 _step1_judge：超 2N 且 R > 1.2 不过；1–2N 且 R > 1.2 待定；N = 0 的按分辨率下限",
             "experts": "路由专家只比 GPU 全量抓数里有的（rank 0 本地 0–3 号）",
         },
+        **({"skipped_not_in_tpu": skipped} if skipped else {}),
         "n_tensors": len(allrows),
+        **(
+            {
+                "excluded": {
+                    "regex": a.exclude,
+                    "tensors": [r["tensor"] for r in allrows if r.get("excluded")],
+                    "rule": "事前登记不进判定与统计（照常算，见 rows）",
+                }
+            }
+            if a.exclude
+            else {}
+        ),
         "tpu_file_check": {
             "checked": bool(dev_sq),
             "rule": f"TPU 梯度文件里每个张量的平方和对设备上算的（diag_step1.json 的 per_tensor.sq），相对差 > {FILE_SQ_TOL:g} 记为落盘损坏、不可判",

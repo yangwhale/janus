@@ -1,0 +1,29 @@
+{
+ "schema_version": 1,
+ "what": "mini 1000 步主 loss 带符号均值：TPU 对 g3-a、对 GPU g3-a…h 8 份均值（第 1–1000 步，口径同 t1-1000step-loss-tpu-variants.json）",
+ "steps": [
+  1,
+  1000
+ ],
+ "gpu_runs": [
+  "g3-a",
+  "g3-b",
+  "g3-c",
+  "g3-d",
+  "g3-e",
+  "g3-f",
+  "g3-g",
+  "g3-h"
+ ],
+ "runs": {
+  "t1zk-a": {
+   "signed_vs_g3a": 7.97619930428593e-06,
+   "signed_vs_gpu_mean": 8.578347996760863e-06,
+   "variants_file_rel_diff": 1.5294061675996673e-06
+  },
+  "t1zr-a": {
+   "signed_vs_g3a": 2.861671542369237e-06,
+   "signed_vs_gpu_mean": 3.463829844281208e-06
+  }
+ }
+}

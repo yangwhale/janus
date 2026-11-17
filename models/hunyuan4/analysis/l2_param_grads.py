@@ -7,6 +7,11 @@
 - TPU：frameworks/maxtext/layer_replay.py --param-grads，吃同一份 in0 与 out0.grad（<out>.param_grads.safetensors，键 tpu.<HF 名>）；
 - FP64：frameworks/megatron/layer_ref.py --param-grads（键 <层>.param.<层内 Megatron 名>，路由专家 16 个）。
 R = rel_L2(TPU, FP64) ÷ rel_L2(GPU, FP64)。索引器参数的 KD 梯度不在单层里（GPU 的 main_grad 有、单层回放没有），不比。
+另给每个张量误差沿 FP64 方向的分量 par =（被测 − FP64）·FP64 ÷ ‖FP64‖²（正 = 沿真值方向多出）。
+
+GPU 与 FP64 两方只取决于 GPU 那次抓数（同一行、同一份输入与余切），与 TPU 的配置无关：换 TPU 配置重做时可以用
+`--gpu-from <上一次的结果 json>` 沿用那一份的 GPU 读数（逐张量 gpu_vs_fp64、gpu_par），这时本次的 FP64 单层要与上一次的
+同源（脚本按 TPU 参照 ref.* 不参与，只核 FP64 文件里的张量集合）。
 
   python l2_param_grads.py --gpu <step_1_grad_micro0.safetensors> --tpu <param_grads.safetensors> --fp64 <layer_ref.safetensors> \
       --hf-config <config.json> --layers 3 --out <json>
@@ -32,7 +37,8 @@ def npy(t):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--gpu", required=True)
+    p.add_argument("--gpu", default=None, help="step_1_grad_micro0.safetensors（与 --gpu-from 二选一）")
+    p.add_argument("--gpu-from", default=None, help="沿用上一次结果 json 的 GPU 读数（GPU 抓数与 FP64 单层同源时）")
     p.add_argument("--tpu", required=True)
     p.add_argument("--fp64", required=True)
     p.add_argument("--hf-config", required=True)
@@ -47,10 +53,12 @@ def main():
                                         moe_layer_freq=[int(t == "sparse") for t in cfg["mlp_layer_types"][:L]],
                                         mtp_num_layers=int(cfg.get("num_nextn_predict_layers", 0)),
                                         num_moe_experts=cfg["n_routed_experts"]))
-    G = safe_open(a.gpu, "pt")
+    assert (a.gpu is None) != (a.gpu_from is None), "--gpu 与 --gpu-from 给且只给一个"
+    G = safe_open(a.gpu, "pt") if a.gpu else None
+    prev = {r["tensor"]: r for r in json.load(open(a.gpu_from))["rows"]} if a.gpu_from else None
     T = safe_open(a.tpu, "pt")
     F = safe_open(a.fp64, "pt")
-    gk, tk, fk = set(G.keys()), set(T.keys()), set(F.keys())
+    gk, tk, fk = (set(G.keys()) if G else set()), set(T.keys()), set(F.keys())
 
     def mc_to_hf(full_name, x):
         """Megatron 全名的一个张量 → {HF 名: 数组}（fc1 拆 gate / up；专家给 (HF 名, 专家号)）。"""
@@ -81,19 +89,28 @@ def main():
                 f64.update(mc_to_hf(pre + n[len(f"{k}.param."):], npy(F.get_tensor(n))))
         hpre = f"model.layers.{k}."
         tpu = {n[4:]: npy(T.get_tensor(n)) for n in tk if n.startswith("tpu." + hpre)}
-        for (h, e), gx in sorted(gpu.items(), key=lambda t: (t[0][0], -1 if t[0][1] is None else t[0][1])):
+        keys = gpu if G else {he: None for he in f64}
+        for (h, e) in sorted(keys, key=lambda t: (t[0], -1 if t[1] is None else t[1])):
             if ".indexer." in h:
                 continue  # KD 梯度不在单层里
+            name = h + (f"[{e}]" if e is not None else "")
             fx = f64.get((h, e))
             tx = tpu.get(h)
-            if fx is None or tx is None:
+            if fx is None or tx is None or (prev is not None and name not in prev):
                 continue
             if e is not None:
                 tx = tx[e]
             fn = float(np.linalg.norm(fx))
-            eg, et = float(np.linalg.norm(gx - fx)) / fn, float(np.linalg.norm(tx - fx)) / fn
-            rows.append({"layer": k, "tensor": h + (f"[{e}]" if e is not None else ""), "gpu_vs_fp64": eg, "tpu_vs_fp64": et,
-                         "R": et / eg if eg else None, "tpu_vs_gpu": float(np.linalg.norm(tx - gx)) / float(np.linalg.norm(gx))})
+            et = float(np.linalg.norm(tx - fx)) / fn
+            tpar = float(np.vdot(tx - fx, fx)) / fn**2
+            if G:
+                gx = gpu[(h, e)]
+                eg, gpar = float(np.linalg.norm(gx - fx)) / fn, float(np.vdot(gx - fx, fx)) / fn**2
+                tg = float(np.linalg.norm(tx - gx)) / float(np.linalg.norm(gx))
+            else:
+                eg, gpar, tg = prev[name]["gpu_vs_fp64"], prev[name].get("gpu_par"), None
+            rows.append({"layer": k, "tensor": name, "gpu_vs_fp64": eg, "tpu_vs_fp64": et,
+                         "R": et / eg if eg else None, "tpu_vs_gpu": tg, "gpu_par": gpar, "tpu_par": tpar})
     rows.sort(key=lambda r: -(r["R"] or 0))
     out = {"what": "单层参数梯度（同一行、同一份输入与余切）对 CPU FP64：GPU 第 0 个 microbatch 的 main_grad、TPU 单层回放",
            "rule": "R = rel_L2(TPU, FP64) ÷ rel_L2(GPU, FP64)", "rows": rows}

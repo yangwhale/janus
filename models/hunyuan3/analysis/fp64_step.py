@@ -13,6 +13,8 @@ TPU 只改执行方式的重跑也不翻转、梯度只差 1e-7，两把执行�
 同时累计每层每个专家第 1 步选中的 token 数（FP64 路由），给 bias_after 的真值用。
 
   python fp64_step.py --hf <HF 目录> --golden-data <golden 运行目录（含 data/batches）> --gpu <运行根>/g1k-a --out <目录> [--micro 0:16]
+  python fp64_step.py --hf <HF 目录> --golden-data <回放目录> --names-from <TPU 运行目录> --out <目录>   # 没有 GPU 运行时（实践 04 阶梯实验）：
+      要算的梯度名单取 TPU 运行第 1 步抓的 exp_avg.*，路由偏置取 HF 的（不和 GPU 核对），不算 scale_fit
 输出 <out>/grads.safetensors（grad.<Megatron 名>，FP64）、<out>/meta.json（scale_fit、counts、loss）。
 """
 from __future__ import annotations
@@ -44,7 +46,9 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--hf", required=True)
     ap.add_argument("--golden-data", required=True)
-    ap.add_argument("--gpu", required=True, help="GPU 第 1 步全量状态读的运行（取要算的梯度名单与 expert_bias）")
+    ap.add_argument("--gpu", default=None, help="GPU 第 1 步全量状态读的运行（取要算的梯度名单与 expert_bias）")
+    ap.add_argument("--name-map", default=str(NAME_MAP), help="name_map（换模型尺寸时给对应的那份，如实践 04 阶梯实验的 name_map_smoke16.yaml）")
+    ap.add_argument("--names-from", default=None, help="没有 GPU 运行时：TPU 运行目录，要算的梯度名单取它第 1 步的 exp_avg.*")
     ap.add_argument("--out", required=True)
     ap.add_argument("--micro", default="", help="只算全局 batch 的这些行（a:b），分进程跑后用 --merge 合并")
     ap.add_argument("--merge", nargs="*", help="把几个 --micro 的输出目录加起来")
@@ -53,7 +57,9 @@ def main(argv=None) -> int:
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     from safetensors.numpy import load_file, save_file
-    g = Run.open(a.gpu)
+    if bool(a.gpu) == bool(a.names_from):
+        raise SystemExit("--gpu 与 --names-from 二选一")
+    g = Run.open(a.gpu) if a.gpu else None
     if a.merge:
         acc, counts, meta0 = {}, None, None
         for d in a.merge:
@@ -66,10 +72,11 @@ def main(argv=None) -> int:
                                              "loss_per_micro": meta0["loss_per_micro"] + m["loss_per_micro"]}
         meta0["counts"] = counts
         meta0["merged_from"] = list(a.merge)
-        meta0["scale_fit"] = scale_fit(g, acc)
+        if g is not None:
+            meta0["scale_fit"] = scale_fit(g, acc)
         save_file(acc, str(out / "grads.safetensors"))
         (out / "meta.json").write_text(json.dumps(meta0, ensure_ascii=False, indent=1))
-        print(json.dumps(meta0["scale_fit"], ensure_ascii=False))
+        print(json.dumps(meta0.get("scale_fit"), ensure_ascii=False))
         return 0
 
     torch.set_num_threads(a.threads)
@@ -83,8 +90,11 @@ def main(argv=None) -> int:
         lo, hi = (int(x) for x in a.micro.split(":"))
         rows = rows[lo:hi]
     n_total = gb.global_rows
-    nm = NameMap.load(NAME_MAP)
-    want = {n[len("grad."):] for n in g.names(1, "grad.*")}
+    nm = NameMap.load(a.name_map)
+    if g is not None:
+        want = {n[len("grad."):] for n in g.names(1, "grad.*")}
+    else:
+        want = {n[len("exp_avg."):] for n in Run.open(a.names_from).names(1, "exp_avg.*")}
     ents = [e for e in nm.entries if not e.buffer and nm.megatron_name(e) in want and nm.expert_owner(e) in (None, 0)]   # 专家只抓了 rank 0 的
     missing = want - {nm.megatron_name(e) for e in ents}
     if missing:
@@ -112,9 +122,10 @@ def main(argv=None) -> int:
     bias = {}
     for i in range(fd, nl):
         b_hf = hf.get(f"model.layers.{i}.mlp.expert_bias")
-        b_g = g.tensor(1, f"buffer.decoder.layers.{i}.mlp.router.expert_bias").astype(np.float64)
-        if not np.array_equal(b_hf, b_g):
-            raise SystemExit(f"第 {i} 层：HF 的 expert_bias 与 GPU 第 1 步的不一致")
+        if g is not None:
+            b_g = g.tensor(1, f"buffer.decoder.layers.{i}.mlp.router.expert_bias").astype(np.float64)
+            if not np.array_equal(b_hf, b_g):
+                raise SystemExit(f"第 {i} 层：HF 的 expert_bias 与 GPU 第 1 步的不一致")
         bias[i] = b_hf
     counts = {i: np.zeros(c["num_experts"], np.int64) for i in bias}
     losses = []
@@ -146,12 +157,13 @@ def main(argv=None) -> int:
 
     grads = {}
     for e in ents:
-        arrs = [leaves[h].grad.numpy() for h in e.hf]
+        # 这一段行里没有 token 选中的专家没有梯度（分进程按行算时常见），记 0
+        arrs = [leaves[h].grad.numpy() if leaves[h].grad is not None else np.zeros(tuple(leaves[h].shape)) for h in e.hf]
         grads["grad." + nm.megatron_name(e)] = np.ascontiguousarray(nm.to_megatron(e, arrs))
     meta = {"rows": len(rows), "row_range": [rows[0], rows[-1] + 1], "global_rows": n_total, "loss_per_micro": losses,
             "counts": {str(i): v.tolist() for i, v in counts.items()}, "seconds": time.time() - t0,
             "semantics": "每个 microbatch 按 token 平均，整步除以 microbatch 总数；FP64 路由；无辅助损失"}
-    if len(rows) == n_total:
+    if len(rows) == n_total and g is not None:
         meta["scale_fit"] = scale_fit(g, grads)
         print(json.dumps(meta["scale_fit"], ensure_ascii=False), flush=True)
     save_file(grads, str(out / "grads.safetensors"))

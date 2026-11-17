@@ -1,4 +1,4 @@
-"""一次实际排查：TPU 上 jit 把 2 行 / 4 行的行块算错（逐算子执行正确）的复现与扫描。
+"""案例 16：TPU 上 jit 把 2 行 / 4 行的行块算错（逐算子执行正确）的复现与扫描。
 
 一个进程只测一种「libtpu × LIBTPU_INIT_ARGS」组合；主进程按 --libtpu / --flags 逐个起子进程，汇总成一份 JSON。
 每个用例在三处各算一遍：宿主机 CPU 上 jit（参考）、TPU 上 jit、TPU 上 jax.disable_jit() 逐算子执行，报 out1 的相对误差
@@ -157,7 +157,7 @@ def main():
       runs.append(r)
       print(f"{r['libtpu_pip']} {fl!r}: {n_bad}/{len(r['results'])} 个用例 jit 算错；"
             f"逐算子算错 {r['n_eager_wrong']}", flush=True)
-  json.dump(dict(issue="一次实际排查", bad_signal=BAD_SIGNAL, runs=runs),
+  json.dump(dict(issue="案例 16", bad_signal=BAD_SIGNAL, runs=runs),
             open(a.out, "w"), indent=1, ensure_ascii=False)
 
 

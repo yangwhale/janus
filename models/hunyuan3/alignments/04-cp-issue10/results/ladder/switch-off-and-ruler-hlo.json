@@ -1,0 +1,33 @@
+{
+ "what": "开关关着时程序不变（MaxText 上的一处修改 的核对）与尺子的程序确实不同：同一镜像离线编译，程序指纹（hlo_screen.program_fp）",
+ "switch_off_equal": {
+  "混元 3 截 4 层对齐配置（FSDP 8、梯度累积 2）": {
+   "base_60273c73": "6c40258563e93c2a1a14dd83982a8f1e2653669b4a53e059bf2c18d3572316cb",
+   "port_fac41a16": "6c40258563e93c2a1a14dd83982a8f1e2653669b4a53e059bf2c18d3572316cb",
+   "equal": true
+  },
+  "16 层 纯数据并行 8": {
+   "base_60273c73": "8c7dbe7cdff55539551cc0cf5d1aeeebec1555bf6ccbbd23ff39f2da85a70ec2",
+   "port_fac41a16": "8c7dbe7cdff55539551cc0cf5d1aeeebec1555bf6ccbbd23ff39f2da85a70ec2",
+   "equal": true
+  },
+  "16 层 纯数据并行 8、梯度累积 2": {
+   "base_60273c73": "c90442181c6a4bb2000bf2339e1f24e2bd8885f175c48cc357c4e2cdea2d1844",
+   "port_fac41a16": "c90442181c6a4bb2000bf2339e1f24e2bd8885f175c48cc357c4e2cdea2d1844",
+   "equal": true
+  },
+  "16 层 USP 2×2": {
+   "base_60273c73": "66feec3ee646fcb3e90b2ac41e5d7538155d6faae63158bf0b4760500698eebc",
+   "port_fac41a16": "66feec3ee646fcb3e90b2ac41e5d7538155d6faae63158bf0b4760500698eebc",
+   "equal": true
+  }
+ },
+ "ruler_programs_distinct": {
+  "dp8": "8c7dbe7cdff55539551cc0cf5d1aeeebec1555bf6ccbbd23ff39f2da85a70ec2",
+  "v64": "f78e84cf8ae29be0029e0672f4fbf77cc00d585b7602fd1c38a94b3e82cca27a",
+  "v56": "dbd8c65e4dddbd398b0f9084ba31f8a7dc7cb89cb97f4a0cc8e68b6c4c72e4bf",
+  "v40": "c52ea12c10f5cfd72a9ef6aa8f9073c68c2ae9a28afe4710c6eea8dbf7462bbf",
+  "v24": "ff17bae179287983f31ee3deb83278d3956dd51e12748fa53e39338329c6cd28",
+  "all_distinct": true
+ }
+}

@@ -270,12 +270,10 @@
   "n_over_scale": 196,
   "over_scale_median": 1.6437600247542254,
   "over_scale_max": 5166.21960131546,
-  "within": true,
+  "within": false,
   "n_attributed": 181,
-  "n_unattributed": 0,
-  "unattributed": [],
-  "n_ihc_accepted": 15,
-  "ihc_accepted": [
+  "n_unattributed": 3,
+  "unattributed": [
    {
     "tensor": "model.hc_head.hc_head_scale",
     "d": 0.584246142798875,
@@ -305,7 +303,10 @@
     "golden_vs_fp64": 0.07046040410057014,
     "gpu_vs_fp64": 0.06572466270482988,
     "r64": 7.495558558509488
-   },
+   }
+  ],
+  "n_ihc_accepted": 12,
+  "ihc_accepted": [
    {
     "tensor": "model.layers.5.hc_mlp_layer.hc_pre.hc_base",
     "d": 0.0647416228806207,
@@ -375,6 +376,36 @@
     "golden_vs_fp64": 1.4944032489505885,
     "gpu_vs_fp64": 0.2863955487502917,
     "r64": 1.8393243492827425
+   },
+   {
+    "tensor": "model.layers.3.hc_mlp_layer.hc_pre.hc_scale",
+    "d": 0.050633263605695214,
+    "scale": 0.02533169637026202,
+    "over_scale": 1.998810615191796,
+    "test_vs_fp64": 0.060205290041921426,
+    "golden_vs_fp64": 0.01047810151295654,
+    "gpu_vs_fp64": 0.033543174997907224,
+    "r64": 1.7948596114016537
+   },
+   {
+    "tensor": "model.layers.1.hc_mlp_layer.hc_pre.hc_scale",
+    "d": 0.004510647916840932,
+    "scale": 0.002938750922662566,
+    "over_scale": 1.534886091249338,
+    "test_vs_fp64": 0.012853787531608941,
+    "golden_vs_fp64": 0.008358612133847055,
+    "gpu_vs_fp64": 0.0073214944042253585,
+    "r64": 1.5377896863474847
+   },
+   {
+    "tensor": "model.layers.6.hc_mlp_layer.hc_pre.hc_base",
+    "d": 0.005222965675599908,
+    "scale": 0.0028614751552335687,
+    "over_scale": 1.8252703211653718,
+    "test_vs_fp64": 0.01858288732727642,
+    "golden_vs_fp64": 0.013393466081290217,
+    "gpu_vs_fp64": 0.012745438982682008,
+    "r64": 1.3874591696047582
    }
   ],
   "fp64": {
@@ -384,7 +415,8 @@
    "test_closer": 122,
    "golden_closer": 83,
    "ratio_median": 0.9828055085782001
-  }
+  },
+  "ihc_rule": "iHC 张量超出尺子且 R > 1.2 时：R ≤ 5.22 单列 ihc_accepted、不计入未定责；R > 5.22 记 unattributed（PROTOCOL 变更记录 2026-11-12，上限 = 01-mini D11 登记接受过的最大 R 5.218）"
  },
  "curves": {
   "janus_rc": 0,
@@ -507,11 +539,17 @@
   "r_max": 0.9144395125259202
  },
  "verdict": {
-  "tier": 2,
-  "label": "在噪声内",
-  "band": "在噪声内",
+  "tier": 3,
+  "label": "超出噪声上限",
+  "band": "超",
   "curves_r_max": 0.9144395125259202,
-  "why": "不逐位；第 1 步梯度没有未定责的张量，曲线 r ≤ 1"
+  "why": "超出噪声上限：第 1 步梯度 3 个张量超出噪声上限且离 FP64 远 1.2 倍以上（最远 model.hc_head.hc_head_scale，21.1 倍）",
+  "before_ihc_cap": {
+   "tier": 2,
+   "label": "在噪声内",
+   "band": "在噪声内",
+   "why": "不逐位；第 1 步梯度没有未定责的张量，曲线 r ≤ 1"
+  }
  },
  "step1_rows": [
   {
@@ -554,7 +592,7 @@
    "golden_vs_fp64": 0.061266744134495565,
    "gpu_vs_fp64": 0.0323212523423918,
    "r64": 8.389628427064325,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.hc_head.hc_head_fn",
@@ -568,7 +606,7 @@
    "golden_vs_fp64": 0.07046040410057014,
    "gpu_vs_fp64": 0.06572466270482988,
    "r64": 7.495558558509488,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.hc_head.hc_head_scale",
@@ -582,7 +620,7 @@
    "golden_vs_fp64": 0.027122338136993888,
    "gpu_vs_fp64": 0.013242708253953713,
    "r64": 21.12538834992977,
-   "verdict": "ihc_accepted"
+   "verdict": "unattributed"
   },
   {
    "tensor": "model.layers.0.hc_attn_layer.hc_pre.hc_base",

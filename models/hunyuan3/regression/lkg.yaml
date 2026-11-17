@@ -9,6 +9,7 @@
 # 2026-11-05 数学级换代：对齐 / 生产配置换成 hy3-4layers.yml a238883b（dense_fp32_accumulation 及 #62 的三个舍入开关，maxtext hunyuan@0622774a）。
 # 按新配置重建的 T0 reg-t0-fa-a、T1 reg-t1-fa-a 追加在末尾，2026-11-05 经项目负责人批准（数值变了的换代要批准，标准第七节）；
 # 7704115 那一版的 LKG 已不是现行配置（run_regression.sh 默认取最后一条）。
+# 2026-11-16 目录换代（数值不变）：T1 的 R25 对齐门参照从 g1k-a（只报）换成修好的 golden rcc-a（判），reg-t1-fa-a 在新目录下重新登记（末条）。
 schema: 1
 approver: 项目负责人
 entries:
@@ -379,3 +380,44 @@ entries:
   approved_at: '2026-11-05'
   location: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T0/20261105/runs/reg-t0-fa-a/
   results: models/hunyuan3/regression/results/reg-t0-fa/
+- key:
+    platform: v5p
+    tier: T1
+    variant: main
+  run: reg-t1-fa-a
+  pair: reg-t1-fa-b
+  date: '2026-11-05'
+  code:
+    maxtext: 0622774a160c17ba8f3f66941cf1ee49cd9158b2
+    janus: 4db01d7a27a1db8f302e7afe705e0786df4e4680
+  image: us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf
+  versions:
+    jax: 0.11.1
+    jaxlib: 0.11.1
+    libtpu: 'PJRT C API
+
+      TFRT TPU v5
+
+      Built on Aug 12 2026 16:43:34 (1786578214) cl/963683785'
+    flax: 0.12.9
+    optax: 0.2.8
+    orbax_checkpoint: 0.12.4
+  config:
+    overrides:
+    - mtp_num_layers=0
+    - per_device_batch_size=2
+    - gradient_accumulation_steps=1
+    yml_sha256: a238883b7f914d5c99f313d2d5ef68fa472164ef81e95d48d1046cb7e593ee6b
+  tier_config_sha256: 2f9c5908788edcac4b436c7ef8535afca17cd8f0cf02f8b03ad0ede0aa4c48b6
+  catalog_sha256:
+    regression-t1.yaml: 4c7d17157147bf075fb4b63e26afc7be212c0bfe43b0b81e36e5d05d0e76c55e
+    regression-common.yaml: d85dca70d26978573c6077a9984cd3b74654649a59479060418d705961d44c19
+  catalog_content_sha256:
+    regression-t1.yaml: 31b369e3c85fde38444cfa04073cefa445c3b4f5f06b867655fced3c5e5a6f3d
+    regression-common.yaml: ba0efaad6f84eccb6f656a4adb3ba0f8ed5c4a2edadcf22f3495b1d4d50761d4
+  reason: 检查项目录换代后重新登记（数值不变）：R25 对齐门的参照从第一阶段 golden g1k-a（只报）换成修好的 golden rcc-a（判，噪声 rcc-a..j 两两 45 对，单步硬上限 9.75e-3），档位配置 tiers/t1.yaml 的 golden 列表同步换成 rcc-a..j。同一对双跑 reg-t1-fa-b → reg-t1-fa-a 在新目录下重判，19
+    行里只有 R02.registry 报这次目录与档位配置变化，其余全部逐位；R25 对 rcc-a 的带符号均值 / MARE / 最大单步 1.26e-5 / 1.082e-4 / 4.99e-4，噪声上限 9.47e-5 / 1.377e-4 / 9.75e-4，pass；登记后重判 PASS
+  approved_by: 项目负责人
+  approved_at: '2026-11-16'
+  location: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T1/20261105/runs/reg-t1-fa-a/
+  results: models/hunyuan3/regression/results/reg-t1-fa-rcc/

@@ -1,0 +1,80 @@
+{
+ "what": "C + branch_input_grad_gpu_order 两格各 4 份按现行检查项目录（catalogs/t1zo-l4.yaml，--test 换被测，GPU g3 16 份 120 对）判 1000 步的摘要",
+ "runs": {
+  "tbi-a": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "not_pass": []
+  },
+  "tbi-b": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "not_pass": []
+  },
+  "tbi-c": {
+   "summary": {
+    "pass": 7,
+    "fail": 0,
+    "inconclusive": 2
+   },
+   "not_pass": [
+    "L4.mtp_loss",
+    "L4.mtp_loss.tail"
+   ]
+  },
+  "tbi-d": {
+   "summary": {
+    "pass": 7,
+    "fail": 0,
+    "inconclusive": 2
+   },
+   "not_pass": [
+    "L4.loss",
+    "L4.loss.tail"
+   ]
+  },
+  "tbm-a": {
+   "summary": {
+    "pass": 7,
+    "fail": 0,
+    "inconclusive": 2
+   },
+   "not_pass": [
+    "L4.mtp_loss",
+    "L4.mtp_loss.tail"
+   ]
+  },
+  "tbm-b": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "not_pass": []
+  },
+  "tbm-c": {
+   "summary": {
+    "pass": 8,
+    "fail": 0,
+    "inconclusive": 1
+   },
+   "not_pass": [
+    "L4.grad_norm"
+   ]
+  },
+  "tbm-d": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "not_pass": []
+  }
+ }
+}

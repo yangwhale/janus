@@ -14,9 +14,9 @@
 
 ## 现状
 
-- 300 步最近一代 `tm-b` 没有不过（过 5、待定 4，都只略超 N）。`tm-b` base2 开、早于 M50；2026-11-11 起的现行对齐配置（关 base2、含 M50、C 口径）在 mid 上尚无运行。
-- 第 1 步主 loss 对 CPU FP64 的相对差在 GPU 一侧（GPU +1.42e-5，TPU `tm-b` +4.0e-6，R 0.28；[`mid-step1-loss-vs-fp64.json`](results/mid-step1-loss-vs-fp64.json)）。
-- 第 1 步逐张量梯度：7 个张量未定责（sink 4 个、iHC 3 个，最大第 3 层 FFN 前 `hc_base` R 15.3），9 个张量 TPU 梯度文件取回损坏（取回时断流留下空洞，见 [`tm2diag-grad-file-holes.json`](results/tm2diag-grad-file-holes.json)），要重跑诊断再比。
+- 300 步现行 C 口径 `tmc-a`（按 PROTOCOL 2026-11-12 的前瞻登记判）没有不过（过 5、待定 4，都只略超 N：主 loss 全程 r 1.01、MTP loss r 1.25 / 1.15、索引器 KD r 1.003）。上一代 `tm-b`（base2 开、早于 M50）也是过 5、待定 4，超线的是主 loss（r 1.38）与 param_norm（r 1.79）。
+- 第 1 步主 loss 对 CPU FP64 的相对差在 GPU 一侧（GPU +1.42e-5，TPU C 口径 −2.67e-6，R 0.19；上一代 `tm-b` +4.0e-6，[`mid-step1-loss-vs-fp64.json`](results/mid-step1-loss-vs-fp64.json)）。
+- 第 1 步逐张量梯度（C 口径 `tmcs-c`，训练步梯度；GPU 参照只有 3 份，参照不足、待补到 6 份）：不过，5 个未定责（iHC 4 个，最大第 3 层 FFN 前 `hc_base` R 13.7；第 4 层 sink R 1.21），落盘核对全对（[`mid-c-step1-train-grad-vs-fp64.json`](results/mid-c-step1-train-grad-vs-fp64.json)）。上一代 `tm2diag` 是 7 个未定责、9 个文件损坏。
 - 1000 步、L1 / L2 没做。对齐开关全开比全关贵 +46.8%，M13 约占 60%（运行没有登记、无结果文件，数字未核；见[对齐报告](ALIGNMENT-REPORT.md)）。
 
 适用范围：只在 v5p 8 个设备上、只用 FSDP，随机初始化，300 步（[对齐报告第 5 节](ALIGNMENT-REPORT.md#5-适用范围)）。

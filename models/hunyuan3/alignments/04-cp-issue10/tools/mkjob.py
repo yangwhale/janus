@@ -7,7 +7,7 @@ MODE=proxy：随机初始化的缩层混元 3（hunyuan3-smoke 覆盖成 16 层�
             代码 maxtext hunyuan@e2c18718。
 MODE=rw4：混元 3 真实权重截 4 层（models/hunyuan3/frameworks/maxtext/hy3-4layers.yml 那份检查点），代码 hunyuan@8ac1d175。
 两种都用 FineWeb-Edu sample-10BT 第一个 parquet 分片在线切词（packing=True），镜像 tpu_pre_training 0.2.5 另装 tokamax 0.0.16。
-以 ! 开头的参数原样写进脚本（例如在两次运行之间拷存档）。产物用 kubectl exec 取回（节点池只有只读存储范围）。
+换 MaxText 提交时给 MT_PKG、MT_SHA（stage.sh 打的包与 sha256）。以 ! 开头的参数原样写进脚本（例如在两次运行之间拷存档）。产物用 kubectl exec 取回（节点池只有只读存储范围）。
 """
 import os
 import sys
@@ -25,6 +25,9 @@ MT_SHA = "24c9a379760842f6b11969389cbd7976a68c486d4847d8f86eaf549b6913dd2a"
 if MODE != "proxy":
     MT_PKG = f"{B}/janus/pkg/maxtext-8ac1d175.tgz"
     MT_SHA = "c3ee3c1c1a319b4c0cd6e60ff92bcda7dfb6ba09590958ffcf53b3995fea5673"
+# 换 MaxText 提交：MT_PKG / MT_SHA 给 stage.sh 打出的包与它的 sha256（E1USP4sw 用 c9f5ccdf 的包）
+MT_PKG = os.environ.get("MT_PKG", MT_PKG)
+MT_SHA = os.environ.get("MT_SHA", MT_SHA)
 IMAGE = "us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf"
 COMMON = ("src/maxtext/configs/base.yml model_name=hunyuan3-smoke override_model_config=True base_num_decoder_layers=16 "
           "base_emb_dim=1024 base_mlp_dim=4096 base_num_query_heads=16 base_num_kv_heads=4 base_moe_mlp_dim=256 mtp_num_layers=0 "

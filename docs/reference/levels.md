@@ -186,7 +186,7 @@ TPU 是整图编译。「哪一层先不同」可能不是算子本身不同，�
 
 ## 换了软硬件版本怎么办
 
-升级 jax / libtpu、换芯片、换镜像，都当作一次新的被测：先跑日常回归（[第 7 章](../guide/07-daily-regression.md)）的回归门，它对上一次通过的 TPU 运行比，数学不变的改动要求逐位相同；再按需重跑 L2–L4。换 libtpu 基本不会逐位，而且不能假定只换了求和顺序：混元 4 上 0.0.46 → 0.0.52，「RMSNorm 多舍一次」从 r 1.06 变成 5.50。做法是新版本先建 golden、和旧 golden 比，再把已知敏感项（混元 4 是 TPU 自比的六件，加上对齐配置里补 GPU 舍入点的 M36、M52、M58）重测一遍（[`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md)），并扫一遍编译器静默算错的特征（[差异清单 F8](tpu-vs-gpu-differences.md#f8-jit-静默算错dus-和读同一缓冲的算子被合进一颗多输出-fusion)）。回归门的设计、数值变了以后要重跑哪几级，见 [`regression.md`](regression.md#九升级-jax--libtpu--kernel-库)。
+升级 jax / libtpu、换芯片、换镜像，都当作一次新的被测：先跑日常回归（[第 7 章](../guide/07-daily-regression.md)）的回归门，它对上一次通过的 TPU 运行比，数学不变的改动要求逐位相同；再按需重跑 L2–L4。换 libtpu 基本不会逐位，而且不能假定只换了求和顺序：混元 4 上 0.0.46 → 0.0.52，「RMSNorm 多舍一次」从 r 1.06 变成 5.50。做法是新版本先建 golden、和旧 golden 比，再把已知敏感项（混元 4 是 TPU 自比的七件，加上对齐配置里补 GPU 舍入点的 M36、M52、M58）重测一遍（[`libtpu-052.md`](../../models/hunyuan4/alignments/04-tpu-self/libtpu-052.md)），并扫一遍编译器静默算错的特征（[差异清单 F8](tpu-vs-gpu-differences.md#f8-jit-静默算错dus-和读同一缓冲的算子被合进一颗多输出-fusion)）。回归门的设计、数值变了以后要重跑哪几级，见 [`regression.md`](regression.md#九升级-jax--libtpu--kernel-库)。
 
 ---
 

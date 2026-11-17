@@ -1,0 +1,37 @@
+{
+ "what": "C + forward_bf16_rounding 4 份按现行检查项目录（catalogs/t1zo-l4.yaml，--test 换被测，GPU g3 16 份 120 对）判 1000 步的摘要",
+ "runs": {
+  "tfr-a2": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "not_pass": []
+  },
+  "tfr-b": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "not_pass": []
+  },
+  "tfr-c": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "not_pass": []
+  },
+  "tfr-d": {
+   "summary": {
+    "pass": 9,
+    "fail": 0,
+    "inconclusive": 0
+   },
+   "not_pass": []
+  }
+ }
+}

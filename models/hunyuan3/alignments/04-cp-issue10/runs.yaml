@@ -26,8 +26,10 @@ step1:
     - {name: i10-st-ul4, change: "CP4 Ulysses"}
     - {name: i10-st-usp4, change: "USP 2×2"}
     - {name: i10-st-usp4nl, change: "USP 2×2 关负载均衡"}
-    - {name: i10-st-usp4-qkvf32, change: "USP 2×2 + 诊断补丁（q/k/v 权重梯度留 FP32）"}
+    - {name: i10-st-usp4-qkvf32, change: "USP 2×2 + 诊断补丁（q/k/v 权重梯度留 FP32；maxtext 1a45e2c6，已由正式开关取代）"}
     - {name: i10-st-b-qkvf32, change: "基线 + 同一补丁"}
+    - {name: i10-st-usp4-sw, change: "USP 2×2 + 正式开关 qkv_proj_wgrad_fp32=True（maxtext c9f5ccdf）；与 i10-st-usp4-qkvf32 逐位相同"}
+    - {name: i10-st-usp4-swoff, change: "USP 2×2，maxtext c9f5ccdf 开关关着；与 i10-st-usp4 逐位相同"}
     - {name: i10-st-b-noexcess, change: "基线 + --xla_allow_excess_precision=false"}
     - {name: i10-st-usp4x, change: "同 i10-st-usp4，XLA_DUMP=1 取编译后的 HLO"}
     - {name: i10-st-bx, change: "同基线，XLA_DUMP=1"}
@@ -78,4 +80,25 @@ long:
   - {name: E1RG2sa256, condition: E1, change: "CP2 Ring + splash 反向分块 256", series: results/series/E1RG2sa256.json}
   - {name: E1RG2nl, condition: E1, change: "CP2 Ring 关负载均衡", series: results/series/E1RG2nl.json}
   - {name: E1USP4, condition: E1, change: "FSDP 2 × Ring 2 × Ulysses 2 USP", series: results/series/E1USP4.json}
-  - {name: E1USP4qkvf32, condition: E1, change: "USP + 诊断补丁（q/k/v 权重梯度留 FP32；第 1510 步被抢占收回，只有前 1510 步）", series: results/series/E1USP4qkvf32.json}
+  - {name: E1USP4qkvf32, condition: E1, change: "USP + 诊断补丁（q/k/v 权重梯度留 FP32；第 1510 步被抢占收回，只有前 1510 步；已由 E1USP4sw 取代）", series: results/series/E1USP4qkvf32.json}
+  - {name: E1USP4sw, condition: E1, change: "USP + 正式开关 qkv_proj_wgrad_fp32=True（maxtext c9f5ccdf）；前 1510 步与 E1USP4qkvf32 逐位相同", series: results/series/E1USP4sw.json}
+
+# ---------------------------------------------------------------------------------------------------------------
+# 阶梯实验（README 正文；设置见 setup.md「阶梯实验」）。运行目录在 gs://<POC 桶>/janus/issue10/ladder/runs/<运行名>/
+# （第 1 步只写 exp_avg 与 meta、metrics.jsonl）；逐步 loss 在 results/series/ladder/<运行名>.json。
+# 运行名：<组>-<级>-<臂>[-<尺子>]；组 lbd = 恒定学习率 1e-4（长跑主组），lad = 恒定 3e-4（L0–L2 长跑，L3 只用第 1 步）。
+# 级、臂、尺子的参数见 setup.md 的三张表；离线编译与上一级同一程序的臂不重跑（L1 的 rg2 / rg4 / usp4 用 L0 的，L2 的 fsdp8 用 L1 的）。
+ladder:
+  inputs:
+    weights: "tools/make_ladder_inputs.py hf，种子 0（HF 2.624e9 参数）→ convert_hf_to_maxtext.py；gs://<POC 桶>/janus/issue10/ladder/{hf-smoke16-r0,mt-smoke16-r0}"
+    data: "tools/make_ladder_inputs.py data，3000 步 × 8 条 × 4096，manifest sha256 5152129a9210…；gs://<POC 桶>/janus/issue10/ladder/replay-fwe-3000"
+    fp64: "fp64_step.py --names-from，8 行分进程再 --merge；第 1 步 FP64 平均 loss 11.716237"
+  code: {maxtext: "hunyuan@5d1b0e95", janus_pkg: "见各运行 meta.json 的 code"}
+  levels: {L0: "原始默认", L0p: "L0 + --xla_allow_excess_precision=false", L1: "L0 + sa_use_base2_exp=False",
+           L2: "L1 + embedding_shard_over_data=True", L3: "L2 + qkv_proj_wgrad_fp32=True",
+           L4: "L3 + routed_gate_bf16_rounding / rmsnorm_single_rounding / mlp_activation_round_per_op / dense_fp32_accumulation"}
+  arms: [dp8, fsdp8, ag2, ag4, rg2, rg4, ul2, ul4, usp4]
+  rulers: {v64: "--xla_tpu_scoped_vmem_limit_kib=65536", v56: "…=57344", v40: "…=40960", v24: "…=24576"}
+  groups:
+    lbd: {lr: 1.0e-4, steps: 3000, levels: [L0, L1, L2, L3, L4, L0p], runs: "每级 dp8 + 7 个 CP 臂 + 4 份尺子（减去不重跑的）；fsdp8 只在 L3、L4、L0p 跑 2 步，L0–L2 用 lad 组的"}
+    lad: {lr: 3.0e-4, steps: 3000, levels: [L0, L1, L2], runs: "同上；L0、L1、L3 另有 fsdp8 2 步；L3 只跑了 dp8、fsdp8 与 6 个 CP 臂（第 1 步用），其余取消；另有 lad-L0-rg4-v64 / lad-L0-rg4-v40（Ring CP4 同程序只改片上内存上限的两份重复，README 第 5 节）"}

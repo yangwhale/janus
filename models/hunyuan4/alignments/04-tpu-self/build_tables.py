@@ -56,15 +56,18 @@ def reading(c, d, steps=300):
     return "临界：贴着 GPU 重跑的最大值" if r > 0.95 * lm else SAME_AS_RERUN
 
 
-# iHC 豁免（tpu_self_compare.py 的 ihc_accepted）：iHC 张量超出噪声上限、R > 1.2 也不记「未定责」、不挡判档。
-# R 超过 IHC_FLAG_R 的单独标出来（PROTOCOL 变更记录 2026-11-11 提议收窄豁免时用的口径；是否生效待定，这里只标，不改判档）
-IHC_FLAG_R = 5.0
+# iHC 豁免（tpu_self_compare.py 的 ihc_accepted）：iHC 张量超出噪声上限、R > 1.2 时，R ≤ IHC_R64_CAP 的单列、不挡判档；
+# 超过上限的记未定责（PROTOCOL 变更记录 2026-11-12）。这里把「因为超上限的 iHC 张量记了未定责」的运行标出来
+IHC_R64_CAP = 5.22  # 同 analysis/tpu_self_compare.py 的 IHC_R64_CAP
+IHC_NAME = ("hc_attn_layer.", "hc_mlp_layer.", "model.hc_head.")
 
 
 def ihc_flag(d):
-    """第 1 步被 iHC 豁免、且 R > IHC_FLAG_R 的张量：(个数, 最大 R, 是否含 hc_head)；没有就 None。"""
-    acc = (d.get("step1_grad") or {}).get("ihc_accepted") or []
-    big = [x for x in acc if (x.get("r64") or 0) > IHC_FLAG_R]
+    """第 1 步记了未定责的 iHC 张量（R > 上限）：(个数, 最大 R, 是否含 hc_head)；没有就 None。"""
+    # 逐张量的全表（step1_rows）优先：step1_grad.unattributed 只存最远的 10 个
+    un = [x for x in d.get("step1_rows") or [] if x.get("verdict") == "unattributed"] or (
+        (d.get("step1_grad") or {}).get("unattributed") or [])
+    big = [x for x in un if any(k in x["tensor"] for k in IHC_NAME) and (x.get("r64") or 0) > IHC_R64_CAP]
     if not big:
         return None
     return len(big), max(x["r64"] for x in big), any(".hc_head." in x["tensor"] for x in big)
@@ -75,12 +78,22 @@ def ihc_text(d):
     if f is None:
         return ""
     n, mx, head = f
-    return f"{n} 个张量{'（含 hc_head）' if head else ' '}R > {IHC_FLAG_R:g}，最大 {mx:.1f}"
+    return f"{n} 个张量{'（含 hc_head）' if head else ' '}R > {IHC_R64_CAP:g}，最大 {mx:.1f}"
+
+
+def ihc_before(d):
+    """iHC 豁免没有上限时（2026-11-12 前）的档；判档没因上限变就 None。"""
+    b = d["verdict"].get("before_ihc_cap")
+    if not b:
+        return None
+    old = BAND.get(b["band"], b["band"])
+    return old if old != BAND.get(d["verdict"]["band"], d["verdict"]["band"]) else None
 
 
 def ihc_matters(c, d, steps):
-    """豁免影响到判档或解读：档不是「超」、解读不是「分得开」，而第 1 步有 R > IHC_FLAG_R 的豁免张量。"""
-    return ihc_flag(d) is not None and c["band"] != "超" and reading(c, d, steps) != APART
+    """豁免上限改了判档：无上限时不是「超」，现在因为超上限的 iHC 张量判「超」。"""
+    del c, steps
+    return ihc_flag(d) is not None and ihc_before(d) is not None
 
 
 @functools.lru_cache(maxsize=1)
@@ -153,8 +166,8 @@ def matrix_table(cls, arms):
         hlo = {True: "是", False: "否", None: "—"}[c["hlo"]]
         rd = reading(c, d, 1000 if a["id"].startswith("L") else 300)
         steps = 1000 if a["id"].startswith("L") else 300
-        band = c["band"] + ((f"（靠 iHC 豁免：{ihc_text(d)}）" if ihc_matters(c, d, steps) else f"（另有 iHC 豁免：{ihc_text(d)}）")
-                            if ihc_flag(d) else "")
+        band = c["band"] + ((f"（iHC 超豁免上限：{ihc_text(d)}；无上限时{ihc_before(d)}）" if ihc_matters(c, d, steps)
+                             else f"（另有 iHC 超豁免上限：{ihc_text(d)}）") if ihc_flag(d) else "")
         rows.append(f"| {a['id']} | {run} | {libtpu_of(a)} | {a['change']} | {a['expect']} | {band} | {c['r']} | {c['lead']} | {rd} | {c['d']} | {c['fp']} | "
                     f"{c['st']} | {c['pk']} | {hlo} | {screen_cell(a['id'])} | {src} |")
     return rows
@@ -229,7 +242,7 @@ def temper_table(arms, classes):
                 if cl["band"] not in ("逐位相同", "在噪声内"):
                     long += f"（{rd1k}）"
                 if ihc_matters(cl, dl, 1000):
-                    long += "（靠 iHC 豁免）"
+                    long += f"（iHC 超上限；无上限时{ihc_before(dl)}）"
         # 算力代价按芯片·秒：步时 × 芯片数 ÷（对照的步时 × 对照的芯片数）− 1；芯片数不是 8 的臂在 arms.yaml 里写 chips
         # 对照不是 golden 的臂（如对某个只改了连带项的对照比），按对照自己的芯片数折算
         base_chips = chips.get(a.get("vs", GOLDEN), 8)
@@ -240,7 +253,7 @@ def temper_table(arms, classes):
         lead = c["lead"] if c["band"] not in ("逐位相同",) else "—"
         rd = reading(c, d, 1000 if a["id"].startswith("L") else 300)
         if ihc_matters(c, d, 1000 if a["id"].startswith("L") else 300):
-            rd = ("" if rd == "—" else rd + "，") + "靠 iHC 豁免"
+            rd = ("" if rd == "—" else rd + "，") + f"iHC 超上限（无上限时{ihc_before(d)}）"
         rows.append(f"| {classes[a['id'][0]]} | {a['plain']} | {a['scenario']} | {c['band']} | {c['r']} | {long} | {lead} | {rd} | {cost} | {fix} |")
     return rows
 
@@ -403,9 +416,9 @@ def noise_table(arms, classes):
     for a in h["noise"]:
         d = result(a)
         c = chip_cost(a, d, chips)
-        r300 = cells(d)["r"] + ("（靠 iHC 豁免）" if ihc_matters(cells(d), d, 300) else "")
+        r300 = cells(d)["r"] + ("（iHC 超上限）" if ihc_matters(cells(d), d, 300) else "")
         dl = long_result(a)
-        rl = r_long(a) + ("（靠 iHC 豁免）" if dl is not None and ihc_matters(cells(dl), dl, 1000) else "")
+        rl = r_long(a) + ("（iHC 超上限）" if dl is not None and ihc_matters(cells(dl), dl, 1000) else "")
         rows.append(f"| {classes[a['id'][0]]} | {a['plain']} | {a['scenario']} | {r300} | {rl} | {'—' if c is None else f'{c:+.1%}'} |")
     return rows
 

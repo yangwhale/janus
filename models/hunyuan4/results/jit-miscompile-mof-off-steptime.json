@@ -1,5 +1,5 @@
 {
- "issue": "一次实际排查",
+ "issue": "案例 16",
  "what": "关掉 multi-output fusion（LIBTPU_INIT_ARGS=--xla_jf_enable_multi_output_fusion=false）对步时的影响，作为案例 16 workaround ① 的代价参考",
  "image": "us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf",
  "maxtext": "镜像自带的 /deps/src/maxtext（未改动）",

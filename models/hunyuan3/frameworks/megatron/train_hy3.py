@@ -5,6 +5,7 @@
           [--janus-run <目录> --side golden-1 --dump-steps 1]
 """
 import argparse
+import ast
 import datetime
 import hashlib
 import json
@@ -88,6 +89,10 @@ p.add_argument("--fp32", action="store_true",
 p.add_argument("--bf16-weights", action="store_true",
                help="（配 --fp32，只作诊断参照）BF16 权重、全程 FP32 计算：每步前向前把参数舍到 BF16，优化器更新前换回 FP32 主权重"
                     "（param_swap.Bf16WeightsFp32Compute）。整条轨迹是 BF16 训练的精确版本")
+p.add_argument("--set", action="append", default=[], metavar="段.字段=值",
+               help="直接改 Megatron-Bridge 配置的任一字段（可重复），在其余参数都设完、开训之前生效；值按 Python 字面量解析，"
+                    "解析不了按字符串。例：--set checkpoint.async_save=True --set optimizer.use_precision_aware_optimizer=True "
+                    "--set model.mtp_num_layers=1。字段不存在直接报错")
 a = p.parse_args()
 if a.bf16_weights and not a.fp32:
     p.error("--bf16-weights 要配 --fp32")
@@ -230,6 +235,21 @@ cfg.checkpoint.save_interval = (a.save_interval or a.steps) if a.save else 10 **
 cfg.checkpoint.load = a.resume
 if a.load and not a.resume:
     cfg.checkpoint.pretrained_checkpoint = a.load
+
+for kv in a.set:                                   # --set 段.字段=值：最后生效，盖过上面任何默认或派生值
+    path, eq, raw = kv.partition("=")
+    if not eq or not path:
+        p.error(f"--set 要写成 段.字段=值，收到 {kv!r}")
+    try:
+        val = ast.literal_eval(raw)
+    except (ValueError, SyntaxError):
+        val = raw
+    obj, (*parents, leaf) = cfg, path.split(".")
+    for name in parents:
+        obj = getattr(obj, name)
+    if not hasattr(obj, leaf):
+        p.error(f"--set {path}：{type(obj).__name__} 没有字段 {leaf}")
+    setattr(obj, leaf, val)
 
 callbacks = []
 if a.import_params or a.export_params_at:

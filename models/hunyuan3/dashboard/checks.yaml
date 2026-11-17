@@ -113,7 +113,7 @@ levels:
             src: {v5p: "phase2-t-loss30:L0.config.diff.*", v7x: "phase2-v7x-t-loss30:L0.config.diff.*"}
           - name: 每步输入指纹
             what: TPU 回放的每一步、每个 rank、每个 microbatch 的输入，对 GPU golden 存下的输入
-            objects: 前 30 步 × 8 个 rank × 2 个 microbatch 的 tokens、labels、loss_mask、position_ids，加每步首个 loss
+            objects: "前 30 步 × 8 个 rank × 2 个 microbatch 的 tokens、labels、loss_mask、position_ids（1,920 个），加每步全部 rank 与 microbatch 的非 padding token 总数（30 个）；这两次比较设了 `first_loss: false`，不比首步 loss（跨平台首步 loss 不逐位，交给 L4）"
             src: {v5p: "phase2-t-loss30:L0.data.fingerprint", v7x: "phase2-v7x-t-loss30:L0.data.fingerprint"}
           - name: 载入后的参数
             what: 训练开始前，TPU 载入的参数对 GPU 载入的参数

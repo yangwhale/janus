@@ -282,7 +282,7 @@
 |---|---|---|---|---|---|---|---|
 | 优化器 | 算法 | 解耦权重衰减 | `optimizer: adam`（GPU meta；Megatron 的 adam 是解耦权重衰减的 AdamW） | `opt_type: "adamw"`（TPU yml） | 等价 | 已对齐（L1，两侧） | 两侧都做了 FP64 重放，在门槛内（见注 24） |
 | 优化器 | β1 / β2 / ε | 更新量 | `adam_beta1: 0.9`、`adam_beta2: 0.95`、`adam_eps: 1e-08`（GPU meta；ε 加在 sqrt 外面） | `adam_b1: 0.9`、`adam_b2: 0.95`、`adam_eps: 1.0e-8`、`adam_eps_root: 0.0`（TPU yml） | 相同 | 已对齐（L1） | 上一行的两组重放用的就是这几个值（见注 25） |
-| 优化器 | 实际生效的权重衰减 | 只读配置会对错超参 | 配置 `weight_decay: 0.1`，但调度器 `start_weight_decay` / `end_weight_decay: 0.033` 覆盖了它（GPU meta 的 `scheduler_config`；00 README 第 10 条） | `adam_weight_decay: 0.033`（TPU yml） | 相同（按实际值） | 已对齐（配置） | 01 `phase2-t-loss30` 的 `L0.config.diff.dropout`（TPU `weight_decay` = GPU `start_weight_decay`） |
+| 优化器 | 实际生效的权重衰减 | 只读配置会对错超参 | 配置 `weight_decay: 0.1`，但调度器 `start_weight_decay` / `end_weight_decay: 0.033` 覆盖了它（GPU meta 的 `scheduler_config`；00 README 第 10 条；链路与定责见注 37） | `adam_weight_decay: 0.033`（TPU yml） | 相同（按实际值） | 已对齐（配置） | 01 `phase2-t-loss30` 的 `L0.config.diff.dropout`（TPU `weight_decay` = GPU `start_weight_decay`） |
 | 优化器 | 哪些参数衰减 | 一维参数不衰减 | Megatron 默认对一维参数（各 RMSNorm 的 scale）不衰减 | `adamw_mask: ["norm/scale"]`（TPU yml）：扫描层把一维 scale 堆成二维，只能按名字排除 | 等价 | 已对齐（L1，两侧） | 两侧重放都按「一维 wd = 0、其余 0.033」吻合（见注 26） |
 | 优化器 | 梯度裁剪 | 第 1 步就裁（裁剪系数 0.057） | `clip_grad: 1.0`（GPU meta） | `gradient_clipping_threshold: 1.0`（TPU yml） | 相同 | 已对齐（L1） | 第 1 步优化器重放按 `max_norm / (grad_norm + 1e-6)` 算出的裁剪系数 0.0570（v5p、v7x），带着它重放的更新量在门槛内（`phase2-st1-on-state-gpuonly`、`phase2-v7x-st1-on-state-gpuonly` 的 `clip_coeff`） |
 | 优化器 | 学习率与调度 | 常数学习率 | `lr = min_lr = 1e-5`、`lr_decay_style: constant`、`lr_warmup_iters: 0`（GPU meta） | `learning_rate: 1.0e-5`、`lr_schedule_type: "wsd"`、`warmup_steps_fraction: 0.0`、`wsd_decay_steps_fraction: 0.0`、`learning_rate_final_fraction: 1.0`（TPU yml） | 等价 | 已对齐 | 01 `phase2-t-loss30` 的 `L4.lr`（30 步逐位） |
@@ -439,3 +439,19 @@
 - 注 36（TPU 诊断臂的提交）：
   - `cot-dgrad` / `cot-wgrad` 两档后补进 main。
   - `train_hy3.py` 与运行 [`t-v5p-bw-rd-hcd/hcw-1000`](../../docs/glossary.md#run-prefixes) 所用提交逐字节相同。
+- 注 37（权重衰减：写 0.1，生效 0.033，链路与定责）：
+  - 版本：Megatron-Bridge 0.7.0、Megatron-Core 0.20.0（nemo:26.10，见 [`frameworks/megatron/README.md`](frameworks/megatron/README.md)）。
+  - 两个值都是 Megatron-Bridge 预训练模板的默认值，分放在两个配置对象里：
+    - GPU 训练脚本直接用 `megatron.bridge.recipes.common._pretrain_common()`（`frameworks/megatron/train_hy3.py`），只改了学习率与调度形状，没碰权重衰减。
+    - 模板调 `recipes/utils/optimizer_utils.py::distributed_fused_adam_with_cosine_annealing`，不传权重衰减。这个函数第 107 行默认 `weight_decay=0.1`，放进 `OptimizerConfig`；第 111–113 行写死 `start_weight_decay = end_weight_decay = 0.033`、`weight_decay_incr_style = "constant"`，放进 `SchedulerConfig(override_opt_param_scheduler=True)`。
+    - Bridge 的 `SchedulerConfig.finalize()` 只检查 start ≥ 0、end ≥ start，不会拿 `weight_decay` 去补 start / end。
+  - Megatron-Core 的调度器每一步覆盖优化器里的值（`megatron/core/optimizer_param_scheduler.py`）：
+    - 构造函数末尾先调一次 `self.step(0)`（第 181 行），所以第一次参数更新之前 0.1 就已被覆盖；
+    - 之后每步 `param_group['weight_decay'] = get_wd() × wd_mult`（第 300 行），`constant` 风格下 `get_wd()` 直接返回 `end_wd`（第 200–202 行）；
+    - 一维参数与 bias 的组 `wd_mult = 0`，其余为 1（`megatron/core/optimizer/__init__.py` 第 115–124 行）。生效值：二维参数 0.033，一维参数 0。
+  - 证据（实测）：GPU 运行 `g1k-c` 的 meta 记 `optimizer_config.weight_decay = 0.1`、`scheduler_config` 为 start = end = 0.033；`metrics.jsonl` 1000 步每一步的 `wd` 都是 0.033。这个 `wd` 是运行时从优化器 `param_groups` 读出的（`janus/dump/megatron.py`，取各组最大值），不是配置。最早的发现来自 GPU 侧 FP64 重放 AdamW：二维参数更新量对不上，拟合出 0.033（00 README 第 10 条）。
+  - 定责：Megatron-Bridge 上游的通用行为，跟模型和具体配置无关，跟优化器种类也无关（混元 3 的 golden 用 `adam`）。
+    - 走 Megatron-LM 自己的命令行入口不会碰上：`megatron/training/arguments.py`（第 1302–1306 行）在 `constant` 风格下令 start = end = `--weight-decay`。
+    - 用 Bridge 的 recipe 或这个工具函数、只改 `optimizer.weight_decay` 的都会碰上。在 Bridge 里改权重衰减，要改 `scheduler.start_weight_decay` 和 `end_weight_decay`。
+    - 0.033 本身没有公式，是 Bridge 写死的常数，来历不明；同文件的 Muon 版、samples 版和十几个模型 recipe 也写的是它。
+  - TPU 一侧从第一次入库起就是 `adam_weight_decay: 0.033`（`frameworks/maxtext/hy3-4layers.yml`），没用 0.1 跑过。L0 配置检查把 TPU 的 `weight_decay` 与 GPU 的 `scheduler_config.start_weight_decay` 比，防回退。

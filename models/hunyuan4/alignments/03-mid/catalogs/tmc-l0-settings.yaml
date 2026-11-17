@@ -1,0 +1,12 @@
+# 混元 4 · hy4-mid 300 步设置核对，C 口径（TPU tmc-a，GPU gm-a）：两边每一步学习率等于 1e-5。
+# 同 tmb-l0-settings.yaml，只换被测（与 tmc-l4.yaml 同一对运行；写于 tmc-a 跑完之后补核）。
+schema_version: 1
+model: hunyuan4-mid
+stage: tmc-l0-settings
+description: hy4-mid 300 步设置核对，C 口径（TPU tmc-a）
+runs:
+  test: tmc-a
+  golden: [gm-a]
+  root: /data/janus-runs
+checks:
+  - {id: L0.settings.lr, type: scalar_series, level: L0, select: {kind: metrics, field: lr, window: "1:301"}, params: {equals: 1.0e-5, rtol: 0.0, abs_ulp: 0}}

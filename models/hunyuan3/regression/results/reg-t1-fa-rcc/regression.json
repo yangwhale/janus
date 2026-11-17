@@ -1,0 +1,1554 @@
+{
+ "tier": "T1",
+ "platform": "v5p",
+ "test": "reg-t1-fa-b",
+ "lkg": "reg-t1-fa-a",
+ "declare": "数学不变",
+ "scope": [],
+ "class": "通过",
+ "verdict": "PASS",
+ "first_differ": null,
+ "counts": {
+  "pass": 19,
+  "fail": 0,
+  "inconclusive": 0,
+  "error": 0,
+  "report": 2
+ },
+ "tier_config": {
+  "path": "models/hunyuan3/regression/tiers/t1.yaml",
+  "sha256": "2f9c5908788edcac4b436c7ef8535afca17cd8f0cf02f8b03ad0ede0aa4c48b6"
+ },
+ "catalog": {
+  "path": "models/hunyuan3/regression/catalogs/regression-t1.yaml",
+  "hash_algo": "content-v1",
+  "content_sha256": "31b369e3c85fde38444cfa04073cefa445c3b4f5f06b867655fced3c5e5a6f3d",
+  "raw_sha256": "4c7d17157147bf075fb4b63e26afc7be212c0bfe43b0b81e36e5d05d0e76c55e",
+  "includes": [
+   {
+    "path": "models/hunyuan3/regression/catalogs/regression-common.yaml",
+    "hash_algo": "content-v1",
+    "content_sha256": "ba0efaad6f84eccb6f656a4adb3ba0f8ed5c4a2edadcf22f3495b1d4d50761d4",
+    "raw_sha256": "d85dca70d26978573c6077a9984cd3b74654649a59479060418d705961d44c19"
+   }
+  ]
+ },
+ "janus": {
+  "version": "0.1.0.dev0",
+  "commit": "1f3740599272c8a4e3f634e937a5de46aabcf012"
+ },
+ "commits": {
+  "test": {
+   "maxtext": "0622774a160c17ba8f3f66941cf1ee49cd9158b2",
+   "janus": "4db01d7a27a1db8f302e7afe705e0786df4e4680"
+  },
+  "lkg": {
+   "maxtext": "0622774a160c17ba8f3f66941cf1ee49cd9158b2",
+   "janus": "4db01d7a27a1db8f302e7afe705e0786df4e4680"
+  }
+ },
+ "rows": {
+  "R01": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R01.run_complete",
+     "status": "pass",
+     "hard": true,
+     "message": "1000 步全部完成、无重复、无重启",
+     "metrics": {
+      "planned": 1000,
+      "logged": 1000,
+      "duplicate": 0,
+      "missing": 0,
+      "extra": 0,
+      "restarts": 0
+     }
+    }
+   ]
+  },
+  "R02": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R02.inputs",
+     "status": "pass",
+     "hard": true,
+     "message": "必须相同的字段都相同；其他不同 0 项",
+     "metrics": {
+      "fields": 7,
+      "must_equal_differ": 0,
+      "other_differ": 0,
+      "missing": 0,
+      "equals_rules": 3
+     }
+    },
+    {
+     "id": "R02.registry",
+     "status": "pass",
+     "hard": true,
+     "metrics": {
+      "tier_config_sha256": "2f9c5908788e",
+      "catalog_files": 2,
+      "catalog_hash": "content-v1"
+     },
+     "message": "档位配置的 sha256、目录的内容指纹与 lkg.yaml 登记的相同"
+    }
+   ]
+  },
+  "R03": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R03.data_fingerprint",
+     "status": "pass",
+     "hard": true,
+     "message": "token 与首步 loss 逐位相同",
+     "metrics": {
+      "units_per_field": {
+       "tokens": 16000,
+       "labels": 16000,
+       "loss_mask": 16000,
+       "position_ids": 16000
+      },
+      "units": 65000,
+      "differ": 0
+     }
+    }
+   ]
+  },
+  "R04": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R04.versions",
+     "status": "pass",
+     "hard": true,
+     "message": "必须相同的字段都相同；其他不同 0 项",
+     "metrics": {
+      "fields": 7,
+      "must_equal_differ": 0,
+      "other_differ": 0,
+      "missing": 0,
+      "equals_rules": 0
+     }
+    }
+   ]
+  },
+  "R05": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R05.process_flags",
+     "status": "pass",
+     "hard": true,
+     "message": "必须相同的字段都相同；其他不同 0 项",
+     "metrics": {
+      "fields": 6,
+      "must_equal_differ": 0,
+      "other_differ": 0,
+      "missing": 0,
+      "equals_rules": 0
+     }
+    },
+    {
+     "id": "R05.compiler_flagfile",
+     "status": "pass",
+     "hard": true,
+     "message": "全部规则满足，指纹与参照相同",
+     "metrics": {
+      "rules": 0,
+      "bad": 0,
+      "fingerprint": "8494a7374f44f508",
+      "ref_fingerprint": "8494a7374f44f508",
+      "fingerprint_equal": true
+     }
+    },
+    {
+     "id": "R05.compiler_debug_options",
+     "status": "pass",
+     "hard": true,
+     "message": "全部规则满足，指纹与参照相同",
+     "metrics": {
+      "rules": 0,
+      "bad": 0,
+      "fingerprint": "59407bf7dd627e57",
+      "ref_fingerprint": "59407bf7dd627e57",
+      "fingerprint_equal": true,
+      "ignored_lines": {
+       "test": 3,
+       "ref": 3
+      }
+     }
+    }
+   ]
+  },
+  "R06": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R06.must_equal",
+     "status": "pass",
+     "hard": true,
+     "message": "必须相同的字段都相同；其他不同 0 项",
+     "metrics": {
+      "fields": 29,
+      "must_equal_differ": 0,
+      "other_differ": 0,
+      "missing": 0,
+      "equals_rules": 29
+     }
+    }
+   ]
+  },
+  "R07": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R07.state_init",
+     "status": "pass",
+     "hard": true,
+     "message": "全部参数逐位相同",
+     "metrics": {
+      "params": 91,
+      "differ": 0,
+      "only_one_side": 0
+     }
+    }
+   ]
+  },
+  "R08": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R08.step1_loss",
+     "status": "pass",
+     "hard": true,
+     "message": "逐位可复现",
+     "metrics": {
+      "fields": 2,
+      "first_differ": [],
+      "tensors": 0,
+      "tensors_differ": 0
+     }
+    },
+    {
+     "id": "R08.loss_tolerance",
+     "status": "pass",
+     "hard": false,
+     "message": "在噪声参照内",
+     "metrics": {
+      "d0": 0.0,
+      "signed_mean": 0.0,
+      "mare": 0.0,
+      "max_step": 0.0,
+      "max_step_at": 2,
+      "window": "1:1001",
+      "denominator": "golden",
+      "nonfinite_steps": [],
+      "signed_mean_se": 0.0,
+      "first_differ_step": null,
+      "noise_dropped": [],
+      "noise_loo": [
+       {
+        "pair": "reg-t1-fa-a~fa-vmem64-t1",
+        "signed_mean": 0.109341182740147,
+        "mare": 1.0402538225371887,
+        "max_step": 0.7109622988759036
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-vmem48-t1",
+        "signed_mean": 0.23017594975963265,
+        "mare": 0.9193846509840767,
+        "max_step": 0.7576800378160489
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-vmem40-t1",
+        "signed_mean": 0.5141045055117909,
+        "mare": 0.9241121502937506,
+        "max_step": 0.6590239375170835
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-vmem56-t1",
+        "signed_mean": 0.30751239940597463,
+        "mare": 0.8900363811880799,
+        "max_step": 0.6087687853988675
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-sabwd1k-t1",
+        "signed_mean": 0.38337628703698223,
+        "mare": 0.9125729478399033,
+        "max_step": 0.7665037428036808
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-sabwd256-t1",
+        "signed_mean": 0.4672936411918671,
+        "mare": 0.9423071616927949,
+        "max_step": 0.7211435381978416
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-combo-t1",
+        "signed_mean": 0.48569805017246787,
+        "mare": 0.8804385503416743,
+        "max_step": 0.6568806325020814
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-vmem48-t1",
+        "signed_mean": 0.12055425353347794,
+        "mare": 0.9613038455950979,
+        "max_step": 1.0048434418974392
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-vmem40-t1",
+        "signed_mean": 0.40453338031090624,
+        "mare": 0.8717401491920662,
+        "max_step": 0.6513393828282388
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-vmem56-t1",
+        "signed_mean": 0.19793758089860103,
+        "mare": 0.8515119286813803,
+        "max_step": 0.895063648825979
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-sabwd1k-t1",
+        "signed_mean": 0.27380570069109794,
+        "mare": 0.8831954578273489,
+        "max_step": 0.7323124429533568
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-sabwd256-t1",
+        "signed_mean": 0.357740400127678,
+        "mare": 0.8732837930462273,
+        "max_step": 0.6132786132734033
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-combo-t1",
+        "signed_mean": 0.5952732504029742,
+        "mare": 0.861738458955458,
+        "max_step": 0.5990756952994697
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-vmem40-t1",
+        "signed_mean": 0.28372313224869394,
+        "mare": 0.8842344005269823,
+        "max_step": 0.6666770852082028
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-vmem56-t1",
+        "signed_mean": 0.07710245462071798,
+        "mare": 0.9212686208200573,
+        "max_step": 0.9951799039576817
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-sabwd1k-t1",
+        "signed_mean": 0.15300552686866775,
+        "mare": 0.8843214967772354,
+        "max_step": 0.7712338024016759
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-sabwd256-t1",
+        "signed_mean": 0.23691779000182248,
+        "mare": 0.9324051656414674,
+        "max_step": 0.6545138320479873
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-combo-t1",
+        "signed_mean": 0.7161007380301391,
+        "mare": 0.9049441784395915,
+        "max_step": 0.6740650945593609
+       },
+       {
+        "pair": "fa-vmem40-t1~fa-vmem56-t1",
+        "signed_mean": 0.20676835664204188,
+        "mare": 0.816239452133429,
+        "max_step": 0.7045257779750302
+       },
+       {
+        "pair": "fa-vmem40-t1~fa-sabwd1k-t1",
+        "signed_mean": 0.1308871769132722,
+        "mare": 0.8138076274836649,
+        "max_step": 0.6642258426760983
+       },
+       {
+        "pair": "fa-vmem40-t1~fa-sabwd256-t1",
+        "signed_mean": 0.0469689195411279,
+        "mare": 0.8410170814021046,
+        "max_step": 0.6163663618798899
+       },
+       {
+        "pair": "fa-vmem40-t1~fa-combo-t1",
+        "signed_mean": 1.0490714176920908,
+        "mare": 0.8717051983777852,
+        "max_step": 0.7731173376126574
+       },
+       {
+        "pair": "fa-vmem56-t1~fa-sabwd1k-t1",
+        "signed_mean": 0.07569185928835807,
+        "mare": 0.8522890765141953,
+        "max_step": 0.9137283179956307
+       },
+       {
+        "pair": "fa-vmem56-t1~fa-sabwd256-t1",
+        "signed_mean": 0.15963033398879375,
+        "mare": 0.8214972397104248,
+        "max_step": 0.6897868926896231
+       },
+       {
+        "pair": "fa-vmem56-t1~fa-combo-t1",
+        "signed_mean": 0.7933917657485583,
+        "mare": 0.8425355422047169,
+        "max_step": 0.7655123296947647
+       },
+       {
+        "pair": "fa-sabwd1k-t1~fa-sabwd256-t1",
+        "signed_mean": 0.08375931060710494,
+        "mare": 0.8165201797921477,
+        "max_step": 0.7524499303945535
+       },
+       {
+        "pair": "fa-sabwd1k-t1~fa-combo-t1",
+        "signed_mean": 0.8692694161752522,
+        "mare": 0.8367013545827777,
+        "max_step": 0.6301218138003483
+       },
+       {
+        "pair": "fa-sabwd256-t1~fa-combo-t1",
+        "signed_mean": 0.953223949423724,
+        "mare": 0.9040233334895026,
+        "max_step": 0.7636120853509948
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "R09": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R09.step1_norms",
+     "status": "pass",
+     "hard": true,
+     "message": "逐位可复现",
+     "metrics": {
+      "fields": 2,
+      "first_differ": [],
+      "tensors": 0,
+      "tensors_differ": 0
+     }
+    }
+   ]
+  },
+  "R12": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R12.loss",
+     "status": "pass",
+     "hard": true,
+     "message": "",
+     "metrics": {
+      "d0": 0.0,
+      "signed_mean": 0.0,
+      "mare": 0.0,
+      "max_step": 0.0,
+      "max_step_at": 2,
+      "window": "1:1001",
+      "denominator": "golden",
+      "nonfinite_steps": [],
+      "signed_mean_se": 0.0,
+      "first_differ_step": null
+     }
+    },
+    {
+     "id": "R12.loss_tolerance",
+     "status": "pass",
+     "hard": false,
+     "message": "在噪声参照内",
+     "metrics": {
+      "d0": 0.0,
+      "signed_mean": 0.0,
+      "mare": 0.0,
+      "max_step": 0.0,
+      "max_step_at": 2,
+      "window": "1:1001",
+      "denominator": "golden",
+      "nonfinite_steps": [],
+      "signed_mean_se": 0.0,
+      "first_differ_step": null,
+      "noise_dropped": [],
+      "noise_loo": [
+       {
+        "pair": "reg-t1-fa-a~fa-vmem64-t1",
+        "signed_mean": 0.109341182740147,
+        "mare": 1.0402538225371887,
+        "max_step": 0.7109622988759036
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-vmem48-t1",
+        "signed_mean": 0.23017594975963265,
+        "mare": 0.9193846509840767,
+        "max_step": 0.7576800378160489
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-vmem40-t1",
+        "signed_mean": 0.5141045055117909,
+        "mare": 0.9241121502937506,
+        "max_step": 0.6590239375170835
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-vmem56-t1",
+        "signed_mean": 0.30751239940597463,
+        "mare": 0.8900363811880799,
+        "max_step": 0.6087687853988675
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-sabwd1k-t1",
+        "signed_mean": 0.38337628703698223,
+        "mare": 0.9125729478399033,
+        "max_step": 0.7665037428036808
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-sabwd256-t1",
+        "signed_mean": 0.4672936411918671,
+        "mare": 0.9423071616927949,
+        "max_step": 0.7211435381978416
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-combo-t1",
+        "signed_mean": 0.48569805017246787,
+        "mare": 0.8804385503416743,
+        "max_step": 0.6568806325020814
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-vmem48-t1",
+        "signed_mean": 0.12055425353347794,
+        "mare": 0.9613038455950979,
+        "max_step": 1.0048434418974392
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-vmem40-t1",
+        "signed_mean": 0.40453338031090624,
+        "mare": 0.8717401491920662,
+        "max_step": 0.6513393828282388
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-vmem56-t1",
+        "signed_mean": 0.19793758089860103,
+        "mare": 0.8515119286813803,
+        "max_step": 0.895063648825979
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-sabwd1k-t1",
+        "signed_mean": 0.27380570069109794,
+        "mare": 0.8831954578273489,
+        "max_step": 0.7323124429533568
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-sabwd256-t1",
+        "signed_mean": 0.357740400127678,
+        "mare": 0.8732837930462273,
+        "max_step": 0.6132786132734033
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-combo-t1",
+        "signed_mean": 0.5952732504029742,
+        "mare": 0.861738458955458,
+        "max_step": 0.5990756952994697
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-vmem40-t1",
+        "signed_mean": 0.28372313224869394,
+        "mare": 0.8842344005269823,
+        "max_step": 0.6666770852082028
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-vmem56-t1",
+        "signed_mean": 0.07710245462071798,
+        "mare": 0.9212686208200573,
+        "max_step": 0.9951799039576817
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-sabwd1k-t1",
+        "signed_mean": 0.15300552686866775,
+        "mare": 0.8843214967772354,
+        "max_step": 0.7712338024016759
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-sabwd256-t1",
+        "signed_mean": 0.23691779000182248,
+        "mare": 0.9324051656414674,
+        "max_step": 0.6545138320479873
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-combo-t1",
+        "signed_mean": 0.7161007380301391,
+        "mare": 0.9049441784395915,
+        "max_step": 0.6740650945593609
+       },
+       {
+        "pair": "fa-vmem40-t1~fa-vmem56-t1",
+        "signed_mean": 0.20676835664204188,
+        "mare": 0.816239452133429,
+        "max_step": 0.7045257779750302
+       },
+       {
+        "pair": "fa-vmem40-t1~fa-sabwd1k-t1",
+        "signed_mean": 0.1308871769132722,
+        "mare": 0.8138076274836649,
+        "max_step": 0.6642258426760983
+       },
+       {
+        "pair": "fa-vmem40-t1~fa-sabwd256-t1",
+        "signed_mean": 0.0469689195411279,
+        "mare": 0.8410170814021046,
+        "max_step": 0.6163663618798899
+       },
+       {
+        "pair": "fa-vmem40-t1~fa-combo-t1",
+        "signed_mean": 1.0490714176920908,
+        "mare": 0.8717051983777852,
+        "max_step": 0.7731173376126574
+       },
+       {
+        "pair": "fa-vmem56-t1~fa-sabwd1k-t1",
+        "signed_mean": 0.07569185928835807,
+        "mare": 0.8522890765141953,
+        "max_step": 0.9137283179956307
+       },
+       {
+        "pair": "fa-vmem56-t1~fa-sabwd256-t1",
+        "signed_mean": 0.15963033398879375,
+        "mare": 0.8214972397104248,
+        "max_step": 0.6897868926896231
+       },
+       {
+        "pair": "fa-vmem56-t1~fa-combo-t1",
+        "signed_mean": 0.7933917657485583,
+        "mare": 0.8425355422047169,
+        "max_step": 0.7655123296947647
+       },
+       {
+        "pair": "fa-sabwd1k-t1~fa-sabwd256-t1",
+        "signed_mean": 0.08375931060710494,
+        "mare": 0.8165201797921477,
+        "max_step": 0.7524499303945535
+       },
+       {
+        "pair": "fa-sabwd1k-t1~fa-combo-t1",
+        "signed_mean": 0.8692694161752522,
+        "mare": 0.8367013545827777,
+        "max_step": 0.6301218138003483
+       },
+       {
+        "pair": "fa-sabwd256-t1~fa-combo-t1",
+        "signed_mean": 0.953223949423724,
+        "mare": 0.9040233334895026,
+        "max_step": 0.7636120853509948
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "R13": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R13.raw_grad_norm",
+     "status": "pass",
+     "hard": true,
+     "message": "",
+     "metrics": {
+      "d0": 0.0,
+      "signed_mean": 0.0,
+      "mare": 0.0,
+      "max_step": 0.0,
+      "max_step_at": 2,
+      "window": "1:1001",
+      "denominator": "golden",
+      "nonfinite_steps": [],
+      "signed_mean_se": 0.0,
+      "first_differ_step": null
+     }
+    },
+    {
+     "id": "R13.param_norm",
+     "status": "pass",
+     "hard": true,
+     "message": "",
+     "metrics": {
+      "d0": 0.0,
+      "signed_mean": 0.0,
+      "mare": 0.0,
+      "max_step": 0.0,
+      "max_step_at": 2,
+      "window": "1:1001",
+      "denominator": "golden",
+      "nonfinite_steps": [],
+      "signed_mean_se": 0.0,
+      "first_differ_step": null
+     }
+    },
+    {
+     "id": "R13.raw_grad_norm_tolerance",
+     "status": "pass",
+     "hard": false,
+     "message": "在噪声参照内",
+     "metrics": {
+      "d0": 0.0,
+      "signed_mean": 0.0,
+      "mare": 0.0,
+      "max_step": 0.0,
+      "max_step_at": 2,
+      "window": "1:1001",
+      "denominator": "golden",
+      "nonfinite_steps": [],
+      "signed_mean_se": 0.0,
+      "first_differ_step": null,
+      "noise_dropped": [],
+      "noise_loo": [
+       {
+        "pair": "reg-t1-fa-a~fa-vmem64-t1",
+        "signed_mean": 0.4253823753812363,
+        "mare": 1.0155889729290926,
+        "max_step": 0.6814599874699141
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-vmem48-t1",
+        "signed_mean": 0.14565306249279728,
+        "mare": 0.806734299881467,
+        "max_step": 0.6473227596811901
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-vmem40-t1",
+        "signed_mean": 0.26733983650270454,
+        "mare": 0.8635151773236739,
+        "max_step": 0.5637424227173362
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-vmem56-t1",
+        "signed_mean": 0.16999351922786504,
+        "mare": 0.8925507222121376,
+        "max_step": 0.5608686253785515
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-sabwd1k-t1",
+        "signed_mean": 0.1800125509860905,
+        "mare": 0.9547474383407981,
+        "max_step": 0.7033683093829377
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-sabwd256-t1",
+        "signed_mean": 0.3598759535962745,
+        "mare": 0.9257201115352652,
+        "max_step": 0.8308069648534354
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-combo-t1",
+        "signed_mean": 0.017062015108037457,
+        "mare": 0.8561453649601283,
+        "max_step": 0.6563361424143521
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-vmem48-t1",
+        "signed_mean": 1.0232073156697625,
+        "mare": 0.984650312927156,
+        "max_step": 0.8439700364027083
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-vmem40-t1",
+        "signed_mean": 0.5789766883201019,
+        "mare": 0.8184895938128842,
+        "max_step": 0.4267870849601453
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-vmem56-t1",
+        "signed_mean": 0.7078411263684652,
+        "mare": 0.8686668595286939,
+        "max_step": 0.41944997783287197
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-sabwd1k-t1",
+        "signed_mean": 0.6667492604334664,
+        "mare": 0.8916494212461398,
+        "max_step": 0.6898193620776115
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-sabwd256-t1",
+        "signed_mean": 0.45384704092435907,
+        "mare": 0.8678595657800531,
+        "max_step": 0.5954112050434971
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-combo-t1",
+        "signed_mean": 0.9773190483352129,
+        "mare": 0.929170052886654,
+        "max_step": 0.40669084632914215
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-vmem40-t1",
+        "signed_mean": 0.23527327641304957,
+        "mare": 0.876221429700174,
+        "max_step": 0.7715023720204154
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-vmem56-t1",
+        "signed_mean": 0.35916593192158763,
+        "mare": 0.9030451231074929,
+        "max_step": 1.1848761885698518
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-sabwd1k-t1",
+        "signed_mean": 0.22933506669943204,
+        "mare": 0.9079793932292274,
+        "max_step": 0.4761954350413215
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-sabwd256-t1",
+        "signed_mean": 0.0765165418914998,
+        "mare": 0.905547546245651,
+        "max_step": 0.7089949386137784
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-combo-t1",
+        "signed_mean": 0.4839251957990065,
+        "mare": 0.8440538897054294,
+        "max_step": 0.5852536213435462
+       },
+       {
+        "pair": "fa-vmem40-t1~fa-vmem56-t1",
+        "signed_mean": 0.26339356237805606,
+        "mare": 0.6852757915370101,
+        "max_step": 0.30660574423847364
+       },
+       {
+        "pair": "fa-vmem40-t1~fa-sabwd1k-t1",
+        "signed_mean": 0.23766286984339818,
+        "mare": 0.7161599400516921,
+        "max_step": 0.3338965391827219
+       },
+       {
+        "pair": "fa-vmem40-t1~fa-sabwd256-t1",
+        "signed_mean": 0.09305248222316925,
+        "mare": 0.7765113715079605,
+        "max_step": 0.3262668917198216
+       },
+       {
+        "pair": "fa-vmem40-t1~fa-combo-t1",
+        "signed_mean": 0.5569289156683515,
+        "mare": 0.7735271839655216,
+        "max_step": 0.40120805145430644
+       },
+       {
+        "pair": "fa-vmem56-t1~fa-sabwd1k-t1",
+        "signed_mean": 0.24099739134305423,
+        "mare": 0.8152372816895656,
+        "max_step": 0.41415432588392836
+       },
+       {
+        "pair": "fa-vmem56-t1~fa-sabwd256-t1",
+        "signed_mean": 0.03875666691043024,
+        "mare": 0.8190047729046166,
+        "max_step": 0.3549981725593463
+       },
+       {
+        "pair": "fa-vmem56-t1~fa-combo-t1",
+        "signed_mean": 0.49167400146936535,
+        "mare": 0.760800164317884,
+        "max_step": 0.3925543087836037
+       },
+       {
+        "pair": "fa-sabwd1k-t1~fa-sabwd256-t1",
+        "signed_mean": 0.07665271739102066,
+        "mare": 0.7620790995252331,
+        "max_step": 0.41808159630530906
+       },
+       {
+        "pair": "fa-sabwd1k-t1~fa-combo-t1",
+        "signed_mean": 0.5149503188548082,
+        "mare": 0.7017455287844947,
+        "max_step": 0.4306621514081452
+       },
+       {
+        "pair": "fa-sabwd256-t1~fa-combo-t1",
+        "signed_mean": 0.7656538429681217,
+        "mare": 0.8138989800355854,
+        "max_step": 0.4492115276433784
+       }
+      ]
+     }
+    },
+    {
+     "id": "R13.param_norm_tolerance",
+     "status": "pass",
+     "hard": false,
+     "message": "在噪声参照内",
+     "metrics": {
+      "d0": 0.0,
+      "signed_mean": 0.0,
+      "mare": 0.0,
+      "max_step": 0.0,
+      "max_step_at": 2,
+      "window": "1:1001",
+      "denominator": "golden",
+      "nonfinite_steps": [],
+      "signed_mean_se": 0.0,
+      "first_differ_step": null,
+      "noise_dropped": [],
+      "noise_loo": [
+       {
+        "pair": "reg-t1-fa-a~fa-vmem64-t1",
+        "signed_mean": 0.48154811935198716,
+        "mare": 0.8683623871123932,
+        "max_step": 0.8000114268629017
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-vmem48-t1",
+        "signed_mean": 0.2573355990227934,
+        "mare": 0.5757372927357618,
+        "max_step": 0.80000725409423
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-vmem40-t1",
+        "signed_mean": 0.020811204381872766,
+        "mare": 0.49009034802274776,
+        "max_step": 0.600008618294762
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-vmem56-t1",
+        "signed_mean": 0.018919233126915666,
+        "mare": 0.5551186818968974,
+        "max_step": 0.600008618294762
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-sabwd1k-t1",
+        "signed_mean": 0.1182634905018366,
+        "mare": 0.5115014438407581,
+        "max_step": 0.8000074466825952
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-sabwd256-t1",
+        "signed_mean": 0.18259629749315506,
+        "mare": 0.5844597150267751,
+        "max_step": 0.6000122293857213
+       },
+       {
+        "pair": "reg-t1-fa-a~fa-combo-t1",
+        "signed_mean": 0.5184520210172228,
+        "mare": 0.5757367243538786,
+        "max_step": 0.7999903708745919
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-vmem48-t1",
+        "signed_mean": 0.7388835991098459,
+        "mare": 0.8794632786964832,
+        "max_step": 0.9999995987817731
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-vmem40-t1",
+        "signed_mean": 0.46073681688585777,
+        "mare": 0.6748631759047512,
+        "max_step": 0.6000109775359332
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-vmem56-t1",
+        "signed_mean": 0.46262879854155375,
+        "mare": 0.6383833251072387,
+        "max_step": 0.6000059701890166
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-sabwd1k-t1",
+        "signed_mean": 0.5998115084291799,
+        "mare": 0.7073772210713979,
+        "max_step": 0.8000016048767712
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-sabwd256-t1",
+        "signed_mean": 0.6641443180776855,
+        "mare": 0.7486139615010962,
+        "max_step": 0.7999903708745919
+       },
+       {
+        "pair": "fa-vmem64-t1~fa-combo-t1",
+        "signed_mean": 1.353393147722765,
+        "mare": 1.1370571395342088,
+        "max_step": 0.9999959878322187
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-vmem40-t1",
+        "signed_mean": 0.27814685168807,
+        "mare": 0.4916759648627238,
+        "max_step": 1.0
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-vmem56-t1",
+        "signed_mean": 0.2762548839254827,
+        "mare": 0.5662213517590173,
+        "max_step": 1.0
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-sabwd1k-t1",
+        "signed_mean": 0.13907214890916986,
+        "mare": 0.452818500957251,
+        "max_step": 0.6000227740200913
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-sabwd256-t1",
+        "signed_mean": 0.07473933986817394,
+        "mare": 0.46392127266598027,
+        "max_step": 0.6000227740200913
+       },
+       {
+        "pair": "fa-vmem48-t1~fa-combo-t1",
+        "signed_mean": 0.26111638282102184,
+        "mare": 0.4853313465789572,
+        "max_step": 0.6000103997608697
+       },
+       {
+        "pair": "fa-vmem40-t1~fa-vmem56-t1",
+        "signed_mean": 0.0018919468096939445,
+        "mare": 0.4488521352679284,
+        "max_step": 0.6000047183653465
+       },
+       {
+        "pair": "fa-vmem40-t1~fa-sabwd1k-t1",
+        "signed_mean": 0.13907467286761227,
+        "mare": 0.37192944360474817,
+        "max_step": 0.6000058257475573
+       },
+       {
+        "pair": "fa-vmem40-t1~fa-sabwd256-t1",
+        "signed_mean": 0.20340747515216107,
+        "mare": 0.5067430899843042,
+        "max_step": 0.6000074146074347
+       },
+       {
+        "pair": "fa-vmem40-t1~fa-combo-t1",
+        "signed_mean": 0.5392631904774865,
+        "mare": 0.5693901998490488,
+        "max_step": 0.7999903708745919
+       },
+       {
+        "pair": "fa-vmem56-t1~fa-sabwd1k-t1",
+        "signed_mean": 0.1371826826333748,
+        "mare": 0.5099157916987924,
+        "max_step": 0.6000058257475573
+       },
+       {
+        "pair": "fa-vmem56-t1~fa-sabwd256-t1",
+        "signed_mean": 0.20151550002526375,
+        "mare": 0.4591624748627162,
+        "max_step": 0.6000038998680786
+       },
+       {
+        "pair": "fa-vmem56-t1~fa-combo-t1",
+        "signed_mean": 0.5373712060888749,
+        "mare": 0.6074556195583831,
+        "max_step": 0.7999906276482611
+       },
+       {
+        "pair": "fa-sabwd1k-t1~fa-sabwd256-t1",
+        "signed_mean": 0.06433278565869367,
+        "mare": 0.38858187374683884,
+        "max_step": 0.6000074146074347
+       },
+       {
+        "pair": "fa-sabwd1k-t1~fa-combo-t1",
+        "signed_mean": 0.4001884946068211,
+        "mare": 0.5384626956615047,
+        "max_step": 0.5999989407853258
+       },
+       {
+        "pair": "fa-sabwd256-t1~fa-combo-t1",
+        "signed_mean": 0.3358556808587676,
+        "mare": 0.5368775391442888,
+        "max_step": 0.600007559049659
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "R14": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R14.lr_wd",
+     "status": "pass",
+     "hard": true,
+     "message": "逐位可复现",
+     "metrics": {
+      "fields": 2,
+      "first_differ": [],
+      "tensors": 0,
+      "tensors_differ": 0
+     }
+    }
+   ]
+  },
+  "R15": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R15.state_final",
+     "status": "pass",
+     "hard": true,
+     "message": "全部参数逐位相同",
+     "metrics": {
+      "params": 91,
+      "differ": 0,
+      "only_one_side": 0
+     }
+    }
+   ]
+  },
+  "R16": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R16.bias_stats",
+     "status": "pass",
+     "hard": true,
+     "message": "",
+     "metrics": {
+      "signed_mean_max": 0.0,
+      "mare_max": 0.0,
+      "max_step_max": 0.0,
+      "stats": 6
+     }
+    },
+    {
+     "id": "R16.bias_stats_tolerance",
+     "status": "pass",
+     "hard": false,
+     "message": "在噪声参照内",
+     "metrics": {
+      "signed_mean_max": 0.0,
+      "mare_max": 0.0,
+      "max_step_max": 0.0,
+      "stats": 6
+     }
+    }
+   ]
+  },
+  "R17": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R17.health",
+     "status": "pass",
+     "hard": true,
+     "message": "健康",
+     "metrics": {
+      "fields": 3,
+      "problems": 0
+     }
+    }
+   ]
+  },
+  "R18": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R18.dtypes",
+     "status": "pass",
+     "hard": true,
+     "message": "182 项 dtype 全部符合规则",
+     "metrics": {
+      "entries": 182,
+      "wrong_dtype": 0,
+      "unmatched": 0,
+      "rule_hits": {
+       "params/*": 58,
+       "MoEBiasVar/*": 2,
+       "*/opt_state/*/mu/*": 58,
+       "*/opt_state/*/nu/*": 58,
+       "*/opt_state/*/count": 4,
+       "OptState/optimizer/step": 2
+      }
+     }
+    }
+   ]
+  },
+  "R20": {
+   "status": "pass",
+   "note": "",
+   "checks": [
+    {
+     "id": "R20.artifact_counts",
+     "status": "pass",
+     "hard": true,
+     "message": "全部规则满足",
+     "metrics": {
+      "rules": 7,
+      "bad": 0
+     }
+    }
+   ]
+  },
+  "R21": {
+   "status": "report",
+   "note": "",
+   "checks": [
+    {
+     "id": "R21.hlo_fingerprint",
+     "status": "pass",
+     "hard": false,
+     "message": "全部规则满足，指纹与参照相同",
+     "metrics": {
+      "rules": 0,
+      "bad": 0,
+      "fingerprint": "97592661a9934200",
+      "ref_fingerprint": "97592661a9934200",
+      "fingerprint_equal": true
+     }
+    }
+   ]
+  },
+  "R25": {
+   "status": "pass",
+   "note": "回归门逐位通过：数值与 LKG 相同，对齐门结论继承 LKG（标准第二节）",
+   "checks": [
+    {
+     "id": "R25.loss_vs_golden",
+     "status": "pass",
+     "hard": true,
+     "message": "在噪声参照内",
+     "metrics": {
+      "d0_max": 1.5969755943868303e-05,
+      "signed_mean_max": 1.25941121556851e-05,
+      "mare_max": 0.00010822126950627952,
+      "max_step_max": 0.0004989504993190685,
+      "goldens": 10,
+      "in_band_frac": 0.7717717717717718,
+      "window": "1:1001",
+      "denominator": "golden",
+      "baseline": "rcc-a",
+      "noise_dropped": [],
+      "noise_loo": [
+       {
+        "pair": "rcc-a~rcc-b",
+        "signed_mean": 0.03279211821229564,
+        "mare": 0.7515915158417162,
+        "max_step": 0.5595896719031305
+       },
+       {
+        "pair": "rcc-a~rcc-c",
+        "signed_mean": 0.7110252307686423,
+        "mare": 0.8297171702433036,
+        "max_step": 0.4643634554997252
+       },
+       {
+        "pair": "rcc-a~rcc-d",
+        "signed_mean": 0.6453550876553364,
+        "mare": 0.8411148566965485,
+        "max_step": 0.5297055542334204
+       },
+       {
+        "pair": "rcc-a~rcc-e",
+        "signed_mean": 0.39097604093462385,
+        "mare": 0.7321701912587408,
+        "max_step": 0.475007552075873
+       },
+       {
+        "pair": "rcc-a~rcc-f",
+        "signed_mean": 0.8301229487297136,
+        "mare": 0.897156607604066,
+        "max_step": 0.5270468978478525
+       },
+       {
+        "pair": "rcc-a~rcc-g",
+        "signed_mean": 0.584148075228257,
+        "mare": 0.8530400389726731,
+        "max_step": 0.536793238637491
+       },
+       {
+        "pair": "rcc-a~rcc-h",
+        "signed_mean": 0.7108795455585155,
+        "mare": 0.8284564431054507,
+        "max_step": 0.47964304653953055
+       },
+       {
+        "pair": "rcc-a~rcc-i",
+        "signed_mean": 0.5738311674454148,
+        "mare": 0.7900270596887311,
+        "max_step": 0.5449062601621643
+       },
+       {
+        "pair": "rcc-a~rcc-j",
+        "signed_mean": 0.16969226311850968,
+        "mare": 0.7778205006817878,
+        "max_step": 0.7356784819190835
+       },
+       {
+        "pair": "rcc-b~rcc-c",
+        "signed_mean": 0.6781347445153132,
+        "mare": 0.8146583340380433,
+        "max_step": 0.5927393700923187
+       },
+       {
+        "pair": "rcc-b~rcc-d",
+        "signed_mean": 0.6124689216786413,
+        "mare": 0.8239336803968242,
+        "max_step": 0.6194424361952618
+       },
+       {
+        "pair": "rcc-b~rcc-e",
+        "signed_mean": 0.3580850984808624,
+        "mare": 0.74186875820165,
+        "max_step": 0.49473805897326106
+       },
+       {
+        "pair": "rcc-b~rcc-f",
+        "signed_mean": 0.79722277911396,
+        "mare": 0.907961316353179,
+        "max_step": 0.5735986874009701
+       },
+       {
+        "pair": "rcc-b~rcc-g",
+        "signed_mean": 0.5512686467845482,
+        "mare": 0.8315285930303757,
+        "max_step": 0.5392590125165887
+       },
+       {
+        "pair": "rcc-b~rcc-h",
+        "signed_mean": 0.6779849823949449,
+        "mare": 0.833585514267596,
+        "max_step": 0.5502869582900749
+       },
+       {
+        "pair": "rcc-b~rcc-i",
+        "signed_mean": 0.5409331514440903,
+        "mare": 0.8090043156947868,
+        "max_step": 0.5989892380120653
+       },
+       {
+        "pair": "rcc-b~rcc-j",
+        "signed_mean": 0.20259333139930574,
+        "mare": 0.816409880613412,
+        "max_step": 0.8348549946294308
+       },
+       {
+        "pair": "rcc-c~rcc-d",
+        "signed_mean": 0.06574814254688986,
+        "mare": 0.7045624111046589,
+        "max_step": 0.555851424546805
+       },
+       {
+        "pair": "rcc-c~rcc-e",
+        "signed_mean": 0.32016197117919387,
+        "mare": 0.7390879807851592,
+        "max_step": 0.5164642699166629
+       },
+       {
+        "pair": "rcc-c~rcc-f",
+        "signed_mean": 0.11902874758267748,
+        "mare": 0.7175812784931903,
+        "max_step": 0.5836214437219417
+       },
+       {
+        "pair": "rcc-c~rcc-g",
+        "signed_mean": 0.12696324374153845,
+        "mare": 0.7482302850552418,
+        "max_step": 0.5471390435510245
+       },
+       {
+        "pair": "rcc-c~rcc-h",
+        "signed_mean": 0.00022734280350428587,
+        "mare": 0.7019607180757415,
+        "max_step": 0.43175164211679373
+       },
+       {
+        "pair": "rcc-c~rcc-i",
+        "signed_mean": 0.1372789990888595,
+        "mare": 0.6713167951939668,
+        "max_step": 0.48596403881116784
+       },
+       {
+        "pair": "rcc-c~rcc-j",
+        "signed_mean": 0.8808725804800274,
+        "mare": 0.9426748179488463,
+        "max_step": 0.6744539921231651
+       },
+       {
+        "pair": "rcc-d~rcc-e",
+        "signed_mean": 0.25449699333897413,
+        "mare": 0.7507571884721472,
+        "max_step": 0.4240671567453135
+       },
+       {
+        "pair": "rcc-d~rcc-f",
+        "signed_mean": 0.18468904269873976,
+        "mare": 0.7393955961821644,
+        "max_step": 0.5646650420662139
+       },
+       {
+        "pair": "rcc-d~rcc-g",
+        "signed_mean": 0.06131958799860753,
+        "mare": 0.8287469423124496,
+        "max_step": 0.48171983115557687
+       },
+       {
+        "pair": "rcc-d~rcc-h",
+        "signed_mean": 0.06542755780697122,
+        "mare": 0.7546666871619185,
+        "max_step": 0.5014431582758737
+       },
+       {
+        "pair": "rcc-d~rcc-i",
+        "signed_mean": 0.07163727179001221,
+        "mare": 0.7614718214474588,
+        "max_step": 0.6214161498543941
+       },
+       {
+        "pair": "rcc-d~rcc-j",
+        "signed_mean": 0.8151968592621143,
+        "mare": 0.9017738757738012,
+        "max_step": 0.5528560427710739
+       },
+       {
+        "pair": "rcc-e~rcc-f",
+        "signed_mean": 0.4390795072725494,
+        "mare": 0.7929989656016597,
+        "max_step": 0.5273019328499279
+       },
+       {
+        "pair": "rcc-e~rcc-g",
+        "signed_mean": 0.19309582827882138,
+        "mare": 0.7917583844489218,
+        "max_step": 0.6216229402771056
+       },
+       {
+        "pair": "rcc-e~rcc-h",
+        "signed_mean": 0.31983093141556873,
+        "mare": 0.741846423828466,
+        "max_step": 0.5211443230141662
+       },
+       {
+        "pair": "rcc-e~rcc-i",
+        "signed_mean": 0.18276530745856867,
+        "mare": 0.7573639565728397,
+        "max_step": 0.6376108451953336
+       },
+       {
+        "pair": "rcc-e~rcc-j",
+        "signed_mean": 0.5607669661933634,
+        "mare": 0.8047913282886702,
+        "max_step": 0.5208291568208966
+       },
+       {
+        "pair": "rcc-f~rcc-g",
+        "signed_mean": 0.24609538469812356,
+        "mare": 0.8140189225587816,
+        "max_step": 0.5511307726036269
+       },
+       {
+        "pair": "rcc-f~rcc-h",
+        "signed_mean": 0.11935208553223338,
+        "mare": 0.7331010964448132,
+        "max_step": 0.5653601793074308
+       },
+       {
+        "pair": "rcc-f~rcc-i",
+        "signed_mean": 0.25641664349183807,
+        "mare": 0.7706316265963293,
+        "max_step": 0.4982201142822017
+       },
+       {
+        "pair": "rcc-f~rcc-j",
+        "signed_mean": 1.1352379698946409,
+        "mare": 0.9748425598456327,
+        "max_step": 0.5766066755094998
+       },
+       {
+        "pair": "rcc-g~rcc-h",
+        "signed_mean": 0.12662387455083182,
+        "mare": 0.7668733349864232,
+        "max_step": 0.5402530510180029
+       },
+       {
+        "pair": "rcc-g~rcc-i",
+        "signed_mean": 0.010430295375163247,
+        "mare": 0.7399111004337809,
+        "max_step": 0.5299841187557212
+       },
+       {
+        "pair": "rcc-g~rcc-j",
+        "signed_mean": 0.7540296260966615,
+        "mare": 1.0258066699081654,
+        "max_step": 1.1757524731635445
+       },
+       {
+        "pair": "rcc-h~rcc-i",
+        "signed_mean": 0.13715003302663584,
+        "mare": 0.7291962036210164,
+        "max_step": 0.5003190046592766
+       },
+       {
+        "pair": "rcc-h~rcc-j",
+        "signed_mean": 0.8807258045552746,
+        "mare": 0.9289066780921895,
+        "max_step": 0.5803636310210213
+       },
+       {
+        "pair": "rcc-i~rcc-j",
+        "signed_mean": 0.7436762210803877,
+        "mare": 0.9283671568621026,
+        "max_step": 0.8505191550304333
+       }
+      ]
+     }
+    }
+   ],
+   "metrics": {
+    "test_signed_mean_max": 1.25941121556851e-05,
+    "test_mare_max": 0.00010822126950627952,
+    "test_max_step_max": 0.0004989504993190685,
+    "gate_status": "pass"
+   }
+  },
+  "R22": {
+   "status": "report",
+   "checks": [],
+   "metrics": {
+    "test_median_s": 0.9064458608627319,
+    "lkg_median_s": 0.9034322500228882,
+    "rel_diff": 0.003335735291459211,
+    "steps_used": 998,
+    "skip_first": 2,
+    "threshold": 0.005703454807219229
+   },
+   "note": "只报。偏离 LKG +0.33%，在阈值 0.57%内（阈值出自 calibration.yaml）；峰值 HBM、编译期临时区还没记"
+  },
+  "R23": {
+   "status": "pass",
+   "checks": [],
+   "metrics": {
+    "rows": 21,
+    "problems": 0
+   },
+   "note": "每一行都出了结论、单元数对得上"
+  }
+ },
+ "first_lkg": false,
+ "lkg_candidate": true,
+ "created_at": "2026-11-16T07:07:44+08:00"
+}

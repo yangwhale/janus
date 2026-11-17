@@ -1,5 +1,6 @@
 """janus/dump/maxtext.py 里不依赖 jax 的部分，与 models/hunyuan3/frameworks/maxtext/replay.py。"""
 import hashlib
+import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -17,8 +18,12 @@ from janus.dump import maxtext as jd
 from janus.dump.name_map import NameMap, apply_ops, leaf_index
 from janus.store import Run, StoreError
 
-sys.path.insert(0, str(ROOT / "models" / "hunyuan3" / "frameworks" / "maxtext"))
-import replay  # noqa: E402
+sys.path.insert(0, str(ROOT / "models" / "hunyuan3" / "frameworks" / "maxtext"))  # param_io 等
+# replay 按文件路径载入、用不重名的模块名：混元 3 与混元 4 各有一个 replay.py，都叫 `import replay` 的话先载入的那个占住
+# sys.modules["replay"]，后一个测试拿到的是错的模块（结果随测试顺序变）。
+_spec = importlib.util.spec_from_file_location("hy3_maxtext_replay", ROOT / "models" / "hunyuan3" / "frameworks" / "maxtext" / "replay.py")
+replay = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(replay)
 
 SMALL = dict(hidden=32, ffn=48, moe_ffn=8, experts=16, topk=4, heads=8, kv_heads=2, head_dim=4, vocab=64)
 

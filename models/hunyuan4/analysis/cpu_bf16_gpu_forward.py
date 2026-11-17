@@ -9,6 +9,9 @@ sink、索引器 k_norm、路由偏置），代码里写死的 `.float()` / `.to
 - `--all-grads`：同 `--backward`，但每行反向后把各参数的梯度（参数自己的 dtype，同 GPU 每个 microbatch 落地一次）在 FP32
   里累加、清零（同 Megatron DDP 的 main_grad；GPU golden 每个 rank 的 microbatch 就是一行），最后除以有效 token 总数，
   换成 HF 名字存 `grads_hf.safetensors`（路由专家不存），给同状态逐张量 R 当 GPU 写法的一份样本；
+- `--inject-dir`：每行灌给定的离散选择（DSA top-k 与路由专家下标，格式同 `step1_ref.py --inject-dir`：
+  `step_<N>_row_<R>.safetensors`，GPU 抓数或 `choices_to_inject.py` 从 TPU 抓到的选择转来），路由权重照算；
+  用来把 CPU 上 GPU 写法的误差拆成「连续」与「离散选择不同」两部分；
 - `--final32` / `--hc-round-only`：主干末尾的 hc_head 输出与末层 RMSNorm 留 FP32（或只保留 hc_head 输出那一次 BF16 舍入），
   MTP 的 hnorm 输入照旧舍 BF16（诊断：看末尾这几次舍入对 hc_head 梯度的影响）。
 
@@ -40,6 +43,7 @@ def main():
     p.add_argument("--backward", action="store_true", help="同时反向，全部行累加后除以有效 token 总数，存 final 块与几组参数的梯度")
     p.add_argument("--all-grads", action="store_true", help="每行反向后 FP32 累加全部梯度，存 HF 名字的 grads_hf.safetensors")
     p.add_argument("--hc-round-only", action="store_true", help="只保留 hc_head 输出的 BF16 舍入，末层 RMSNorm 在 FP32 里算、输出不舍")
+    p.add_argument("--inject-dir", default=None, help="每行灌这个目录里的离散选择（step_<N>_row_<R>.safetensors，同 step1_ref.py）")
     a = p.parse_args()
     if a.all_grads:
         a.backward = True
@@ -90,6 +94,17 @@ def main():
                 mod.forward = lambda x, _of=of: _of(x.to(torch.bfloat16))
                 print("PATCH hnorm input -> bf16", n_, flush=True)
     m16.train()
+    taps, cores = {}, []
+    if a.inject_dir:
+        from megatron.core.transformer.moe.moe_layer import MoELayer
+
+        mod = m16.module
+        cores = [(str(i), l.self_attention.core_attention) for i, l in enumerate(mod.decoder.layers)]
+        cores.append(("mtp0", mod.mtp.layers[0].mtp_model_layer.self_attention.core_attention))
+        for i, l in enumerate(mod.decoder.layers):
+            if isinstance(l.mlp, MoELayer):
+                taps[str(i)] = l.mlp.router.router_replay = S.RouterTap()
+        taps["mtp0"] = mod.mtp.layers[0].mtp_model_layer.mlp.router.router_replay = S.RouterTap()
     dts = {}
     for _n, q in m16.named_parameters():
         dts[str(q.dtype)] = dts.get(str(q.dtype), 0) + q.numel()
@@ -108,6 +123,22 @@ def main():
         ids = torch.from_numpy(row[:-1])[None]
         labels = torch.from_numpy(row[1:])[None]
         lm = (ids != eod).float()
+        if a.inject_dir:
+            from safetensors import safe_open
+
+            with safe_open(os.path.join(a.inject_dir, f"step_{a.step}_row_{r:02d}.safetensors"), "pt") as f:
+                if "input.tokens" in f.keys():
+                    assert torch.equal(f.get_tensor("input.tokens").reshape(-1), ids[0]), f"灌的选择不是第 {r} 行"
+                for name, c in cores:
+                    hn = f"hf.model.layers.{name}" if name != "mtp0" else "hf.model.mtp_layers.0"
+                    if c.is_full:
+                        c.inject_topk = f.get_tensor(f"{hn}.self_attn.topk")
+                    if name in taps:
+                        rm = f.get_tensor(f"{hn}.mlp.gate.routing_map")
+                        k = cfg16.moe_router_topk
+                        assert int(rm.sum(1).min()) == k and int(rm.sum(1).max()) == k
+                        taps[name].inject = torch.argsort(rm.to(torch.int8), dim=1, descending=True, stable=True)[:, :k]
+                        taps[name].records.clear()
         MTPLossAutoScaler.set_loss_scale(torch.tensor(1.0))
         DSAIndexerLossAutoScaler.set_loss_scale(torch.tensor(1.0))
         MTPLossLoggingHelper.clean_metrics_in_tracker()
@@ -127,6 +158,10 @@ def main():
                     q.grad = None
         rec = {"row": r, "loss_sum": s, "n_tokens": float(lm.sum()), "fwd_s": round(time.time() - t0, 1),
                "mtp_mean": float(MTPLossLoggingHelper.tracker["loss_values"][0])}
+        if taps:  # 灌的路由与本侧自选同一组专家的 token 比例（逐层）
+            rec["natural_agree"] = {n: round(float((torch.sort(t.records[0]["idx"], 1).values
+                                                    == torch.sort(t.inject, 1).values).all(1).float().mean()), 5)
+                                    for n, t in taps.items() if t.records}
         MTPLossLoggingHelper.clean_metrics_in_tracker()
         print("MICRO " + json.dumps(rec), flush=True)
     if a.all_grads:

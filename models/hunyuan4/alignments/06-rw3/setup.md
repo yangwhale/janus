@@ -23,7 +23,7 @@
 |---|---|---|
 | 硬件 | v5p 2x2x4（16 个 JAX 设备，每设备分配器上限 1.028e11 字节 ≈ 95.7 GiB，`rfx-on` / `rfx-off` 的 `meta.json` 里 `memory.bytes_limit`），spot 节点池 | B200 × 16（2 台，机间 GPUDirect RDMA） |
 | 程序 | MaxText 混元 4 集成分支 `b87a55aa`（TPU 自比 golden 的同一提交）；1000 步两臂 `rfx-on`、`rfx-off` 的 `meta.json` 记 janus `f46f6981`、jax 0.11.1、libtpu 0.0.46 | [`frameworks/megatron/`](../../frameworks/megatron/README.md)，多机见 [05](../05-gpu-scale/README.md) |
-| 配置 | [`hy4-t2-d1.yml`](../../frameworks/maxtext/hy4-t2-d1.yml)（与 mini 现行配置除 `model_name` 外逐键相同；层数与 MTP 由 `STAGE=D3` 给），命令行另加 `gradient_accumulation_steps=1 ici_fsdp_parallelism=16`。`rfx-off` 是 C 口径之前的对齐配置：除这两项外与那时的 yml 逐键相同（含 M42b、M50，base2 关），没有 C 口径的 M52、M58（2026-11-11 加进 `hy4-t2-d1.yml`；M58 要 MaxText `06244684` 起才有，`b87a55aa` 里没有）；`rfx-on` 只多 `sa_use_base2_exp: true`（两份 `meta.json` 的 `maxtext_config_full` 已核）。D3 上还没有 C 口径（现行对齐配置）的运行。更早的 `trw-*`、`b2r-*` 等运行的提交以各自 `meta.json` 为准 | 附加参数见下 |
+| 配置 | [`hy4-t2-d1.yml`](../../frameworks/maxtext/hy4-t2-d1.yml)（与 mini 现行配置除 `model_name` 外逐键相同；层数与 MTP 由 `STAGE=D3` 给），命令行另加 `gradient_accumulation_steps=1 ici_fsdp_parallelism=16`。`rfx-off` 是 C 口径之前的对齐配置：除这两项外与那时的 yml 逐键相同（含 M42b、M50，base2 关），没有 C 口径的 M52、M58（2026-11-11 加进 `hy4-t2-d1.yml`；M58 要 MaxText `06244684` 起才有，`b87a55aa` 里没有）；`rfx-on` 只多 `sa_use_base2_exp: true`（两份 `meta.json` 的 `maxtext_config_full` 已核）。C 口径（现行对齐配置）的 1000 步是 `rfc-a`（MaxText `8d3d7561`、janus `7314865d`，命令行同样另加这两项切分参数，每 100 步存档）。更早的 `trw-*`、`b2r-*` 等运行的提交以各自 `meta.json` 为准 | 附加参数见下 |
 | 切分 | FSDP 16，每设备微批 1、不累积 | DP 16 + EP 16，每卡微批 1、不累积 |
 | 重算 | `custom`（同 T1） | 整层重算 |
 | 数据 | `replay.py` 原样回放 `rw1k-a` 写下的 1000 步 batch 与 loss_mask：设备 d 拿 GPU rank d 的那一条 | `--save-batches`；`tokens.npy`，第 s 步第 (s−1)·16 + rank 条 |
@@ -43,13 +43,13 @@ STAGE=D3 YML=hy4-t2-d1.yml PLATFORM=v5p-16 GOLDEN=gs://<POC 桶>/janus/hunyuan4/
 
 ## 软件版本
 
-D3 上没有 C 口径的运行，下表以 C 口径之前、关 base2 的 `rfx-off` 为准：TPU `rfx-off` 对 GPU `rw1k-a`，噪声是同设置 8 份。下表 TPU 各行在 `rfx-off`、`rfx-on` 两份 `meta.json` 上都核过，两份逐项相同。其余各行同 [T1 的「软件版本」](../01-mini/setup.md#软件版本)。
+下表以现行 C 口径的 `rfc-a` 为准（MaxText、janus 两行另注 C 口径之前 `rfx-off` 的提交）：TPU `rfc-a` 对 GPU `rw1k-a`，噪声是同设置 8 份。下表 TPU 各行在 `rfc-a`、`rfx-off`、`rfx-on` 三份 `meta.json` 上都核过，除提交外逐项相同。其余各行同 [T1 的「软件版本」](../01-mini/setup.md#软件版本)。
 
 | 侧 | 组件 | 版本 | 证据出处 |
 |---|---|---|---|
-| TPU | 镜像 | MaxText `tpu_pre_training`，digest `b152355a…`（同 T1） | `rfx-off`、`rfx-on` 的 `meta.json` 的 `image` |
-| TPU | MaxText | 集成分支 `b87a55aa` | `meta.json` 的 `code`；[`runs.yaml`](runs.yaml) |
-| TPU | janus（打进 Pod 的程序） | `f46f6981` | `meta.json` 的 `code` |
+| TPU | 镜像 | MaxText `tpu_pre_training`，digest `b152355a…`（同 T1） | `rfc-a`、`rfx-off`、`rfx-on` 的 `meta.json` 的 `image` |
+| TPU | MaxText | 集成分支 `8d3d7561`（`rfx-off` / `rfx-on`：`b87a55aa`） | `meta.json` 的 `code`；[`runs.yaml`](runs.yaml) |
+| TPU | janus（打进 Pod 的程序） | `7314865d`（`rfx-off` / `rfx-on`：`f46f6981`） | `meta.json` 的 `code` |
 | TPU | jax / jaxlib | 0.11.1 / 0.11.1 | `meta.json` 的 `versions` |
 | TPU | libtpu | 0.0.46（构建 `cl/963683785`） | `meta.json` 的 `versions.libtpu` 与 `versions.libtpu_pip` |
 | TPU | tokamax | 0.0.14（镜像自带的包，实测） | `meta.json` 不记；同 T1，读镜像层里的 `tokamax-0.0.14.dist-info` 核过（2026-11-11，[mini 的「软件版本」](../01-mini/setup.md#软件版本)） |
