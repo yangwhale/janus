@@ -13,34 +13,34 @@ runs:
   # 容差门（role: tolerance）的噪声参照：TPU 执行噪声，基线 + 过了三关的扰动臂两两成对（28 对，正式；README 第五节）。
   # 必须和 ../calibration.yaml 里 v5p / T1 最新一条的 pairs 相同（tests 核）；运行目录由 run_regression.sh 按那里的位置取回
   noise:
-    - [reg-t1-fa-a, fa-vmem64-t1]
-    - [reg-t1-fa-a, fa-vmem48-t1]
-    - [reg-t1-fa-a, fa-vmem40-t1]
-    - [reg-t1-fa-a, fa-vmem56-t1]
-    - [reg-t1-fa-a, fa-sabwd1k-t1]
-    - [reg-t1-fa-a, fa-sabwd256-t1]
-    - [reg-t1-fa-a, fa-combo-t1]
-    - [fa-vmem64-t1, fa-vmem48-t1]
-    - [fa-vmem64-t1, fa-vmem40-t1]
-    - [fa-vmem64-t1, fa-vmem56-t1]
-    - [fa-vmem64-t1, fa-sabwd1k-t1]
-    - [fa-vmem64-t1, fa-sabwd256-t1]
-    - [fa-vmem64-t1, fa-combo-t1]
-    - [fa-vmem48-t1, fa-vmem40-t1]
-    - [fa-vmem48-t1, fa-vmem56-t1]
-    - [fa-vmem48-t1, fa-sabwd1k-t1]
-    - [fa-vmem48-t1, fa-sabwd256-t1]
-    - [fa-vmem48-t1, fa-combo-t1]
-    - [fa-vmem40-t1, fa-vmem56-t1]
-    - [fa-vmem40-t1, fa-sabwd1k-t1]
-    - [fa-vmem40-t1, fa-sabwd256-t1]
-    - [fa-vmem40-t1, fa-combo-t1]
-    - [fa-vmem56-t1, fa-sabwd1k-t1]
-    - [fa-vmem56-t1, fa-sabwd256-t1]
-    - [fa-vmem56-t1, fa-combo-t1]
-    - [fa-sabwd1k-t1, fa-sabwd256-t1]
-    - [fa-sabwd1k-t1, fa-combo-t1]
-    - [fa-sabwd256-t1, fa-combo-t1]
+    - [sync0119-t1-a, s19-vmem64-t1]
+    - [sync0119-t1-a, s19-vmem48-t1]
+    - [sync0119-t1-a, s19-vmem40-t1]
+    - [sync0119-t1-a, s19-vmem56-t1]
+    - [sync0119-t1-a, s19-sabwd1k-t1]
+    - [sync0119-t1-a, s19-sabwd256-t1]
+    - [sync0119-t1-a, s19-combo-t1]
+    - [s19-vmem64-t1, s19-vmem48-t1]
+    - [s19-vmem64-t1, s19-vmem40-t1]
+    - [s19-vmem64-t1, s19-vmem56-t1]
+    - [s19-vmem64-t1, s19-sabwd1k-t1]
+    - [s19-vmem64-t1, s19-sabwd256-t1]
+    - [s19-vmem64-t1, s19-combo-t1]
+    - [s19-vmem48-t1, s19-vmem40-t1]
+    - [s19-vmem48-t1, s19-vmem56-t1]
+    - [s19-vmem48-t1, s19-sabwd1k-t1]
+    - [s19-vmem48-t1, s19-sabwd256-t1]
+    - [s19-vmem48-t1, s19-combo-t1]
+    - [s19-vmem40-t1, s19-vmem56-t1]
+    - [s19-vmem40-t1, s19-sabwd1k-t1]
+    - [s19-vmem40-t1, s19-sabwd256-t1]
+    - [s19-vmem40-t1, s19-combo-t1]
+    - [s19-vmem56-t1, s19-sabwd1k-t1]
+    - [s19-vmem56-t1, s19-sabwd256-t1]
+    - [s19-vmem56-t1, s19-combo-t1]
+    - [s19-sabwd1k-t1, s19-sabwd256-t1]
+    - [s19-sabwd1k-t1, s19-combo-t1]
+    - [s19-sabwd256-t1, s19-combo-t1]
 include: [regression-common.yaml]
 vars: {steps: 1000, window: "1:1001", units: 65000}
 checks:
@@ -103,6 +103,20 @@ checks:
     select: {kind: metrics, field: lm_loss, window: "1:1001"}
     threshold: calibrated
     params: {denominator: golden}
+  # 第 1 步梯度范数对 LKG（容差门；尺子是 GPU 重跑：修好的 golden rcc-a..j 第 1 步两两 45 对，noise_from: golden）。
+  # 第 1 步还没有混沌放大，读到的是改动本身：变异测试里 1000 步序列的容差门分不开无害改动与真错（都在 1–1.5 倍），
+  # 第 1 步梯度范数能分开（无害改动 ≤ 0.13 倍，关掉 RMSNorm 只舍一次 6.1 倍，eps 改一个量级 1400 倍）。
+  # 只看 grad_norm 一项：GPU 第 1 步 loss 十份逐位相同（尺子为 0，给不出判定）。TPU 的 grad_norm 是裁剪前的范数，同 GPU
+  - id: R09.step1_grad_norm_tolerance
+    row: R09
+    role: tolerance
+    type: loss_series
+    level: regress
+    hard: false
+    compare: lkg
+    select: {kind: metrics, field: grad_norm, window: "1:2"}
+    threshold: calibrated
+    params: {denominator: golden, noise_from: golden, judge: first_step}
   - id: R13.{f}_tolerance
     row: R13
     role: tolerance

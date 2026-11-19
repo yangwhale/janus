@@ -251,3 +251,19 @@ def test_config_diff_dict_with_ignore():
     b["cfg"]["remat"] = "full"
     r = fn("c", "regress", a, b, m)
     assert r.status == FAIL and r.details[0]["differ"] == [{"key": "remat", "test": "custom", "ref": "full"}]
+
+
+def test_config_diff_one_side_report():
+    """完整配置里只在一边出现的键（新加的默认关开关）：one_side: report 只列出、不判 fail；两边都有、值不同的照旧 fail。"""
+    ref = {"cfg": {"a": 1, "b": 2}}
+    new_key = {"cfg": {"a": 1, "b": 2, "new_switch": False}}
+    m = [{"test": "cfg", "ref": "cfg", "must_equal": True}]
+    assert REGISTRY["config_diff"]("c", "L0", new_key, ref, m).status == FAIL          # 默认 judge：多一个键就 fail
+    r = REGISTRY["config_diff"]("c", "L0", new_key, ref, [{**m[0], "one_side": "report"}])
+    assert r.status == PASS and r.metrics["other_differ"] == 1
+    assert r.details[0]["one_side"] == [{"key": "new_switch", "test": False, "ref": "<缺>"}]
+    changed = {"cfg": {"a": 1, "b": 3, "new_switch": False}}
+    r2 = REGISTRY["config_diff"]("c", "L0", changed, ref, [{**m[0], "one_side": "report"}])
+    assert r2.status == FAIL and r2.details[0]["differ"] == [{"key": "b", "test": 3, "ref": 2}]
+    bad = REGISTRY["config_diff"]("c", "L0", new_key, ref, [{**m[0], "one_side": "ignore"}])
+    assert bad.status == ERROR

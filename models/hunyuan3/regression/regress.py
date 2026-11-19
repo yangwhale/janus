@@ -136,8 +136,27 @@ def judge_rows(tier: str, catalog, results: dict, declare: str, scope: set) -> d
         out[row] = {"status": st, "note": note,
                     "checks": [{"id": c["id"], "status": (r or {}).get("status", "error"), "hard": c.get("hard", True),
                                 "message": (r or {}).get("message", "没有结果"),
-                                "metrics": (r or {}).get("metrics", {})} for c, r in strict + ent["tolerance"]]}
+                                "metrics": (r or {}).get("metrics", {}),
+                                **({"r": rm} if (rm := ruler_multiple(r)) is not None else {})}
+                               for c, r in strict + ent["tolerance"]]}
     return out
+
+
+def ruler_multiple(r: dict | None) -> float | None:
+    """按噪声参照判的检查：判定量对尺子上限的倍数，取各判定量里最大的（标准「判据按尺子倍数」）。不是 calibrated 的给 None。
+
+    loss_series 的三个量直接取 |值| / 上限；router_stats 的三个量在 metrics 里叫 *_max；首步判定（judge: first_step）只有 d0。"""
+    th = (r or {}).get("threshold") or {}
+    up = (th.get("noise") or {}).get("upper") or {}
+    if th.get("kind") != "calibrated" or not up:
+        return None
+    m = (r or {}).get("metrics") or {}
+    rs = []
+    for k, u in up.items():
+        v = m.get(k, m.get(f"{k}_max"))
+        if isinstance(v, (int, float)) and isinstance(u, (int, float)) and u > 0:
+            rs.append(abs(v) / u)
+    return max(rs) if rs else None
 
 
 def registry_check(rows: dict, lkg_name: str, cfg: dict, results: dict, declare: str, scope: set) -> None:
@@ -187,6 +206,14 @@ def load_calibration(platform: str, tier: str) -> dict | None:
     return hits[-1] if hits else None
 
 
+def _image_identity(image: str | None) -> str | None:
+    """镜像按内容摘要（@sha256:…）认：同一个摘要推到哪个仓库都是同一份镜像，仓库地址属于站点配置，不进仓库。
+    没有摘要的写法按原文比。"""
+    if image and "@sha256:" in image:
+        return image[image.index("@sha256:"):]
+    return image
+
+
 def calibration_valid(cal: dict | None, test: Run, cfg: dict) -> tuple[bool, str]:
     """标准第五节：一份噪声参照绑定平台、档位配置（sha256）、训练配置（hy3-4layers.yml 的 sha256）、依赖集合（镜像与版本）。
     任何一样变了，参照作废。训练配置改了（例如打开一个会改数值的开关）基线就变了，旧参照量的不是新配置的噪声。
@@ -202,7 +229,7 @@ def calibration_valid(cal: dict | None, test: Run, cfg: dict) -> tuple[bool, str
         bad.append("训练配置（标定条目没记 hy3-4layers.yml 的 sha256）")
     elif b["config_yml_sha256"] != yml:
         bad.append("训练配置（hy3-4layers.yml）")
-    if b.get("image") != test.meta.get("image"):
+    if _image_identity(b.get("image")) != _image_identity(test.meta.get("image")):
         bad.append("镜像")
     if b.get("versions") != test.meta.get("versions"):
         bad.append("依赖版本")
@@ -436,6 +463,8 @@ def render(o: dict, deps_same: bool) -> str:
         if e["checks"]:
             for i, ch in enumerate(e["checks"]):
                 key = ", ".join(f"{k}={_fmt(v)}" for k, v in list(ch["metrics"].items())[:5])
+                if ch.get("r") is not None:
+                    key = f"**{ch['r']:.2f} 倍尺子**, {key}"   # 判据按尺子倍数：≤ 1 pass、1–2 inconclusive、> 2 fail
                 msg = (ch["message"] or "").replace("|", "/").replace("\n", " ")[:140]
                 note = e["note"] if i == 0 and e.get("note") else ""
                 lines.append(f"| {row if i == 0 else ''} | {e['status'] if i == 0 else ''} | `{ch['id']}`（{ch['status']}"

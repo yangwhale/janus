@@ -149,15 +149,28 @@ def test_regression_t0_catalog_catches_one_ulp_in_final_state(tmp_path):
 
 
 def test_regression_t0_catalog_flags_config_change(tmp_path):
-    """档位以外多开一个精度开关：R05 的完整配置比对报出那一个键。"""
+    """档位以外多开一个精度开关（两边都有这个键、值不同）：R05 的完整配置比对报出那一个键，判 fail。"""
     make_noise_runs(tmp_path)
-    make_regression_run(tmp_path, "lkg-a")
+    make_regression_run(tmp_path, "lkg-a", extra_cfg={"lm_head_dh_wbar_remove": False})
     make_regression_run(tmp_path, "t-flag", extra_cfg={"lm_head_dh_wbar_remove": True})
     rc, out, res = _run_t0(tmp_path, "t-flag", "lkg-a")
     assert res["R05.process_flags"]["status"] == FAIL and "maxtext_config_full" in res["R05.process_flags"]["message"]
     det = [json.loads(x) for x in (out / "details" / "R05.process_flags.jsonl").read_text().splitlines()]
     cfg = next(d for d in det if d["name"].startswith("maxtext_config_full"))
     assert [x["key"] for x in cfg["differ"]] == ["lm_head_dh_wbar_remove"]
+
+
+def test_regression_t0_new_default_off_key_is_report_only(tmp_path):
+    """训练代码新加一个默认关的开关（只在被测的完整配置里出现）、数值逐位不变：R05 只报那个键，不判 fail。
+    变异测试里混元 3 分支 12 个合并提交（三个新开关默认关）就是这样被误判 fail 的。"""
+    make_noise_runs(tmp_path)
+    make_regression_run(tmp_path, "lkg-a")
+    make_regression_run(tmp_path, "t-new", extra_cfg={"embedding_shard_over_data": False})
+    rc, out, res = _run_t0(tmp_path, "t-new", "lkg-a")
+    assert res["R05.process_flags"]["status"] == PASS
+    det = [json.loads(x) for x in (out / "details" / "R05.process_flags.jsonl").read_text().splitlines()]
+    cfg = next(d for d in det if d["name"].startswith("maxtext_config_full"))
+    assert cfg["differ"] == [] and [x["key"] for x in cfg["one_side"]] == ["embedding_shard_over_data"]
 
 
 def test_regression_catalogs_load_and_cover_tier_rows():
@@ -283,6 +296,12 @@ def test_calibration_binding_includes_training_yml():
     old = {"binding": {k: v for k, v in good["binding"].items() if k != "config_yml_sha256"}}
     ok, why = regress.calibration_valid(old, test, cfg)
     assert not ok and "没记" in why
+    # 镜像按摘要认：仓库地址换成占位不影响；摘要不同才算换了镜像
+    placeholder = {"binding": {**good["binding"], "image": "<自建镜像>@sha256:1"}}
+    assert regress.calibration_valid(placeholder, test, cfg) == (True, "")
+    other = {"binding": {**good["binding"], "image": "img@sha256:2"}}
+    ok, why = regress.calibration_valid(other, test, cfg)
+    assert not ok and "镜像" in why
 
 
 def test_calibration_yml_binding_matches_pinned_config():

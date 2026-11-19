@@ -24,7 +24,7 @@ bash models/hunyuan3/regression/run_regression.sh T0 <名>   # 20 步冒烟
 bash models/hunyuan3/regression/run_regression.sh T1 <名>   # 1000 步主力
 ```
 
-混元 3 v5p 验收时的配置（`hy3-4layers.yml` a238883b）下，T0 / T1 的 LKG `reg-t0-fa-a`、`reg-t1-fa-a` 双跑逐位，并已批准（仓库里现在的 `hy3-4layers.yml` 已不是这一版，照现行文件直接跑 R02 必 fail、噪声标定作废，见 7.4 第 2 步）。TPU 执行噪声由基线加 7 个扰动臂共 8 份运行组成，两两 28 对；T1 loss 带符号均值上限是 4.76e-5。
+混元 3 v5p 验收时的配置（`hy3-4layers.yml` a238883b，也是仓库里现在这一版）下，T0 / T1 的 LKG `reg-t0-fa-a`、`reg-t1-fa-a` 双跑逐位，并已批准。TPU 执行噪声由基线加 7 个扰动臂共 8 份运行组成，两两 28 对；T1 loss 带符号均值上限是 4.76e-5。
 
 ## 本章做完手里有什么
 
@@ -122,13 +122,19 @@ flowchart LR
 | T3 生产形状 | 80 层、生产切分与数据管线，100 步 | 待定：生产配置与切片资源未定 |
 | T4 低精度配方 | — | 未启用：混元 3 目前没有 FP8 配方 |
 
-T0 / T1 的 LKG 都是验收时的配置 a238883b 下建的，已确认；仓库现行 yml 已变，跑之前先按 7.4 第 2 步处理。T0 / T1 守的是回归程序（累积 1、不重算），不是正式验收的 `t-rmap-on-1000`（累积 2 + rmap 重算）：T0 / T1 绿了，只说明回归程序没变；给验收程序单独建变体与 LKG 待定（[回归守的不是正式验收的那个程序](../../models/hunyuan3/regression/README.md#回归守的不是正式验收的那个程序)）。
+T0 / T1 的 LKG 都是验收时的配置 a238883b 下建的，已确认；仓库里的 yml 就是这一版。T0 / T1 守的是回归程序（累积 1、不重算），不是正式验收的 `t-rmap-on-1000`（累积 2 + rmap 重算）：T0 / T1 绿了，只说明回归程序没变；给验收程序单独建变体与 LKG 待定（[回归守的不是正式验收的那个程序](../../models/hunyuan3/regression/README.md#回归守的不是正式验收的那个程序)）。
 
 T1 的对齐门 R25 对的是[两层验收](../glossary.md#two-tier)的最终 golden [`rcc`](../glossary.md#rcc)（修好的 golden）：只对基线 `rcc-a` 算，`rcc-b..j` 只组噪声带（10 份两两 45 对），与正式迁移验收第一层同一把尺子。它是判定的：数值变了时，对 `rcc-a` 超出噪声要拦，对 LKG 变差也要拦。2026-11-16 之前对的是第一阶段 golden [`g1k`](../glossary.md#g1k)，TPU 对它本来就超，只报不判。以 [`regression/README.md`](../../models/hunyuan3/regression/README.md) 的 R25 行为准。
+
+### 能抓到多大的变化
+
+2026-11-18 用变异测试量过（[`effectiveness.md`](../../models/hunyuan3/regression/effectiveness.md)）：默认的逐位判法什么改动都抓得到；PR 声明「会改数值」以后，1000 步序列的容差门和对齐门 R25 只拦得住大错（eps 改一个量级），小精度改动和无害改动读数都在 1 倍尺子附近。T1 的 R09 第 1 步梯度范数容差门是为这一点补的。
 
 ### 触发方式与耗时
 
 现在全部手动触发。7.1 表里「频率」那一行的节奏，即每次合并、每 2–4 小时、每天，是目标（[`regression/README.md`](../../models/hunyuan3/regression/README.md#三档位)「三、档位」）。
+
+[`tools/autorun/`](../../tools/autorun/README.md) 把「对被守分支的分支头跑一档、出报告」包成一条命令，手动触发为主（项目负责人 2026-11-18 定）：`autorun.py --config <站点配置> --job <名>`，混元 3 的 T1 可以这样跑。定时轮询是可选的，默认不开。
 
 v5p 上从提交到取回，T0 一次约 10 分钟，T1 约 25 分钟（[`regression/README.md`](../../models/hunyuan3/regression/README.md#二平台档案)「二、平台档案」）。
 
@@ -144,19 +150,7 @@ v5p 上从提交到取回，T0 一次约 10 分钟，T1 约 25 分钟（[`regres
 2. 核对 R02 钉死的值。
    - `catalogs/regression-common.yaml` 钉了权重清单、数据清单和训练配置 `hy3-4layers.yml` 的 sha256。
    - 仓库里现有的登记钉的是验收时的配置 `hy3-4layers.yml` a238883b（[`lkg.yaml`](../../models/hunyuan3/regression/lkg.yaml) 开头有说明）。
-   - 注意：仓库里现在这份 `hy3-4layers.yml` 是 305fa4b5（只改了注释，数值相同），已经和登记不同。R02 比的是文件字节的 sha256，照它跑 R02 必然 fail，噪声标定也会判作废。
-   - 办法二选一（选哪种待拍板）：用 a238883b 那一版 yml 跑；或用 305fa4b5 重建 LKG、重标噪声、改钉值（[`regression/README.md`](../../models/hunyuan3/regression/README.md)「状态」）。
-   - 用 a238883b 那一版跑时，不能只在工作树里把文件换掉：`stage.sh` 只打已提交的 HEAD（`git archive`），工作树不干净直接退出。要把旧版 yml 提交到一个单独的分支，再从那份检出里 stage：
-
-     ```bash
-     git worktree add -b reg-yml-a238883b ../janus-reg origin/main
-     cd ../janus-reg
-     git show 4db01d7a:models/hunyuan3/frameworks/maxtext/hy3-4layers.yml > models/hunyuan3/frameworks/maxtext/hy3-4layers.yml
-     sha256sum models/hunyuan3/frameworks/maxtext/hy3-4layers.yml   # 应为 a238883b…
-     git commit -am "回归：yml 换回 a238883b 那一版"
-     git push -u origin reg-yml-a238883b   # 运行的 meta 记的 janus 提交要能取回
-     # 之后的 stage.sh、run_regression.sh 都在 ../janus-reg 里跑
-     ```
+   - 仓库里的 `hy3-4layers.yml` 就是 a238883b 那一版（2026-11-18 换回；中间一度因为改注释变成 305fa4b5，R02 比的是文件字节，会误报）。改这个文件哪怕只改注释，sha256 也会变，LKG 与噪声标定随之作废，所以注释里的说明改写进 README，不改 yml。
    - 你的配置不同就要改这几个值。
 3. 建首个 LKG，并把打印出的条目追加进 `lkg.yaml`、提交到你的分支。
    - 之后不带 `--lkg` 时默认取这一档最新的一条。

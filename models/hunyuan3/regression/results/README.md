@@ -165,6 +165,38 @@
   - 档位配置的 sha256 变了（abd58de70a97 → 2f9c5908788e），T1 噪声标定按新档位配置重新绑定（`../calibration.yaml` 末条）。参照运行与参照对不变，由同一批 8 份运行离线重算，各序列上限与上一条逐位相同；R22 阈值仍是 0.57%。
 - T0 没有 R25，不受影响。
 
+## 2026-11-18 变异测试后的目录换代
+
+变异测试（[`../effectiveness.md`](../effectiveness.md)）之后改了两处目录，数值不变，离线重新登记。
+
+- 改了什么：
+  - `../catalogs/regression-common.yaml`：R05 完整 MaxText 配置写 `one_side: report`（只在一边出现的键只报）。
+  - `../catalogs/regression-t1.yaml`：加 `R09.step1_grad_norm_tolerance`（`role: tolerance`，`judge: first_step`，`noise_from: golden`，尺子 `rcc-a..j` 第 1 步两两 45 对，上界 3.14e-5）。
+  - 档位配置没改，噪声标定的绑定不受影响。
+- 重新登记：
+  - `reg-t0-fa-b` → `reg-t0-fa-a`、`reg-t1-fa-b` → `reg-t1-fa-a` 在新目录下重判：只有 `R02.registry` 报目录变化，其余全部逐位。
+  - 两条追加在 `../lkg.yaml` 末尾（逐位，无需批准），登记后重判 PASS：[`reg-t0-fa-r05/`](reg-t0-fa-r05/report.md)、[`reg-t1-fa-r09/`](reg-t1-fa-r09/report.md)。
+
+## 2026-11-19 升级依赖换代（MaxText 同步上游 main）
+
+MaxText 上的一处修改 把 main 同步到上游最新 main 并升级依赖（jax / jaxlib 0.12.1、libtpu 0.0.53.1、flax 0.12.12、optax 0.2.9、orbax-checkpoint 0.12.11、tokamax 0.0.17），声明「升级依赖」。被测 `7e49199ee` 即合入 main 的同步代码；训练配置（yml a238883b）和档位配置都没变。
+
+| # | 做什么 | 被测 → LKG | 结论 | 结果 |
+|---|---|---|---|---|
+| 1 | 新依赖下对旧 LKG | `sync0119-t1-a` → `reg-t1-fa-a` | 数值 FAIL（按「升级依赖」只报）：R04 / R05 / R21 按预期不同，R03、R07 逐位，数值行不逐位 | [`sync0119-t1-a/`](sync0119-t1-a/report.md) |
+| 2 | 同一提交双跑 | `sync0119-t1-b` → `sync0119-t1-a` | PASS，19 行全部逐位 | [`sync0119-t1/`](sync0119-t1/report.md) |
+
+- 第 1 行的容差行用的是旧 TPU 执行噪声参照。依赖变了，这份参照按第五节已经作废，倍数只作参考：loss 0.97、第 1 步梯度范数 0.27、raw_grad_norm 1.01（1–2 倍区间）、param_norm 0.82、路由偏置 0.54。
+- 对齐门 R25（对 GPU golden 10 份）0.77 倍尺子，LKG 时 0.79：不变差。
+- 2026-11-19 07:01 项目负责人批准：`sync0119-t1-a` 登记为 T1 新 LKG（`../lkg.yaml` 末条）。
+- 新依赖下重标 TPU 执行噪声：同一代码、同一镜像，照第五节现行配置那次的做法重跑基线和 7 个臂（vmem64、vmem48、vmem40、vmem56、sabwd1k、sabwd256、combo），运行名前缀 `s19-`，读数在 [`calibration-v5p-s19.json`](calibration-v5p-s19.json)。
+  - 三关：7 个臂全过。T0 双跑都逐位；第二关 R20 计数与基线相同（all-reduce 8、`reduce-precision` 63）；第三关 1000 步 loss 对基线是 GPU 自噪声上限（10 份 45 对）的 0.03–0.67 倍（带符号均值）、0.83–0.93 倍（MARE）、0.51–0.72 倍（最大单步）。
+  - 第二关的允许键：vmem 臂写 `xla_tpu_scoped_vmem_limit_kib`（新 libtpu 的 flagfile 在基线里也列出默认值 `-1`，两行都要认作臂自己的开关）；sabwd 臂除 `sa_block_*_dkv / _dq` 外还要写派生的 `local_sa_block_*`。
+  - 参照：8 份运行两两 28 对，`status: 正式`。T1 lm_loss 上限：带符号均值 3.60e-5、MARE 1.17e-4、最大单步 6.36e-4（旧参照 4.76e-5 / 1.19e-4 / 7.16e-4）。留一法：lm_loss 最大的一对是第二大的 1.05 倍（T1）、1.12 倍（T0）。
+  - 注意：T1 `raw_grad_norm` 的带符号均值上限由 `s19-sabwd1k-t1` × `s19-combo-t1` 一对撑着，是第二大的 1.71 倍；其余序列与统计量都在 1.12 倍以内。项目负责人 2026-11-19 确认不补臂，按这份参照用。
+- 重标后目录换代（数值不变）：`runs.noise` 换了，目录内容指纹随之变化。`sync0119-t1-b` → `sync0119-t1-a` 在新目录下重判，只有 `R02.registry` 报目录变化，其余逐位；登记后重判 PASS，容差行用新尺子全部 pass（[`sync0119-t1-r/`](sync0119-t1-r/report.md)），T1 LKG 在新目录下重新登记（`../lkg.yaml` 末条，逐位，无需批准）。
+- T0：`s19-t0-a` 对旧 T0 LKG `reg-t0-fa-a`（声明「升级依赖」，[`s19-t0-a/`](s19-t0-a/report.md)）：R04 / R05 / R21 按预期不同，R03、R07 逐位，数值行不逐位；R08 容差（新尺子）0.62 倍。同一提交双跑 `s19-t0-b` → `s19-t0-a` 全部逐位（[`s19-t0/`](s19-t0/report.md)）。2026-11-19 项目负责人批准：`s19-t0-a` 登记为 T0 新 LKG（`../lkg.yaml` 末条，升级依赖换代）。登记后按 `lkg.yaml` 默认取 LKG 重判 `s19-t0-b`：PASS，15 行全部逐位（[`s19-t0-r/`](s19-t0-r/report.md)）。
+
 下面是旧配置（yml 7704115b）下的标定与 LKG 记录，留作历史。
 
 ## TPU 执行噪声标定（正式，`../README.md` 第五节）

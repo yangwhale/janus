@@ -98,9 +98,13 @@ train() {   # $1 = 运行名
   return $rc
 }
 
-fetch_lkg() {   # LKG 运行目录不在本地时，按 lkg.yaml 的 location 取回
+fetch_lkg() {   # LKG 运行目录不在本地（或不全）时，按 lkg.yaml 的 location 取回
   local name=$1 loc
-  [ -f "$LOCAL_RUNS/$name/DONE" ] && return 0
+  # 只看 DONE 不够：LKG 往往也是噪声参照的基线，fetch_noise 只给它取 meta.json、metrics.jsonl、DONE 三个文件，
+  # 之后 R03 / R07 / R15 / R20 / R21 会因缺输入指纹、状态清单、优化后 HLO 报 error。三样都在才算本地已有
+  [ -f "$LOCAL_RUNS/$name/DONE" ] && [ -f "$LOCAL_RUNS/$name/state_sha/final.json" ] \
+    && [ -f "$LOCAL_RUNS/$name/hlo/train_step.after_optimizations.txt" ] \
+    && compgen -G "$LOCAL_RUNS/$name/data/rank*.jsonl" >/dev/null && return 0
   loc=$($PY - "$HERE/lkg.yaml" "$name" <<'PY'
 import sys, yaml
 d = yaml.safe_load(open(sys.argv[1])) or {}

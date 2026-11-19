@@ -54,6 +54,8 @@ def config_diff(cid, level, test_cfg: dict, ref_cfg: dict, mapping: list, hard=T
     - 两边对照：{test: 键路径, ref: 键路径, must_equal: bool, transform: 可选 'float'|'str'}。
       must_equal 的字段不同即 fail；其余不同只列出。键缺失：must_equal 的判 error。
       两边都是字典时逐子键比，ignore（通配列表）匹配到的子键不比，details 只列不同的子键。
+      one_side: report 时，只在一边出现的子键（新加或删掉的配置项）只列出、不算 must_equal 的不同；
+      两边都有、值不同的子键照旧判。用于完整配置：加一个默认关的新开关，数值不变，不该因为多了一个键就判 fail。
     - 等于给定值：{test: 键路径, equals: 值, ref: 可选键路径}。被测与参照两边都必须等于给定值（ref 省略时与 test 同路径），
       任一边不等即 fail，任一边缺键即 error。用于 dropout = 0、随机路由关这类「两边相同也不够，必须是这个值」的断言。"""
     res = CheckResult(cid, "config_diff", level, hard, threshold={"kind": "exact"})
@@ -101,15 +103,25 @@ def config_diff(cid, level, test_cfg: dict, ref_cfg: dict, mapping: list, hard=T
             import fnmatch
             ign = list(m.get("ignore") or [])
             keep = lambda k: not any(fnmatch.fnmatchcase(str(k), pat) for pat in ign)  # noqa: E731
+            one_side = m.get("one_side", "judge")
+            if one_side not in ("judge", "report"):
+                missing.append(f"{m['test']}: one_side 只能是 judge 或 report")
+                continue
             sub = sorted(k for k in set(a) | set(b) if keep(k) and (k not in a or k not in b or a[k] != b[k]))
-            same = not sub
+            lone = [k for k in sub if k not in a or k not in b] if one_side == "report" else []
+            judged = [k for k in sub if k not in lone]
+            same = not judged
             row = {"name": f"{m['test']} ↔ {m['ref']}", "equal": same, "must_equal": bool(m.get("must_equal")),
                    "keys": len([k for k in set(a) | set(b) if keep(k)]), "ignored": ign,
-                   "differ": [{"key": k, "test": a.get(k, "<缺>"), "ref": b.get(k, "<缺>")} for k in sub[:20]],
-                   "differ_count": len(sub)}
+                   "differ": [{"key": k, "test": a.get(k, "<缺>"), "ref": b.get(k, "<缺>")} for k in judged[:20]],
+                   "differ_count": len(judged)}
+            if lone:
+                row["one_side"] = [{"key": k, "test": a.get(k, "<缺>"), "ref": b.get(k, "<缺>")} for k in lone[:20]]
+                row["one_side_count"] = len(lone)
+                diff.append(f"{row['name']}（只在一边出现 {len(lone)} 个子键，只报：{lone[:3]}）")
             res.details.append(row)
             if not same:
-                (bad if m.get("must_equal") else diff).append(f"{row['name']}（{len(sub)} 个子键：{sub[:3]}）")
+                (bad if m.get("must_equal") else diff).append(f"{row['name']}（{len(judged)} 个子键：{judged[:3]}）")
             continue
         same = a == b
         row = {"name": f"{m['test']} ↔ {m['ref']}", "test": a, "ref": b, "equal": same, "must_equal": bool(m.get("must_equal"))}

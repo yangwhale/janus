@@ -10,6 +10,12 @@
 
 ### Added
 
+- 混元 3 `hy3-4layers.yml` 换回 a238883b 那一版（#251 只改了注释里一个路径，文件 sha256 变了，照仓库跑 R02 必 fail），LKG 与噪声标定不动
+
+- `loss_series` 新参数 `judge: first_step`（只判首步差 `d0`，尺子取噪声对的首步差）与 `noise_from: golden`（尺子换成 golden 两两，比较对象不变）；`config_diff` 新参数 `one_side: report`（只在一边出现的子键只报）。默认值不改行为，已提交结果不受影响
+- 混元 4 `analysis/kernel_signature_diff.py`：比两份优化后 HLO 里 Pallas kernel 的结果类型，报 kernel 内部缓冲 dtype 变窄（第一道检查扫不到的 kernel 内精度变化）
+- **[判定]** 混元 3 日常回归 T1 加 R09 容差门 `R09.step1_grad_norm_tolerance`（第 1 步梯度范数对 LKG，尺子 `rcc-a..j` 第 1 步两两 45 对），只在声明「执行级」「升级依赖」不逐位时采用；数学不变时不看。LKG `reg-t1-fa-a` 在新目录下重新登记，数值不变
+
 - 混元 4 TPU 自比第 07 件「输出头反向省掉一次舍入」（`04-tpu-self/impacts/07-hc-head-dgrad.md`）与修法开关的上卡核对：MaxText `hc_head_dgrad_force_bf16_rounding`（台账 M65，默认关）在 v7x 0.0.52 纯数据并行不累积、v7x 0.0.46 FSDP 8、v5p 关小矩阵乘改写三种会偏的程序上把 `hc_head` 第 1 步梯度拉回对照水平，前向与步时不变（`results/hc-head-dgrad-fix.json`，脚本 `analysis/hc_head_dgrad_fix_check.py`，台账 J75）
 - 混元 4 mini 普查 TPU 实验二：libtpu 0.0.52 上专家并行 4、8（04 自比 V22–V24，对底 V22 都在噪声内，只换求和顺序）；推荐组合开回「索引器权重投影乘 16 位模型权重」（M27）跑 300 步一份（`x5-prod-m27`，`t1zp300m27-l4`：索引器 KD 带符号均值 −6.76e-4 → −1.98e-4，从不过变待定，`t1zp-m27-step1.json` 第 1 步逐位相同）；两个 v5p 切片走 DCN 的多切片一次（04 自比 B15，`ts-ms2-dp2-r2`：曲线在噪声内，但第 1 步 `hc_head` 三个张量离 FP64 0.51–0.57，靠 iHC 豁免单列；机制见下一条）。判定不变
 - 混元 4 普查离线补查（只用 CPU）：B15 的 `hc_head` 偏差离线定位为差异清单 A16 同一型（走 DCN 改了融合切分，主输出头 dgrad 卷积 kernel 并进末层 RMSNorm 行和；单切片同一切法 B2c 没有、不偏；LLO 与上卡加 barrier 没核；`hc-head-dgrad-fusion.json` 追加两份）；案例 16 的特征补扫 8 份存了 HLO 的运行，`jit-miscompile-hlo-scan.json` 292 → 300 份，都是 0 处；C 口径第 6 份 `tc-f` 离线重编再扫，0 处（并进 `jit-miscompile-offline-scan.json`）。判定不变
@@ -103,6 +109,8 @@
 
 ### Changed
 
+- **[判定]** 混元 3 日常回归 R05 的完整 MaxText 配置写 `one_side: report`：训练代码新加或删掉的配置项只报不判。原来新加一个默认关的开关、数值逐位不变也判 fail（`hunyuan` 分支 LKG 之后的 12 个合并提交实测如此）。T0、T1 的 LKG 在新目录下重新登记，数值不变
+
 - 混元 4 GPU 一侧的共用文件（`hy4_mcore.py`、`hy4_weights.py`、`hy4_capture.py`、`train_hy4mg.py`、`step1_ref.py`、`layer_ref.py`、`export_hf_grads.py`、`equiv_hf.py`、`pod_run.sh`，TPU 一侧的 `replay.py`、`run.sh`，`model/make_tiny_hf.py`）加扩展点：别的模型变体写在同目录的扩展模块里（`hy4_ext_*.py`、`pod_run_ext_*.sh`、`replay_ext_*.py`、`run_ext_*.sh`、`make_tiny_hf_*.py`），共用文件不依赖它们；没有扩展时各文件的行为就是共用部分（`frameworks/megatron/hy4_ext.py`）。CPU 上 hy4-tiny 的训练、存档、抓数、第 1 步 FP64 参照、单层参照、梯度导出、HF 目录与回放核对，输出与改动前逐位相同
 - **[判定]** 混元 4 TPU 自比的 iHC 豁免加倍数上限：iHC 张量 R ≤ 5.22 才单列、不计入未定责，超过的记未定责（`analysis/tpu_self_compare.py` 的 `IHC_R64_CAP`；上限取 01-mini D11 实际接受过的最大 R 5.218；PROTOCOL 变更记录 2026-11-12）。旧结果已全部重判写回（`analysis/tpu_self_ihc_cap_rejudge.py --apply`，台账 J74；旧档存 `verdict.before_ihc_cap`）：220 个结果文件里 9 个换档，都是 `hc_head` 偏的那几次（D3、H2、B15、V17 及 L7、L21）从略超 / 在噪声内变成超
 - **[判定]** 混元 4 mini 对齐配置改 C 口径：四份对齐 yml 在已开的 `ihc_force_bf16_rounding`（M36）之外再开 `hc_head_force_bf16_rounding`（M52）与 `ihc_stream_grad_gpu_order`（M58），TPU 在 iHC 与 hc_head 一带照 GPU 的写法「FP32 算、BF16 存」，GPU 不改；MaxText `8d3d7561`。现行比较从 `tz-off-rep` 换成 C 口径第一份 `tc-a`（同配置 5 份 `tc-a … tc-e` 都判、都报）。现行判定：1000 步 9 项过 8、待定 1（路由偏置均值，带符号均值 r 1.31，`t1zc-l4`），主 loss 由待定（r 1.55、1.52）变过（MARE r 0.98、0.97）；前 300 步过 8、待定 1（grad_norm MARE r 1.01，`t1zc300-l4`）。`tz-off-rep` 降为上一代，结果保留、不重判。主 loss 后段的主因定到 iHC 流梯度的舍入写法（混元 4 `ROOT-CAUSES.md` 第 30 行），取代之前的「根因未定」；C 口径下后段还剩约 +6.6e-6，机制待查。L3 第 1 步梯度、优化器一步、路由一致率、L1、L2、QK-Clip、健康信号、同设置重跑、存档续跑、抓数不改数值、案例 16 的特征扫描没在 C 口径上重判，沿用上一代读数（各文档标「C 口径上没重判」；其中 L3 第 1 步随后在 C 口径上重判，案例 16 的扫描随后补扫 `tc-a … tc-e`）。另加 GPU 一侧诊断开关 G37（`HY4_TPU_LIKE_*`，默认不改行为）、`models/hunyuan4/analysis/mini_factorial_cells.py`，结果 `t1zc-repeats.json`、`tc-l0-settings`、`tc-l0-config`、`mini-factorial-tpu.json`、`mini-factorial-c-vs-m58.json`、`mini-gpu-tpulike.json`。变更记录见混元 4 `PROTOCOL.md` 2026-11-11
@@ -140,6 +148,8 @@
 - 文档：`01-principles.md` 的术语表并入 `docs/glossary.md`；指标速查并入 `docs/reference/metrics.md`；三份设计文档从 `docs/reference/` 搬到 `docs/design/` 并编号
 
 ### Fixed
+
+- 混元 3 `run_regression.sh`：LKG 也是噪声参照的基线时，`fetch_noise` 只取它的三个文件，`fetch_lkg` 原来见到 DONE 就跳过，R03 / R07 / R15 / R20 / R21 报 error；改为输入指纹、状态清单、优化后 HLO 都在才跳过
 
 - 混元 4 Megatron 一侧两个 CPU 参照工具在 `main` 上原样跑不起来，已修：
   - `equiv_hf.py --backward` 比梯度时报 `KeyError: 'decoder.final_layernorm.weight'`。当初为去掉 iHC 的结构消融在 `hy4_weights.GLOBAL` 里加了普通末层 RMSNorm 一项，它与 hc_head 那几项互斥，载入时按「模型里有没有」筛掉了，比梯度时没筛。改为 `hy4_weights.global_plan(hc_mult)` 按 config 只给实际有的几项，载入、比梯度、`analysis/l0_init_vs_gpu_mcore.py` 都用它（后者原来会把这一项算成「只在一边」）。

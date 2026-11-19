@@ -1,5 +1,5 @@
 # 混元 3 截 4 层：MaxText 训练配置，逐项对齐 GPU golden（models/hunyuan3/frameworks/megatron/train_hy3.py 与 golden 的 meta.json）。
-# 逐项对照与证据见 models/hunyuan3/config-alignment.md。要 maxtext hunyuan@4d4ffac 或更新（下面三个精度开关从这个提交起才有）。
+# 逐项对照与证据见 models/hunyuan3/model/config-alignment.md。要 maxtext hunyuan@4d4ffac 或更新（下面三个精度开关从这个提交起才有）。
 # 用法见 models/hunyuan3/frameworks/maxtext/README.md；train_hy3.py 读这个文件，再在命令行补上必须覆盖模型配置的键
 #（mtp_num_layers=0 等，见 train_hy3.py 的 FORCED）。
 #

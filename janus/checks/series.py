@@ -117,6 +117,7 @@ def _hard_limit(res: CheckResult, vals, params):
 def loss_series(cid, level, test, ref, threshold: Threshold, hard=True, params=None, **_):
     """test / ref：步号 → 值（被测已按 meta.steps.convention 换算到 golden 步号）。params：window（必填）、
     denominator（golden）、first_step（窗口外单独报的首步，默认 0）、hard_limit.max_step、
+    judge（window 默认，判窗口的三个量；first_step 只判首步 d0，calibrated 时尺子取噪声对首步差的最大值）、
     auto_offset（[lo, hi]，步号偏移探测，见 probe_offset）、step_offset（约定里的 k，只用于报告）。
     判定量取绝对值：d0、signed_mean、mare、max_step。顺序：偏移探测 → 首步 → 窗口统计。"""
     params = params or {}
@@ -138,6 +139,16 @@ def loss_series(cid, level, test, ref, threshold: Threshold, hard=True, params=N
         res.status, res.message = FAIL, f"出现非有限值：第 {raw['nonfinite_steps'][:5]} 步"
         return res
     if _first_step(res, vals, params) or _hard_limit(res, vals, params):
+        return res
+    if params.get("judge") not in (None, "window", "first_step"):
+        res.status, res.message = ERROR, f"judge 只能是 window 或 first_step：{params.get('judge')}"
+        return res
+    if params.get("judge") == "first_step":
+        # 只判首步（窗口外单独报的那一步，d0）：首步还没有混沌放大，读到的是改动本身；窗口统计照常报、不判
+        judge_series(res, vals, threshold, ("d0",))
+        if res.threshold.get("kind") == "calibrated":
+            up = res.threshold["noise"]["upper"].get("d0")
+            res.r1 = (vals["d0"] / up) if up else None
         return res
     judge_series(res, vals, threshold, CALIBRATED_KEYS if threshold.kind == "calibrated" else SERIES_KEYS,
            _se_floor(threshold, params))

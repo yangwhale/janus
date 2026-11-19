@@ -201,3 +201,27 @@ def test_multi_golden_noise_from_golden_ignores_runs_noise(tmp_path):
     assert pairs["L4.loss"] == ["n1~n2", "n1~n3", "n2~n3"]
     assert pairs["L4.loss_g"] == ["g1~g2", "g1~g3", "g2~g3"]
     assert res["L4.loss"]["status"] != res["L4.loss_g"]["status"] or res["L4.loss"]["threshold"] != res["L4.loss_g"]["threshold"]
+
+
+def test_loss_series_noise_from_golden_compares_to_lkg(tmp_path):
+    """日常回归：compare: lkg 的 loss_series 写 noise_from: golden 时，被测仍对 LKG 比，尺子换成 golden 两两（GPU 重跑）。"""
+    for i in (1, 2, 3):
+        make(tmp_path, f"g{i}", f"golden-{i}", seed=i)
+        make(tmp_path, f"n{i}", "tpu", seed=10 + i, noise=1e-7)
+    make(tmp_path, "l", "tpu", seed=20)
+    make(tmp_path, "t", "tpu", seed=21)
+    chk = {"id": "R12", "type": "loss_series", "level": "regress", "compare": "lkg", "threshold": "calibrated",
+           "select": {"kind": "metrics", "field": "lm_loss", "window": "1:51"}}
+    cat = {"schema_version": 1, "model": "toy", "stage": "t",
+           "runs": {"test": "t", "lkg": "l", "golden": ["g1", "g2", "g3"], "root": str(tmp_path),
+                    "noise": [["n1", "n2"], ["n1", "n3"], ["n2", "n3"]]},
+           "checks": [chk, {**chk, "id": "R12g", "params": {"noise_from": "golden"}}]}
+    cp = tmp_path / "cat.yaml"
+    cp.write_text(yaml.safe_dump(cat, allow_unicode=True))
+    main(["run", str(cp), "--out", str(tmp_path / "out")])
+    res = {c["id"]: c for c in json.loads((tmp_path / "out" / "results.json").read_text())["checks"]}
+    assert [r["pair"] for r in res["R12"]["metrics"]["noise_loo"]] == ["n1~n2", "n1~n3", "n2~n3"]
+    assert [r["pair"] for r in res["R12g"]["metrics"]["noise_loo"]] == ["g1~g2", "g1~g3", "g2~g3"]
+    assert res["R12"]["metrics"]["signed_mean"] == res["R12g"]["metrics"]["signed_mean"]      # 比较对象相同，只换尺子
+    no_noise = {**cat, "runs": {k: v for k, v in cat["runs"].items() if k != "noise"}, "checks": [cat["checks"][1]]}
+    validate(no_noise)                                                                         # 不给 runs.noise 也合法

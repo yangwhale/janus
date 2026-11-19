@@ -136,13 +136,14 @@ runs:
 - `hard_limit`、`signed_mean_se_k`；
 - `denominator: golden | test | mean`（默认 `golden`）；
 - `rtol` / `abs_ulp`；
-- `multi_golden` 另有：
-  - `noise_from: runs | golden`：默认 `runs`，有 `runs.noise` 就用它；`golden` 固定用 golden 两两组合；
-  - `baseline: <golden 名>`：单 golden 模式，只对这一份比，其余 golden 只组噪声。
+- `noise_from: runs | golden`（`multi_golden` 与 `loss_series`）：默认 `runs`，有 `runs.noise` 就用它；`golden` 固定用 golden 两两组合。
+  - `loss_series` 用它时比较对象不变（`compare: lkg` 仍是被测对 LKG），只把尺子换成 golden 两两。日常回归里 `runs.noise` 是 TPU 执行噪声，要 GPU 重跑当尺子的那几条写 `noise_from: golden`。
+- `multi_golden` 另有 `baseline: <golden 名>`：单 golden 模式，只对这一份比，其余 golden 只组噪声。
 
 注 2（`config_diff`）：
 - 键路径指向 `meta.json`；
-- 两边都是字典时逐子键比，`ignore` 的通配子键不比。
+- 两边都是字典时逐子键比，`ignore` 的通配子键不比；
+- `one_side: judge | report`（默认 `judge`）：`report` 时只在一边出现的子键只列出（`details` 的 `one_side`），不算 `must_equal` 的不同；两边都有、值不同的子键照旧判。
 
 注 3（`checkpoint_equal`）：
 - 默认比参数清单：被测对 golden；给了 `test_run` / `ref_run` 就比这两个运行。
@@ -178,7 +179,7 @@ runs:
 2. `id` 唯一；`type` 是已注册的检查类型；`level` 合法；`select.kind` 合法；必填字段齐全。
 3. `threshold` 含数值时必须有 `source`。
 4. `threshold: calibrated` 时 `runs.noise` 至少 1 对。
-   - `multi_golden` 例外：没给、或写了 `noise_from: golden`，就用 golden 两两组合；
+   - `multi_golden` 例外：没给、或写了 `noise_from: golden`，就用 golden 两两组合；`loss_series` 写了 `noise_from: golden` 也用 golden 两两组合；
    - 少于 3 对时该检查只能得到 `inconclusive` 或 `fail`。
 5. `compare: lkg` 时 `runs.lkg` 不为空。
 6. `threshold: pending`（待标定）只能用在 `loss_series`、`router_stats`。

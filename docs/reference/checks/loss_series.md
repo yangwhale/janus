@@ -18,6 +18,8 @@
 - `first_step_tol` + `first_step_source`（首步单独判，可选）。
 - `hard_limit.max_step`（单步硬上限，可选）。
 - `signed_mean_se_k`（可选，见下）。
+- `judge`（`window` 默认 / `first_step`）：`first_step` 时只判首步差 `d0`，窗口的三个量照报不判（见下）。
+- `noise_from`（`runs` 默认 / `golden`）：`golden` 时尺子换成 `runs.golden` 两两组合，比较对象不变（`compare: lkg` 仍是被测对 LKG）。
 
 **判据**：判定量取绝对值：首步差 `d0`、带符号均值、MARE、最大单步。
 
@@ -27,6 +29,8 @@
   3. 单步超硬上限 → `fail`；
   4. 再按门槛判。
 - `calibrated` 只判带符号均值、MARE、最大单步（首步差是单个样本，GPU 自比时常为 0，不能当尺子）。
+  - 例外 `judge: first_step`：只判 `d0`，尺子是各噪声对首步差的最大值。只在噪声对首步确实不同时用（例如 GPU 重跑第 1 步的梯度范数；GPU 第 1 步 loss 常逐位相同，那时噪声对被剔掉、只能给 `inconclusive`）。
+    - 用途：日常回归在声明「会改数值」时读改动本身。1000 步后两条轨迹已去相关，窗口的三个量对任何不逐位的改动都在 1 倍尺子附近；第 1 步还没有混沌放大（混元 3 变异测试，`models/hunyuan3/regression/effectiveness.md`）。
 - `exact` 要求四个量都是 0。
 
 ## 可选机制

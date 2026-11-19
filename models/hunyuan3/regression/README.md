@@ -8,15 +8,12 @@
 
 **状态**（2026-11-05）：
 
-- **能不能跑**：T0、T1 可以手动跑（第八节），**不排程**（第九节第 3 条）。T2 及以上未实施。
+- **能不能跑**：T0、T1 可以手动跑（第八节）。也可以用 [`tools/autorun/`](../../../tools/autorun/README.md) 一条命令对 `hunyuan` 分支头跑 T1（`--job hy3-t1`，作业类型 `hy3-t1`），手动触发；定时轮询可选、默认不开。T2 及以上未实施。
 - **首个 LKG**：v5p T0、T1 已建立（同一提交双跑逐位）。
   - 「数学不变」复测逐位通过、故意改开关被拦（[`results/`](results/README.md)）。
 - **现行配置是 `hy3-4layers.yml` a238883b**。
   - 内容：`dense_fp32_accumulation`（FSDP 切开收缩维的投影改用 FP32 累加）与三个舍入开关，maxtext hunyuan@0622774a。
-- **⚠ 仓库里现在这份 `hy3-4layers.yml` 的 sha256 是 305fa4b5，不是 a238883b**（只改了注释，数值相同）。
-  - 训练脚本记的是文件字节的 sha256（`train_hy3.py` 的 `sha_file`），所以照仓库现行文件跑日常回归：R02（`config.sha256 == a238883b`）必然判 fail，噪声标定按 `config_yml_sha256` 判作废，执行级判定降为 inconclusive。
-  - 两种办法：用 a238883b 那一版 yml（`git show 4db01d7a:models/hunyuan3/frameworks/maxtext/hy3-4layers.yml`，的提交）跑；或改用 305fa4b5，重建 LKG、重标噪声、改 R02 的钉值。选哪种待拍板。
-  - 用旧版 yml 时不能只在工作树里换文件：`stage.sh` 只打已提交的 HEAD、要求工作树干净。要提交到单独的分支再 stage，完整步骤见[指南第 7 章 7.4 第 2 步](../../../docs/guide/07-daily-regression.md#第一次跑之前换成你自己的)。
+- **仓库里的 `hy3-4layers.yml` 已换回 a238883b 那一版**（2026-11-18，项目负责人选方案 A）：曾把文件头注释里的一个路径改了，使文件字节的 sha256 变成 305fa4b5、照仓库跑 R02 必 fail；数值配置两版相同。现在照仓库直接跑即可，LKG、噪声标定、R02 钉值都不用动。注释里那条旧路径 `models/hunyuan3/model/config-alignment.md` 现在是 [`../config-alignment.md`](../config-alignment.md)。
 - **现行配置下的 LKG**：T0、T1 已重建（`reg-t0-fa-a`、`reg-t1-fa-a`）。
   - 同一提交双跑逐位，各另有 3 次同程序重跑也逐位。
   - **2026-11-05 换代**（数学级换代）。
@@ -28,6 +25,9 @@
   - 噪声是 `rcc-a..j` 10 份两两 45 对，与正式迁移验收第一层同基线、同尺子；单步硬上限 9.75e-3（注「单步硬上限」）。
   - 现行 T1 LKG `reg-t1-fa-a` 对 `rcc-a`：带符号均值 / MARE / 最大单步 +1.26e-5 / 1.082e-4 / 4.99e-4，噪声上限 9.47e-5 / 1.377e-4 / 9.75e-4，**pass**（注 R25）。
   - 只改了检查项目录和档位配置的 golden 列表，数值没变：`reg-t1-fa-a` 在新目录下重新登记（[`lkg.yaml`](lkg.yaml) 末条），T1 噪声标定按新档位配置重新绑定，数值逐位不变（[`calibration.yaml`](calibration.yaml) 末条）。
+- **有效性检验（2026-11-18，变异测试）**：注入大小已知的改动各跑一次 T1，见 [`effectiveness.md`](effectiveness.md)。
+  - 默认的逐位判法 8 个改动全抓到、对照与原样拷贝都过；声明「会改数值」后 1000 步容差门与 R25 分不开小真错与无害改动（都在 0.75–1.62 倍）。
+  - 据此 T1 加了 R09 第 1 步梯度范数容差门（注 5），R05 完整配置只在一边出现的键改为只报（注 1）；T0、T1 的 LKG 在新目录下重新登记，数值不变（[`lkg.yaml`](lkg.yaml) 末两条）。
 - **历史**：旧配置（7704115b）下的标定与 LKG 留作历史。
 - 凡写「待实测」「待标定」的数都还没有。
 
@@ -235,6 +235,13 @@ T0–T2、T4 都用回放数据，所以**生产的数据管线不在这几档�
 
 ### 现行配置的标定
 
+**现状（2026-11-19，新依赖）**：MaxText 上的一处修改 升级依赖（jax 0.12.1、libtpu 0.0.53.1、tokamax 0.0.17 等）后旧参照作废，同一配置（yml a238883b）在新镜像上照下面 2026-11-05 的做法重标。
+
+- 基线 T1 `sync0119-t1-a`（与 `-b` 逐位）、T0 `s19-t0-a`（与 `-b` 逐位）；同样 7 个臂（`s19-*`），三关全过。
+- 8 份运行两两 28 对，`status: 正式`；读数在 [`results/calibration-v5p-s19.json`](results/calibration-v5p-s19.json)，条目在 `calibration.yaml` 末两条，两份目录的 `runs.noise` 已换。
+- 镜像绑定按摘要（`@sha256:…`）认，仓库地址不进仓库（`regress.py` 的 `_image_identity`）。
+- 这次没有 R22 步时阈值：同一程序的运行只有基线双跑两份，不够 5 份。
+
 **现状（2026-11-05，现行配置 yml a238883b）**：配置换代后按标准第五节重标。
 
 - 7 个在旧配置下进了参照的臂在新配置下重跑，三关全过：
@@ -416,8 +423,10 @@ bash models/hunyuan3/regression/run_regression.sh T0 <名> --declare 数学级 -
   - 「数学级」时范围内的数值行只报；范围外的行不逐位就写明「PR 退回」。
 - 报告首屏的「对照臂」一栏：建首个 LKG 时就是同一提交双跑。
   - 其余手动运行没跑对照臂，数值失败时先补跑一次 LKG 的提交再下结论（标准第八节）。
-- 执行级声明下，R09（第 1 步范数）与 R15（训练后状态）没有容差门：不逐位时这两行是 `inconclusive`。
+- 执行级声明下，R15（训练后状态）没有容差门，T0 的 R09（第 1 步范数）也没有：不逐位时这两行是 `inconclusive`。
   - 所以执行级的 T1 现在整体最多「无结论」。
+  - T1 的 R09 有容差门（2026-11-18 起）：第 1 步梯度范数对 LKG，尺子是 GPU 重跑（`rcc-a..j` 第 1 步两两 45 对，注 5）。
+- 报告表里按噪声参照判的检查，「关键数」一栏开头写「x 倍尺子」：判定量对尺子上限的倍数，三个量里取最大（≤ 1 pass、1–2 inconclusive、> 2 fail）。
   - 容差门各自给出 pass / inconclusive / fail（[`results/README.md`](results/README.md)「容差门给真结论」）。
 - 退出码：0 通过、1 数值失败、2 工具或跑不完、3 无结论（有待标定的门槛，或没有容差门的行不逐位）。
 
@@ -429,10 +438,10 @@ bash models/hunyuan3/regression/run_regression.sh T0 <名> --declare 数学级 -
 | R02 | `config_diff`：权重清单、数据清单、`hy3-4layers.yml` 的 sha256 钉死；命令行覆盖、步数、载入路径对 LKG；档位配置的 sha256 与目录的内容指纹由 [`regress.py`](regress.py) 对 `lkg.yaml` | — |
 | R03 | `data_fingerprint` 对 LKG，全部步；单元数由 `expect` 核（T0 1300、T1 65000） | — |
 | R04 | `config_diff`：镜像 digest、`versions`、硬件；提交号只列出 | — |
-| R05 | 运行进程与编译器两份配置都对 LKG（注 1） | 「编译进程与运行进程互比」（注 1） |
+| R05 | 运行进程与编译器两份配置都对 LKG（注 1）；完整配置里只在一边出现的键只报（注 1） | 「编译进程与运行进程互比」（注 1） |
 | R06 | `config_diff` 的 `equals`，读完整配置（第四节的清单，另加 `enable_dropout`、主切分两项） | — |
 | R07、R15 | FP32 状态清单（第四节） | — |
-| R08、R09、R14 | `determinism`（R08 / R09 只比第 1 步） | — |
+| R08、R09、R14 | `determinism`（R08 / R09 只比第 1 步）；T1 的 R09 另有容差门（注 5） | — |
 | R12、R13 | `loss_series` `exact`：四个量 + 第一个不同的步（T1） | — |
 | R16 | ① 偏置均值 / 标准差 `router_stats` `exact`（T1） | `router.load_cv`；② 属 T2 |
 | R17 | `health_signals`：非有限值、突跳 | 跳步数：不另数（注 2） |
@@ -449,6 +458,8 @@ bash models/hunyuan3/regression/run_regression.sh T0 <名> --declare 数学级 -
   - 运行进程：启动时与第一步编译后各一份环境变量与 `jax.config`、展开后的完整 MaxText 配置，逐子键对 LKG（运行名、路径、主机名不比）。
   - 编译器：XLA dump 的 `flagfile` 与 `debug_options` 整份对 LKG。
   - 暂缓「编译进程与运行进程互比」：本档位不做提前编译，两者是同一个进程，没有第二份可比。
+  - 完整 MaxText 配置写了 `one_side: report`（2026-11-18 起）：只在一边出现的键（训练代码新加或删掉的配置项）只报不判，两边都有、值不同的键照旧判 fail。
+    - 原因：变异测试里 `hunyuan` 分支 LKG 之后的 12 个合并提交（新加三个默认关的开关）数值全部逐位，却因为完整配置多了 6 个键被 R05 判 fail（[`effectiveness.md`](effectiveness.md)）。
 - 注 2：R17 跳步数：`skip_step_on_spikes` 由 R06 断言为 false，训练循环里没有跳步路径，不另数。
 - 注 3：R22 阈值是现行配置 yml a238883b 下的，取自 [`calibration.yaml`](calibration.yaml) 最新两条的 `step_time_threshold`；旧配置下是 0.83% / 0.73%。
 - 注 4：R25
@@ -457,6 +468,11 @@ bash models/hunyuan3/regression/run_regression.sh T0 <名> --declare 数学级 -
   - `regress.py`：回归门逐位时继承 LKG；否则两样取较差：
     - 对齐门本身（`hard: true`）：对 `rcc-a` 的三个量对 golden 噪声上限；
     - 不变差：对 golden 的三个量，新值 − LKG 值 ≤ TPU 执行噪声上限。
+- 注 5：T1 的 R09 容差门 `R09.step1_grad_norm_tolerance`（2026-11-18 起）
+  - `loss_series`，`compare: lkg`，`judge: first_step`：只判第 1 步梯度范数对 LKG 的相对差（d0）。
+  - 尺子 `noise_from: golden`：`rcc-a..j` 第 1 步两两 45 对的最大相对差 3.14e-5。GPU 第 1 步 loss 十份逐位相同（尺子为 0），所以只看梯度范数。
+  - 为什么加：第 1 步还没有混沌放大，读到的是改动本身。变异测试里 1000 步序列的容差门对无害改动和真错都读 1.0–1.5 倍尺子，分不开；第 1 步梯度范数把「关掉 RMSNorm 只舍一次」读成 6.1 倍、无害改动 ≤ 0.13 倍（[`effectiveness.md`](effectiveness.md)）。
+  - 和其余容差门一样只在「执行级」「升级依赖」不逐位时采用；数学不变时 R09 照旧逐位。
 
 ### 编译缓存与试跑结果
 
@@ -472,6 +488,7 @@ bash models/hunyuan3/regression/run_regression.sh T0 <名> --declare 数学级 -
    - 它们照样按逐位对同一个 LKG 判，报告里看第一个不同的量变没变，分清是不是同一个原因。
 3. **不排程**：现在只手动跑，第三节的节奏表保留为目标。
    - 排程（定时任务、调度器、CI 定时作业）等有 TPU 预算再做。
+   - 2026-11-18 项目负责人重申：只手动触发。合并后要跑时用 [`tools/autorun/`](../../../tools/autorun/README.md) 的 `--job hy3-t1`（每次一个 v5p-8 切片，跑完删 JobSet）；定时轮询可选、默认不开。
 4. **PR 声明**：`maxtext` 的 PR 模板加 `## 数值影响` 一栏，`pr-check` 核它。
    - 动了训练代码或依赖的 PR 必须三选一。
    - 「会改数值」要写幅度、范围、理由；「升级依赖」要写版本。

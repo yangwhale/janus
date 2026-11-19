@@ -235,7 +235,8 @@ def validate(d: dict) -> None:
             errs.append(f"{where} 数值门槛必须写 source")
         if th == "pending" and c.get("type") not in PENDING_OK:
             errs.append(f"{where} threshold: pending（待标定）只能用在 {sorted(PENDING_OK)}")
-        if th == "calibrated" and not noise and c.get("type") != "multi_golden":
+        golden_ruler = (c.get("params") or {}).get("noise_from") == "golden" and c.get("type") == "loss_series"
+        if th == "calibrated" and not noise and c.get("type") != "multi_golden" and not golden_ruler:
             errs.append(f"{where} calibrated 门槛需要 runs.noise")
         if c.get("compare") == "lkg" and not runs.get("lkg"):
             errs.append(f"{where} compare: lkg 需要 runs.lkg")

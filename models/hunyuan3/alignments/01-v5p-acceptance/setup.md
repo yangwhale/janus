@@ -77,7 +77,7 @@
 | `7704115ba7a7…` | `67208dd` | 改成 `per_device_batch_size: 1`、GA 2 | `r-l2-*`（逐层回放）、`t-fix-*-30`（精度开关走命令行）、`r-l2-noexcess`、`t-ga2-noexcess-30`；`t-vmem24-1000`（命令行改回 2 + 1，与 `t-a` 相同） |
 | `2a76c7590866…` | `3a5f03f` | 打开三个精度开关（见表下）；要 maxtext hunyuan@4d4ffac 或更新 | `t-rmap-1000`、`r-l2-*` 之后到 2026-11-05 的运行 |
 | `a238883b7f91…` | `4db01d7` | 再打开 `dense_fp32_accumulation`（见表下）；maxtext hunyuan 分支开关从 `0622774` 起有；验收钉 `0622774a`，结论只对这个提交成立；换提交先跑日常回归 T0、T1，对 LKG 逐位相同再用 | `t-st-on-100`、`r-l2-on`、`t-rmap-on-1000` 及之后 |
-| `305fa4b55099…` | `b447a72` | 只改文件头注释里的一个路径，数值配置与 `a238883b` 相同（`git diff 4db01d7a b447a72a` 只差第 2 行） | 仓库里现在这份；验收与 LKG 的运行都是 `a238883b` |
+| `305fa4b55099…` | `b447a72` | 只改文件头注释里的一个路径，数值配置与 `a238883b` 相同（`git diff 4db01d7a b447a72a` 只差第 2 行） | 2026-11-18 起不再用：仓库换回 `a238883b`；验收与 LKG 的运行都是 `a238883b` |
 
 - **`2a76c7590866…`**：
   - 打开 `routed_gate_bf16_rounding`（路由核先舍 BF16 再乘）、`rmsnorm_single_rounding`（RMSNorm 在 FP32 里算完只舍一次）、`mlp_activation_round_per_op`（门控激活按 GPU 的两个算子分别舍入）；

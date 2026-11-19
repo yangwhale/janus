@@ -222,3 +222,19 @@ def test_first_differ_step_and_loss_series_exact():
     r = REGISTRY["loss_series"]("l", "regress", b, a, Threshold("exact"), params={"window": "1:5", "first_step": 1})
     assert r.status == FAIL and r.metrics["first_differ_step"] == 3
     assert first_differ_step(a, {1: 2.0}, (1, 3)) == 2                 # 缺步也算不同
+
+
+def test_loss_series_judge_first_step():
+    """judge: first_step 只判首步 d0：尺子取噪声对首步差的最大值；窗口里的大差照报不判。"""
+    ref = {1: 10.0, 2: 9.0, 3: 8.0}
+    pairs = [({1: 10.0, 2: 9.0, 3: 8.0}, {1: 10.0 * (1 + e), 2: 9.0 * 1.1, 3: 8.0}) for e in (1e-5, 2e-5, 3e-5)]
+    noise = noise_from_pairs(pairs, (1, 4), first_step=1)
+    th = Threshold("calibrated", noise=noise)
+    p = {"window": "1:4", "first_step": 1, "judge": "first_step"}
+    ok = loss_series("g", "regress", {1: 10.0 * (1 + 2e-5), 2: 99.0, 3: 8.0}, ref, th, params=p)
+    assert ok.status == PASS and ok.r1 == pytest.approx(2 / 3, rel=1e-4)
+    bad = loss_series("g", "regress", {1: 10.0 * (1 + 1e-4), 2: 9.0, 3: 8.0}, ref, th, params=p)
+    assert bad.status == FAIL and bad.r1 == pytest.approx(10 / 3, rel=1e-4)
+    assert bad.threshold["noise"]["upper"] == {"d0": pytest.approx(3e-5, rel=1e-4)}
+    err = loss_series("g", "regress", ref, ref, th, params={**p, "judge": "both"})
+    assert err.status == ERROR

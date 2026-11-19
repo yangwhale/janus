@@ -10,10 +10,10 @@
 
 | 文中的叫法 | 公开分支 | 公开提交 | 基于上游 AI-Hypercomputer/maxtext |
 |---|---|---|---|
-| `hunyuan` 分支（混元 3） | [`hunyuan`](https://github.com/yangwhale/maxtext/tree/hunyuan) | `fb4c449621c2f3f3a0941f176903911da4cfb69c` | `ae6e4eb2fdb8bd115c14ad9d3331d7e6dd407e43` |
-| 混元 4 集成分支 | [`hunyuan4`](https://github.com/yangwhale/maxtext/tree/hunyuan4) | `319afd46a676654e33c09a553b3d4266b82716cc` | `493d5928156869b70f7198ba7bbd1a7f779233d9` |
+| `hunyuan` 分支（混元 3） | [`hunyuan`](https://github.com/yangwhale/maxtext/tree/hunyuan) | `2543503273370cdb333fcd81c1a63a6c93ad568a` | `ae6e4eb2fdb8bd115c14ad9d3331d7e6dd407e43` |
+| 混元 4 集成分支 | [`hunyuan4`](https://github.com/yangwhale/maxtext/tree/hunyuan4) | `26b22ff417476c5554d79d00874d69ba199feb47` | `493d5928156869b70f7198ba7bbd1a7f779233d9` |
 
-- 每个公开分支只有一个提交，放在它所基于的上游提交之上，`git diff HEAD~1` 就是全部改动。分支根目录的 `HUNYUAN.md` 列了模型、配置与开关。
+- 每个公开分支只有一个提交，放在它所基于的上游提交之上，`git diff HEAD~1` 就是全部改动。更早发布的版本留在标签 `hunyuan-20261111`、`hunyuan4-20261111` 上。分支根目录的 `HUNYUAN.md` 列了模型、配置与开关。
 - 混元 4 的 `stage.sh` 用 `MAXTEXT_BRANCH=hunyuan4`；混元 3 的 `stage.sh` 默认的 `origin/hunyuan` 在公开仓库里同名。
 - 公开分支是开发分支某一时刻的最新代码，不带开发历史。文档、配置和结果文件（`meta.json`、`results.json`、`runs.yaml` 的 `code`、`commits`）里记的 maxtext 提交号是开发分支上的提交，公开仓库里查不到，原样保留作出处。下面两张表把它们对到各自引入的开关或改动，这些改动都已含在对应的公开分支里。
 - 公开分支上开关的默认值与各提交相同（默认关，关时行为不变）。用旧提交跑出的结果，在公开分支上照结果文件里的配置打开对应开关，走的是同一套代码路径；逐位是否相同没有逐一验证过。
@@ -26,6 +26,13 @@
 | `4d4ffac2` | `mlp_activation_round_per_op`；路由专家稀疏路径读 `activations_in_float32`。此时分支上已有 `routed_gate_bf16_rounding`（路由核先舍入成 BF16，梯度不舍）与 `rmsnorm_single_rounding` |
 | `237a3270` | 只改 PR 模板与检查脚本（公开版已删），代码与 `4d4ffac2` 相同 |
 | `0622774a` | `dense_fp32_accumulation`（DenseGeneral FP32 累加、只舍一次）。此时分支上已有 `remat_policy: save_everything` 与诊断开关 `lm_head_dh_gauge_scale` / `lm_head_dh_wbar_remove` |
+| `998a2e37` | `rmsnorm_scale_grad_fp32`、`logits_dense_wgrad_fp32`、`embedding_grad_fp32`（三个参数梯度留 FP32） |
+| `e2c18718` | 只改协作文件（公开版已删），代码与它的父提交相同 |
+| `8ac1d175` | 修复：多进程下 ZeRO-1 优化器状态重分片（合入提交） |
+| `c9f5ccdf` | `qkv_proj_wgrad_fp32` |
+| `60273c73` | 同上（合入提交） |
+| `fac41a16` | `embedding_grad_fp32_local_bf16_comm`、`embedding_shard_over_data`；`embedding_grad_fp32` 在数据并行 + 梯度累积下保留每个微批 |
+| `5d1b0e95` | 同上（合入提交） |
 
 ### 混元 4：混元 4 集成分支上的提交 → 公开分支 `hunyuan4`
 
@@ -90,6 +97,18 @@
 | `56492817` | MLA 把 `float32_qk_product`、`float32_logits` 接到 AttentionOp |
 | `f76a136f` | 同上（合入提交） |
 | `9099c8ce` | `embedding_shard_over_data` |
+| `06244684` | `ihc_stream_grad_gpu_order`（iHC 流梯度照 Megatron-Core 的 BF16 舍入点） |
+| `76ba907d` | 诊断开关 `rmsnorm_final_rounding` |
+| `8d3d7561` | `ihc_stream_grad_gpu_order_parts` |
+| `cbee53c8` | 同上（合入提交） |
+| `0e33d77c` | 诊断开关 `rmsnorm_cotangent_bf16_rounding`、`plain_residual_force_bf16_rounding`、`rope_bf16_gpu_form`、`hc_head_force_bf16_rounding`、`mtp_input_shared_final_norm`、`mtp_hc_head_param_stop_gradient` |
+| `338c9737` | `hc_head_force_bf16_rounding_forward_only`、`ihc_stream_grad_gpu_order_skip_hc_head` |
+| `98a80d92` | 同上（合入提交） |
+| `f476a624` | `branch_input_grad_gpu_order`（合入提交） |
+| `e96c5d50` | `forward_bf16_rounding` |
+| `4793ac4c` | 同上（合入提交） |
+| `07eaa922` | `hc_head_dgrad_force_bf16_rounding` |
+| `a49e4f58` | 同上（合入提交） |
 
 ## 文中提到、但没有公开的东西
 

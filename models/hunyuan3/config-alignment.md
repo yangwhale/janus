@@ -29,7 +29,7 @@
 - 「MaxText 代码」指同一仓库的 `src/maxtext/layers/moe.py`、`layers/linears.py`。
   - 以上都按 v5p [`t-loss30`](../../docs/glossary.md#run-prefixes)（TPU 30 步冒烟）用的 commit `64cd9a64` 读。
   - 精度开关 几处 MaxText 修改 按 `4d4ffac2` 读，`dense_fp32_accumulation`（FSDP 切开收缩维的投影改用 FP32 累加）按 `0622774` 读。
-  - 现行 `hy3-4layers.yml`（验收运行记的 sha256 是 `a238883b…`；仓库里现在这份是 `305fa4b5…`，只改了注释，数值相同）打开了这四个开关，开关从 `hunyuan@0622774` 起有；验收（正式被测、日常回归的 LKG）钉在 `0622774a`，结论只对这个提交成立，用更新的提交先跑日常回归 T0、T1，对 LKG 逐位相同再用（[`frameworks/maxtext/README.md`](frameworks/maxtext/README.md)）。
+  - 现行 `hy3-4layers.yml`（验收运行记的 sha256 是 `a238883b…`；2026-11-18 起仓库里也是这一版，中间一度是只改了注释的 `305fa4b5…`）打开了这四个开关，开关从 `hunyuan@0622774` 起有；验收（正式被测、日常回归的 LKG）钉在 `0622774a`，结论只对这个提交成立，用更新的提交先跑日常回归 T0、T1，对 LKG 逐位相同再用（[`frameworks/maxtext/README.md`](frameworks/maxtext/README.md)）。
 - 「HF」指 `tencent/Hy3` revision `a960ebc3…` 的 `config.json`，经 [`truncate_hy3.py`](model/truncate_hy3.py) 截成 4 层、去 MTP。
 
 取值约定：拿不准的写「待查」，推出来的写「推断」并给理由。

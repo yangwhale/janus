@@ -1559,4 +1559,509 @@ entries:
     sabwd1k: 进参照
     sabwd256: 进参照
     combo: 进参照
-  rebind_note: 重新绑定，噪声数值未变：T1 档位配置 tiers/t1.yaml 只把 R25 的 golden 列表从 g1k-a/b/c 换成 rcc-a..j（sha256 abd58de70a97 → 2f9c5908788e），训练命令、步数、覆盖都没变，TPU 执行的程序与参照运行相同。参照运行、参照对与上一条（2026-11-05）相同；各序列三个量的上限由同一批 8 份运行离线重算，与上一条逐位相同
+  rebind_note: 重新绑定，噪声数值未变：T1 档位配置 tiers/t1.yaml 只把 R25 的 golden 列表从 g1k-a/b/c 换成 rcc-a..j（sha256 abd58de70a97 → 2f9c5908788e），训练命令、步数、覆盖都没变，TPU
+    执行的程序与参照运行相同。参照运行、参照对与上一条（2026-11-05）相同；各序列三个量的上限由同一批 8 份运行离线重算，与上一条逐位相同
+- key:
+    platform: v5p
+    tier: T1
+    variant: main
+  date: '2026-11-19'
+  status: 正式
+  binding:
+    platform: v5p
+    tier_config_sha256: 2f9c5908788edcac4b436c7ef8535afca17cd8f0cf02f8b03ad0ede0aa4c48b6
+    config_yml_sha256: a238883b7f914d5c99f313d2d5ef68fa472164ef81e95d48d1046cb7e593ee6b
+    image: <自建镜像，按上游 main 的依赖 Dockerfile>@sha256:bbd58277c1a17af89e3ceadbb794c0f5c2e59505c2c619e4fef5a0b6b536e52b
+    versions:
+      jax: 0.12.1
+      jaxlib: 0.12.1
+      libtpu: 'TFRT TPU v5
+
+        Built on Nov 17 2026 04:24:36 (1794918276) cl/1023598134'
+      flax: 0.12.12
+      optax: 0.2.9
+      orbax_checkpoint: 0.12.11
+  base: sync0119-t1-a
+  runs:
+    sync0119-t1-a: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T1/20261119/runs/sync0119-t1-a/
+    s19-vmem64-t1: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T1/20261119/runs/s19-vmem64-t1/
+    s19-vmem48-t1: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T1/20261119/runs/s19-vmem48-t1/
+    s19-vmem40-t1: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T1/20261119/runs/s19-vmem40-t1/
+    s19-vmem56-t1: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T1/20261119/runs/s19-vmem56-t1/
+    s19-sabwd1k-t1: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T1/20261119/runs/s19-sabwd1k-t1/
+    s19-sabwd256-t1: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T1/20261119/runs/s19-sabwd256-t1/
+    s19-combo-t1: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T1/20261119/runs/s19-combo-t1/
+  pairs:
+  - - sync0119-t1-a
+    - s19-vmem64-t1
+  - - sync0119-t1-a
+    - s19-vmem48-t1
+  - - sync0119-t1-a
+    - s19-vmem40-t1
+  - - sync0119-t1-a
+    - s19-vmem56-t1
+  - - sync0119-t1-a
+    - s19-sabwd1k-t1
+  - - sync0119-t1-a
+    - s19-sabwd256-t1
+  - - sync0119-t1-a
+    - s19-combo-t1
+  - - s19-vmem64-t1
+    - s19-vmem48-t1
+  - - s19-vmem64-t1
+    - s19-vmem40-t1
+  - - s19-vmem64-t1
+    - s19-vmem56-t1
+  - - s19-vmem64-t1
+    - s19-sabwd1k-t1
+  - - s19-vmem64-t1
+    - s19-sabwd256-t1
+  - - s19-vmem64-t1
+    - s19-combo-t1
+  - - s19-vmem48-t1
+    - s19-vmem40-t1
+  - - s19-vmem48-t1
+    - s19-vmem56-t1
+  - - s19-vmem48-t1
+    - s19-sabwd1k-t1
+  - - s19-vmem48-t1
+    - s19-sabwd256-t1
+  - - s19-vmem48-t1
+    - s19-combo-t1
+  - - s19-vmem40-t1
+    - s19-vmem56-t1
+  - - s19-vmem40-t1
+    - s19-sabwd1k-t1
+  - - s19-vmem40-t1
+    - s19-sabwd256-t1
+  - - s19-vmem40-t1
+    - s19-combo-t1
+  - - s19-vmem56-t1
+    - s19-sabwd1k-t1
+  - - s19-vmem56-t1
+    - s19-sabwd256-t1
+  - - s19-vmem56-t1
+    - s19-combo-t1
+  - - s19-sabwd1k-t1
+    - s19-sabwd256-t1
+  - - s19-sabwd1k-t1
+    - s19-combo-t1
+  - - s19-sabwd256-t1
+    - s19-combo-t1
+  n_pairs: 28
+  window: 1:1001
+  noise_upper:
+    lm_loss:
+      signed_mean: 3.597194086236943e-05
+      mare: 0.00011703056208601877
+      max_step: 0.0006355054683097569
+    raw_grad_norm:
+      signed_mean: 0.003399807580701159
+      mare: 0.029413111281064382
+      max_step: 0.30543992240865486
+    param_norm:
+      signed_mean: 1.2209142563180448e-07
+      mare: 1.3895972319652096e-07
+      max_step: 4.814595156340738e-07
+    router.bias_mean.1:
+      signed_mean: 0.039170379200221386
+      mare: 0.0392337137310039
+      max_step: 0.06912695751255091
+    router.bias_mean.2:
+      signed_mean: 0.022853497485821012
+      mare: 0.023384866283431543
+      max_step: 0.059054578176862896
+    router.bias_mean.3:
+      signed_mean: 0.0363997344155852
+      mare: 0.03666228857966381
+      max_step: 0.1541165377950513
+    router.bias_std.1:
+      signed_mean: 0.0016808474905658864
+      mare: 0.0017555147819931644
+      max_step: 0.0061358235139962495
+    router.bias_std.2:
+      signed_mean: 0.0012481890936219928
+      mare: 0.002263213686545715
+      max_step: 0.00945447453299202
+    router.bias_std.3:
+      signed_mean: 0.002110959479785942
+      mare: 0.0031647650904483545
+      max_step: 0.015247089338284104
+    router.bias_*:
+      signed_mean: 0.039170379200221386
+      mare: 0.0392337137310039
+      max_step: 0.1541165377950513
+  noise_loo_lm_loss:
+  - pair: 0
+    signed_mean: 0.103
+    mare: 0.949
+    max_step: 0.816
+  - pair: 1
+    signed_mean: 0.76
+    mare: 0.847
+    max_step: 0.982
+  - pair: 2
+    signed_mean: 0.562
+    mare: 0.93
+    max_step: 0.929
+  - pair: 3
+    signed_mean: 0.332
+    mare: 0.869
+    max_step: 0.765
+  - pair: 4
+    signed_mean: 1.05
+    mare: 0.931
+    max_step: 0.759
+  - pair: 5
+    signed_mean: 0.048
+    mare: 0.889
+    max_step: 0.701
+  - pair: 6
+    signed_mean: 0.136
+    mare: 0.86
+    max_step: 0.819
+  - pair: 7
+    signed_mean: 0.656
+    mare: 0.879
+    max_step: 0.747
+  - pair: 8
+    signed_mean: 0.458
+    mare: 0.905
+    max_step: 0.705
+  - pair: 9
+    signed_mean: 0.229
+    mare: 0.85
+    max_step: 0.776
+  - pair: 10
+    signed_mean: 0.896
+    mare: 1.039
+    max_step: 0.756
+  - pair: 11
+    signed_mean: 0.055
+    mare: 0.897
+    max_step: 0.734
+  - pair: 12
+    signed_mean: 0.033
+    mare: 0.883
+    max_step: 0.803
+  - pair: 13
+    signed_mean: 0.199
+    mare: 0.895
+    max_step: 0.895
+  - pair: 14
+    signed_mean: 0.428
+    mare: 0.817
+    max_step: 0.832
+  - pair: 15
+    signed_mean: 0.24
+    mare: 0.906
+    max_step: 0.872
+  - pair: 16
+    signed_mean: 0.712
+    mare: 0.852
+    max_step: 0.671
+  - pair: 17
+    signed_mean: 0.624
+    mare: 0.873
+    max_step: 0.796
+  - pair: 18
+    signed_mean: 0.229
+    mare: 0.867
+    max_step: 0.756
+  - pair: 19
+    signed_mean: 0.438
+    mare: 0.94
+    max_step: 0.872
+  - pair: 20
+    signed_mean: 0.514
+    mare: 0.937
+    max_step: 0.781
+  - pair: 21
+    signed_mean: 0.426
+    mare: 0.876
+    max_step: 0.73
+  - pair: 22
+    signed_mean: 0.667
+    mare: 0.919
+    max_step: 0.729
+  - pair: 23
+    signed_mean: 0.284
+    mare: 0.877
+    max_step: 1.019
+  - pair: 24
+    signed_mean: 0.196
+    mare: 0.838
+    max_step: 0.819
+  - pair: 25
+    signed_mean: 0.952
+    mare: 0.935
+    max_step: 0.885
+  - pair: 26
+    signed_mean: 0.864
+    mare: 0.963
+    max_step: 0.806
+  - pair: 27
+    signed_mean: 0.088
+    mare: 0.875
+    max_step: 0.731
+  step_time_threshold: null
+  arms:
+    vmem64: 进参照
+    vmem48: 进参照
+    vmem40: 进参照
+    vmem56: 进参照
+    sabwd1k: 进参照
+    sabwd256: 进参照
+    combo: 进参照
+- key:
+    platform: v5p
+    tier: T0
+    variant: main
+  date: '2026-11-19'
+  status: 正式
+  binding:
+    platform: v5p
+    tier_config_sha256: d95fa250a233d61e1c4b8807fd4a8cece80412e43fd91a73ad974e42d02803cd
+    config_yml_sha256: a238883b7f914d5c99f313d2d5ef68fa472164ef81e95d48d1046cb7e593ee6b
+    image: <自建镜像，按上游 main 的依赖 Dockerfile>@sha256:bbd58277c1a17af89e3ceadbb794c0f5c2e59505c2c619e4fef5a0b6b536e52b
+    versions:
+      jax: 0.12.1
+      jaxlib: 0.12.1
+      libtpu: 'TFRT TPU v5
+
+        Built on Nov 17 2026 04:24:36 (1794918276) cl/1023598134'
+      flax: 0.12.12
+      optax: 0.2.9
+      orbax_checkpoint: 0.12.11
+  base: s19-t0-a
+  runs:
+    s19-t0-a: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T0/20261119/runs/s19-t0-a/
+    s19-vmem64-a: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T0/20261119/runs/s19-vmem64-a/
+    s19-vmem48-a: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T0/20261119/runs/s19-vmem48-a/
+    s19-vmem40-a: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T0/20261119/runs/s19-vmem40-a/
+    s19-vmem56-a: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T0/20261119/runs/s19-vmem56-a/
+    s19-sabwd1k-a: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T0/20261119/runs/s19-sabwd1k-a/
+    s19-sabwd256-a: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T0/20261119/runs/s19-sabwd256-a/
+    s19-combo-a: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T0/20261119/runs/s19-combo-a/
+  pairs:
+  - - s19-t0-a
+    - s19-vmem64-a
+  - - s19-t0-a
+    - s19-vmem48-a
+  - - s19-t0-a
+    - s19-vmem40-a
+  - - s19-t0-a
+    - s19-vmem56-a
+  - - s19-t0-a
+    - s19-sabwd1k-a
+  - - s19-t0-a
+    - s19-sabwd256-a
+  - - s19-t0-a
+    - s19-combo-a
+  - - s19-vmem64-a
+    - s19-vmem48-a
+  - - s19-vmem64-a
+    - s19-vmem40-a
+  - - s19-vmem64-a
+    - s19-vmem56-a
+  - - s19-vmem64-a
+    - s19-sabwd1k-a
+  - - s19-vmem64-a
+    - s19-sabwd256-a
+  - - s19-vmem64-a
+    - s19-combo-a
+  - - s19-vmem48-a
+    - s19-vmem40-a
+  - - s19-vmem48-a
+    - s19-vmem56-a
+  - - s19-vmem48-a
+    - s19-sabwd1k-a
+  - - s19-vmem48-a
+    - s19-sabwd256-a
+  - - s19-vmem48-a
+    - s19-combo-a
+  - - s19-vmem40-a
+    - s19-vmem56-a
+  - - s19-vmem40-a
+    - s19-sabwd1k-a
+  - - s19-vmem40-a
+    - s19-sabwd256-a
+  - - s19-vmem40-a
+    - s19-combo-a
+  - - s19-vmem56-a
+    - s19-sabwd1k-a
+  - - s19-vmem56-a
+    - s19-sabwd256-a
+  - - s19-vmem56-a
+    - s19-combo-a
+  - - s19-sabwd1k-a
+    - s19-sabwd256-a
+  - - s19-sabwd1k-a
+    - s19-combo-a
+  - - s19-sabwd256-a
+    - s19-combo-a
+  n_pairs: 28
+  window: '1:21'
+  noise_upper:
+    lm_loss:
+      signed_mean: 4.771061815281122e-06
+      mare: 1.115648525945067e-05
+      max_step: 3.550012941819332e-05
+    raw_grad_norm:
+      signed_mean: 5.722154042064259e-05
+      mare: 0.00012275749075845005
+      max_step: 0.0009136876889188627
+    param_norm:
+      signed_mean: 1.6894177171369895e-08
+      mare: 6.75763734890705e-08
+      max_step: 2.40740228053218e-07
+    router.bias_mean.1:
+      signed_mean: 0.017654583231519923
+      mare: 0.0176545835546434
+      max_step: 0.04797007575499899
+    router.bias_mean.2:
+      signed_mean: 0.006799062370304017
+      mare: 0.013454035868275035
+      max_step: 0.059054578176862896
+    router.bias_mean.3:
+      signed_mean: 0.023561657825083685
+      mare: 0.030589887634013407
+      max_step: 0.1541165377950513
+    router.bias_std.1:
+      signed_mean: 0.0013857398324885455
+      mare: 0.0013857398324885455
+      max_step: 0.002760025907131723
+    router.bias_std.2:
+      signed_mean: 0.00027910580504592037
+      mare: 0.0005426619778698859
+      max_step: 0.00184476852307644
+    router.bias_std.3:
+      signed_mean: 0.000650205491060729
+      mare: 0.000901178832629704
+      max_step: 0.0025184745301486977
+    router.bias_*:
+      signed_mean: 0.023561657825083685
+      mare: 0.030589887634013407
+      max_step: 0.1541165377950513
+  noise_loo_lm_loss:
+  - pair: 0
+    signed_mean: 0.089
+    mare: 0.658
+    max_step: 0.505
+  - pair: 1
+    signed_mean: 0.106
+    mare: 0.642
+    max_step: 0.679
+  - pair: 2
+    signed_mean: 0.911
+    mare: 0.639
+    max_step: 0.585
+  - pair: 3
+    signed_mean: 0.041
+    mare: 0.615
+    max_step: 0.664
+  - pair: 4
+    signed_mean: 0.433
+    mare: 0.485
+    max_step: 0.393
+  - pair: 5
+    signed_mean: 0.027
+    mare: 0.429
+    max_step: 0.394
+  - pair: 6
+    signed_mean: 0.433
+    mare: 0.589
+    max_step: 0.395
+  - pair: 7
+    signed_mean: 0.195
+    mare: 0.675
+    max_step: 0.665
+  - pair: 8
+    signed_mean: 1.098
+    mare: 0.876
+    max_step: 1.105
+  - pair: 9
+    signed_mean: 0.13
+    mare: 1.116
+    max_step: 0.861
+  - pair: 10
+    signed_mean: 0.522
+    mare: 0.59
+    max_step: 0.607
+  - pair: 11
+    signed_mean: 0.116
+    mare: 0.646
+    max_step: 0.648
+  - pair: 12
+    signed_mean: 0.523
+    mare: 0.632
+    max_step: 0.475
+  - pair: 13
+    signed_mean: 0.805
+    mare: 0.896
+    max_step: 0.654
+  - pair: 14
+    signed_mean: 0.064
+    mare: 0.837
+    max_step: 0.811
+  - pair: 15
+    signed_mean: 0.327
+    mare: 0.595
+    max_step: 0.582
+  - pair: 16
+    signed_mean: 0.079
+    mare: 0.57
+    max_step: 0.823
+  - pair: 17
+    signed_mean: 0.328
+    mare: 0.776
+    max_step: 0.595
+  - pair: 18
+    signed_mean: 0.87
+    mare: 0.67
+    max_step: 0.646
+  - pair: 19
+    signed_mean: 0.478
+    mare: 0.591
+    max_step: 0.554
+  - pair: 20
+    signed_mean: 0.884
+    mare: 0.57
+    max_step: 0.623
+  - pair: 21
+    signed_mean: 0.477
+    mare: 0.689
+    max_step: 0.525
+  - pair: 22
+    signed_mean: 0.391
+    mare: 0.833
+    max_step: 0.741
+  - pair: 23
+    signed_mean: 0.014
+    mare: 0.818
+    max_step: 0.818
+  - pair: 24
+    signed_mean: 0.392
+    mare: 0.762
+    max_step: 0.905
+  - pair: 25
+    signed_mean: 0.406
+    mare: 0.471
+    max_step: 0.536
+  - pair: 26
+    signed_mean: 0.001
+    mare: 0.556
+    max_step: 0.342
+  - pair: 27
+    signed_mean: 0.406
+    mare: 0.557
+    max_step: 0.419
+  step_time_threshold: null
+  arms:
+    vmem64: 进参照
+    vmem48: 进参照
+    vmem40: 进参照
+    vmem56: 进参照
+    sabwd1k: 进参照
+    sabwd256: 进参照
+    combo: 进参照

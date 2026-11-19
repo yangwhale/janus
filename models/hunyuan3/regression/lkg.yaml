@@ -10,6 +10,10 @@
 # 按新配置重建的 T0 reg-t0-fa-a、T1 reg-t1-fa-a 追加在末尾，2026-11-05 经项目负责人批准（数值变了的换代要批准，标准第七节）；
 # 7704115 那一版的 LKG 已不是现行配置（run_regression.sh 默认取最后一条）。
 # 2026-11-16 目录换代（数值不变）：T1 的 R25 对齐门参照从 g1k-a（只报）换成修好的 golden rcc-a（判），reg-t1-fa-a 在新目录下重新登记（末条）。
+# 2026-11-18 目录换代（数值不变）：R05 完整配置里只在一边出现的键只报；T1 加 R09 第 1 步梯度范数容差门。reg-t0-fa-a、reg-t1-fa-a 在新目录下重新登记（末两条）。
+# 2026-11-19 升级依赖换代：MaxText 上的一处修改（同步上游 main，jax 0.12.1 / libtpu 0.0.53.1 / tokamax 0.0.17 等），T1 新 LKG sync0119-t1-a 追加在末尾，
+# 2026-11-19 07:01 经项目负责人批准。旧 TPU 执行噪声参照随依赖变化作废，新依赖下重标另记（README 第五节、results/README.md）；T0 新 LKG 随重标的 T0 基线双跑另行登记。
+# 2026-11-19 新依赖下重标后的目录换代（数值不变）：runs.noise 换成新参照对，sync0119-t1-a 在新目录下重新登记（末条）。T0 新 LKG s19-t0-a（升级依赖）2026-11-19 经项目负责人批准，追加在末尾。
 schema: 1
 approver: 项目负责人
 entries:
@@ -421,3 +425,193 @@ entries:
   approved_at: '2026-11-16'
   location: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T1/20261105/runs/reg-t1-fa-a/
   results: models/hunyuan3/regression/results/reg-t1-fa-rcc/
+- key:
+    platform: v5p
+    tier: T0
+    variant: main
+  run: reg-t0-fa-a
+  pair: reg-t0-fa-b
+  date: '2026-11-05'
+  code:
+    maxtext: 0622774a160c17ba8f3f66941cf1ee49cd9158b2
+    janus: 4db01d7a27a1db8f302e7afe705e0786df4e4680
+  image: us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf
+  versions:
+    jax: 0.11.1
+    jaxlib: 0.11.1
+    libtpu: 'PJRT C API
+
+      TFRT TPU v5
+
+      Built on Aug 12 2026 16:43:34 (1786578214) cl/963683785'
+    flax: 0.12.9
+    optax: 0.2.8
+    orbax_checkpoint: 0.12.4
+  config:
+    overrides:
+    - mtp_num_layers=0
+    - per_device_batch_size=2
+    - gradient_accumulation_steps=1
+    yml_sha256: a238883b7f914d5c99f313d2d5ef68fa472164ef81e95d48d1046cb7e593ee6b
+  tier_config_sha256: d95fa250a233d61e1c4b8807fd4a8cece80412e43fd91a73ad974e42d02803cd
+  catalog_sha256:
+    regression-t0.yaml: ed85e06a67231739a6ea539c5991476ce9ee434323af45695c92b3c07d7790af
+    regression-common.yaml: b1981b9504a4e3aed4644355cd4608f0accf3981914ae32abd5cea147fe5edd0
+  catalog_content_sha256:
+    regression-t0.yaml: 1d276a58991cd0065bf2546aae1025fd3ad17bbe91d9a33077c11f87fb3fabb8
+    regression-common.yaml: 1361bdd49cf9307e404eb410a95ca279633f454011a1faf9df9483500321d019
+  reason: 检查项目录换代后重新登记（数值不变）：R05 完整配置里只在一边出现的键改为只报（regression-common.yaml）。同一对双跑 reg-t0-fa-b → reg-t0-fa-a 在新目录下重判，只有 R02.registry 报这次目录变化，其余全部逐位
+  approved_by: 逐位，无需批准
+  approved_at: '2026-11-18'
+  location: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T0/20261105/runs/reg-t0-fa-a/
+  results: models/hunyuan3/regression/results/reg-t0-fa-r05/
+- key:
+    platform: v5p
+    tier: T1
+    variant: main
+  run: reg-t1-fa-a
+  pair: reg-t1-fa-b
+  date: '2026-11-05'
+  code:
+    maxtext: 0622774a160c17ba8f3f66941cf1ee49cd9158b2
+    janus: 4db01d7a27a1db8f302e7afe705e0786df4e4680
+  image: us-docker.pkg.dev/cloud-tpu-images/maxtext-images/tpu_pre_training@sha256:b152355a1425c28e99841c014703495059705de1733df8ac837ba43b4fe52fcf
+  versions:
+    jax: 0.11.1
+    jaxlib: 0.11.1
+    libtpu: 'PJRT C API
+
+      TFRT TPU v5
+
+      Built on Aug 12 2026 16:43:34 (1786578214) cl/963683785'
+    flax: 0.12.9
+    optax: 0.2.8
+    orbax_checkpoint: 0.12.4
+  config:
+    overrides:
+    - mtp_num_layers=0
+    - per_device_batch_size=2
+    - gradient_accumulation_steps=1
+    yml_sha256: a238883b7f914d5c99f313d2d5ef68fa472164ef81e95d48d1046cb7e593ee6b
+  tier_config_sha256: 2f9c5908788edcac4b436c7ef8535afca17cd8f0cf02f8b03ad0ede0aa4c48b6
+  catalog_sha256:
+    regression-t1.yaml: 5330b652bc59425616d29ead206988c4281a199240b87cb60d0237637a72f861
+    regression-common.yaml: b1981b9504a4e3aed4644355cd4608f0accf3981914ae32abd5cea147fe5edd0
+  catalog_content_sha256:
+    regression-t1.yaml: 39f2cf8e8940b4865d59d10bdd2d3dc5d9ddaf293ef3cd1e0f01c9b56526f64d
+    regression-common.yaml: 1361bdd49cf9307e404eb410a95ca279633f454011a1faf9df9483500321d019
+  reason: 检查项目录换代后重新登记（数值不变）：T1 加 R09 第 1 步梯度范数容差门（尺子 rcc-a..j 第 1 步两两 45 对），R05 完整配置里只在一边出现的键改为只报。同一对双跑 reg-t1-fa-b → reg-t1-fa-a 在新目录下重判，只有 R02.registry 报这次目录变化，其余全部逐位
+  approved_by: 逐位，无需批准
+  approved_at: '2026-11-18'
+  location: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T1/20261105/runs/reg-t1-fa-a/
+  results: models/hunyuan3/regression/results/reg-t1-fa-r09/
+- key:
+    platform: v5p
+    tier: T1
+    variant: main
+  run: sync0119-t1-a
+  pair: sync0119-t1-b
+  date: '2026-11-19'
+  code:
+    maxtext: 7e49199ee99b5d84cffc8192006ed95301e3c11c
+    janus: b4e84eaa3862cb754efbbf43847477a58f6ef6f2
+  image: <自建镜像，按上游 main 的依赖 Dockerfile>@sha256:bbd58277c1a17af89e3ceadbb794c0f5c2e59505c2c619e4fef5a0b6b536e52b
+  versions:
+    jax: 0.12.1
+    jaxlib: 0.12.1
+    libtpu: 0.0.53.1（TFRT TPU v5，Built on Nov 17 2026 04:24:36）
+    flax: 0.12.12
+    optax: 0.2.9
+    orbax_checkpoint: 0.12.11
+  config:
+    overrides:
+    - mtp_num_layers=0
+    - per_device_batch_size=2
+    - gradient_accumulation_steps=1
+    yml_sha256: a238883b7f914d5c99f313d2d5ef68fa472164ef81e95d48d1046cb7e593ee6b
+  tier_config_sha256: 2f9c5908788edcac4b436c7ef8535afca17cd8f0cf02f8b03ad0ede0aa4c48b6
+  catalog_sha256:
+    regression-t1.yaml: 5330b652bc59425616d29ead206988c4281a199240b87cb60d0237637a72f861
+    regression-common.yaml: b1981b9504a4e3aed4644355cd4608f0accf3981914ae32abd5cea147fe5edd0
+  catalog_content_sha256:
+    regression-t1.yaml: 39f2cf8e8940b4865d59d10bdd2d3dc5d9ddaf293ef3cd1e0f01c9b56526f64d
+    regression-common.yaml: 1361bdd49cf9307e404eb410a95ca279633f454011a1faf9df9483500321d019
+  reason: 升级依赖换代（声明：升级依赖，MaxText 上的一处修改，被测 7e49199ee 即合入 main 的同步代码）：jax / jaxlib 0.11.1 → 0.12.1、libtpu 0.0.52 → 0.0.53.1、flax 0.12.9 → 0.12.12、optax 0.2.8 → 0.2.9、orbax-checkpoint 0.12.4 → 0.12.11、tokamax 0.0.14 → 0.0.17，镜像按上游 main 的依赖 Dockerfile 自建。同一提交双跑 sync0119-t1-b → sync0119-t1-a 全部逐位（results/sync0119-t1/）。回归门对旧 LKG reg-t1-fa-a（results/sync0119-t1-a/）：R04 / R05 / R21 按预期不同（版本、镜像、编译开关、HLO），R03 数据与 R07 初始参数逐位相同，数值行不逐位；容差行（旧 TPU 尺子，依赖变了已作废，只作参考）loss 0.97、第 1 步梯度范数 0.27、raw_grad_norm 1.01（1–2 倍区间）、param_norm 0.82、路由偏置 0.54 倍尺子。对齐门 R25 对 GPU golden（10 份）0.77 倍尺子，LKG 时为 0.79，不变差。归因：同一代码换依赖（代码段改动对混元 3 默认关），未单独跑对照臂
+  approved_by: 项目负责人
+  approved_at: '2026-11-19'
+  approval_note: 2026-11-19 07:01 项目负责人批准登记；同时安排新依赖下重标 TPU 执行噪声参照（重标前容差门只能给 inconclusive）
+  location: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T1/20261119/runs/sync0119-t1-a/
+  results: models/hunyuan3/regression/results/sync0119-t1-a/
+- key:
+    platform: v5p
+    tier: T1
+    variant: main
+  run: sync0119-t1-a
+  pair: sync0119-t1-b
+  date: '2026-11-19'
+  code:
+    maxtext: 7e49199ee99b5d84cffc8192006ed95301e3c11c
+    janus: b4e84eaa3862cb754efbbf43847477a58f6ef6f2
+  image: <自建镜像，按上游 main 的依赖 Dockerfile>@sha256:bbd58277c1a17af89e3ceadbb794c0f5c2e59505c2c619e4fef5a0b6b536e52b
+  versions:
+    jax: 0.12.1
+    jaxlib: 0.12.1
+    libtpu: 0.0.53.1（TFRT TPU v5，Built on Nov 17 2026 04:24:36）
+    flax: 0.12.12
+    optax: 0.2.9
+    orbax_checkpoint: 0.12.11
+  config:
+    overrides:
+    - mtp_num_layers=0
+    - per_device_batch_size=2
+    - gradient_accumulation_steps=1
+    yml_sha256: a238883b7f914d5c99f313d2d5ef68fa472164ef81e95d48d1046cb7e593ee6b
+  tier_config_sha256: 2f9c5908788edcac4b436c7ef8535afca17cd8f0cf02f8b03ad0ede0aa4c48b6
+  catalog_sha256:
+    regression-t1.yaml: 96e192b88054133017da3db16d6758324086d4bfdc39cfa00056aaddf4021ff3
+    regression-common.yaml: b1981b9504a4e3aed4644355cd4608f0accf3981914ae32abd5cea147fe5edd0
+  catalog_content_sha256:
+    regression-t1.yaml: 8b3eeed25a02d72a11382f8cd626483424451421ac635bf6dd057496a5394208
+    regression-common.yaml: 1361bdd49cf9307e404eb410a95ca279633f454011a1faf9df9483500321d019
+  reason: 新依赖下重标 TPU 执行噪声后目录换代（数值不变）：两份档位目录的 runs.noise 换成 calibration.yaml 2026-11-19 的新参照对（基线 + 7 个臂，28 对），内容指纹变了。同一对双跑 sync0119-t1-b → sync0119-t1-a 在新目录下重判，只有 R02.registry 报这次目录变化，其余全部逐位，容差行用新尺子全部 pass
+  approved_by: 逐位，无需批准
+  approved_at: '2026-11-19'
+  location: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T1/20261119/runs/sync0119-t1-a/
+  results: models/hunyuan3/regression/results/sync0119-t1-r/
+- key:
+    platform: v5p
+    tier: T0
+    variant: main
+  run: s19-t0-a
+  pair: s19-t0-b
+  date: '2026-11-19'
+  code:
+    maxtext: 7e49199ee99b5d84cffc8192006ed95301e3c11c
+    janus: 2fdb4b693ccf237c5c1512e850e81572948ad1cd
+  image: <自建镜像，按上游 main 的依赖 Dockerfile>@sha256:bbd58277c1a17af89e3ceadbb794c0f5c2e59505c2c619e4fef5a0b6b536e52b
+  versions:
+    jax: 0.12.1
+    jaxlib: 0.12.1
+    libtpu: 0.0.53.1（TFRT TPU v5，Built on Nov 17 2026 04:24:36）
+    flax: 0.12.12
+    optax: 0.2.9
+    orbax_checkpoint: 0.12.11
+  config:
+    overrides:
+    - mtp_num_layers=0
+    - per_device_batch_size=2
+    - gradient_accumulation_steps=1
+    yml_sha256: a238883b7f914d5c99f313d2d5ef68fa472164ef81e95d48d1046cb7e593ee6b
+  tier_config_sha256: d95fa250a233d61e1c4b8807fd4a8cece80412e43fd91a73ad974e42d02803cd
+  catalog_sha256:
+    regression-t0.yaml: 5268518d9968a438841b3d983f335e808481756c9565681d17dacca5885ed102
+    regression-common.yaml: b1981b9504a4e3aed4644355cd4608f0accf3981914ae32abd5cea147fe5edd0
+  catalog_content_sha256:
+    regression-t0.yaml: fe3f694cee70e06cbb1b79287689af81306bb96636b8cdb433177afbcbba7826
+    regression-common.yaml: 1361bdd49cf9307e404eb410a95ca279633f454011a1faf9df9483500321d019
+  reason: 升级依赖换代（声明：升级依赖，MaxText 上的一处修改，被测 7e49199ee）：依赖同 T1 的 sync0119-t1-a。同一提交双跑 s19-t0-b → s19-t0-a 全部逐位（results/s19-t0/）。对旧 T0 LKG reg-t0-fa-a（results/s19-t0-a/）：R04 / R05 / R21 按预期不同（版本、镜像、编译开关、HLO），R03 数据、R07 初始参数逐位，R20 计数规则全过，数值行（R08、R09、R15）不逐位；R08 容差用新依赖下的参照（calibration.yaml 2026-11-19）0.62 倍尺子。T0 没有 R25
+  approved_by: 项目负责人
+  approved_at: '2026-11-19'
+  approval_note: 2026-11-19 项目负责人批准登记（升级依赖换代，依据上面对 reg-t0-fa-a 的判定读数）
+  location: gs://<POC 桶>/janus/hunyuan3-4l/regression/v5p/T0/20261119/runs/s19-t0-a/
+  results: models/hunyuan3/regression/results/s19-t0-a/

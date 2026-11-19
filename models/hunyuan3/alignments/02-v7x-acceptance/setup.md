@@ -42,7 +42,7 @@
 | TPU | jax / jaxlib | 0.11.1 / 0.11.1 | `meta.json` 的 `versions` |
 | TPU | libtpu | 0.0.46（TPU7x 版，构建 `cl/963683785`；按构建号认） | `meta.json` 只记构建号。同一构建号的 v7x 运行实测记的是 `libtpu==0.0.46`（device_kind TPU7x，混元 4 [`jit-miscompile-probe-v7x.json`](../../../hunyuan4/results/jit-miscompile-probe-v7x.json)） |
 | TPU | tokamax | 0.0.14（镜像自带的包） | `meta.json` 不记；同 01（同一镜像 digest，01 读镜像层核过） |
-| TPU | 配置 | `hy3-4layers.yml` sha256 `a238883b…`（仓库里现在这份是 `305fa4b5…`，只改了注释，数值相同，见 01 setup「配置文件版本」），命令行另加 `mtp_num_layers=0` 与 remat 覆盖（同 01 `t-rmap-on-1000`） | `meta.json` 的 `config`；登记见 [`runs.yaml`](runs.yaml) |
+| TPU | 配置 | `hy3-4layers.yml` sha256 `a238883b…`（2026-11-18 起仓库里也是这一版，中间一度是只改了注释的 `305fa4b5…`，见 01 setup「配置文件版本」），命令行另加 `mtp_num_layers=0` 与 remat 覆盖（同 01 `t-rmap-on-1000`） | `meta.json` 的 `config`；登记见 [`runs.yaml`](runs.yaml) |
 | GPU | 全部 | 同 01（golden 是同一批 `rcc-*`） | — |
 
 结果文件 [`phase2-v7x-acceptance-rcc.results.json`](results/phase2-v7x-acceptance-rcc.results.json) 记着 `t-v7x-on-1000` 的 `meta_sha256`。**结论在这些版本上测得**；换 libtpu 或 jax 要按混元 4 [`libtpu-052.md`](../../../hunyuan4/alignments/04-tpu-self/libtpu-052.md) 的做法重测。

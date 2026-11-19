@@ -80,8 +80,10 @@ checks:
         - {test: flags.at_start.jax_config, ref: flags.at_start.jax_config, must_equal: true}
         - {test: flags.after_compile.jax_config, ref: flags.after_compile.jax_config, must_equal: true}
         - {test: determinism, ref: determinism, must_equal: true}
-        # 展开后的完整 MaxText 配置：运行名、各种输出目录与路径每次不同，不比（载入路径在 R02 比）
-        - {test: maxtext_config_full, ref: maxtext_config_full, must_equal: true,
+        # 展开后的完整 MaxText 配置：运行名、各种输出目录与路径每次不同，不比（载入路径在 R02 比）。
+        # one_side: report —— 只在一边出现的键（训练代码新加或删掉的配置项）只报不判；两边都有的键值不同照旧判 fail。
+        # 加一个默认关的新开关时数值逐位不变（R08–R16 管），不该只因为多了一个键就把整次回归判 fail
+        - {test: maxtext_config_full, ref: maxtext_config_full, must_equal: true, one_side: report,
            ignore: ["run_name", "*dir*", "*_path", "*_paths", "*directory*", "tensorboard*", "*file*", "*url*", "*project*"]}
   - id: R05.compiler_flagfile
     row: R05

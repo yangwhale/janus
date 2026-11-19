@@ -1,0 +1,23 @@
+# tools/autorun/autorun.py 的站点配置样例。复制到仓库外按自己的环境填；真实配置（集群、桶、节点池、凭据路径）不进本仓库。
+enabled: false                      # 定时轮询总开关（默认关：手动触发为主）；--job 手动跑不看它
+pause_file: ~/janus-autorun/PAUSE   # 存在就暂停（临时停用不用改配置）
+state_dir: ~/janus-autorun/state    # 每个作业上次跑到哪个提交（<作业>.json）、锁文件
+log_dir: ~/janus-autorun/logs       # 每次运行一个目录 + history.jsonl
+jobs:
+  - name: hy3-t1
+    enabled: false
+    kind: hy3-t1                    # 混元 3 日常回归 T1：一个 TPU 切片约 25 分钟
+    repo: maxtext
+    branch: hunyuan
+    clone: ~/janus-autorun/maxtext
+    comment: true
+    max_attempts: 2
+    run_prefix: auto-t1             # 运行名 = <前缀>-<提交前 8 位>
+    env:                            # 原样传给 stage.sh / run_regression.sh（见 models/hunyuan3/regression/README.md 第八节）
+      KUBECONFIG: <kubeconfig 路径>
+      CONTEXT: <kubectl 上下文>
+      NODEPOOL: <回归专用节点池>
+      PLATFORM: v5p
+      BUCKET: gs://<POC 桶>
+      LOCAL_RUNS: ~/janus-autorun/runs
+      WAIT_BUSY: "3600"             # 节点池上有别的 janus 作业时最多等多久

@@ -204,6 +204,14 @@ class Runner:
                 if c["threshold"] == "calibrated":
                     from janus.checks.series import noise_from_pairs
                     npairs = self.cat.runs.get("noise") or []
+                    # noise_from: golden —— 目录里 runs.noise 是别的检查用的另一种噪声（如回归的 TPU 执行噪声），
+                    # 这一条改用 golden 两两组合当尺子（GPU 重跑），比较对象不变（compare: lkg 时仍是被测对 LKG）
+                    src = (c.get("params") or {}).get("noise_from", "runs")
+                    if src not in ("runs", "golden"):
+                        raise CatalogError(f"noise_from 只能是 runs 或 golden：{src}")
+                    if src == "golden":
+                        gs = list(self.cat.runs.get("golden") or [])
+                        npairs = [[a, b] for i, a in enumerate(gs) for b in gs[i + 1:]]
                     # 噪声参照对是同一侧的两次运行，步号约定相同，不换算
                     noise = noise_from_pairs([(self.run(a).series(field), self.run(b).series(field)) for a, b in npairs],
                                              parse_window(params["window"]), params.get("denominator", "golden"),
